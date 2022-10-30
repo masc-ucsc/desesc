@@ -1,0 +1,20 @@
+
+desesc: Dromajo Based ESESC
+
+-Remove most (all?) the const char *str, and use std::string or std::string_view
+
+-Remove most mallocs (string related. any else?)
+
+-Get code style compliant with LiveHD
+
+
+=Cleanup callback
+
+ The code is based on esesc (C++ from 2000 without lambdas/std::function). Use
+ something closer to LiveHD tasks queue syntax.
+
+=Deprecase the pool
+
+ Use new/delete, then valgrind can be used to detect memory leaks (no need for
+ in-class check for leaks)
+

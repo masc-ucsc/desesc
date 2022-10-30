@@ -30,3 +30,19 @@
 *.exe
 *.out
 *.app
+
+# Common edits
+pp
+tags
+cscope*
+*NBSD*
+*.swp
+*.swo
+*.swn
+
+# No log files
+*.log
+
+# No bazel
+bazel-*
+

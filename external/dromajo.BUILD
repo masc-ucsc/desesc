@@ -6,7 +6,7 @@ cc_library(
     name = "dromajo",
     srcs = glob(
         ["src/*.cpp"],
-        exclude = ["src/*dromajo_cosim.cpp", "src/*_test.cpp", "src/dromajo.cpp", "src/dromajo_main.cpp"],
+        exclude = ["src/*dromajo_cosim.cpp", "src/*_test.cpp", "src/dromajo.cpp"],
     ),
     hdrs = glob(["include/*.h"]),
     includes = ["include"],

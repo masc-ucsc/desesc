@@ -1,13 +1,14 @@
+// See LICENSE for details.
 
 #include <math.h>
 #include <iostream>
 #include <stdlib.h>
 
-#include "DInst.h"
+#include "dinst.hpp"
+#include "config.hpp"
+
 #include "MemObj.h"
 #include "MemRequest.h"
-#include "SescConf.h"
-
 #include "AddressPredictor.h"
 
 BimodalStride::BimodalStride(int _size)

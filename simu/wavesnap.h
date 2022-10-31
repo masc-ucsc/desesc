@@ -1,20 +1,12 @@
-/*
-  USAGE:
-    1. In GProcessor.h uncomment: #define WAVESNAP_EN
+// See LICENSE for details.
 
-    2. In TaskHandler.cpp, in TaskHandler::unplug() specify the format and the file where you
-       want to dump the traces. In case wavedrom format is picked, copy and paste generated
-       file into Wavedrom edittor to visualize. 
-*/
-
-#ifndef _WAVESNAP_
-#define _WAVESNAP_
+#pragma once
 //functional defines
 
 //general wavesnap defines
 #define SINGLE_WINDOW     false
 #define WITH_SAMPLING     true
-#define RECORD_ONCE       
+#define RECORD_ONCE
 #define HASHED_RECORD
 
 //signature defines
@@ -47,14 +39,15 @@
 #include <string>
 #include <sstream>
 #include <map>
-#include "InstOpcode.h"
-#include "EmuSampler.h"
-#include "DInst.h"
+
+#include "opcode.hpp"
+#include "dinst.hpp"
+
 /*
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
-#include <boost/serialization/map.hpp> 
-#include <boost/serialization/string.hpp> 
+#include <boost/serialization/map.hpp>
+#include <boost/serialization/string.hpp>
 #include <boost/serialization/vector.hpp>
 */
 class instruction_info {
@@ -120,7 +113,7 @@ class wavesnap {
           result << parent1_id << ", ";
           result << parent2_id << ", ";
           result << depth << ")";
-    
+
           return result.str();
         }
     };
@@ -164,7 +157,7 @@ class wavesnap {
     void add_pipeline_info(pipeline_info* pipe_info, instruction_info* dinst);
     uint64_t hash(std::string signature, uint64_t more);
     #ifdef RECORD_ONCE
-      std::vector<bool> signature_hit; 
+      std::vector<bool> signature_hit;
     #endif
 
   public:
@@ -173,11 +166,11 @@ class wavesnap {
 
     //many windows
     void update_window(DInst* dinst, uint64_t committed);
-    void add_instruction(DInst* dinst); 
+    void add_instruction(DInst* dinst);
     bool first_window_completed;
     uint64_t last_removed_id;
     uint64_t update_count;
-    std::vector<uint64_t> wait_buffer; 
+    std::vector<uint64_t> wait_buffer;
     std::vector<bool> completed;
     pipeline_info working_window;
     std::map<uint64_t, instruction_info> dinst_info;
@@ -200,7 +193,7 @@ class wavesnap {
     void calculate_ipc();
     void test_uncompleted();
     void window_frequency();
-    
+
     //other
     instruction_info extract_inst_info(DInst* dinst, uint64_t committed);
     void add_to_RAT(DInst* dinst);
@@ -218,4 +211,4 @@ class wavesnap {
     void save();
     void load();
 };
-#endif
+

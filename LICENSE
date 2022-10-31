@@ -204,11 +204,18 @@
   Code is based from ESESC which had a permissive license (BSD):
 
   Contributed by Jose Renau
-                  Basilio Fraguela
-                  Luis Ceze
-                  Smruti Sarangi
-                  Paul Sack
-                  Sina Hassani
+                 Basilio Fraguela
+                 Milos Prvulovic
+                 Luis Ceze
+                 Smruti Sarangi
+                 Karin Strauss
+                 Paul Sack
+                 Smruti Sarangi
+                 Jose Luis Briz
+                 Islam Atta (IBM)
+                 Sina Hassani
+                 David Munday
+                 Kerry Veenstra
 
  Copyright (C) 2002-2003 University of Illinois.
  Copyright (C) 2004-2022 Regents of the University of California and the ESESC Project.

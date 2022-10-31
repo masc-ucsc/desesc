@@ -121,7 +121,7 @@
 #include <math.h>
 #include <vector>
 
-#include "InstOpcode.h"
+#include "opcode.hpp"
 
 #include "DOLC.h"
 
@@ -1549,7 +1549,7 @@ public:
     return pred_taken;
   }
 
-  void HistoryUpdate(AddrType PC, InstOpcode brtype, bool taken, AddrType target, long long &X, int &Y, folded_history *H,
+  void HistoryUpdate(AddrType PC, Opcode brtype, bool taken, AddrType target, long long &X, int &Y, folded_history *H,
                      folded_history *G, folded_history *J, long long &LH, long long &SH, long long &TH, long long &PH,
                      long long &GBRHIST) {
     // special treatment for unconditional branchs;
@@ -1927,7 +1927,7 @@ public:
     }
   }
 
-  void TrackOtherInst(AddrType PC, InstOpcode opType, AddrType branchTarget) {
+  void TrackOtherInst(AddrType PC, Opcode opType, AddrType branchTarget) {
 
     fetchBoundaryOffsetOthers(PC);
 

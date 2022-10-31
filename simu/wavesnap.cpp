@@ -79,12 +79,12 @@ void wavesnap::add_pipeline_info(pipeline_info* pipe_info, instruction_info* d) 
   pipe_info->commit_cycles.push_back(d->committed_time - d->executed_time);
 }
 
-void wavesnap::add_instruction(DInst *dinst) {
+void wavesnap::add_instruction(Dinst *dinst) {
   wait_buffer.push_back(dinst->getID());
   completed.push_back(false);
 }
 
-instruction_info wavesnap::extract_inst_info(DInst* dinst, uint64_t committed) {
+instruction_info wavesnap::extract_inst_info(Dinst* dinst, uint64_t committed) {
   instruction_info result;
 
   result.fetched_time   = dinst->getFetchedTime();
@@ -97,7 +97,7 @@ instruction_info wavesnap::extract_inst_info(DInst* dinst, uint64_t committed) {
   return result;
 }
 
-void wavesnap::update_window(DInst *dinst, uint64_t committed) {
+void wavesnap::update_window(Dinst *dinst, uint64_t committed) {
   // update instruction as completed
   bool     found = false;
   uint64_t i     = dinst->getID();
@@ -363,7 +363,7 @@ void wavesnap::calculate_ipc() {
 
 /////////////////////////////////
 //FULL IPC UPDATE and CALCULATION
-void wavesnap::update_single_window(DInst* dinst, uint64_t committed) {
+void wavesnap::update_single_window(Dinst* dinst, uint64_t committed) {
   uint64_t fetched = dinst->getFetchedTime();
   uint64_t renamed = dinst->getRenamedTime();
   uint64_t issued = dinst->getIssuedTime();
@@ -486,7 +486,7 @@ void wavesnap::test_uncompleted() {
   std::cout << "uncomleted instruction = " << count << std::endl;
 }
 
-void wavesnap::add_to_RAT(DInst *dinst) {
+void wavesnap::add_to_RAT(Dinst *dinst) {
   uint64_t dst, src1, src2;
   bool     skip = false;
   if(dinst->getInst()->isStore()) {

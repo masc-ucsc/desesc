@@ -92,7 +92,7 @@ protected:
   int tl_type;
 
   AddrType pc;
-  DInst *  dinst;     // WARNING: valid IFF demand DL1
+  Dinst *  dinst;     // WARNING: valid IFF demand DL1
   AddrType pref_sign; // WARNING: valid IFF prefetch is true
   int32_t  degree;    // WARNING: valid IFF prefetch is true
   /* }}} */
@@ -324,20 +324,20 @@ public:
     MemRequest *mreq = createReqRead(m, doStats, addr, pc, cb);
     m->req(mreq);
   } 
-  static void sendSpecReqDL1Read(MemObj *m, bool doStats, AddrType addr, AddrType pc, DInst *dinst, CallbackBase *cb) {
+  static void sendSpecReqDL1Read(MemObj *m, bool doStats, AddrType addr, AddrType pc, Dinst *dinst, CallbackBase *cb) {
     MemRequest *mreq = createSpecReqRead(m, doStats, addr, pc, cb);
     mreq->dinst      = dinst;
     m->req(mreq);
   }
 
- static void sendSafeReqDL1Read(MemObj *m, bool doStats, AddrType addr, AddrType pc, DInst *dinst, CallbackBase *cb) {
+ static void sendSafeReqDL1Read(MemObj *m, bool doStats, AddrType addr, AddrType pc, Dinst *dinst, CallbackBase *cb) {
     MemRequest *mreq = createSafeReqRead(m, doStats, addr, pc, cb);
     mreq->dinst      = dinst;
     m->req(mreq);
   }
 
 
-  static void sendReqDL1Read(MemObj *m, bool doStats, AddrType addr, AddrType pc, DInst *dinst, CallbackBase *cb) {
+  static void sendReqDL1Read(MemObj *m, bool doStats, AddrType addr, AddrType pc, Dinst *dinst, CallbackBase *cb) {
     MemRequest *mreq = createReqRead(m, doStats, addr, pc, cb);
     mreq->dinst      = dinst;
     m->req(mreq);
@@ -541,7 +541,7 @@ public:
   }
 
   // WARNING: Only available on DL1 demand miss
-  DInst *getDInst() const {
+  Dinst *getDinst() const {
     return dinst;
   }
 

@@ -79,7 +79,7 @@ Prefetcher::Prefetcher(MemObj *_l1, int cpuID)
 }
 /* }}} */
 
-void Prefetcher::exe(DInst *dinst)
+void Prefetcher::exe(Dinst *dinst)
 /* forward bus read {{{1 */
 {
   if(apred == 0)
@@ -122,7 +122,7 @@ void Prefetcher::exe(DInst *dinst)
 }
 /* }}} */
 
-void Prefetcher::ret(DInst *dinst)
+void Prefetcher::ret(Dinst *dinst)
 // {{{1 update prefetcher state at retirement
 {
   if(apred == 0)

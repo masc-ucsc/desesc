@@ -149,7 +149,7 @@ FetchEngine::~FetchEngine() {
   delete bpred;
 }
 
-bool FetchEngine::processBranch(DInst *dinst, uint16_t n2Fetch) {
+bool FetchEngine::processBranch(Dinst *dinst, uint16_t n2Fetch) {
   const Instruction *inst = dinst->getInst();
 
   I(dinst->getInst()->isControl()); // getAddr is target only for br/jmp
@@ -223,7 +223,7 @@ void FetchEngine::chainPrefDone(AddrType pc, int distance, AddrType addr) {
 #endif
 }
 
-void FetchEngine::chainLoadDone(DInst *dinst) {
+void FetchEngine::chainLoadDone(Dinst *dinst) {
 #ifdef ESESC_TRACE_DATA
   // MSG("ldchain ldpc:%llx %d dist:%d",dinst->getPC(), oracleDataLast[dinst->getPC()].chained, dinst->getChained());
 
@@ -242,7 +242,7 @@ void FetchEngine::realfetch(IBucket *bucket, EmulInterface *eint, FlowID fid, in
 #endif
 
   do {
-    DInst *dinst = 0;
+    Dinst *dinst = 0;
     dinst        = eint->peekHead(fid);
     if(dinst == 0) {
 #if 0
@@ -808,7 +808,7 @@ void FetchEngine::realfetch(IBucket *bucket, EmulInterface *eint, FlowID fid, in
         }
 #endif
 #endif
-        DInst *dinstn = eint->peekHead(fid);
+        Dinst *dinstn = eint->peekHead(fid);
         if(dinstn == 0) {
           zeroDinst.inc(true);
 #if 0
@@ -894,7 +894,7 @@ void FetchEngine::realfetch(IBucket *bucket, EmulInterface *eint, FlowID fid, in
 
 #ifdef ENABLE_LDBP
 #if 0
-DInst* FetchEngine::init_ldbp(DInst *dinst, DataType dd, AddrType ldpc) {
+Dinst* FetchEngine::init_ldbp(Dinst *dinst, DataType dd, AddrType ldpc) {
   if(dinst->getLBType() == 1) {  //R1 -> LD->BR, R2 -> 0
     dinst->setBrData1(dinst->getData());
     dinst->setBrData2(0);
@@ -994,7 +994,7 @@ void FetchEngine::dump(const char *str) const {
   bpred->dump(nstr);
 }
 
-void FetchEngine::unBlockFetchBPredDelay(DInst *dinst, Time_t missFetchTime) {
+void FetchEngine::unBlockFetchBPredDelay(Dinst *dinst, Time_t missFetchTime) {
   clearMissInst(dinst, missFetchTime);
 
   Time_t n = (globalClock - missFetchTime);
@@ -1005,7 +1005,7 @@ void FetchEngine::unBlockFetchBPredDelay(DInst *dinst, Time_t missFetchTime) {
   nDelayInst3.add(n, dinst->getStatsFlag());
 }
 
-void FetchEngine::unBlockFetch(DInst *dinst, Time_t missFetchTime) {
+void FetchEngine::unBlockFetch(Dinst *dinst, Time_t missFetchTime) {
   clearMissInst(dinst, missFetchTime);
 
   I(missFetchTime != 0 || globalClock < 1000); // The first branch can have time zero fetch
@@ -1020,29 +1020,29 @@ void FetchEngine::unBlockFetch(DInst *dinst, Time_t missFetchTime) {
   lastMissTime = globalClock;
 }
 
-void FetchEngine::clearMissInst(DInst *dinst, Time_t missFetchTime) {
+void FetchEngine::clearMissInst(Dinst *dinst, Time_t missFetchTime) {
 
-  // MSG("\t\t\t\t\tCPU: %d\tU:ID: %d,DInst PE:%d, Dinst PC %x",(int) this->gproc->getID(),(int)
+  // MSG("\t\t\t\t\tCPU: %d\tU:ID: %d,Dinst PE:%d, Dinst PC %x",(int) this->gproc->getID(),(int)
   // dinst->getID(),dinst->getPE(),dinst->getPC());
   I(missInst);
   missInst = false;
 
-  I(dinst == missDInst);
+  I(dinst == missDinst);
 #ifdef DEBUG
-  missDInst = 0;
+  missDinst = 0;
 #endif
 
   cbPending.mycall();
 }
 
-void FetchEngine::setMissInst(DInst *dinst) {
-  // MSG("CPU: %d\tL:ID: %d,DInst PE:%d, Dinst PC %x",(int) this->gproc->getID(),(int)
+void FetchEngine::setMissInst(Dinst *dinst) {
+  // MSG("CPU: %d\tL:ID: %d,Dinst PE:%d, Dinst PC %x",(int) this->gproc->getID(),(int)
   // dinst->getID(),dinst->getPE(),dinst->getPC());
 
   I(!missInst);
 
   missInst = true;
 #ifdef DEBUG
-  missDInst = dinst;
+  missDinst = dinst;
 #endif
 }

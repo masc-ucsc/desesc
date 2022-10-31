@@ -109,7 +109,7 @@ private:
   // InstID of the address that generated a misprediction
 
   bool missInst; // branch missprediction. Stop fetching until solved
-  ID(DInst *missDInst);
+  ID(Dinst *missDinst);
   CallbackContainer cbPending;
 
   Time_t lastMissTime; // FIXME: maybe we need an array
@@ -117,8 +117,8 @@ private:
   bool enableICache;
 
 protected:
-  // bool processBranch(DInst *dinst, uint16_t n2Fetched);
-  bool processBranch(DInst *dinst, uint16_t n2Fetchedi);
+  // bool processBranch(Dinst *dinst, uint16_t n2Fetched);
+  bool processBranch(Dinst *dinst, uint16_t n2Fetchedi);
 
   // ******************* Statistics section
   GStatsAvg  avgFetchLost;
@@ -148,9 +148,9 @@ public:
 
 #ifdef ENABLE_LDBP
 
-  DInst* init_ldbp(DInst *dinst, DataType dd, AddrType ldpc);
+  Dinst* init_ldbp(Dinst *dinst, DataType dd, AddrType ldpc);
   MemObj *DL1;
-  DInst *ld_dinst;
+  Dinst *ld_dinst;
   AddrType dep_pc; //dependent instn's PC
   int fetch_br_count;
 
@@ -171,14 +171,14 @@ public:
   // typedef CallbackMember4<FetchEngine, IBucket *, EmulInterface* , FlowID, int32_t, &FetchEngine::realfetch>  realfetchCB;
 
   void chainPrefDone(AddrType pc, int distance, AddrType addr);
-  void chainLoadDone(DInst *dinst);
+  void chainLoadDone(Dinst *dinst);
   typedef CallbackMember3<FetchEngine, AddrType, int, AddrType, &FetchEngine::chainPrefDone> chainPrefDoneCB;
 
-  void unBlockFetch(DInst *dinst, Time_t missFetchTime);
-  typedef CallbackMember2<FetchEngine, DInst *, Time_t, &FetchEngine::unBlockFetch> unBlockFetchCB;
+  void unBlockFetch(Dinst *dinst, Time_t missFetchTime);
+  typedef CallbackMember2<FetchEngine, Dinst *, Time_t, &FetchEngine::unBlockFetch> unBlockFetchCB;
 
-  void unBlockFetchBPredDelay(DInst *dinst, Time_t missFetchTime);
-  typedef CallbackMember2<FetchEngine, DInst *, Time_t, &FetchEngine::unBlockFetchBPredDelay> unBlockFetchBPredDelayCB;
+  void unBlockFetchBPredDelay(Dinst *dinst, Time_t missFetchTime);
+  typedef CallbackMember2<FetchEngine, Dinst *, Time_t, &FetchEngine::unBlockFetchBPredDelay> unBlockFetchBPredDelayCB;
 
 #if 0
   void unBlockFetch();
@@ -194,12 +194,12 @@ public:
     return missInst;
   }
 #ifdef DEBUG
-  DInst *getMissDInst() const {
-    return missDInst;
+  Dinst *getMissDinst() const {
+    return missDinst;
   }
 #endif
 
-  void clearMissInst(DInst *dinst, Time_t missFetchTime);
-  void setMissInst(DInst *dinst);
+  void clearMissInst(Dinst *dinst, Time_t missFetchTime);
+  void setMissInst(Dinst *dinst);
 };
 

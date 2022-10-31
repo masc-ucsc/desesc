@@ -48,7 +48,7 @@ public:
   ~Prefetcher() {
   }
 
-  void exe(DInst *dinst);
-  void ret(DInst *dinst);
+  void exe(Dinst *dinst);
+  void ret(Dinst *dinst);
 };
 

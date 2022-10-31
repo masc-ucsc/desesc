@@ -34,8 +34,8 @@ private:
     double committed;
     Time_t r_dinst_ID;
     Time_t dinst_ID;
-    DInst *r_dinst;
-    DInst *dinst;
+    Dinst *r_dinst;
+    Dinst *dinst;
     bool   operator==(const RetireState &a) const {
       return a.committed == committed;
     };
@@ -59,14 +59,14 @@ private:
   uint32_t serialize;
   int32_t  serialize_for;
   uint32_t forwardProg_threshold;
-  DInst *  last_serialized;
-  DInst *  last_serializedST;
+  Dinst *  last_serialized;
+  Dinst *  last_serializedST;
 
   int32_t spaceInInstQueue;
-  DInst * RAT[LREG_MAX];
+  Dinst * RAT[LREG_MAX];
   int32_t nTotalRegs;
 
-  DInst *  serializeRAT[LREG_MAX];
+  Dinst *  serializeRAT[LREG_MAX];
   RegType  last_serializeLogical;
   AddrType last_serializePC;
 
@@ -185,7 +185,7 @@ protected:
 
   // BEGIN VIRTUAL FUNCTIONS of GProcessor
   bool       advance_clock(FlowID fid);
-  StallCause addInst(DInst *dinst);
+  StallCause addInst(Dinst *dinst);
   void       retire();
 
   // END VIRTUAL FUNCTIONS of GProcessor
@@ -201,33 +201,33 @@ public:
   const int BTT_SIZE;
   const int MAX_TRIG_DIST;
 
-  void classify_ld_br_chain(DInst *dinst, RegType br_src1, int reg_flag);
-  void classify_ld_br_double_chain(DInst *dinst, RegType br_src1, RegType br_src2, int reg_flag);
-  void ct_br_hit_double(DInst *dinst, RegType b1, RegType b2, int reg_flag);
-  void lgt_br_miss_double(DInst *dinst, RegType b1, RegType b2);
-  void lgt_br_hit_double(DInst *dinst, RegType b1, RegType b2, int idx);
+  void classify_ld_br_chain(Dinst *dinst, RegType br_src1, int reg_flag);
+  void classify_ld_br_double_chain(Dinst *dinst, RegType br_src1, RegType br_src2, int reg_flag);
+  void ct_br_hit_double(Dinst *dinst, RegType b1, RegType b2, int reg_flag);
+  void lgt_br_miss_double(Dinst *dinst, RegType b1, RegType b2);
+  void lgt_br_hit_double(Dinst *dinst, RegType b1, RegType b2, int idx);
   DataType extract_load_immediate(AddrType li_pc);
-  void generate_trigger_load(DInst *dinst, RegType reg, int lgt_index, int tl_type);
-  int hit_on_lgt(DInst *dinst, int reg_flag, RegType reg1, RegType reg2 = LREG_R0);
+  void generate_trigger_load(Dinst *dinst, RegType reg, int lgt_index, int tl_type);
+  int hit_on_lgt(Dinst *dinst, int reg_flag, RegType reg1, RegType reg2 = LREG_R0);
 
 
   //new interface !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #if 0
   //LOAD TABLE
-  void hit_on_load_table(DInst *dinst, bool is_li);
+  void hit_on_load_table(Dinst *dinst, bool is_li);
   int return_load_table_index(AddrType pc);
 #endif
   void power_save_mode_table_reset();
   //RTT
-  void rtt_load_hit(DInst *dinst);
-  void rtt_alu_hit(DInst *dinst);
-  void rtt_br_hit(DInst *dinst);
+  void rtt_load_hit(Dinst *dinst);
+  void rtt_alu_hit(Dinst *dinst);
+  void rtt_br_hit(Dinst *dinst);
   //BTT
   int return_btt_index(AddrType pc);
-  void btt_br_miss(DInst *dinst);
-  void btt_br_hit(DInst *dinst, int btt_index);
-  void btt_trigger_load(DInst *dinst, AddrType ld_ptr);
-  int btt_pointer_check(DInst *dinst, int btt_index);
+  void btt_br_miss(Dinst *dinst);
+  void btt_br_hit(Dinst *dinst, int btt_index);
+  void btt_trigger_load(Dinst *dinst, AddrType ld_ptr);
+  int btt_pointer_check(Dinst *dinst, int btt_index);
   // 1 -> btt_ptr == plq_ptr && all tracking set => trigger_loads
   // 2 -> btt_ptr == plq_ptr but all tracking not set => do nothing
   // 3 -> if x in BTT.ptr but not in PLQ.ptr => sp.track++
@@ -259,13 +259,13 @@ public:
     bool is_li;
     int tracking; //0 to 3 -> useful counter
 
-    void lt_load_miss(DInst *dinst) {
+    void lt_load_miss(Dinst *dinst) {
       load_table();
       ldpc         = dinst->getPC();
       ld_addr      = dinst->getAddr();
     }
 
-    void lt_load_hit(DInst *dinst) {
+    void lt_load_hit(Dinst *dinst) {
       ldpc         = dinst->getPC();
       prev_delta   = delta;
       prev_ld_addr = ld_addr;
@@ -279,7 +279,7 @@ public:
       //MSG("LT clk=%d ldpc=%llx addr=%d del=%d conf=%d", globalClock, ldpc, ld_addr, delta, conf);
     }
 
-    void lt_load_imm(DInst *dinst) {
+    void lt_load_imm(Dinst *dinst) {
       ldpc  = dinst->getPC();
       is_li = true;
       conf = 4096;
@@ -350,7 +350,7 @@ public:
     int accuracy; // MAX 0 to 7
     std::vector<AddrType> load_table_pointer = std::vector<AddrType>(NUM_LOADS); // pointer from Load Table to refer loads
 
-    void btt_update_accuracy(DInst *dinst, int id) {
+    void btt_update_accuracy(Dinst *dinst, int id) {
       if(dinst->isBranch_hit2_miss3()) {
         if(accuracy > 0)
           accuracy--;
@@ -466,7 +466,7 @@ public:
     AddrType goal_addr;
     AddrType prev_goal_addr;
 
-    void ct_load_hit(DInst *dinst) { //add/reset entry on CT
+    void ct_load_hit(Dinst *dinst) { //add/reset entry on CT
       classify_table_entry(); // reset entries
       if(dinst->getPC() != ldpc) {
         mem_lat_vec.clear();
@@ -493,7 +493,7 @@ public:
         dep_list[i] = 0;
     }
 
-    void ct_br_hit(DInst *dinst, int reg_flag) {
+    void ct_br_hit(Dinst *dinst, int reg_flag) {
       ldbr_type = 0;
       simple = false;
       if(dinst->getInst()->getSrc1() == 0 || dinst->getInst()->getSrc2() == 0) {
@@ -571,7 +571,7 @@ public:
       }
     }
 
-    void ct_alu_hit(DInst *dinst) {
+    void ct_alu_hit(Dinst *dinst) {
       //FIXME - check if alu is Li or Lui
       dep_depth++;
       dep_list[dep_depth] = dinst->getPC();
@@ -661,13 +661,13 @@ public:
     //AddrType prev_constant2;
     //AddrType last_trig_addr2;
 
-    void lgt_br_hit_li(DInst *dinst, int ldbr, int depth) {
+    void lgt_br_hit_li(Dinst *dinst, int ldbr, int depth) {
       ldbr_type  = ldbr;
       dep_depth  = depth;
       lgt_update_br_fields(dinst);
     }
 
-    void lgt_br_hit(DInst *dinst, AddrType ld_addr, int ldbr, int depth, bool is_r1) {
+    void lgt_br_hit(Dinst *dinst, AddrType ld_addr, int ldbr, int depth, bool is_r1) {
       if(is_r1) {
         prev_delta = ld_delta;
         ld_delta   = ld_addr - start_addr;
@@ -693,7 +693,7 @@ public:
       lgt_update_br_fields(dinst);
     }
 
-    void lgt_br_miss(DInst *dinst, int ldbr, AddrType _ldpc, AddrType ld_addr, bool is_r1) {
+    void lgt_br_miss(Dinst *dinst, int ldbr, AddrType _ldpc, AddrType ld_addr, bool is_r1) {
       if(is_r1) {
         ldpc         = _ldpc;
         start_addr   = ld_addr;
@@ -706,7 +706,7 @@ public:
       //MSG("LGT_BR_MISS clk=%u ldpc=%llx ld_addr=%u del=%u prev_del=%u conf=%u brpc=%llx ldbr=%d", globalClock, ldpc, start_addr, ld_delta, prev_delta, ld_conf, brpc, ldbr_type);
     }
 
-    void lgt_update_br_fields(DInst *dinst) {
+    void lgt_update_br_fields(Dinst *dinst) {
       brpc            = dinst->getPC();
       inf_branch      = dinst->getInflight(); //FIXME use dinst->getInflight() instead of variable
       if(br_mv_outcome == 0) {
@@ -774,12 +774,12 @@ public:
 
 #endif
 
-  void executing(DInst *dinst);
-  void executed(DInst *dinst);
+  void executing(Dinst *dinst);
+  void executed(Dinst *dinst);
   LSQ *getLSQ() {
     return &lsq;
   }
-  void replay(DInst *target);
+  void replay(Dinst *target);
   bool isFlushing() {
     return flushing;
   }

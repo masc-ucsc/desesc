@@ -21,7 +21,7 @@ public:
   ClusterScheduler(const ResourcesPoolType ores);
   virtual ~ClusterScheduler();
 
-  virtual Resource *getResource(DInst *dinst) = 0;
+  virtual Resource *getResource(Dinst *dinst) = 0;
 };
 
 class RoundRobinClusterScheduler : public ClusterScheduler {
@@ -33,7 +33,7 @@ public:
   RoundRobinClusterScheduler(const ResourcesPoolType res);
   ~RoundRobinClusterScheduler();
 
-  Resource *getResource(DInst *dinst);
+  Resource *getResource(Dinst *dinst);
 };
 
 class LRUClusterScheduler : public ClusterScheduler {
@@ -42,7 +42,7 @@ public:
   LRUClusterScheduler(const ResourcesPoolType res);
   ~LRUClusterScheduler();
 
-  Resource *getResource(DInst *dinst);
+  Resource *getResource(Dinst *dinst);
 };
 
 class UseClusterScheduler : public ClusterScheduler {
@@ -55,6 +55,6 @@ public:
   UseClusterScheduler(const ResourcesPoolType res);
   ~UseClusterScheduler();
 
-  Resource *getResource(DInst *dinst);
+  Resource *getResource(Dinst *dinst);
 };
 

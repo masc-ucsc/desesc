@@ -20,17 +20,17 @@ protected:
   bool advance_clock(FlowID fid);
 
   // Not needed for Acc
-  StallCause addInst(DInst *dinst);
+  StallCause addInst(Dinst *dinst);
   void       retire();
   void       fetch(FlowID fid);
   LSQ *      getLSQ();
   bool       isFlushing();
   bool       isReplayRecovering();
   Time_t     getReplayID();
-  void       executing(DInst *dinst);
-  void       executed(DInst *dinst);
+  void       executing(Dinst *dinst);
+  void       executed(Dinst *dinst);
 
-  virtual void replay(DInst *target){}; // = 0;
+  virtual void replay(Dinst *target){}; // = 0;
 
   // END VIRTUAL FUNCTIONS of GProcessor
 

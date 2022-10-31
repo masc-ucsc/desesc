@@ -20,7 +20,7 @@ class SCB {
 public:
   int32_t              freeEntries;
   MemObj*              firstLevelMemObj;  
-  std::deque< DInst* > replacementDInstQueue;
+  std::deque< Dinst* > replacementDinstQueue;
   SCBEntryType*        scbEntry; 
   int                  bsize;
   int                  lineSizeBits;
@@ -28,20 +28,20 @@ public:
   ~SCB() {
   }
 
-  bool   canAccept(DInst* dinst); 
-  void   tryAddInst(MemObj *firstLevelMemObject,DInst* dinst);
-  void   addInst( DInst* dinst);
+  bool   canAccept(Dinst* dinst); 
+  void   tryAddInst(MemObj *firstLevelMemObject,Dinst* dinst);
+  void   addInst( Dinst* dinst);
   bool   findTag(AddrType tag);
-  void   performedOwnership( DInst* dinst);
-  void   performedWriteback(DInst* dinst);
-  void   doReplacement(DInst* dinst);
-  bool   isWordBytesHit(DInst* dinst);
-  bool   isTagHit(DInst* dinst);
-  bool   isStateModified(DInst* dinst);
-  void   setWordBytesPresentinTagHit(DInst* dinst);
-  void   issueWriteReqforOwnership(DInst* dinst);
-  typedef CallbackMember1<SCB, DInst *,&SCB::performedOwnership> ownershipCB;
-  typedef CallbackMember1<SCB, DInst *,&SCB::performedWriteback> writebackCB;
+  void   performedOwnership( Dinst* dinst);
+  void   performedWriteback(Dinst* dinst);
+  void   doReplacement(Dinst* dinst);
+  bool   isWordBytesHit(Dinst* dinst);
+  bool   isTagHit(Dinst* dinst);
+  bool   isStateModified(Dinst* dinst);
+  void   setWordBytesPresentinTagHit(Dinst* dinst);
+  void   issueWriteReqforOwnership(Dinst* dinst);
+  typedef CallbackMember1<SCB, Dinst *,&SCB::performedOwnership> ownershipCB;
+  typedef CallbackMember1<SCB, Dinst *,&SCB::performedWriteback> writebackCB;
   typedef HASH_MAP<AddrType, SCBEntryType*> SCBinstMap ;
   SCBinstMap           instMap;
 

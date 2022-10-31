@@ -17,7 +17,7 @@
 class StoreSet {
 private:
   typedef std::vector<SSID_t>  SSIT_t;
-  typedef std::vector<DInst *> LFST_t;
+  typedef std::vector<Dinst *> LFST_t;
 
   SSIT_t SSIT;
   LFST_t LFST;
@@ -46,11 +46,11 @@ private:
   void clear_SSIT();
 
   // LFST Functions
-  DInst *get_LFS(SSID_t SSID) const {
+  Dinst *get_LFS(SSID_t SSID) const {
     I(SSID <= (int32_t)LFST.size());
     return LFST[SSID];
   };
-  void set_LFS(SSID_t SSID, DInst *dinst) {
+  void set_LFS(SSID_t SSID, Dinst *dinst) {
     LFST[SSID] = dinst;
   }
   void clear_LFST(void);
@@ -63,27 +63,27 @@ private:
 
 #if 1
   // TO - delete
-  void stldViolation_withmerge(DInst *ld_dinst, DInst *st_dinst);
-  void VPC_misspredict(DInst *ld_dinst, AddrType store_pc);
-  void assign_SSID(DInst *dinst, SSID_t SSID);
+  void stldViolation_withmerge(Dinst *ld_dinst, Dinst *st_dinst);
+  void VPC_misspredict(Dinst *ld_dinst, AddrType store_pc);
+  void assign_SSID(Dinst *dinst, SSID_t SSID);
 #endif
 public:
   StoreSet(const int32_t cpu_id);
   ~StoreSet() {
   }
 
-  bool insert(DInst *dinst);
-  void remove(DInst *dinst);
-  void stldViolation(DInst *ld_dinst, AddrType st_pc);
-  void stldViolation(DInst *ld_dinst, DInst *st_dinst);
+  bool insert(Dinst *dinst);
+  void remove(Dinst *dinst);
+  void stldViolation(Dinst *ld_dinst, AddrType st_pc);
+  void stldViolation(Dinst *ld_dinst, Dinst *st_dinst);
 
   SSID_t mergeset(SSID_t id1, SSID_t id2);
 
 #ifdef STORESET_MERGING
   // move violating load to qdinst load's store set, stores will migrate as violations occur.
-  void merge_sets(DInst *m_dinst, DInst *d_dinst);
+  void merge_sets(Dinst *m_dinst, Dinst *d_dinst);
 #else
-  void merge_sets(DInst *m_dinst, DInst *d_dinst){};
+  void merge_sets(Dinst *m_dinst, Dinst *d_dinst){};
 #endif
 };
 

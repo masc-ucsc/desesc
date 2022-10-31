@@ -49,7 +49,7 @@ Resource::Resource(uint8_t type, Cluster *cls, PortGeneric *aGen, TimeDelta_t l,
 }
 /* }}} */
 
-void Resource::setStats(const DInst *dinst) {
+void Resource::setStats(const Dinst *dinst) {
 
   if(!dinst->getStatsFlag())
     return;
@@ -122,7 +122,7 @@ MemReplay::MemReplay(uint8_t type, Cluster *cls, PortGeneric *gen, StoreSet *ss,
   }
 }
 
-void MemReplay::replayManage(DInst *dinst) {
+void MemReplay::replayManage(Dinst *dinst) {
 
   if(dinst->getSSID() == -1)
     return;
@@ -246,7 +246,7 @@ FULoad::FULoad(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *_lsq, StoreSe
 }
 /* }}} */
 
-StallCause FULoad::canIssue(DInst *dinst) {
+StallCause FULoad::canIssue(Dinst *dinst) {
   /* canIssue {{{1 */
 
   if(freeEntries <= 0) {
@@ -276,7 +276,7 @@ StallCause FULoad::canIssue(DInst *dinst) {
 }
 /* }}} */
 
-void FULoad::executing(DInst *dinst) {
+void FULoad::executing(Dinst *dinst) {
   /* executing {{{1 */
 
 #ifndef LSQ_LATE_EXECUTED
@@ -287,7 +287,7 @@ void FULoad::executing(DInst *dinst) {
   cluster->executing(dinst);
   Time_t when = gen->nextSlot(dinst->getStatsFlag()) + lat;
 
-  DInst *qdinst = lsq->executing(dinst);
+  Dinst *qdinst = lsq->executing(dinst);
   I(qdinst == 0);
   if(qdinst) {
     I(qdinst->getInst()->isStore());
@@ -319,7 +319,7 @@ void FULoad::executing(DInst *dinst) {
 
 /* }}} */
 
-/*bool FULoad::isLoadSpec(DInst *dinst){
+/*bool FULoad::isLoadSpec(Dinst *dinst){
 
   std::vector<double> mem_unresolved;
   std::vector<double> br_unresolved;
@@ -329,7 +329,7 @@ void FULoad::executing(DInst *dinst) {
   if(robSize>0){
     for(uint32_t i=0;i<robSize;i++) {
       uint32_t pos = dinst->getGProc()->getIDFromTop(i);
-      DInst *dinst = dinst->getGProc()->getData(pos);
+      Dinst *dinst = dinst->getGProc()->getData(pos);
       if(dinst->getInst()->isMemory()){
         if(!dinst->isExecuting()){
          mem_unresolved.push_back(pos);
@@ -354,7 +354,7 @@ void FULoad::executing(DInst *dinst) {
 }
 */
 
-void FULoad::cacheDispatched(DInst *dinst) {
+void FULoad::cacheDispatched(Dinst *dinst) {
   /* cacheDispatched {{{1 */
 
   I(enableDcache);
@@ -383,7 +383,7 @@ void FULoad::cacheDispatched(DInst *dinst) {
 }
 /* }}} */
 
-void FULoad::executed(DInst *dinst) {
+void FULoad::executed(Dinst *dinst) {
   /* executed {{{1 */
 
 #ifdef LSQ_LATE_EXECUTED
@@ -409,7 +409,7 @@ void FULoad::executed(DInst *dinst) {
 }
 /* }}} */
 
-bool FULoad::preretire(DInst *dinst, bool flushing)
+bool FULoad::preretire(Dinst *dinst, bool flushing)
 /* retire {{{1 */
 {
   bool done = dinst->isDispatched();
@@ -426,7 +426,7 @@ bool FULoad::preretire(DInst *dinst, bool flushing)
 }
 /* }}} */
 
-bool FULoad::retire(DInst *dinst, bool flushing)
+bool FULoad::retire(Dinst *dinst, bool flushing)
 /* retire {{{1 */
 {
   if(!dinst->isPerformed())
@@ -460,7 +460,7 @@ bool FULoad::retire(DInst *dinst, bool flushing)
 }
 /* }}} */
 
-void FULoad::performed(DInst *dinst) {
+void FULoad::performed(Dinst *dinst) {
   /* memory operation was globally performed {{{1 */
 
   // MSG("DONE   %lld 0x%x 0x%x @%lld",dinst->getID(), dinst->getAddr(), dinst->getPC(), globalClock);
@@ -510,7 +510,7 @@ FUStore::FUStore(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *_lsq, Store
     }
 /* }}} */
 
-StallCause FUStore::canIssue(DInst *dinst) {
+StallCause FUStore::canIssue(Dinst *dinst) {
   /* canIssue {{{1 */
   
   if(dinst->getInst()->isStoreAddress())
@@ -575,11 +575,11 @@ StallCause FUStore::canIssue(DInst *dinst) {
 }
 /* }}} */
 
-void FUStore::executing(DInst *dinst) {
+void FUStore::executing(Dinst *dinst) {
   /* executing {{{1 */
 
   if(!dinst->getInst()->isStoreAddress()) {
-    DInst *qdinst = lsq->executing(dinst);
+    Dinst *qdinst = lsq->executing(dinst);
     if(qdinst) {
       dinst->getGProc()->replay(qdinst);
       if(!dinst->getGProc()->isFlushing())
@@ -606,7 +606,7 @@ void FUStore::executing(DInst *dinst) {
 }
 /* }}} */
 
-void FUStore::executed(DInst *dinst) {
+void FUStore::executed(Dinst *dinst) {
   /* executed */
 
   if(dinst->getInst()->isStore())
@@ -635,7 +635,7 @@ void FUStore::executed(DInst *dinst) {
 
 
 
-bool FUStore::preretire(DInst *dinst, bool flushing) {
+bool FUStore::preretire(Dinst *dinst, bool flushing) {
   /* retire {{{1 */
   
   if(!dinst->isExecuted()){
@@ -682,7 +682,7 @@ bool FUStore::preretire(DInst *dinst, bool flushing) {
 }
 /* }}} */
 
-void FUStore::performed(DInst *dinst) {
+void FUStore::performed(Dinst *dinst) {
   /* memory operation was globally performed {{{1 */
 
   setStats(dinst); // Not retire for stores
@@ -731,7 +731,7 @@ void FUStore::performed(DInst *dinst) {
 }
 /* }}} */
 
-bool FUStore::retire(DInst *dinst, bool flushing) {
+bool FUStore::retire(Dinst *dinst, bool flushing) {
   /* retire {{{1 */
  
   if(dinst->getInst()->isStoreAddress()) {
@@ -763,7 +763,7 @@ FUGeneric::FUGeneric(uint8_t type, Cluster *cls, PortGeneric *aGen, TimeDelta_t 
 }
 /* }}} */
 
-StallCause FUGeneric::canIssue(DInst *dinst) {
+StallCause FUGeneric::canIssue(Dinst *dinst) {
   /* canIssue {{{1 */
 #if 0
   if (inorder) {
@@ -776,7 +776,7 @@ StallCause FUGeneric::canIssue(DInst *dinst) {
 }
 /* }}} */
 
-void FUGeneric::executing(DInst *dinst) {
+void FUGeneric::executing(Dinst *dinst) {
   /* executing {{{1 */
   Time_t nlat = gen->nextSlot(dinst->getStatsFlag()) + lat;
 #if 0
@@ -794,21 +794,21 @@ void FUGeneric::executing(DInst *dinst) {
 }
 /* }}} */
 
-void FUGeneric::executed(DInst *dinst) {
+void FUGeneric::executed(Dinst *dinst) {
   /* executed {{{1 */
   cluster->executed(dinst);
   dinst->markPerformed();
 }
 /* }}} */
 
-bool FUGeneric::preretire(DInst *dinst, bool flushing)
+bool FUGeneric::preretire(Dinst *dinst, bool flushing)
 /* preretire {{{1 */
 {
   return dinst->isExecuted();
 }
 /* }}} */
 
-bool FUGeneric::retire(DInst *dinst, bool flushing)
+bool FUGeneric::retire(Dinst *dinst, bool flushing)
 /* retire {{{1 */
 {
   setStats(dinst);
@@ -817,7 +817,7 @@ bool FUGeneric::retire(DInst *dinst, bool flushing)
 }
 /* }}} */
 
-void FUGeneric::performed(DInst *dinst) {
+void FUGeneric::performed(Dinst *dinst) {
   /* memory operation was globally performed {{{1 */
   dinst->markPerformed();
   I(0); // It should be called only for memory operations
@@ -835,7 +835,7 @@ FUBranch::FUBranch(uint8_t type, Cluster *cls, PortGeneric *aGen, TimeDelta_t l,
 }
 /* }}} */
 
-StallCause FUBranch::canIssue(DInst *dinst) {
+StallCause FUBranch::canIssue(Dinst *dinst) {
   /* canIssue {{{1 */
 
   I(dinst->getInst()->isControl());
@@ -848,14 +848,14 @@ StallCause FUBranch::canIssue(DInst *dinst) {
 }
 /* }}} */
 
-void FUBranch::executing(DInst *dinst) {
+void FUBranch::executing(Dinst *dinst) {
   /* executing {{{1 */
   cluster->executing(dinst);
   executedCB::scheduleAbs(gen->nextSlot(dinst->getStatsFlag()) + lat, this, dinst);
 }
 /* }}} */
 
-void FUBranch::executed(DInst *dinst) {
+void FUBranch::executed(Dinst *dinst) {
   /* executed {{{1 */
   cluster->executed(dinst);
   dinst->markPerformed();
@@ -869,7 +869,7 @@ void FUBranch::executed(DInst *dinst) {
 }
 /* }}} */
 
-bool FUBranch::preretire(DInst *dinst, bool flushing)
+bool FUBranch::preretire(Dinst *dinst, bool flushing)
 /* preretire {{{1 */
 {
   if(drainOnMiss && dinst->isExecuted() && dinst->isBranchMiss()) {
@@ -879,7 +879,7 @@ bool FUBranch::preretire(DInst *dinst, bool flushing)
 }
 /* }}} */
 
-bool FUBranch::retire(DInst *dinst, bool flushing)
+bool FUBranch::retire(Dinst *dinst, bool flushing)
 /* retire {{{1 */
 {
   setStats(dinst);
@@ -887,7 +887,7 @@ bool FUBranch::retire(DInst *dinst, bool flushing)
 }
 /* }}} */
 
-void FUBranch::performed(DInst *dinst) {
+void FUBranch::performed(Dinst *dinst) {
   /* memory operation was globally performed {{{1 */
   dinst->markPerformed();
   I(0); // It should be called only for memory operations
@@ -905,7 +905,7 @@ FURALU::FURALU(uint8_t type, Cluster *cls, PortGeneric *aGen, TimeDelta_t l, int
 }
 /* }}} */
 
-StallCause FURALU::canIssue(DInst *dinst)
+StallCause FURALU::canIssue(Dinst *dinst)
 /* canIssue {{{1 */
 {
   I(dinst->getPC() != 0xf00df00d); // It used to be a Syspend, but not longer true
@@ -940,7 +940,7 @@ StallCause FURALU::canIssue(DInst *dinst)
 }
 /* }}} */
 
-void FURALU::executing(DInst *dinst)
+void FURALU::executing(Dinst *dinst)
 /* executing {{{1 */
 {
   cluster->executing(dinst);
@@ -950,7 +950,7 @@ void FURALU::executing(DInst *dinst)
 }
 /* }}} */
 
-void FURALU::executed(DInst *dinst)
+void FURALU::executed(Dinst *dinst)
 /* executed {{{1 */
 {
   cluster->executed(dinst);
@@ -958,14 +958,14 @@ void FURALU::executed(DInst *dinst)
 }
 /* }}} */
 
-bool FURALU::preretire(DInst *dinst, bool flushing)
+bool FURALU::preretire(Dinst *dinst, bool flushing)
 /* preretire {{{1 */
 {
   return dinst->isExecuted();
 }
 /* }}} */
 
-bool FURALU::retire(DInst *dinst, bool flushing)
+bool FURALU::retire(Dinst *dinst, bool flushing)
 /* retire {{{1 */
 {
   setStats(dinst);
@@ -973,7 +973,7 @@ bool FURALU::retire(DInst *dinst, bool flushing)
 }
 /* }}} */
 
-void FURALU::performed(DInst *dinst)
+void FURALU::performed(Dinst *dinst)
 /* memory operation was globally performed {{{1 */
 {
   dinst->markPerformed();

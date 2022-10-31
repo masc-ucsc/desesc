@@ -5,7 +5,7 @@
 #include "Pipeline.h"
 
 IBucket::IBucket(size_t size, Pipeline *p, bool clean)
-    : FastQueue<DInst *>(size)
+    : FastQueue<Dinst *>(size)
     , cleanItem(clean)
     , pipeLine(p)
     , markFetchedCB(this) {

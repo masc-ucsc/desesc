@@ -171,7 +171,7 @@ int32_t GProcessor::issue(PipeQueue &pipeQ) {
 
       I(!bucket->empty());
 
-      DInst *dinst = bucket->top();
+      Dinst *dinst = bucket->top();
       //  GMSG(getCoreId()==1,"push to pipe %p", bucket);
 
       // MSG("@%lld issue dinstID=%lld",globalClock, dinst->getID());

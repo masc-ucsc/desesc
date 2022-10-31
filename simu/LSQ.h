@@ -26,9 +26,9 @@ protected:
   }
 
 public:
-  virtual bool   insert(DInst *dinst)    = 0;
-  virtual DInst *executing(DInst *dinst) = 0;
-  virtual void   remove(DInst *dinst)    = 0;
+  virtual bool   insert(Dinst *dinst)    = 0;
+  virtual Dinst *executing(Dinst *dinst) = 0;
+  virtual void   remove(Dinst *dinst)    = 0;
 
   void incFreeEntries() {
     freeEntries++;
@@ -47,12 +47,12 @@ public:
 
 class LSQFull : public LSQ {
 private:
-  typedef HASH_MULTIMAP<AddrType, DInst *> AddrDInstQMap;
+  typedef HASH_MULTIMAP<AddrType, Dinst *> AddrDinstQMap;
 
   GStatsCntr    stldForwarding;
-  AddrDInstQMap instMap;
+  AddrDinstQMap instMap;
 
-  static AddrType calcWord(const DInst *dinst) {
+  static AddrType calcWord(const Dinst *dinst) {
     return (dinst->getAddr()) >> 3;
   }
 
@@ -61,14 +61,14 @@ public:
   ~LSQFull() {
   }
 
-  bool   insert(DInst *dinst);
-  DInst *executing(DInst *dinst);
-  void   remove(DInst *dinst);
+  bool   insert(Dinst *dinst);
+  Dinst *executing(Dinst *dinst);
+  void   remove(Dinst *dinst);
 };
 
 class LSQNone : public LSQ {
 private:
-  DInst *addrTable[128];
+  Dinst *addrTable[128];
 
   int getEntry(AddrType addr) const {
     return ((addr >> 1) ^ (addr >> 17)) & 127;
@@ -79,18 +79,18 @@ public:
   ~LSQNone() {
   }
 
-  bool   insert(DInst *dinst);
-  DInst *executing(DInst *dinst);
-  void   remove(DInst *dinst);
+  bool   insert(Dinst *dinst);
+  Dinst *executing(Dinst *dinst);
+  void   remove(Dinst *dinst);
 };
 
 class LSQVPC : public LSQ {
 private:
-  std::multimap<AddrType, DInst *> instMap;
+  std::multimap<AddrType, Dinst *> instMap;
 
   GStatsCntr LSQVPC_replays;
 
-  static AddrType calcWord(const DInst *dinst) {
+  static AddrType calcWord(const Dinst *dinst) {
     return (dinst->getAddr()) >> 2;
   }
 
@@ -99,9 +99,9 @@ public:
   ~LSQVPC() {
   }
 
-  bool     insert(DInst *dinst);
-  DInst *  executing(DInst *dinst);
-  void     remove(DInst *dinst);
-  AddrType replayCheck(DInst *dinst);
+  bool     insert(Dinst *dinst);
+  Dinst *  executing(Dinst *dinst);
+  void     remove(Dinst *dinst);
+  AddrType replayCheck(Dinst *dinst);
 };
 

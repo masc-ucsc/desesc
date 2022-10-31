@@ -32,7 +32,7 @@ Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
 #include "nanassert.h"
 
-#include "DInst.h"
+#include "Dinst.h"
 #include "Instruction.h"
 
 //*********** BEGIN CREATE FAKE PROCESSOR CLASS
@@ -40,7 +40,7 @@ uint64_t nReplays = 0;
 #define GPROCESSOR_H 1
 class GProcessor {
 public:
-  void replay(DInst *dinst) {
+  void replay(Dinst *dinst) {
     nReplays++;
   }
 };
@@ -58,7 +58,7 @@ void doTest() {
   Instruction *st    = Instruction::create(iSALU_ST, 0, 0, 0, 0, false );
   Instruction *stadd = Instruction::create(iSALU_ADDR, 0, 0, 0, 0, false );
 
-  DInst *dld1 = DInst::create(ld, rinst1, 0);
+  Dinst *dld1 = Dinst::create(ld, rinst1, 0);
 #endif
 }
 

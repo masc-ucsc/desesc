@@ -13,7 +13,7 @@
 #include "StoreSet.h"
 
 class PortGeneric;
-class DInst;
+class Dinst;
 class MemObj;
 class Cluster;
 class GProcessor;
@@ -56,7 +56,7 @@ protected:
 
   Resource(uint8_t type, Cluster *cls, PortGeneric *gen, TimeDelta_t l, uint32_t cpuid);
 
-  void setStats(const DInst *dinst);
+  void setStats(const Dinst *dinst);
 
 public:
   virtual ~Resource();
@@ -78,20 +78,20 @@ public:
   // executing.
   //
   // 3rd) executed is called the instructions has been executed. It may be
-  // called through DInst::doAtExecuted
+  // called through Dinst::doAtExecuted
   //
   // 4th) When the instruction is retired from the ROB retire is called
 
-  virtual StallCause canIssue(DInst *dinst)                 = 0;
-  virtual void       executing(DInst *dinst)                = 0;
-  virtual void       executed(DInst *dinst)                 = 0;
-  virtual bool       preretire(DInst *dinst, bool flushing) = 0;
-  virtual bool       retire(DInst *dinst, bool flushing)    = 0;
-  virtual void       performed(DInst *dinst)                = 0;
+  virtual StallCause canIssue(Dinst *dinst)                 = 0;
+  virtual void       executing(Dinst *dinst)                = 0;
+  virtual void       executed(Dinst *dinst)                 = 0;
+  virtual bool       preretire(Dinst *dinst, bool flushing) = 0;
+  virtual bool       retire(Dinst *dinst, bool flushing)    = 0;
+  virtual void       performed(Dinst *dinst)                = 0;
 
-  typedef CallbackMember1<Resource, DInst *, &Resource::executing> executingCB;
-  typedef CallbackMember1<Resource, DInst *, &Resource::executed>  executedCB;
-  typedef CallbackMember1<Resource, DInst *, &Resource::performed> performedCB;
+  typedef CallbackMember1<Resource, Dinst *, &Resource::executing> executingCB;
+  typedef CallbackMember1<Resource, Dinst *, &Resource::executed>  executedCB;
+  typedef CallbackMember1<Resource, Dinst *, &Resource::performed> performedCB;
 
   Time_t getUsedTime() const {
     return usedTime;
@@ -108,7 +108,7 @@ protected:
   const uint32_t lfSize;
 
   StoreSet *storeset;
-  void      replayManage(DInst *dinst);
+  void      replayManage(Dinst *dinst);
   struct FailType {
     SSID_t     ssid;
     Time_t     id;
@@ -154,20 +154,20 @@ private:
 #endif
 
 protected:
-  void                                                               cacheDispatched(DInst *dinst);
-  typedef CallbackMember1<FULoad, DInst *, &FULoad::cacheDispatched> cacheDispatchedCB;
+  void                                                               cacheDispatched(Dinst *dinst);
+  typedef CallbackMember1<FULoad, Dinst *, &FULoad::cacheDispatched> cacheDispatchedCB;
 
 public:
   FULoad(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *lsq, StoreSet *ss, Prefetcher *pref, SCB* scb,  TimeDelta_t lsdelay, TimeDelta_t l, GMemorySystem *ms, int32_t size, int32_t id, const char *cad);
 
-  StallCause canIssue(DInst *dinst);
-  void       executing(DInst *dinst);
-  void       executed(DInst *dinst);
-  bool       preretire(DInst *dinst, bool flushing);
-  bool       retire(DInst *dinst, bool flushing);
-  void       performed(DInst *dinst);
+  StallCause canIssue(Dinst *dinst);
+  void       executing(Dinst *dinst);
+  void       executed(Dinst *dinst);
+  bool       preretire(Dinst *dinst, bool flushing);
+  bool       retire(Dinst *dinst, bool flushing);
+  void       performed(Dinst *dinst);
   
-  bool       isLoadSpec( DInst *dinst);
+  bool       isLoadSpec( Dinst *dinst);
 };
 
 class FUStore : public MemResource {
@@ -179,7 +179,7 @@ private:
  // int32_t  scbMerge[1024];
   uint32_t lineSizeBits;
 
-  //typedef std::list<DInst *> SCBQueueType;
+  //typedef std::list<Dinst *> SCBQueueType;
  // SCBQueueType               scbQueue;
 
 
@@ -188,12 +188,12 @@ public:
   FUStore(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *lsq, StoreSet *ss, Prefetcher *pref, SCB* scb, TimeDelta_t l, GMemorySystem *ms,
           int32_t size, int32_t id, const char *cad);
 
-  StallCause canIssue(DInst *dinst);
-  void       executing(DInst *dinst);
-  void       executed(DInst *dinst);
-  bool       preretire(DInst *dinst, bool flushing);
-  bool       retire(DInst *dinst, bool flushing);
-  void       performed(DInst *dinst);
+  StallCause canIssue(Dinst *dinst);
+  void       executing(Dinst *dinst);
+  void       executed(Dinst *dinst);
+  bool       preretire(Dinst *dinst, bool flushing);
+  bool       retire(Dinst *dinst, bool flushing);
+  void       performed(Dinst *dinst);
 };
 
 class FUGeneric : public Resource {
@@ -202,12 +202,12 @@ protected:
 public:
   FUGeneric(uint8_t type, Cluster *cls, PortGeneric *aGen, TimeDelta_t l, uint32_t cpuid);
 
-  StallCause canIssue(DInst *dinst);
-  void       executing(DInst *dinst);
-  void       executed(DInst *dinst);
-  bool       preretire(DInst *dinst, bool flushing);
-  bool       retire(DInst *dinst, bool flushing);
-  void       performed(DInst *dinst);
+  StallCause canIssue(Dinst *dinst);
+  void       executing(Dinst *dinst);
+  void       executed(Dinst *dinst);
+  bool       preretire(Dinst *dinst, bool flushing);
+  bool       retire(Dinst *dinst, bool flushing);
+  void       performed(Dinst *dinst);
 };
 
 class FUBranch : public Resource {
@@ -219,12 +219,12 @@ protected:
 public:
   FUBranch(uint8_t type, Cluster *cls, PortGeneric *aGen, TimeDelta_t l, uint32_t cpuid, int32_t mb, bool dom);
 
-  StallCause canIssue(DInst *dinst);
-  void       executing(DInst *dinst);
-  void       executed(DInst *dinst);
-  bool       preretire(DInst *dinst, bool flushing);
-  bool       retire(DInst *dinst, bool flushing);
-  void       performed(DInst *dinst);
+  StallCause canIssue(Dinst *dinst);
+  void       executing(Dinst *dinst);
+  void       executed(Dinst *dinst);
+  bool       preretire(Dinst *dinst, bool flushing);
+  bool       retire(Dinst *dinst, bool flushing);
+  void       performed(Dinst *dinst);
 };
 
 class FURALU : public Resource {
@@ -237,11 +237,11 @@ protected:
 public:
   FURALU(uint8_t type, Cluster *cls, PortGeneric *aGen, TimeDelta_t l, int32_t id);
 
-  StallCause canIssue(DInst *dinst);
-  void       executing(DInst *dinst);
-  void       executed(DInst *dinst);
-  bool       preretire(DInst *dinst, bool flushing);
-  bool       retire(DInst *dinst, bool flushing);
-  void       performed(DInst *dinst);
+  StallCause canIssue(Dinst *dinst);
+  void       executing(Dinst *dinst);
+  void       executed(Dinst *dinst);
+  bool       preretire(Dinst *dinst, bool flushing);
+  bool       retire(Dinst *dinst, bool flushing);
+  void       performed(Dinst *dinst);
 };
 

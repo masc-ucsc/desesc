@@ -58,7 +58,7 @@ public:
   }
 };
 
-class IBucket : public FastQueue<DInst *> {
+class IBucket : public FastQueue<Dinst *> {
 private:
 protected:
   const bool cleanItem;

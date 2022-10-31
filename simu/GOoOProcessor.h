@@ -12,7 +12,7 @@ protected:
 
   //  virtual void fetch(EmulInterface *eint, FlowID fid);
   //  virtual bool advance_clock();
-  //  virtual StallCause addInst(DInst *dinst);
+  //  virtual StallCause addInst(Dinst *dinst);
   //  virtual void retire();
 
   // END VIRTUAL FUNCTIONS of GProcessor

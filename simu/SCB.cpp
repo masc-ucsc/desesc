@@ -19,7 +19,7 @@ SCB::SCB( int scbSize_)
   printf(" scbSize or Free Entries are  %lld \n", scbSize_);
 }
 
-bool SCB::canAccept(DInst* dinst){
+bool SCB::canAccept(Dinst* dinst){
   
   if(hasFreeEntries()){
     return true;
@@ -28,7 +28,7 @@ bool SCB::canAccept(DInst* dinst){
     }
   }
 
-void SCB::tryAddInst(MemObj *firstLevelMemObject, DInst* dinst){
+void SCB::tryAddInst(MemObj *firstLevelMemObject, Dinst* dinst){
   if(hasFreeEntries()){
     addInst(dinst);
   }else{ 
@@ -43,7 +43,7 @@ void SCB::tryAddInst(MemObj *firstLevelMemObject, DInst* dinst){
   lineSizeBits            = log2i(bsize);
 }
 
-void SCB::addInst(DInst* dinst){
+void SCB::addInst(Dinst* dinst){
   AddrType tag=dinst->getAddr()>>6;
   int pos = tag%64;
   std::vector<int> wordBytePresent;
@@ -62,7 +62,7 @@ void SCB::addInst(DInst* dinst){
   bool found=findTag(tag);
 }
 
-bool SCB::isStateModified(DInst* dinst){
+bool SCB::isStateModified(Dinst* dinst){
 
   HASH_MAP< AddrType, SCBEntryType*>::iterator InstIt;
   AddrType tag=dinst->getAddr()>>6;
@@ -79,7 +79,7 @@ bool SCB::isStateModified(DInst* dinst){
 
 }
 
-bool SCB::isTagHit(DInst* dinst){
+bool SCB::isTagHit(Dinst* dinst){
   HASH_MAP< AddrType, SCBEntryType*>::iterator InstIt;
   AddrType tag=dinst->getAddr()>>6;
   InstIt=instMap.find(tag);
@@ -91,7 +91,7 @@ bool SCB::isTagHit(DInst* dinst){
 }
 
 
-bool SCB::isWordBytesHit(DInst* dinst){
+bool SCB::isWordBytesHit(Dinst* dinst){
   HASH_MAP< AddrType, SCBEntryType*>::iterator InstIt;
   AddrType tag=dinst->getAddr()>>6;
   InstIt=instMap.find(tag);
@@ -111,7 +111,7 @@ bool SCB::isWordBytesHit(DInst* dinst){
     }
   }
 
-void SCB::setWordBytesPresentinTagHit(DInst* dinst){
+void SCB::setWordBytesPresentinTagHit(Dinst* dinst){
   AddrType tag=dinst->getAddr()>>6;
   int pos = tag%64;
   HASH_MAP< AddrType, SCBEntryType*>::iterator InstIt;
@@ -135,7 +135,7 @@ bool SCB::findTag(AddrType tag){
   }
 }
 
-void SCB::issueWriteReqforOwnership(DInst* dinst){
+void SCB::issueWriteReqforOwnership(Dinst* dinst){
  //issue Write Req for ownership after 1st time  
   AddrType tag= dinst->getAddr()>>6;
   HASH_MAP< AddrType, SCBEntryType*>::iterator InstIt;
@@ -149,7 +149,7 @@ void SCB::issueWriteReqforOwnership(DInst* dinst){
 }
 
 
-void SCB::performedOwnership(DInst* dinst){
+void SCB::performedOwnership(Dinst* dinst){
 // 1.get ack from L1 for M state 
 
   AddrType tag=dinst->getAddr()>>6;
@@ -160,7 +160,7 @@ void SCB::performedOwnership(DInst* dinst){
     InstIt->second->isPendingOwnership   =0;
     InstIt->second->dinst                =dinst;
     bool found=findTag(tag);
-    replacementDInstQueue.push_back(dinst);
+    replacementDinstQueue.push_back(dinst);
     }else{
       //printf("SCBPerformed:: Inst not found in SCB for tag %13lld\n",tag);
     }
@@ -174,15 +174,15 @@ I(!dinst->isPerformed());
  dinst->markPerformed();
 }
   
-void SCB::doReplacement(DInst* dinst){
+void SCB::doReplacement(Dinst* dinst){
   
   HASH_MAP< AddrType, SCBEntryType*>::iterator RIt;
   AddrType tag= dinst->getAddr()>>6;
   for(RIt=instMap.begin(); RIt!=instMap.end(); ++RIt){
     if(RIt->second->state==SCBEntryType::StateType::M && RIt->first!=tag){
-    DInst* replacementDInst=RIt->second->dinst; 
+    Dinst* replacementDinst=RIt->second->dinst; 
     AddrType tagReplacement=RIt->first;
-    MemRequest::sendDirtyDisp(getFirstLevelMemObj(), getFirstLevelMemObj(),tagReplacement<<6,replacementDInst->getStatsFlag(),writebackCB::create(this,replacementDInst ));
+    MemRequest::sendDirtyDisp(getFirstLevelMemObj(), getFirstLevelMemObj(),tagReplacement<<6,replacementDinst->getStatsFlag(),writebackCB::create(this,replacementDinst ));
     instMap.erase(RIt); 
     incFreeEntries();
     break;
@@ -195,7 +195,7 @@ void SCB::doReplacement(DInst* dinst){
  }
 }
 
-void SCB::performedWriteback(DInst* dinst){
+void SCB::performedWriteback(Dinst* dinst){
 //  printf("ReplacemntQ done\n");
  
 }

@@ -56,12 +56,12 @@ protected:
   StoreSet           storeset;
   Prefetcher         prefetcher;
   SCB*               scb;
-  FastQueue<DInst *> rROB; // ready/retiring/executed ROB
-  FastQueue<DInst *> ROB;
+  FastQueue<Dinst *> rROB; // ready/retiring/executed ROB
+  FastQueue<Dinst *> ROB;
 
   // Updated by Processor or SMTProcessor. Shows the number of clocks
   // that the processor have been active (fetch + exe engine)
-  ID(int32_t prevDInstID);
+  ID(int32_t prevDinstID);
 
   uint32_t smt;     // 1...
   uint32_t smt_ctx; // 0... smt_ctx = cpu_id % smt
@@ -110,7 +110,7 @@ protected:
   virtual void retire();
 
   virtual void       fetch(FlowID fid)     = 0;
-  virtual StallCause addInst(DInst *dinst) = 0;
+  virtual StallCause addInst(Dinst *dinst) = 0;
 
 public:
 #ifdef WAVESNAP_EN
@@ -127,14 +127,14 @@ public:
   GMemorySystem *getMemorySystem() const {
     return memorySystem;
   }
-  virtual void   executing(DInst *dinst) = 0;
-  virtual void   executed(DInst *dinst)  = 0;
+  virtual void   executing(Dinst *dinst) = 0;
+  virtual void   executed(Dinst *dinst)  = 0;
   virtual LSQ *  getLSQ()                = 0;
   virtual bool   isFlushing()            = 0;
   virtual bool   isReplayRecovering()    = 0;
   virtual Time_t getReplayID()           = 0;
 
-  virtual void replay(DInst *target){}; // = 0;
+  virtual void replay(Dinst *target){}; // = 0;
 
   bool isROBEmpty() const {
     return (ROB.empty() && rROB.empty());
@@ -153,7 +153,7 @@ public:
   uint32_t getIDFromTop(int position) const {
     return ROB.getIDFromTop(position);
   }
-  DInst* getData(uint32_t position) const {
+  Dinst* getData(uint32_t position) const {
     return ROB.getData(position);
   }
 
@@ -243,7 +243,7 @@ public:
   Prefetcher *getPrefetcher() {
     return &prefetcher;
   }
-  FastQueue<DInst *>  *getROB() {
+  FastQueue<Dinst *>  *getROB() {
     return &ROB;
   }
   SCB *getSCB(){

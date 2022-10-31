@@ -20,7 +20,7 @@
 
 #define STRIDE_DELTA0 1
 
-class DInst;
+class Dinst;
 class MemObj;
 
 class AddressPredictor {
@@ -283,7 +283,7 @@ protected:
   bool   use_alt_pred;
   int8_t use_alt_on_na;
 
-  void rename(DInst *dinst);
+  void rename(Dinst *dinst);
 
   uint16_t get_offset(AddrType pc) const {
     return (pc & ((1UL << log2fetchwidth) - 1)) >> 2;

@@ -130,7 +130,7 @@ DummyMemObj::DummyMemObj(const char *section, const char *sName)
 
 #ifdef ENABLE_LDBP
 //NEW INTERFACE !!!!!
-void MemObj::hit_on_load_table(DInst *dinst, bool is_li) {
+void MemObj::hit_on_load_table(Dinst *dinst, bool is_li) {
   //if hit on load_table, update and move entry to LRU position
   for(int i = LOAD_TABLE_SIZE - 1; i >= 0; i--) {
     if(dinst->getPC() == load_table_vec[i].ldpc) {
@@ -926,7 +926,7 @@ bool MemObj::checkL2TLBHit(MemRequest *req) {
   I(0);
   return false;
 }
-void MemObj::replayCheckLSQ_removeStore(DInst *) {
+void MemObj::replayCheckLSQ_removeStore(Dinst *) {
   I(0);
 }
 void MemObj::updateXCoreStores(AddrType addr) {

@@ -79,13 +79,13 @@ bool AccProcessor::advance_clock(FlowID fid)
 }
 /* }}} */
 
-void AccProcessor::executing(DInst *dinst) {
+void AccProcessor::executing(Dinst *dinst) {
 }
 
-void AccProcessor::executed(DInst *dinst) {
+void AccProcessor::executed(Dinst *dinst) {
 }
 
-StallCause AccProcessor::addInst(DInst *dinst)
+StallCause AccProcessor::addInst(Dinst *dinst)
 /* rename (or addInst) a new instruction {{{1 */
 {
   I(0);

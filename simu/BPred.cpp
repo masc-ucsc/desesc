@@ -41,7 +41,7 @@ BPred::BPred(int32_t i, const char *sec, const char *sname, const char *name)
 BPred::~BPred() {
 }
 
-void BPred::fetchBoundaryBegin(DInst *dinst) {
+void BPred::fetchBoundaryBegin(Dinst *dinst) {
   // No fetch boundary implemented (must be specialized per predictor if supported)
 }
 
@@ -88,7 +88,7 @@ void BPRas::tryPrefetch(MemObj *il1, bool doStats, int degree) {
   }
 }
 
-PredType BPRas::predict(DInst *dinst, bool doUpdate, bool doStats) {
+PredType BPRas::predict(Dinst *dinst, bool doUpdate, bool doStats) {
 
   // RAS is a little bit different than other predictors because it can update
   // the state without knowing the oracleNextPC. All the other predictors update the
@@ -177,7 +177,7 @@ BPBTB::~BPBTB() {
     data->destroy();
 }
 
-void BPBTB::updateOnly(DInst *dinst) {
+void BPBTB::updateOnly(Dinst *dinst) {
   if(data == 0 || !dinst->isTaken())
     return;
 
@@ -189,7 +189,7 @@ void BPBTB::updateOnly(DInst *dinst) {
   cl->inst = dinst->getAddr();
 }
 
-PredType BPBTB::predict(DInst *dinst, bool doUpdate, bool doStats) {
+PredType BPBTB::predict(Dinst *dinst, bool doUpdate, bool doStats) {
   bool ntaken = !dinst->isTaken();
 
   if(data == 0) {
@@ -269,7 +269,7 @@ PredType BPBTB::predict(DInst *dinst, bool doUpdate, bool doStats) {
  * BPOracle
  */
 
-PredType BPOracle::predict(DInst *dinst, bool doUpdate, bool doStats) {
+PredType BPOracle::predict(Dinst *dinst, bool doUpdate, bool doStats) {
   if(!dinst->isTaken())
     return CorrectPrediction; // NT
 
@@ -280,7 +280,7 @@ PredType BPOracle::predict(DInst *dinst, bool doUpdate, bool doStats) {
  * BPTaken
  */
 
-PredType BPTaken::predict(DInst *dinst, bool doUpdate, bool doStats) {
+PredType BPTaken::predict(Dinst *dinst, bool doUpdate, bool doStats) {
   if(dinst->getInst()->isJump() || dinst->isTaken())
     return btb.predict(dinst, doUpdate, doStats);
 
@@ -296,7 +296,7 @@ PredType BPTaken::predict(DInst *dinst, bool doUpdate, bool doStats) {
  * BPNotTaken
  */
 
-PredType BPNotTaken::predict(DInst *dinst, bool doUpdate, bool doStats) {
+PredType BPNotTaken::predict(Dinst *dinst, bool doUpdate, bool doStats) {
   if(dinst->getInst()->isJump())
     return btb.predict(dinst, doUpdate, doStats);
 
@@ -307,7 +307,7 @@ PredType BPNotTaken::predict(DInst *dinst, bool doUpdate, bool doStats) {
  * BPMiss
  */
 
-PredType BPMiss::predict(DInst *dinst, bool doUpdate, bool doStats) {
+PredType BPMiss::predict(Dinst *dinst, bool doUpdate, bool doStats) {
   return MissPrediction;
 }
 
@@ -315,7 +315,7 @@ PredType BPMiss::predict(DInst *dinst, bool doUpdate, bool doStats) {
  * BPNotTakenEnhaced
  */
 
-PredType BPNotTakenEnhanced::predict(DInst *dinst, bool doUpdate, bool doStats) {
+PredType BPNotTakenEnhanced::predict(Dinst *dinst, bool doUpdate, bool doStats) {
   if(dinst->getInst()->isJump())
     return btb.predict(dinst, doUpdate, doStats); // backward branches predicted as taken (loops)
 
@@ -348,7 +348,7 @@ BP2bit::BP2bit(int32_t i, const char *section, const char *sname)
   // Done
 }
 
-PredType BP2bit::predict(DInst *dinst, bool doUpdate, bool doStats) {
+PredType BP2bit::predict(Dinst *dinst, bool doUpdate, bool doStats) {
   if(dinst->getInst()->isJump())
     return btb.predict(dinst, doUpdate, doStats);
 
@@ -399,7 +399,7 @@ BPLdbp::BPLdbp(int32_t i, const char *section, const char *sname, MemObj *dl1)
   // Done
 }
 
-PredType BPLdbp::predict(DInst *dinst, bool doUpdate, bool doStats) {
+PredType BPLdbp::predict(Dinst *dinst, bool doUpdate, bool doStats) {
 
 #if 0
   // OPTION for the paper. To show impact when no prediction is enabled
@@ -531,7 +531,7 @@ BPTData::BPTData(int32_t i, const char *section, const char *sname)
   // Done
 }
 
-PredType BPTData::predict(DInst *dinst, bool doUpdate, bool doStats) {
+PredType BPTData::predict(Dinst *dinst, bool doUpdate, bool doStats) {
   if(dinst->getInst()->isJump())
     return btb.predict(dinst, doUpdate, doStats);
 
@@ -599,7 +599,7 @@ BPIMLI::BPIMLI(int32_t i, const char *section, const char *sname)
   imli = new IMLIBest(log2fetchwidth, blogb, bwidth, nhist, statcorrector);
 }
 
-void BPIMLI::fetchBoundaryBegin(DInst *dinst) {
+void BPIMLI::fetchBoundaryBegin(Dinst *dinst) {
   if(FetchPredict)
     imli->fetchBoundaryBegin(dinst->getPC());
 }
@@ -609,7 +609,7 @@ void BPIMLI::fetchBoundaryEnd() {
     imli->fetchBoundaryEnd();
 }
 
-PredType BPIMLI::predict(DInst *dinst, bool doUpdate, bool doStats) {
+PredType BPIMLI::predict(Dinst *dinst, bool doUpdate, bool doStats) {
 
   if(dinst->getInst()->isJump() || dinst->getInst()->isFuncRet()) {
     imli->TrackOtherInst(dinst->getPC(), dinst->getInst()->getOpcode(), dinst->getAddr());
@@ -694,7 +694,7 @@ BP2level::~BP2level() {
   delete historyTable;
 }
 
-PredType BP2level::predict(DInst *dinst, bool doUpdate, bool doStats) {
+PredType BP2level::predict(Dinst *dinst, bool doUpdate, bool doStats) {
   if(dinst->getInst()->isJump()) {
     if(useDolc)
       dolc.update(dinst->getPC());
@@ -778,7 +778,7 @@ BPHybrid::BPHybrid(int32_t i, const char *section, const char *sname)
 BPHybrid::~BPHybrid() {
 }
 
-PredType BPHybrid::predict(DInst *dinst, bool doUpdate, bool doStats) {
+PredType BPHybrid::predict(Dinst *dinst, bool doUpdate, bool doStats) {
   if(dinst->getInst()->isJump())
     return btb.predict(dinst, doUpdate, doStats);
 
@@ -885,7 +885,7 @@ BP2BcgSkew::~BP2BcgSkew() {
   // Nothing?
 }
 
-PredType BP2BcgSkew::predict(DInst *dinst, bool doUpdate, bool doStats) {
+PredType BP2BcgSkew::predict(Dinst *dinst, bool doUpdate, bool doStats) {
   if(dinst->getInst()->isJump())
     return btb.predict(dinst, doUpdate, doStats);
 
@@ -1027,7 +1027,7 @@ BPyags::BPyags(int32_t i, const char *section, const char *sname)
 BPyags::~BPyags() {
 }
 
-PredType BPyags::predict(DInst *dinst, bool doUpdate, bool doStats) {
+PredType BPyags::predict(Dinst *dinst, bool doUpdate, bool doStats) {
   if(dinst->getInst()->isJump())
     return btb.predict(dinst, doUpdate, doStats);
 
@@ -1162,7 +1162,7 @@ BPOgehl::BPOgehl(int32_t i, const char *section, const char *sname)
 BPOgehl::~BPOgehl() {
 }
 
-PredType BPOgehl::predict(DInst *dinst, bool doUpdate, bool doStats) {
+PredType BPOgehl::predict(Dinst *dinst, bool doUpdate, bool doStats) {
   if(dinst->getInst()->isJump())
     return btb.predict(dinst, doUpdate, doStats);
 
@@ -1593,7 +1593,7 @@ BPredictor::~BPredictor() {
   meta  = 0;
 }
 
-void BPredictor::fetchBoundaryBegin(DInst *dinst) {
+void BPredictor::fetchBoundaryBegin(Dinst *dinst) {
   pred1->fetchBoundaryBegin(dinst);
   if(pred2)
     pred2->fetchBoundaryBegin(dinst);
@@ -1617,7 +1617,7 @@ void BPredictor::fetchBoundaryEnd() {
 }
 
 /*
-bool  BPredictor::Miss_Prediction(DInst *dinst) {
+bool  BPredictor::Miss_Prediction(Dinst *dinst) {
 
 
   PredType outcome1;
@@ -1650,7 +1650,7 @@ bool  BPredictor::Miss_Prediction(DInst *dinst) {
 }
 */
 
-PredType BPredictor::predict1(DInst *dinst) {
+PredType BPredictor::predict1(Dinst *dinst) {
   I(dinst->getInst()->isControl());
 
 #if 0
@@ -1669,7 +1669,7 @@ PredType BPredictor::predict1(DInst *dinst) {
   return p;
 }
 
-PredType BPredictor::predict2(DInst *dinst) {
+PredType BPredictor::predict2(Dinst *dinst) {
   I(dinst->getInst()->isControl());
 
   nBranches2.inc(dinst->getStatsFlag());
@@ -1684,7 +1684,7 @@ PredType BPredictor::predict2(DInst *dinst) {
   return p;
 }
 
-PredType BPredictor::predict3(DInst *dinst) {
+PredType BPredictor::predict3(Dinst *dinst) {
   I(dinst->getInst()->isControl());
 
 #if 0
@@ -1720,7 +1720,7 @@ PredType BPredictor::predict3(DInst *dinst) {
   return p;
 }
 
-TimeDelta_t BPredictor::predict(DInst *dinst, bool *fastfix) {
+TimeDelta_t BPredictor::predict(Dinst *dinst, bool *fastfix) {
 
   *fastfix = true;
 

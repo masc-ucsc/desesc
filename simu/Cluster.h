@@ -56,11 +56,11 @@ protected:
   Cluster(const char *clusterName, uint32_t pos, uint32_t cpuid);
 
 public:
-  void select(DInst *dinst);
+  void select(Dinst *dinst);
 
-  virtual void executing(DInst *dinst)           = 0;
-  virtual void executed(DInst *dinst)            = 0;
-  virtual bool retire(DInst *dinst, bool replay) = 0;
+  virtual void executing(Dinst *dinst)           = 0;
+  virtual void executed(Dinst *dinst)            = 0;
+  virtual bool retire(Dinst *dinst, bool replay) = 0;
 
   static Cluster *create(const char *clusterName, uint32_t pos, GMemorySystem *ms, uint32_t cpuid, GProcessor *gproc);
 
@@ -73,8 +73,8 @@ public:
     return name;
   }
 
-  StallCause canIssue(DInst *dinst) const;
-  void       addInst(DInst *dinst);
+  StallCause canIssue(Dinst *dinst) const;
+  void       addInst(Dinst *dinst);
 
   int32_t getAvailSpace() const {
     if(regPool < windowSize)
@@ -96,9 +96,9 @@ public:
       : Cluster(clusterName, pos, cpuid) {
   }
 
-  void executing(DInst *dinst);
-  void executed(DInst *dinst);
-  bool retire(DInst *dinst, bool replay);
+  void executing(Dinst *dinst);
+  void executed(Dinst *dinst);
+  bool retire(Dinst *dinst, bool replay);
 };
 
 class ExecutedCluster : public Cluster {
@@ -110,9 +110,9 @@ public:
       : Cluster(clusterName, pos, cpuid) {
   }
 
-  void executing(DInst *dinst);
-  void executed(DInst *dinst);
-  bool retire(DInst *dinst, bool replay);
+  void executing(Dinst *dinst);
+  void executed(Dinst *dinst);
+  bool retire(Dinst *dinst, bool replay);
 };
 
 class RetiredCluster : public Cluster {
@@ -123,8 +123,8 @@ public:
       : Cluster(clusterName, pos, cpuid) {
   }
 
-  void executing(DInst *dinst);
-  void executed(DInst *dinst);
-  bool retire(DInst *dinst, bool replay);
+  void executing(Dinst *dinst);
+  void executed(Dinst *dinst);
+  bool retire(Dinst *dinst, bool replay);
 };
 

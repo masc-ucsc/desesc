@@ -29,7 +29,7 @@ RoundRobinClusterScheduler::RoundRobinClusterScheduler(const ResourcesPoolType o
 RoundRobinClusterScheduler::~RoundRobinClusterScheduler() {
 }
 
-Resource *RoundRobinClusterScheduler::getResource(DInst *dinst) {
+Resource *RoundRobinClusterScheduler::getResource(Dinst *dinst) {
   const Instruction *inst = dinst->getInst();
   InstOpcode         type = inst->getOpcode();
 
@@ -53,7 +53,7 @@ LRUClusterScheduler::LRUClusterScheduler(const ResourcesPoolType ores)
 LRUClusterScheduler::~LRUClusterScheduler() {
 }
 
-Resource *LRUClusterScheduler::getResource(DInst *dinst) {
+Resource *LRUClusterScheduler::getResource(Dinst *dinst) {
   const Instruction *inst  = dinst->getInst();
   InstOpcode         type  = inst->getOpcode();
   Resource *         touse = res[type][0];
@@ -84,7 +84,7 @@ UseClusterScheduler::UseClusterScheduler(const ResourcesPoolType ores)
 UseClusterScheduler::~UseClusterScheduler() {
 }
 
-Resource *UseClusterScheduler::getResource(DInst *dinst) {
+Resource *UseClusterScheduler::getResource(Dinst *dinst) {
   const Instruction *inst = dinst->getInst();
   InstOpcode         type = inst->getOpcode();
 

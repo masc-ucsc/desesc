@@ -43,8 +43,8 @@ InOrderProcessor::InOrderProcessor(GMemorySystem *gm, CPU_t i)
   spaceInInstQueue = InstQueueSize;
 
   uint32_t smtnum = 1; // getMaxFlows();
-  RAT             = new DInst *[LREG_MAX * smtnum * 128];
-  bzero(RAT, sizeof(DInst *) * LREG_MAX * smtnum * 128);
+  RAT             = new Dinst *[LREG_MAX * smtnum * 128];
+  bzero(RAT, sizeof(Dinst *) * LREG_MAX * smtnum * 128);
 
   busy                 = false;
   lastrob_getStatsFlag = false;
@@ -163,13 +163,13 @@ bool InOrderProcessor::advance_clock(FlowID fid) { /*{{{*/
   return true;
 } /*}}}*/
 
-void InOrderProcessor::executing(DInst *dinst) {
+void InOrderProcessor::executing(Dinst *dinst) {
 }
 
-void InOrderProcessor::executed(DInst *dinst) {
+void InOrderProcessor::executed(Dinst *dinst) {
 }
 
-StallCause InOrderProcessor::addInst(DInst *dinst) { /*{{{*/
+StallCause InOrderProcessor::addInst(Dinst *dinst) { /*{{{*/
 
   const Instruction *inst = dinst->getInst();
   FlowID rat_off = 0; // no need, addInst is private per thread. Cluster is shared (dinst->getFlowId() % getMaxFlows())*LREG_MAX;
@@ -287,7 +287,7 @@ void InOrderProcessor::retire() { /*{{{*/
   // Pass all the ready instructions to the rrob
   bool stats = false;
   while(!ROB.empty()) {
-    DInst *dinst = ROB.top();
+    Dinst *dinst = ROB.top();
     stats        = dinst->getStatsFlag();
 
     I(cpu_id == dinst->getFlowId());
@@ -318,7 +318,7 @@ void InOrderProcessor::retire() { /*{{{*/
   rrobUsed.sample(rROB.size(), stats);
 
   for(uint16_t i = 0; i < RetireWidth && !rROB.empty(); i++) {
-    DInst *dinst = rROB.top();
+    Dinst *dinst = rROB.top();
 
     if(!dinst->isExecuted())
       break;
@@ -347,7 +347,7 @@ void InOrderProcessor::retire() { /*{{{*/
 
 } /*}}}*/
 
-void InOrderProcessor::replay(DInst *dinst) { /*{{{*/
+void InOrderProcessor::replay(Dinst *dinst) { /*{{{*/
 
   MSG("Inorder cores do not support replays. Set MemoryReplay = false in the confguration");
 

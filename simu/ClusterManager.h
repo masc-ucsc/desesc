@@ -21,7 +21,7 @@ protected:
 public:
   ClusterManager(GMemorySystem *ms, uint32_t cpuid, GProcessor *gproc);
 
-  Resource *getResource(DInst *dinst) const {
+  Resource *getResource(Dinst *dinst) const {
     return scheduler->getResource(dinst);
   }
 };

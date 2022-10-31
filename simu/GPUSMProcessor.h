@@ -54,7 +54,7 @@ private:
 
   bool *inst_perpe_percyc; // Only needed for the GPUSMProc
 
-  DInst **RAT;
+  Dinst **RAT;
 
   void fetch(FlowID fid);
 
@@ -64,7 +64,7 @@ protected:
   bool advance_clock(FlowID fid);
   void retire();
 
-  StallCause addInst(DInst *dinst);
+  StallCause addInst(Dinst *dinst);
   // END VIRTUAL FUNCTIONS of GProcessor
 
 public:
@@ -74,7 +74,7 @@ public:
   LSQ *getLSQ() {
     return &lsq;
   }
-  void replay(DInst *dinst);
+  void replay(Dinst *dinst);
 
   bool isFlushing() {
     return false;

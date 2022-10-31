@@ -516,7 +516,7 @@ void vtage::updateVtage(AddrType pc, int ndelta, uint16_t loff) {
 #endif
 }
 
-void vtage::rename(DInst *dinst) {
+void vtage::rename(Dinst *dinst) {
 }
 
 void vtage_gentry::allocate() {

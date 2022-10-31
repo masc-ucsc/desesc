@@ -62,13 +62,13 @@ GPUSMProcessor::GPUSMProcessor(GMemorySystem *gm, CPU_t i)
 
   spaceInInstQueue = InstQueueSize;
 
-  // RAT = new DInst* [LREG_MAX * numSP * maxwarps * 128];
-  // bzero(RAT,sizeof(DInst*)*LREG_MAX * numSP * maxwarps * 128);
+  // RAT = new Dinst* [LREG_MAX * numSP * maxwarps * 128];
+  // bzero(RAT,sizeof(Dinst*)*LREG_MAX * numSP * maxwarps * 128);
 
   uint64_t ratsize = LREG_MAX * numSP * maxwarps; // 16777216; //2^24
   // uint64_t ratsize =4294967296; //2^32
-  RAT = new DInst *[ratsize];
-  bzero(RAT, sizeof(DInst *) * ratsize);
+  RAT = new Dinst *[ratsize];
+  bzero(RAT, sizeof(Dinst *) * ratsize);
 
   busy = false;
 } /*}}}*/
@@ -173,7 +173,7 @@ bool GPUSMProcessor::advance_clock(FlowID fid) { /*{{{*/
   return true;
 } /*}}}*/
 
-StallCause GPUSMProcessor::addInst(DInst *dinst) { /*{{{*/
+StallCause GPUSMProcessor::addInst(Dinst *dinst) { /*{{{*/
 
   const Instruction *inst = dinst->getInst();
 
@@ -240,7 +240,7 @@ StallCause GPUSMProcessor::addInst(DInst *dinst) { /*{{{*/
   // dinst->dump("");
 
   inst_perpe_percyc[dinst->getPE()] = true;
-  // MSG("Setting DInst %lld PE-%d, GlobalClock = %lld ",dinst->getID(), dinst->getPE(),globalClock);
+  // MSG("Setting Dinst %lld PE-%d, GlobalClock = %lld ",dinst->getID(), dinst->getPE(),globalClock);
 
   nInst[inst->getOpcode()]->inc(dinst->getStatsFlag());
 
@@ -288,7 +288,7 @@ void GPUSMProcessor::retire() { /*{{{*/
   // Pass all the ready instructions to the rrob
   bool stats = false;
   while(!ROB.empty()) {
-    DInst *dinst = ROB.top();
+    Dinst *dinst = ROB.top();
     stats        = dinst->getStatsFlag();
 
     if(!dinst->isExecuted())
@@ -308,7 +308,7 @@ void GPUSMProcessor::retire() { /*{{{*/
   rrobUsed.sample(rROB.size(), stats);
 
   for(uint16_t i = 0; i < RetireWidth && !rROB.empty(); i++) {
-    DInst *dinst = rROB.top();
+    Dinst *dinst = rROB.top();
 
     if(!dinst->isExecuted())
       break;
@@ -337,7 +337,7 @@ void GPUSMProcessor::retire() { /*{{{*/
 
 } /*}}}*/
 
-void GPUSMProcessor::replay(DInst *dinst) { /*{{{*/
+void GPUSMProcessor::replay(Dinst *dinst) { /*{{{*/
 
   MSG("GPU_SM cores(which are essentially inorder) do not support replays. Set MemoryReplay = false at the confguration");
 

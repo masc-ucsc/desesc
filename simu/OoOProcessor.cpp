@@ -123,8 +123,8 @@ OoOProcessor::OoOProcessor(GMemorySystem *gm, CPU_t i)
     , fwd2done2("P(%d)_fwd2done2", i)
 #endif
     , codeProfile("P(%d)_prof", i) {
-  bzero(RAT, sizeof(DInst *) * LREG_MAX);
-  bzero(serializeRAT, sizeof(DInst *) * LREG_MAX);
+  bzero(RAT, sizeof(Dinst *) * LREG_MAX);
+  bzero(serializeRAT, sizeof(Dinst *) * LREG_MAX);
 #ifdef TRACK_FORWARDING
   bzero(fwdDone, sizeof(Time_t) * LREG_MAX);
 #endif
@@ -306,7 +306,7 @@ bool OoOProcessor::advance_clock(FlowID fid)
 }
 /* }}} */
 
-void OoOProcessor::executing(DInst *dinst)
+void OoOProcessor::executing(Dinst *dinst)
 // {{{1 Called when the instruction starts to execute
 {
   dinst->markExecuting();
@@ -355,14 +355,14 @@ void OoOProcessor::executing(DInst *dinst)
 }
 // 1}}}
 //
-void OoOProcessor::executed(DInst *dinst) {
+void OoOProcessor::executed(Dinst *dinst) {
 #ifdef TRACK_FORWARDING
   fwdDone[dinst->getInst()->getDst1()] = globalClock;
   fwdDone[dinst->getInst()->getDst2()] = globalClock;
 #endif
 }
 
-StallCause OoOProcessor::addInst(DInst *dinst)
+StallCause OoOProcessor::addInst(Dinst *dinst)
 /* rename (or addInst) a new instruction {{{1 */
 {
   if(replayRecovering && dinst->getID() > replayID) {
@@ -576,7 +576,7 @@ void OoOProcessor::retire_lock_check()
 
 #ifdef ENABLE_LDBP
 #if 0
-void OoOProcessor::hit_on_load_table(DInst *dinst, bool is_li) {
+void OoOProcessor::hit_on_load_table(Dinst *dinst, bool is_li) {
   //if hit on load_table, update and move entry to LRU position
   for(int i = LOAD_TABLE_SIZE - 1; i >= 0; i--) {
     if(dinst->getPC() == load_table_vec[i].ldpc) {
@@ -663,7 +663,7 @@ void OoOProcessor::power_save_mode_table_reset() {
   DL1->bot_vec = bot;
 }
 
-void OoOProcessor::rtt_load_hit(DInst *dinst) {
+void OoOProcessor::rtt_load_hit(Dinst *dinst) {
   //reset entry on hit and update fields
   RegType dst          = dinst->getInst()->getDst1();
   RegType src1          = dinst->getInst()->getSrc1();
@@ -772,7 +772,7 @@ void OoOProcessor::rtt_load_hit(DInst *dinst) {
   }
 }
 
-void OoOProcessor::rtt_alu_hit(DInst *dinst) {
+void OoOProcessor::rtt_alu_hit(Dinst *dinst) {
   //update fields using information from RTT and LT
   //num_ops = src1(nops) + src2(nops) + 1
   //ld_ptr = ptr of src1 and src2
@@ -840,7 +840,7 @@ void OoOProcessor::rtt_alu_hit(DInst *dinst) {
   rtt_vec[dst].pc_list = tmp2;
 }
 
-void OoOProcessor::rtt_br_hit(DInst *dinst) {
+void OoOProcessor::rtt_br_hit(Dinst *dinst) {
   //read num ops and stride ptr fields on hit
   //use stride ptr to figure out if the LD(s) are predictable
   int btt_id = return_btt_index(dinst->getPC());
@@ -1335,7 +1335,7 @@ int OoOProcessor::return_btt_index(AddrType pc) {
   return -1;
 }
 
-void OoOProcessor::btt_br_miss(DInst *dinst) {
+void OoOProcessor::btt_br_miss(Dinst *dinst) {
   RegType src1 = dinst->getInst()->getSrc1();
   RegType src2 = dinst->getInst()->getSrc2();
 #if 0
@@ -1399,7 +1399,7 @@ void OoOProcessor::btt_br_miss(DInst *dinst) {
   }
 }
 
-void OoOProcessor::btt_br_hit(DInst *dinst, int btt_id) {
+void OoOProcessor::btt_br_hit(Dinst *dinst, int btt_id) {
   btt_vec[btt_id].btt_update_accuracy(dinst, btt_id); //update BTT accuracy
   if(btt_vec[btt_id].accuracy == 0) { //clear sp.tracking if acc == 0 and reset BTT entry
     for(int i = 0; i < btt_vec[btt_id].load_table_pointer.size(); i++) {
@@ -1429,7 +1429,7 @@ void OoOProcessor::btt_br_hit(DInst *dinst, int btt_id) {
   }
 }
 
-void OoOProcessor::btt_trigger_load(DInst *dinst, AddrType ld_ptr) {
+void OoOProcessor::btt_trigger_load(Dinst *dinst, AddrType ld_ptr) {
   //int lor_id = DL1->return_lor_index(ld_ptr);
   int lor_id = DL1->compute_lor_index(dinst->getPC(), ld_ptr);
   int lt_idx = DL1->return_load_table_index(ld_ptr);
@@ -1495,7 +1495,7 @@ void OoOProcessor::btt_trigger_load(DInst *dinst, AddrType ld_ptr) {
   }
 }
 
-int OoOProcessor::btt_pointer_check(DInst *dinst, int btt_id) {
+int OoOProcessor::btt_pointer_check(Dinst *dinst, int btt_id) {
   //returns 1 if all ptrs are found; else 0
   bool all_ptr_found = true;
   bool all_ptr_track = true;
@@ -1611,7 +1611,7 @@ void OoOProcessor::retire()
 #endif
   // Pass all the ready instructions to the rrob
   while(!ROB.empty()) {
-    DInst *dinst = ROB.top();
+    Dinst *dinst = ROB.top();
     uint64_t num_inflight_branches = 0;
 
     bool done = dinst->getClusterResource()->preretire(dinst, flushing);
@@ -1697,7 +1697,7 @@ void OoOProcessor::retire()
       //compute num of inflight branches
       for(uint32_t i = 0; i < ROB.size(); i++) { //calculate num of inflight branches
         uint32_t pos   = ROB.getIDFromTop(i);
-        DInst*  tmp_dinst = ROB.getData(pos);
+        Dinst*  tmp_dinst = ROB.getData(pos);
         if(tmp_dinst->getInst()->isBranch() && (tmp_dinst->getPC() == dinst->getPC()))
           num_inflight_branches++;
       }
@@ -1714,7 +1714,7 @@ void OoOProcessor::retire()
 
 #endif
 
-    I(IFID.getMissDInst() != dinst);
+    I(IFID.getMissDinst() != dinst);
 
     rROB.push(dinst);
     ROB.pop();
@@ -1727,7 +1727,7 @@ void OoOProcessor::retire()
     int total_miss = 0;
     for(uint32_t i = 0; i < ROB.size(); i++) {
       uint32_t pos   = ROB.getIDFromTop(i);
-      DInst *  dinst = ROB.getData(pos);
+      Dinst *  dinst = ROB.getData(pos);
 
       if(!dinst->getStatsFlag())
         continue;
@@ -1752,7 +1752,7 @@ void OoOProcessor::retire()
 #ifdef ESESC_CODEPROFILE
     if(rROB.top()->getStatsFlag()) {
       if(codeProfile_trigger <= clockTicks.getDouble()) {
-        DInst *dinst = rROB.top();
+        Dinst *dinst = rROB.top();
 
         codeProfile_trigger = clockTicks.getDouble() + 121;
 
@@ -1767,7 +1767,7 @@ void OoOProcessor::retire()
   }
 
   for(uint16_t i = 0; i < RetireWidth && !rROB.empty(); i++) {
-    DInst *dinst = rROB.top();
+    Dinst *dinst = rROB.top();
 
     if((dinst->getExecutedTime() + RetireDelay) >= globalClock) {
 #if 0
@@ -1888,7 +1888,7 @@ if(SINGLE_WINDOW) {
 }
 /* }}} */
 
-void OoOProcessor::replay(DInst *target)
+void OoOProcessor::replay(Dinst *target)
 /* trigger a processor replay {{{1 */
 {
   if(serialize_for)
@@ -1929,7 +1929,7 @@ void OoOProcessor::dumpROB()
   for(uint32_t i=0;i<size;i++) {
     uint32_t pos = ROB.getIDFromTop(i);
 
-    DInst *dinst = ROB.getData(pos);
+    Dinst *dinst = ROB.getData(pos);
     dinst->dump("");
   }
 
@@ -1938,7 +1938,7 @@ void OoOProcessor::dumpROB()
   for(uint32_t i=0;i<size;i++) {
     uint32_t pos = rROB.getIDFromTop(i);
 
-    DInst *dinst = rROB.getData(pos);
+    Dinst *dinst = rROB.getData(pos);
     if (dinst->isReplay())
       printf("-----REPLAY--------\n");
     dinst->dump("");
@@ -1955,7 +1955,7 @@ bool OoOProcessor::loadIsSpec(){
   if(robSize>0){
     for(uint32_t i=0;i<robSize;i++) {
       uint32_t pos = ROB.getIDFromTop(i);
-      DInst *dinst = ROB.getData(pos);
+      Dinst *dinst = ROB.getData(pos);
       if(dinst->getInst()->isMemory()){
         if(!dinst->isExecuting()){
          mem_unresolved.push_back(pos);

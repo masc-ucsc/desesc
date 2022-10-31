@@ -119,7 +119,7 @@ public:
 
   //NEW INTERFACE !!!!!! Nov 20, 2019
   ////Load Table
-  void hit_on_load_table(DInst *dinst, bool is_li);
+  void hit_on_load_table(Dinst *dinst, bool is_li);
   int return_load_table_index(AddrType pc);
   int getLoadTableConf() const {
     return LOAD_TABLE_CONF;
@@ -206,14 +206,14 @@ public:
       }
     }
 
-    void lt_load_miss(DInst *dinst) {
+    void lt_load_miss(Dinst *dinst) {
       load_table();
       ldpc         = dinst->getPC();
       ld_addr      = dinst->getAddr();
       ld_data = dinst->getData();
     }
 
-    void lt_load_hit(DInst *dinst) {
+    void lt_load_hit(Dinst *dinst) {
       ldpc         = dinst->getPC();
       use_slice    = 1;
       prev_delta   = delta;
@@ -254,7 +254,7 @@ public:
 #endif
     }
 
-    void lt_load_imm(DInst *dinst) {
+    void lt_load_imm(Dinst *dinst) {
       ldpc  = dinst->getPC();
       is_li = true;
       conf = 4096;
@@ -613,7 +613,7 @@ public:
 
   // Optional virtual methods
   virtual bool checkL2TLBHit(MemRequest *req);
-  virtual void replayCheckLSQ_removeStore(DInst *);
+  virtual void replayCheckLSQ_removeStore(Dinst *);
   virtual void updateXCoreStores(AddrType addr);
   virtual void replayflush();
   virtual void setTurboRatio(float r);

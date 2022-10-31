@@ -70,11 +70,11 @@ public:
   BPred(int32_t i, const char *section, const char *sname, const char *name);
   virtual ~BPred();
 
-  virtual PredType predict(DInst *dinst, bool doUpdate, bool doStats) = 0;
-  virtual void     fetchBoundaryBegin(DInst *dinst); // If the branch predictor support fetch boundary model, do it
+  virtual PredType predict(Dinst *dinst, bool doUpdate, bool doStats) = 0;
+  virtual void     fetchBoundaryBegin(Dinst *dinst); // If the branch predictor support fetch boundary model, do it
   virtual void     fetchBoundaryEnd();               // If the branch predictor support fetch boundary model, do it
 
-  PredType doPredict(DInst *dinst, bool doStats = true) {
+  PredType doPredict(Dinst *dinst, bool doStats = true) {
     PredType pred = predict(dinst, true, doStats);
     if(pred == NoPrediction)
       return pred;
@@ -88,7 +88,7 @@ public:
     return pred;
   }
 
-  void update(DInst *dinst) {
+  void update(Dinst *dinst) {
     predict(dinst, true, false);
   }
 };
@@ -105,7 +105,7 @@ protected:
 public:
   BPRas(int32_t i, const char *section, const char *sname);
   ~BPRas();
-  PredType predict(DInst *dinst, bool doUpdate, bool doStats);
+  PredType predict(Dinst *dinst, bool doUpdate, bool doStats);
 
   void tryPrefetch(MemObj *il1, bool doStats, int degree);
 };
@@ -139,8 +139,8 @@ public:
   BPBTB(int32_t i, const char *section, const char *sname, const char *name = 0);
   ~BPBTB();
 
-  PredType predict(DInst *dinst, bool doUpdate, bool doStats);
-  void     updateOnly(DInst *dinst);
+  PredType predict(Dinst *dinst, bool doUpdate, bool doStats);
+  void     updateOnly(Dinst *dinst);
 };
 
 class BPOracle : public BPred {
@@ -154,7 +154,7 @@ public:
       , btb(i, section, sname) {
   }
 
-  PredType predict(DInst *dinst, bool doUpdate, bool doStats);
+  PredType predict(Dinst *dinst, bool doUpdate, bool doStats);
 };
 
 class BPNotTaken : public BPred {
@@ -169,7 +169,7 @@ public:
     // Done
   }
 
-  PredType predict(DInst *dinst, bool doUpdate, bool doStats);
+  PredType predict(Dinst *dinst, bool doUpdate, bool doStats);
 };
 
 class BPMiss : public BPred {
@@ -181,7 +181,7 @@ public:
     // Done
   }
 
-  PredType predict(DInst *dinst, bool doUpdate, bool doStats);
+  PredType predict(Dinst *dinst, bool doUpdate, bool doStats);
 };
 
 class BPNotTakenEnhanced : public BPred {
@@ -196,7 +196,7 @@ public:
     // Done
   }
 
-  PredType predict(DInst *dinst, bool doUpdate, bool doStats);
+  PredType predict(Dinst *dinst, bool doUpdate, bool doStats);
 };
 
 class BPTaken : public BPred {
@@ -211,7 +211,7 @@ public:
     // Done
   }
 
-  PredType predict(DInst *dinst, bool doUpdate, bool doStats);
+  PredType predict(Dinst *dinst, bool doUpdate, bool doStats);
 };
 
 class BP2bit : public BPred {
@@ -224,7 +224,7 @@ protected:
 public:
   BP2bit(int32_t i, const char *section, const char *sname);
 
-  PredType predict(DInst *dinst, bool doUpdate, bool doStats);
+  PredType predict(Dinst *dinst, bool doUpdate, bool doStats);
 };
 
 class IMLIBest;
@@ -242,9 +242,9 @@ protected:
 public:
   BPIMLI(int32_t i, const char *section, const char *sname);
 
-  void     fetchBoundaryBegin(DInst *dinst);
+  void     fetchBoundaryBegin(Dinst *dinst);
   void     fetchBoundaryEnd();
-  PredType predict(DInst *dinst, bool doUpdate, bool doStats);
+  PredType predict(Dinst *dinst, bool doUpdate, bool doStats);
 };
 
 class BP2level : public BPred {
@@ -268,7 +268,7 @@ public:
   BP2level(int32_t i, const char *section, const char *sname);
   ~BP2level();
 
-  PredType predict(DInst *dinst, bool doUpdate, bool doStats);
+  PredType predict(Dinst *dinst, bool doUpdate, bool doStats);
 };
 
 class BPHybrid : public BPred {
@@ -290,7 +290,7 @@ public:
   BPHybrid(int32_t i, const char *section, const char *sname);
   ~BPHybrid();
 
-  PredType predict(DInst *dinst, bool doUpdate, bool doStats);
+  PredType predict(Dinst *dinst, bool doUpdate, bool doStats);
 };
 
 class BP2BcgSkew : public BPred {
@@ -318,7 +318,7 @@ public:
   BP2BcgSkew(int32_t i, const char *section, const char *sname);
   ~BP2BcgSkew();
 
-  PredType predict(DInst *dinst, bool doUpdate, bool doStats);
+  PredType predict(Dinst *dinst, bool doUpdate, bool doStats);
 };
 
 class BPyags : public BPred {
@@ -347,7 +347,7 @@ public:
   BPyags(int32_t i, const char *section, const char *sname);
   ~BPyags();
 
-  PredType predict(DInst *dinst, bool doUpdate, bool doStats);
+  PredType predict(Dinst *dinst, bool doUpdate, bool doStats);
 };
 
 class BPOgehl : public BPred {
@@ -374,7 +374,7 @@ private:
   uint8_t  miniTag;
   uint8_t *MINITAG;
 
-  uint8_t genMiniTag(const DInst *dinst) const {
+  uint8_t genMiniTag(const Dinst *dinst) const {
     AddrType t = dinst->getPC() >> 2;
     return (uint8_t)((t ^ (t >> 3)) & 3);
   }
@@ -389,7 +389,7 @@ public:
   BPOgehl(int32_t i, const char *section, const char *sname);
   ~BPOgehl();
 
-  PredType predict(DInst *dinst, bool doUpdate, bool doStats);
+  PredType predict(Dinst *dinst, bool doUpdate, bool doStats);
 };
 
 class LoopPredictor {
@@ -446,7 +446,7 @@ public:
   ~BPTData() {
   }
 
-  PredType predict(DInst *dinst, bool doUpdate, bool doStats);
+  PredType predict(Dinst *dinst, bool doUpdate, bool doStats);
 };
 
 /*LOAD BRANCH PREDICTOR (LDBP)*/
@@ -476,7 +476,7 @@ class BPLdbp : public BPred {
     BPLdbp(int32_t i, const char *section, const char *sname, MemObj *dl1 = 0);
     ~BPLdbp(){}
 
-    PredType predict(DInst *dinst, bool doUpdate, bool doStats);
+    PredType predict(Dinst *dinst, bool doUpdate, bool doStats);
     bool outcome_calculator(BrOpType br_op, DataType br_data1, DataType br_data2);
     BrOpType branch_type(AddrType brpc);
 
@@ -543,7 +543,7 @@ class BPLdbp : public BPred {
     std::vector<data_outcome_correlator> doc_table = std::vector<data_outcome_correlator>(DOC_SIZE);
     //std::vector<data_outcome_correlator> doc_table;
 
-    int outcome_doc(DInst *dinst, AddrType _tag, bool outcome) {
+    int outcome_doc(Dinst *dinst, AddrType _tag, bool outcome) {
       //tag is 2n bits
       AddrType t         = (_tag >> (int)log2i(DOC_SIZE)) & (DOC_SIZE - 1); //upper n bits for tag
       int index          = _tag & (DOC_SIZE - 1);  //lower n bits for index
@@ -604,9 +604,9 @@ private:
   GStatsCntr nAgree3;
 
 protected:
-  PredType predict1(DInst *dinst);
-  PredType predict2(DInst *dinst);
-  PredType predict3(DInst *dinst);
+  PredType predict1(Dinst *dinst);
+  PredType predict2(Dinst *dinst);
+  PredType predict3(Dinst *dinst);
 
 public:
   BPredictor(int32_t i, MemObj *il1, MemObj *DL1, BPredictor *bpred = 0);
@@ -614,10 +614,10 @@ public:
 
   static BPred *getBPred(int32_t id, const char *sname, const char *sec, MemObj *dl1 = 0);
 
-  void        fetchBoundaryBegin(DInst *dinst);
+  void        fetchBoundaryBegin(Dinst *dinst);
   void        fetchBoundaryEnd();
-  TimeDelta_t predict(DInst *dinst, bool *fastfix);
-  bool        Miss_Prediction(DInst *dinst);
+  TimeDelta_t predict(Dinst *dinst, bool *fastfix);
+  bool        Miss_Prediction(Dinst *dinst);
   void        dump(const char *str) const;
 
   void set_Miss_Pred_Bool() {

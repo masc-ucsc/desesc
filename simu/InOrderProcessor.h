@@ -40,8 +40,8 @@ private:
 
   SMTFetch *sf;
 
-  // DInst *RAT[LREG_MAX];
-  DInst **RAT;
+  // Dinst *RAT[LREG_MAX];
+  Dinst **RAT;
 
   void fetch(FlowID fid);
 
@@ -52,19 +52,19 @@ protected:
   bool advance_clock(FlowID fid);
   void retire();
 
-  StallCause addInst(DInst *dinst);
+  StallCause addInst(Dinst *dinst);
   // END VIRTUAL FUNCTIONS of GProcessor
 
 public:
   InOrderProcessor(GMemorySystem *gm, CPU_t i);
   virtual ~InOrderProcessor();
 
-  void executing(DInst *dinst);
-  void executed(DInst *dinst);
+  void executing(Dinst *dinst);
+  void executed(Dinst *dinst);
   LSQ *getLSQ() {
     return &lsq;
   }
-  void replay(DInst *dinst);
+  void replay(Dinst *dinst);
   bool isFlushing() {
     I(0);
     return false;

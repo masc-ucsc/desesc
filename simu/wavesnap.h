@@ -165,8 +165,8 @@ class wavesnap {
     ~wavesnap();
 
     //many windows
-    void update_window(DInst* dinst, uint64_t committed);
-    void add_instruction(DInst* dinst);
+    void update_window(Dinst* dinst, uint64_t committed);
+    void add_instruction(Dinst* dinst);
     bool first_window_completed;
     uint64_t last_removed_id;
     uint64_t update_count;
@@ -181,7 +181,7 @@ class wavesnap {
     #endif
 
     //single huge window, good for debeging
-    void update_single_window(DInst* dinst, uint64_t committed);
+    void update_single_window(Dinst* dinst, uint64_t committed);
     std::map<uint64_t, uint32_t> full_fetch_ipc;
     std::map<uint64_t, uint32_t> full_rename_ipc;
     std::map<uint64_t, uint32_t> full_issue_ipc;
@@ -195,8 +195,8 @@ class wavesnap {
     void window_frequency();
 
     //other
-    instruction_info extract_inst_info(DInst* dinst, uint64_t committed);
-    void add_to_RAT(DInst* dinst);
+    instruction_info extract_inst_info(Dinst* dinst, uint64_t committed);
+    void add_to_RAT(Dinst* dinst);
     void merge();
     #ifdef HASHED_RECORD
       std::map<uint64_t, pipeline_info> window_sign_info;

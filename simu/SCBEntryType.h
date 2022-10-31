@@ -8,7 +8,7 @@ public:
   std::vector<int>          wordBytePresent;
   StateType                 state;
   int                       validBit;
-  DInst*                    dinst;
+  Dinst*                    dinst;
   int                       isPendingOwnership;
 
   SCBEntryType() {

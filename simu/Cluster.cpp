@@ -252,13 +252,13 @@ Cluster *Cluster::create(const char *clusterName, uint32_t pos, GMemorySystem *m
   return cluster;
 }
 
-void Cluster::select(DInst *dinst) {
+void Cluster::select(Dinst *dinst) {
   I(nready >= 0);
   nready++;
   window.select(dinst);
 }
 
-StallCause Cluster::canIssue(DInst *dinst) const {
+StallCause Cluster::canIssue(Dinst *dinst) const {
   if(regPool <= 0)
     return SmallREGStall;
 
@@ -272,7 +272,7 @@ StallCause Cluster::canIssue(DInst *dinst) const {
   return dinst->getClusterResource()->canIssue(dinst);
 }
 
-void Cluster::addInst(DInst *dinst) {
+void Cluster::addInst(Dinst *dinst) {
 
   rdRegPool.add(2, dinst->getStatsFlag()); // 2 reads
 
@@ -290,7 +290,7 @@ void Cluster::addInst(DInst *dinst) {
 
 //************ Executing Cluster
 
-void ExecutingCluster::executing(DInst *dinst) {
+void ExecutingCluster::executing(Dinst *dinst) {
   nready--;
 
   if(lateAlloc && dinst->getInst()->hasDstRegister()) {
@@ -303,13 +303,13 @@ void ExecutingCluster::executing(DInst *dinst) {
   delEntry();
 }
 
-void ExecutingCluster::executed(DInst *dinst) {
+void ExecutingCluster::executed(Dinst *dinst) {
 
   window.executed(dinst);
   dinst->getGProc()->executed(dinst);
 }
 
-bool ExecutingCluster::retire(DInst *dinst, bool reply) {
+bool ExecutingCluster::retire(Dinst *dinst, bool reply) {
 
   bool done = dinst->getClusterResource()->retire(dinst, reply);
 
@@ -330,7 +330,7 @@ bool ExecutingCluster::retire(DInst *dinst, bool reply) {
 
 //************ Executed Cluster
 
-void ExecutedCluster::executing(DInst *dinst) {
+void ExecutedCluster::executing(Dinst *dinst) {
   nready--;
 
   if(lateAlloc && dinst->getInst()->hasDstRegister()) {
@@ -341,7 +341,7 @@ void ExecutedCluster::executing(DInst *dinst) {
   dinst->getGProc()->executing(dinst);
 }
 
-void ExecutedCluster::executed(DInst *dinst) {
+void ExecutedCluster::executed(Dinst *dinst) {
 
   window.executed(dinst);
   dinst->getGProc()->executed(dinst);
@@ -350,7 +350,7 @@ void ExecutedCluster::executed(DInst *dinst) {
   delEntry();
 }
 
-bool ExecutedCluster::retire(DInst *dinst, bool reply) {
+bool ExecutedCluster::retire(Dinst *dinst, bool reply) {
 
   bool done = dinst->getClusterResource()->retire(dinst, reply);
   if(!done)
@@ -370,7 +370,7 @@ bool ExecutedCluster::retire(DInst *dinst, bool reply) {
 
 //************ RetiredCluster
 
-void RetiredCluster::executing(DInst *dinst) {
+void RetiredCluster::executing(Dinst *dinst) {
   nready--;
 
   if(lateAlloc && dinst->getInst()->hasDstRegister()) {
@@ -380,13 +380,13 @@ void RetiredCluster::executing(DInst *dinst) {
   dinst->getGProc()->executing(dinst);
 }
 
-void RetiredCluster::executed(DInst *dinst) {
+void RetiredCluster::executed(Dinst *dinst) {
 
   window.executed(dinst);
   dinst->getGProc()->executed(dinst);
 }
 
-bool RetiredCluster::retire(DInst *dinst, bool reply) {
+bool RetiredCluster::retire(Dinst *dinst, bool reply) {
 
   bool done = dinst->getClusterResource()->retire(dinst, reply);
   if(!done)

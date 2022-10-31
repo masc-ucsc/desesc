@@ -12,17 +12,17 @@ LSQFull::LSQFull(const int32_t id, int32_t size)
 }
 /* }}} */
 
-bool LSQFull::insert(DInst *dinst)
+bool LSQFull::insert(Dinst *dinst)
 /* Insert dinst in LSQ (in-order) {{{1 */
 {
   I(dinst->getAddr());
-  instMap.insert(std::pair<AddrType, DInst *>(calcWord(dinst), dinst));
+  instMap.insert(std::pair<AddrType, Dinst *>(calcWord(dinst), dinst));
 
   return true;
 }
 /* }}} */
 
-DInst *LSQFull::executing(DInst *dinst)
+Dinst *LSQFull::executing(Dinst *dinst)
 /* dinst got executed (out-of-order) {{{1 */
 {
   I(dinst->getAddr());
@@ -30,10 +30,10 @@ DInst *LSQFull::executing(DInst *dinst)
   AddrType tag = calcWord(dinst);
 
   const Instruction *inst   = dinst->getInst();
-  DInst *            faulty = 0;
+  Dinst *            faulty = 0;
 
 #if 0
-  AddrDInstQMap::const_iterator instIt = instMap.begin();
+  AddrDinstQMap::const_iterator instIt = instMap.begin();
   I(instIt != instMap.end());
 
   I(!dinst->isExecuted());
@@ -44,13 +44,13 @@ DInst *LSQFull::executing(DInst *dinst)
       continue;
     }
 #endif
-  std::pair<AddrDInstQMap::iterator, AddrDInstQMap::iterator> ret;
+  std::pair<AddrDinstQMap::iterator, AddrDinstQMap::iterator> ret;
   ret = instMap.equal_range(tag);
-  for(AddrDInstQMap::iterator instIt = ret.first; instIt != ret.second; ++instIt) {
+  for(AddrDinstQMap::iterator instIt = ret.first; instIt != ret.second; ++instIt) {
     I(instIt->first == tag);
 
     // inst->dump("Executed");
-    DInst *qdinst = instIt->second;
+    Dinst *qdinst = instIt->second;
     if(qdinst == dinst) {
       continue;
     }
@@ -84,18 +84,18 @@ DInst *LSQFull::executing(DInst *dinst)
 }
 /* }}} */
 
-void LSQFull::remove(DInst *dinst)
+void LSQFull::remove(Dinst *dinst)
 /* Remove from the LSQ {{{1 (in-order) */
 {
   I(dinst->getAddr());
 
   // const Instruction *inst = dinst->getInst();
 
-  std::pair<AddrDInstQMap::iterator, AddrDInstQMap::iterator> rangeIt;
+  std::pair<AddrDinstQMap::iterator, AddrDinstQMap::iterator> rangeIt;
   // rangeIt = instMap.equal_range(calcWord(dinst));
-  AddrDInstQMap::iterator instIt = instMap.begin();
+  AddrDinstQMap::iterator instIt = instMap.begin();
 
-  // for(AddrDInstQMap::iterator it = rangeIt.first; it != rangeIt.second ; it++) {
+  // for(AddrDinstQMap::iterator it = rangeIt.first; it != rangeIt.second ; it++) {
   while(instIt != instMap.end()) {
     if(instIt->second == dinst) {
       instMap.erase(instIt);
@@ -115,7 +115,7 @@ LSQNone::LSQNone(const int32_t id, int32_t size)
 }
 /* }}} */
 
-bool LSQNone::insert(DInst *dinst)
+bool LSQNone::insert(Dinst *dinst)
 /* Insert dinst in LSQ (in-order) {{{1 */
 {
   int i = getEntry(dinst->getAddr());
@@ -128,7 +128,7 @@ bool LSQNone::insert(DInst *dinst)
 }
 /* }}} */
 
-DInst *LSQNone::executing(DInst *dinst)
+Dinst *LSQNone::executing(Dinst *dinst)
 /* dinst got executed (out-of-order) {{{1 */
 {
   int i = getEntry(dinst->getAddr());
@@ -140,7 +140,7 @@ DInst *LSQNone::executing(DInst *dinst)
 }
 /* }}} */
 
-void LSQNone::remove(DInst *dinst)
+void LSQNone::remove(Dinst *dinst)
 /* Remove from the LSQ {{{1 (in-order) */
 {
 }
@@ -153,27 +153,27 @@ LSQVPC::LSQVPC(int32_t size)
 }
 /* }}} */
 
-bool LSQVPC::insert(DInst *dinst)
+bool LSQVPC::insert(Dinst *dinst)
 /* Insert dinst in LSQ (in-order) {{{1 */
 {
   I(dinst->getAddr());
-  instMap.insert(std::pair<AddrType, DInst *>(calcWord(dinst), dinst));
+  instMap.insert(std::pair<AddrType, Dinst *>(calcWord(dinst), dinst));
 
   return true;
 }
 /* }}} */
 
-DInst *LSQVPC::executing(DInst *dinst) {
+Dinst *LSQVPC::executing(Dinst *dinst) {
   I(0);
   unresolved--;
   return 0;
 }
 
-AddrType LSQVPC::replayCheck(DInst *dinst) // return non-zero if replay needed
+AddrType LSQVPC::replayCheck(Dinst *dinst) // return non-zero if replay needed
 /* dinst got executed (out-of-order) {{{1 */
 {
   AddrType                                   tag = calcWord(dinst);
-  std::multimap<AddrType, DInst *>::iterator instIt;
+  std::multimap<AddrType, Dinst *>::iterator instIt;
   // instIt = instMap.begin();
   instIt = instMap.find(tag);
   // AddrType storefound = 0;
@@ -200,11 +200,11 @@ AddrType LSQVPC::replayCheck(DInst *dinst) // return non-zero if replay needed
 }
 /* }}} */
 
-void LSQVPC::remove(DInst *dinst)
+void LSQVPC::remove(Dinst *dinst)
 /* Remove from the LSQ {{{1 (in-order) */
 {
   I(dinst->getAddr());
-  std::multimap<AddrType, DInst *>::iterator instIt;
+  std::multimap<AddrType, Dinst *>::iterator instIt;
   // instIt = instMap.begin();
   AddrType tag = calcWord(dinst);
   instIt       = instMap.find(tag);

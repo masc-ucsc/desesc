@@ -1,3 +1,4 @@
+// See LICENSE for details.
 
 #include <pthread.h>
 #include <signal.h>
@@ -9,11 +10,9 @@
 #include <vector>
 
 #include "iassert.hpp"
-
-#include "Snippets.h"
-
+#include "snippets.hpp"
 #include "ThreadSafeFIFO.h"
-#include "pool.h"
+#include "pool.hpp"
 
 class DummyObjTest {
   int32_t c;

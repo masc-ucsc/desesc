@@ -30,8 +30,7 @@ Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #include "fmt/format.h"
 
 #include "iassert.hpp"
-
-#include "pool.h"
+#include "pool.hpp"
 
 /*
  * The maximum time difference between tasks in the queue should be less than

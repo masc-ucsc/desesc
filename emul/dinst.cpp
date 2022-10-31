@@ -1,48 +1,19 @@
-// Contributed by Jose Renau
-//                Luis Ceze
-//
-// The ESESC/BSD License
-//
-// Copyright (c) 2005-2013, Regents of the University of California and
-// the ESESC Project.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-//   - Redistributions of source code must retain the above copyright notice,
-//   this list of conditions and the following disclaimer.
-//
-//   - Redistributions in binary form must reproduce the above copyright
-//   notice, this list of conditions and the following disclaimer in the
-//   documentation and/or other materials provided with the distribution.
-//
-//   - Neither the name of the University of California, Santa Cruz nor the
-//   names of its contributors may be used to endorse or promote products
-//   derived from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// See LICENSE for details.
 
 #include <math.h>
-#include "DInst.h"
-#include "EmulInterface.h"
-/* }}} */
 
-pool<DInst> DInst::dInstPool(32768, "DInst"); // 4 * tsfifo size
+#include "fmt/format.h"
 
-Time_t DInst::currentID = 0;
+#include "iassert.hpp"
 
-DInst::DInst() {
+#include "dinst.hpp"
+#include "emul_base.hpp"
+
+pool<Dinst> Dinst::dInstPool(32768, "Dinst"); // 4 * tsfifo size
+
+Time_t Dinst::currentID = 0;
+
+Dinst::Dinst() {
   pend[0].init(this);
   pend[1].init(this);
   pend[2].init(this);
@@ -50,8 +21,8 @@ DInst::DInst() {
   nDeps = 0;
 }
 
-void DInst::dump(const char *str) {
-  fprintf(stderr, "%s:%p (%d) %lld %c DInst: pc=0x%llx, addr=0x%llx src1=%d (%s) src2 = %d dest1 =%d dest2 = %d", str, this, fid,
+void Dinst::dump(const char *str) {
+  fprintf(stderr, "%s:%p (%d) %lld %c Dinst: pc=0x%llx, addr=0x%llx src1=%d (%s) src2 = %d dest1 =%d dest2 = %d", str, this, fid,
           (long long)ID, keepStats ? 't' : 'd', (long long)pc, (long long)addr, (int)(inst.getSrc1()), inst.getOpcodeName(),
           inst.getSrc2(), inst.getDst1(), inst.getDst2());
 
@@ -109,7 +80,7 @@ void DInst::dump(const char *str) {
   fprintf(stderr, "\n");
 }
 
-void DInst::clearRATEntry() {
+void Dinst::clearRATEntry() {
   I(RAT1Entry);
   if((*RAT1Entry) == this)
     *RAT1Entry = 0;
@@ -121,7 +92,7 @@ void DInst::clearRATEntry() {
 }
 
 #ifdef ESESC_TRACE_DATA
-DataSign DInst::calcDataSign(int64_t _data) {
+DataSign Dinst::calcDataSign(int64_t _data) {
 
   DataSign data_sign;
   int64_t  hash, code;
@@ -179,14 +150,15 @@ DataSign DInst::calcDataSign(int64_t _data) {
   return data_sign;
 }
 
-void DInst::setDataSign(int64_t _data, AddrType _ldpc) {
+void Dinst::setDataSign(int64_t _data, Addr_t _ldpc) {
   ///data = _data;
   ldpc = _ldpc;
 
   data_sign = calcDataSign(_data);
   //br_ld_chain_predictable = true; //FIXME - LDBP does prediction only if this flag is set(when load is predictable)
 }
-void DInst::addDataSign(int ds, int64_t _data, AddrType _ldpc) {
+
+void Dinst::addDataSign(int ds, int64_t _data, Addr_t _ldpc) {
   ldpc = (ldpc << 4) ^ _ldpc;
 
   if(ds == 0) {
@@ -210,8 +182,8 @@ void DInst::addDataSign(int ds, int64_t _data, AddrType _ldpc) {
       data_sign = DS_NE;
     }
   } else if(ds == 1) {
-    // DataType mix = data ^ (_data<<3) + (data>>1);
-    DataType mix = data ^ (_data << 3);
+    // Data_t mix = data ^ (_data<<3) + (data>>1);
+    Data_t mix = data ^ (_data << 3);
     data         = mix;
     int v        = static_cast<int>(DS_OPos) + (data % 255);
     data_sign    = static_cast<DataSign>(v);
@@ -221,9 +193,9 @@ void DInst::addDataSign(int ds, int64_t _data, AddrType _ldpc) {
 }
 #endif
 
-DInst *DInst::clone() {
+Dinst *Dinst::clone() {
 
-  DInst *i = dInstPool.out();
+  Dinst *i = dInstPool.out();
 
   i->fid  = fid;
   i->inst = inst;
@@ -242,33 +214,27 @@ DInst *DInst::clone() {
   return i;
 }
 
-void DInst::recycle() {
+void Dinst::recycle() {
   I(nDeps == 0); // No deps src
   I(first == 0); // no dependent instructions
 
   dInstPool.in(this);
 }
 
-void DInst::scrap(EmulInterface *eint) {
+void Dinst::scrap() {
   I(nDeps == 0); // No deps src
   I(first == 0); // no dependent instructions
-
-  I(eint);
-  eint->reexecuteTail(fid);
 
   dInstPool.in(this);
 }
 
-void DInst::destroy(EmulInterface *eint) {
+void Dinst::destroy() {
   I(nDeps == 0); // No deps src
 
   I(issued);
   I(executed);
 
   I(first == 0); // no dependent instructions
-
-  I(eint);
-  eint->reexecuteTail(fid);
 
   dInstPool.in(this);
 }

@@ -39,16 +39,15 @@
 
 #pragma once
 
-#include "estl.h" // hash_map
+#include "fmt/format.h"
 
 #include <list>
 #include <stdarg.h>
 #include <vector>
 #include <string>
 
+#include "estl.h" // hash_map
 #include "iassert.hpp"
-
-#include "callback.h"
 
 class GStats_strcasecmp {
 public:

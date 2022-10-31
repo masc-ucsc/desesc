@@ -1,107 +1,73 @@
-// Contributed by Jose Renau
-//                Luis Ceze
-//
-// The ESESC/BSD License
-//
-// Copyright (c) 2005-2013, Regents of the University of California and
-// the ESESC Project.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-//   - Redistributions of source code must retain the above copyright notice,
-//   this list of conditions and the following disclaimer.
-//
-//   - Redistributions in binary form must reproduce the above copyright
-//   notice, this list of conditions and the following disclaimer in the
-//   documentation and/or other materials provided with the distribution.
-//
-//   - Neither the name of the University of California, Santa Cruz nor the
-//   names of its contributors may be used to endorse or promote products
-//   derived from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// See LICENSE for details.
 
-#ifndef DINST_H
-#define DINST_H
+#pragma once
 
 #include "iassert.hpp"
+#include "instruction.hpp"
+#include "pool.hpp"
+#include "snippets.hpp"
+#include "callback.hpp"
 
-#include "Instruction.h"
-#include "pool.h"
-
-#include "RAWDInst.h"
-#include "Snippets.h"
-#include "callback.h"
+using Hartid_t = uint32_t;
+using Addr_t   = uint64_t;
+using Data_t   = uint64_t;
 
 typedef int32_t SSID_t;
 
-class DInst;
+class Dinst;
 class FetchEngine;
 class BPredictor;
 class Cluster;
 class Resource;
-class EmulInterface;
 class GProcessor;
 
 //#define ESESC_TRACE 1
 #define DINST_PARENT
 
-class DInstNext {
+class DinstNext {
 private:
-  DInst *dinst;
+  Dinst *dinst;
 #ifdef DINST_PARENT
-  DInst *parentDInst;
+  Dinst *parentDinst;
 #endif
 public:
-  DInstNext() {
+  DinstNext() {
     dinst = 0;
   }
 
-  DInstNext *nextDep;
+  DinstNext *nextDep;
   bool       isUsed; // true while non-satisfied RAW dependence
 
-  const DInstNext *getNext() const {
+  const DinstNext *getNext() const {
     return nextDep;
   }
-  DInstNext *getNext() {
+  DinstNext *getNext() {
     return nextDep;
   }
 
-  void setNextDep(DInstNext *n) {
+  void setNextDep(DinstNext *n) {
     nextDep = n;
   }
 
-  void init(DInst *d) {
+  void init(Dinst *d) {
     I(dinst == 0);
     dinst = d;
   }
 
-  DInst *getDInst() const {
+  Dinst *getDinst() const {
     return dinst;
   }
 
 #ifdef DINST_PARENT
-  DInst *getParentDInst() const {
-    return parentDInst;
+  Dinst *getParentDinst() const {
+    return parentDinst;
   }
-  void setParentDInst(DInst *d) {
+  void setParentDinst(Dinst *d) {
     GI(d, isUsed);
-    parentDInst = d;
+    parentDinst = d;
   }
 #else
-  void setParentDInst(DInst *d) {
+  void setParentDinst(Dinst *d) {
   }
 #endif
 };
@@ -150,18 +116,18 @@ enum DataSign {
   DS_OPos   = 40
 };
 
-class DInst {
+class Dinst {
 private:
   // In a typical RISC processor MAX_PENDING_SOURCES should be 2
   static const int32_t MAX_PENDING_SOURCES = 3;
 
-  static pool<DInst> dInstPool;
+  static pool<Dinst> dInstPool;
 
-  DInstNext  pend[MAX_PENDING_SOURCES];
-  DInstNext *last;
-  DInstNext *first;
+  DinstNext  pend[MAX_PENDING_SOURCES];
+  DinstNext *last;
+  DinstNext *first;
 
-  FlowID fid;
+  Hartid_t fid;
 
   // BEGIN Boolean flags
   Time_t fetched;
@@ -206,36 +172,38 @@ private:
   // END Boolean flags
 
   SSID_t      SSID;
-  AddrType    conflictStorePC;
+  Addr_t    conflictStorePC;
   Instruction inst;
-  AddrType    pc;   // PC for the dinst
-  AddrType    addr; // Either load/store address or jump/branch address
+  Addr_t    pc;   // PC for the dinst
+  Addr_t    addr; // Either load/store address or jump/branch address
   uint64_t inflight;
+
 #ifdef ESESC_TRACE_DATA
-  AddrType ldpc;
-  AddrType ld_addr;
-  AddrType base_pref_addr;
-  DataType data;
-  DataType data2;
+  Addr_t ldpc;
+  Addr_t ld_addr;
+  Addr_t base_pref_addr;
+  Data_t data;
+  Data_t data2;
   DataSign data_sign;
-  DataType br_data1;
-  DataType br_data2;
+  Data_t br_data1;
+  Data_t br_data2;
   int ld_br_type;
   int dep_depth;
   int      chained;
   //BR stats
-  AddrType brpc;
+  Addr_t brpc;
   uint64_t delta;
   uint64_t br_op_type;
   int ret_br_count;
-#endif
   bool br_ld_chain_predictable;
   bool br_ld_chain;
+#endif
+
   Cluster *    cluster;
   Resource *   resource;
-  DInst **     RAT1Entry;
-  DInst **     RAT2Entry;
-  DInst **     serializeEntry;
+  Dinst **     RAT1Entry;
+  Dinst **     RAT2Entry;
+  Dinst **     serializeEntry;
   FetchEngine *fetch;
   GProcessor * gproc;
 
@@ -298,9 +266,9 @@ private:
 
 
 #ifdef DINST_PARENT
-    pend[0].setParentDInst(0);
-    pend[1].setParentDInst(0);
-    pend[2].setParentDInst(0);
+    pend[0].setParentDinst(0);
+    pend[1].setParentDinst(0);
+    pend[2].setParentDinst(0);
 #endif
 
     pend[0].isUsed = false;
@@ -310,12 +278,12 @@ private:
 
 protected:
 public:
-  DInst();
+  Dinst();
   bool   isSpec = false;
   bool   isSafe = false;
   bool   isLdCache = false;
   Time_t memReqTimeL1 = 0;
-  DInst  *clone();
+  Dinst  *clone();
 
   bool getStatsFlag() const {
     return keepStats;
@@ -349,8 +317,8 @@ public:
   void clearSafe() {
     isSafe = false;
   }
-  static DInst *create(const Instruction *inst, AddrType pc, AddrType address, FlowID fid, bool keepStats) {
-    DInst *i = dInstPool.out();
+  static Dinst *create(const Instruction *inst, Addr_t pc, Addr_t address, Hartid_t fid, bool keepStats) {
+    Dinst *i = dInstPool.out();
 
     I(inst);
 
@@ -418,27 +386,27 @@ public:
     br_ld_chain_predictable = true;
   }
 
-  AddrType getBasePrefAddr() const {
+  Addr_t getBasePrefAddr() const {
     return base_pref_addr;
   }
 
-  void setBasePrefAddr(AddrType _base_addr) {
+  void setBasePrefAddr(Addr_t _base_addr) {
     base_pref_addr = _base_addr;
   }
 
-  AddrType getLdAddr() const {
+  Addr_t getLdAddr() const {
     return ld_addr;
   }
 
-  void setLdAddr(AddrType _ld_addr) {
+  void setLdAddr(Addr_t _ld_addr) {
     ld_addr = _ld_addr;
   }
 
-  AddrType getBrPC() const {
+  Addr_t getBrPC() const {
     return brpc;
   }
 
-  void setBrPC(AddrType _brpc) {
+  void setBrPC(Addr_t _brpc) {
     brpc = _brpc;
   }
 
@@ -460,19 +428,19 @@ public:
     ld_br_type = lb;
   }
 
-  DataType getBrData1() const {
+  Data_t getBrData1() const {
     return br_data1;
   }
 
-  DataType getBrData2() const {
+  Data_t getBrData2() const {
     return br_data2;
   }
 
-  DataType getData() const {
+  Data_t getData() const {
     return data;
   }
 
-  DataType getData2() const {
+  Data_t getData2() const {
     return data2;
   }
 
@@ -481,14 +449,14 @@ public:
   } // FIXME:}
 
   // DataSign getDataSign() const { return data_sign; }
-  void setDataSign(int64_t _data, AddrType ldpc);
-  void addDataSign(int ds, int64_t _data, AddrType ldpc);
+  void setDataSign(int64_t _data, Addr_t ldpc);
+  void addDataSign(int ds, int64_t _data, Addr_t ldpc);
 
-  void setBrData1(DataType _data) {
+  void setBrData1(Data_t _data) {
     br_data1 = _data;
   }
 
-  void setBrData2(DataType _data) {
+  void setBrData2(Data_t _data) {
     br_data2 = _data;
   }
 
@@ -500,7 +468,7 @@ public:
     data2 = _data;
   }
 
-  AddrType getLDPC() const {
+  Addr_t getLDPC() const {
     return ldpc;
   }
   void setChain(FetchEngine *fe, int c) {
@@ -515,22 +483,34 @@ public:
   }
 #else
   static DataSign calcDataSign(int64_t data) {
+    (void)data;
     return DS_NoData;
   };
-  DataType getData() const {
+  Data_t getData() const {
     return 0;
   }
   DataSign getDataSign() const {
     return DS_NoData;
   }
-  void setDataSign(int64_t _data, AddrType ldpc){};
-  void addDataSign(int ds, int64_t _data, AddrType ldpc){};
-  void setData(uint64_t _data) {
+  void setDataSign(int64_t _data, Addr_t ldpc){
+    (void)_data;
+    (void)ldpc;
   }
-  AddrType getLDPC() const {
+
+  void addDataSign(int ds, int64_t _data, Addr_t ldpc){
+    (void)ds;
+    (void)_data;
+    (void)ldpc;
+  }
+  void setData(uint64_t _data) {
+    (void)_data;
+  }
+  Addr_t getLDPC() const {
     return 0;
   }
   void setChain(FetchEngine *fe, int c) {
+    (void)fe;
+    (void)c;
   }
   int getChained() const {
     return 0;
@@ -544,21 +524,21 @@ public:
     return 0;
   }
 
-  DataType getBrData1() const {
+  Data_t getBrData1() const {
     return 0;
   }
 
-  DataType getBrData2() const {
+  Data_t getBrData2() const {
     return 0;
   }
 
-  DataType getData2() const {
+  Data_t getData2() const {
     return 0;
   }
 #endif
 
-  void scrap(EmulInterface *eint); // Destroys the instruction without any other effects
-  void destroy(EmulInterface *eint);
+  void scrap(); // Destroys the instruction without any other effects
+  void destroy();
   void recycle();
 
   void clearCluster() {
@@ -578,15 +558,15 @@ public:
   }
 
   void clearRATEntry();
-  void setRAT1Entry(DInst **rentry) {
+  void setRAT1Entry(Dinst **rentry) {
     I(!RAT1Entry);
     RAT1Entry = rentry;
   }
-  void setRAT2Entry(DInst **rentry) {
+  void setRAT2Entry(Dinst **rentry) {
     I(!RAT2Entry);
     RAT2Entry = rentry;
   }
-  void setSerializeEntry(DInst **rentry) {
+  void setSerializeEntry(Dinst **rentry) {
     I(!serializeEntry);
     serializeEntry = rentry;
   }
@@ -598,29 +578,29 @@ public:
     return SSID;
   }
 
-  void setConflictStorePC(AddrType storepc) {
+  void setConflictStorePC(Addr_t storepc) {
     I(storepc);
     I(this->getInst()->isLoad());
     conflictStorePC = storepc;
   }
-  AddrType getConflictStorePC() const {
+  Addr_t getConflictStorePC() const {
     return conflictStorePC;
   }
 
 #ifdef DINST_PARENT
-  DInst *getParentSrc1() const {
+  Dinst *getParentSrc1() const {
     if(pend[0].isUsed)
-      return pend[0].getParentDInst();
+      return pend[0].getParentDinst();
     return 0;
   }
-  DInst *getParentSrc2() const {
+  Dinst *getParentSrc2() const {
     if(pend[1].isUsed)
-      return pend[1].getParentDInst();
+      return pend[1].getParentDinst();
     return 0;
   }
-  DInst *getParentSrc3() const {
+  Dinst *getParentSrc3() const {
     if(pend[2].isUsed)
-      return pend[2].getParentDInst();
+      return pend[2].getParentDinst();
     return 0;
   }
 #endif
@@ -798,9 +778,9 @@ public:
     return gproc;
   }
 
-  DInst *getNextPending() {
+  Dinst *getNextPending() {
     I(first);
-    DInst *n = first->getDInst();
+    Dinst *n = first->getDinst();
 
     I(n);
 
@@ -808,24 +788,24 @@ public:
     n->nDeps--;
 
     first->isUsed = false;
-    first->setParentDInst(0);
+    first->setParentDinst(0);
     first = first->getNext();
 
     return n;
   }
 
-  void addSrc1(DInst *d) {
+  void addSrc1(Dinst *d) {
     I(d->nDeps < MAX_PENDING_SOURCES);
     d->nDeps++;
 
     I(executed == 0);
     I(d->executed == 0);
-    DInstNext *n = &d->pend[0];
+    DinstNext *n = &d->pend[0];
     I(!n->isUsed);
     n->isUsed = true;
-    n->setParentDInst(this);
+    n->setParentDinst(this);
 
-    I(n->getDInst() == d);
+    I(n->getDinst() == d);
     if(first == 0) {
       first = n;
     } else {
@@ -835,18 +815,18 @@ public:
     last       = n;
   }
 
-  void addSrc2(DInst *d) {
+  void addSrc2(Dinst *d) {
     I(d->nDeps < MAX_PENDING_SOURCES);
     d->nDeps++;
     I(executed == 0);
     I(d->executed == 0);
 
-    DInstNext *n = &d->pend[1];
+    DinstNext *n = &d->pend[1];
     I(!n->isUsed);
     n->isUsed = true;
-    n->setParentDInst(this);
+    n->setParentDinst(this);
 
-    I(n->getDInst() == d);
+    I(n->getDinst() == d);
     if(first == 0) {
       first = n;
     } else {
@@ -856,18 +836,18 @@ public:
     last       = n;
   }
 
-  void addSrc3(DInst *d) {
+  void addSrc3(Dinst *d) {
     I(d->nDeps < MAX_PENDING_SOURCES);
     d->nDeps++;
     I(executed == 0);
     I(d->executed == 0);
 
-    DInstNext *n = &d->pend[2];
+    DinstNext *n = &d->pend[2];
     I(!n->isUsed);
     n->isUsed = true;
-    n->setParentDInst(this);
+    n->setParentDinst(this);
 
-    I(n->getDInst() == d);
+    I(n->getDinst() == d);
     if(first == 0) {
       first = n;
     } else {
@@ -878,20 +858,20 @@ public:
   }
 
 #if 0
-  void setAddr(AddrType a) {
+  void setAddr(Addr_t a) {
     addr = a;
   }
 #endif
-  void setPC(AddrType a) {
+  void setPC(Addr_t a) {
     pc = a;
   }
-  AddrType getPC() const {
+  Addr_t getPC() const {
     return pc;
   }
-  AddrType getAddr() const {
+  Addr_t getAddr() const {
     return addr;
   }
-  FlowID getFlowId() const {
+  Hartid_t getFlowId() const {
     return fid;
   }
 
@@ -916,10 +896,10 @@ public:
     return nDeps != 0;
   }
 
-  const DInst *getFirstPending() const {
-    return first->getDInst();
+  const Dinst *getFirstPending() const {
+    return first->getDinst();
   }
-  const DInstNext *getFirst() const {
+  const DinstNext *getFirst() const {
     return first;
   }
 
@@ -1080,11 +1060,10 @@ public:
 #endif
 };
 
-class Hash4DInst {
+class Hash4Dinst {
 public:
-  size_t operator()(const DInst *dinst) const {
+  size_t operator()(const Dinst *dinst) const {
     return (size_t)(dinst);
   }
 };
 
-#endif // DINST_H

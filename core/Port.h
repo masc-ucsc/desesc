@@ -45,7 +45,7 @@ Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #include "iassert.hpp"
 
 #include "GStats.h"
-#include "callback.h"
+#include "callback.hpp"
 
 typedef uint16_t NumUnits_t;
 

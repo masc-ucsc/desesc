@@ -1,29 +1,4 @@
-/*
-   ESESC: Super ESCalar simulator
-   Copyright (C) 2003 University of Illinois.
-   Copyright (C) 2009 University of California, Santa Cruz.
-
-   Contributed by Jose Renau
-                  Basilio Fraguela
-                  Luis Ceze
-                  Smruti Sarangi
-                  Paul Sack
-
-This file is part of ESESC.
-
-ESESC is free software; you can redistribute it and/or modify it under the terms
-of the GNU General Public License as published by the Free Software Foundation;
-either version 2, or (at your option) any later version.
-
-ESESC is    distributed in the  hope that  it will  be  useful, but  WITHOUT ANY
-WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-
-You should  have received a copy of  the GNU General  Public License along with
-ESESC; see the file COPYING.  If not, write to the  Free Software Foundation, 59
-Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-*/
-
+// This file is distributed under the BSD 3-Clause License. See LICENSE for details.
 
 #include "fmt/format.h"
 
@@ -60,7 +35,7 @@ bool Config::check(const std::string &block, const std::string &name) {
   return true;
 }
 
-std::string Config::get_string(const std::string &block, const std::string &name) {
+std::string Config::get_string(const std::string &block, const std::string &name, const std::vector<std::string> allowed) {
 
   if (!check(block,name)) {
     return "INVALID";
@@ -80,7 +55,55 @@ std::string Config::get_string(const std::string &block, const std::string &name
     return "INVALID";
   }
 
-  return ent.as_string();
+  std::string val{ent.as_string()};
+  if (!allowed.empty()) {
+    for(auto e:allowed) {
+      auto same = std::equal(e.cbegin(), e.cend(), val.cbegin(), val.cend()
+                             ,[](auto c1, auto c2) { return std::toupper(c1) == std::toupper(c2); }
+                             );
+      if (same) {
+        return e;
+      }
+    }
+
+    errors.emplace_back(fmt::format("conf:{} section:{} field:{} value:{} is not allowed\n", filename, block, name, val));
+    return "INVALID";
+  }
+
+  return val;
+}
+
+int Config::get_integer(const std::string &block, const std::string &name, int from, int to) {
+
+  if (!check(block,name)) {
+    return 0;
+  }
+
+  int val = 0;
+
+  {
+    std::string env_var= fmt::format("DESESC_{}_{}",block,name);
+
+    const char *e = getenv(env_var.c_str());
+    if(e) {
+      val = std::atoi(e);
+    }
+  }
+
+  auto ent = toml::find(data, block, name);
+  if (!ent.is_integer()) {
+    errors.emplace_back(fmt::format("conf:{} section:{} field:{} is not a integer\n", filename, block, name));
+    return 0;
+  }
+
+  val = ent.as_integer();
+
+  if (val<from || val>to) {
+    errors.emplace_back(fmt::format("conf:{} section:{} field:{} value:{} is not allowed range ({}..<={})\n", filename, block, name, val, from, to));
+    return 0;
+  }
+
+  return val;
 }
 
 size_t Config::get_array_size(const std::string &block, const std::string &name) {

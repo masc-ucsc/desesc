@@ -1,9 +1,8 @@
+// This file is distributed under the BSD 3-Clause License. See LICENSE for details.
 
-
-#include "callback.h"
+#include "callback.hpp"
 
 #include "benchmark/benchmark.h"
-
 
 void counter_fsm();
 typedef StaticCallbackFunction0<&counter_fsm> counter_fsmCB;

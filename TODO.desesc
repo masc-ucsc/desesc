@@ -18,3 +18,14 @@ desesc: Dromajo Based ESESC
  Use new/delete, then valgrind can be used to detect memory leaks (no need for
  in-class check for leaks)
 
+=remove estl.h
+
+ Use abseil flat_hash_map or flat_hash_set 
+
+ btree_map if needed
+
+=No Uppercase C++ file
+
+ Rename class name to avoid CamelCase to Non_camel_case
+ Rename file name from CamelCase.h to Non_camel_case.hpp and Non_camel_case.cpp
+

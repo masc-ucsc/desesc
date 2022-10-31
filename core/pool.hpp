@@ -1,27 +1,4 @@
-/*
-   ESESC: Super ESCalar simulator
-   Copyright (C) 2003 University of Illinois.
-
-   Code based on Jose Martinez pool code (Thanks)
-
-   Contributed by Jose Renau
-                  Milos Prvulovic
-                  James Tuck
-
-This file is part of ESESC.
-
-ESESC is free software; you can redistribute it and/or modify it under the terms
-of the GNU General Public License as published by the Free Software Foundation;
-either version 2, or (at your option) any later version.
-
-ESESC is    distributed in the  hope that  it will  be  useful, but  WITHOUT ANY
-WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-
-You should  have received a copy of  the GNU General  Public License along with
-ESESC; see the file COPYING.  If not, write to the  Free Software Foundation, 59
-Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-*/
+// See LICENSE for details.
 
 #pragma once
 
@@ -30,12 +7,9 @@ Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #include <strings.h>
 
 #include "fmt/format.h"
+
 #include "iassert.hpp"
-
-// Recycle memory allocated from time to time. This is useful for adapting to
-// the phases of the application
-
-#include "Snippets.h"
+#include "snippets.hpp"
 
 #ifndef NDEBUG
 //#define POOL_TIMEOUT 1

@@ -80,3 +80,14 @@ http_archive(
         "https://github.com/masc-ucsc/dromajo/archive/753f4c43bda3dfd05becadd81bd0041cec240910.zip",
     ],
 )
+
+# libelf (needed by dromajo in OSX)
+http_archive(
+    name = "libelf",
+    build_file = "libelf.BUILD",
+    sha256 = "c0627b45c29a151e4e1105988ad7ce9bf83b52cbbca0a1db06c7fcad69b85c4b",
+    strip_prefix = "libelf-ba3c81450b91d1935fff01bae191a59d7653d2a5",
+    urls = [
+        "https://github.com/masc-ucsc/libelf/archive/ba3c81450b91d1935fff01bae191a59d7653d2a5.zip",
+    ],
+)

@@ -12,8 +12,10 @@ IBucket::IBucket(size_t size, Pipeline *p, bool clean)
 }
 
 void IBucket::markFetched() {
+#ifndef NDEBUG
   I(fetched == false);
-  IS(fetched = true); // Only called once
+  fetched = true; // Only called once
+#endif
 
   if(!empty()) {
     //    if (top()->getFlowId())
@@ -162,20 +164,14 @@ IBucket *Pipeline::nextItem() {
 }
 
 PipeQueue::PipeQueue(CPU_t i)
-    : pipeLine(SescConf->getInt("cpusimu", "decodeDelay", i) + SescConf->getInt("cpusimu", "renameDelay", i),
-               SescConf->getInt("cpusimu", "fetchWidth", i), SescConf->getInt("cpusimu", "maxIRequests", i))
-    , instQueue(SescConf->getInt("cpusimu", "instQueueSize", i)) {
-  SescConf->isInt("cpusimu", "decodeDelay", i);
-  SescConf->isBetween("cpusimu", "decodeDelay", 1, 64, i);
+    : pipeLine(Config::get_integer("soc", "core", i, "decode_delay", 1, 64)
+              +Config::get_integer("soc", "core", i, "rename_delay", 1, 8)
+              ,Config::get_integer("soc", "core", i, "fetch_width", 1, 64)
+              ,Config::get_integer("soc", "core", i, "ftq_size", 1, 64))
+    , instQueue(Config::get_integer("soc", "core", i, "instq_size", 1, 128)) {
 
-  SescConf->isInt("cpusimu", "renameDelay", i);
-  SescConf->isBetween("cpusimu", "renameDelay", 1, 64, i);
-
-  SescConf->isInt("cpusimu", "maxIRequests", i);
-  SescConf->isBetween("cpusimu", "maxIRequests", 0, 32000, i);
-
-  SescConf->isInt("cpusimu", "instQueueSize", i);
-  SescConf->isBetween("cpusimu", "instQueueSize", SescConf->getInt("cpusimu", "fetchWidth", i), 32768, i);
+  auto fetch_width = Config::get_integer("soc", "core", i, "fetch_width", 1, 64);
+  auto instq_size  = Config::get_integer("soc", "core", i, "instq_size", fetch_width, 128);
 }
 
 PipeQueue::~PipeQueue() {
@@ -195,9 +191,11 @@ IBucket *Pipeline::newItem() {
   b->setPipelineId(maxItemCntr);
   maxItemCntr++;
 
-  IS(b->fetched = false);
-
+#ifndef NDEBUG
+  b->fetched = false;
   I(b->empty());
+#endif
+
   return b;
 }
 

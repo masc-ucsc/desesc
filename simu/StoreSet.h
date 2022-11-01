@@ -30,7 +30,7 @@ private:
   StaticCallbackMember0<StoreSet, &StoreSet::clearStoreSetsTimer> clearStoreSetsTimerCB;
 #endif
 
-  AddrType hashPC(AddrType PC) const {
+  uint64_t hashPC(uint64_t PC) const {
     //    return ((PC>>2) % 8191);
     return ((((PC >> 2) ^ (PC >> 11)) + PC) >> 2) & (StoreSetSize - 1);
   }
@@ -40,7 +40,7 @@ private:
   }
 
   // SSIT Functions
-  SSID_t get_SSID(AddrType PC) const {
+  SSID_t get_SSID(uint64_t PC) const {
     return SSIT[hashPC(PC)];
   };
   void clear_SSIT();
@@ -56,15 +56,15 @@ private:
   void clear_LFST(void);
 
   SSID_t create_id();
-  void   set_SSID(AddrType PC, SSID_t SSID) {
+  void   set_SSID(uint64_t PC, SSID_t SSID) {
     SSIT[hashPC(PC)] = SSID;
   };
-  SSID_t create_set(AddrType);
+  SSID_t create_set(uint64_t);
 
 #if 1
   // TO - delete
   void stldViolation_withmerge(Dinst *ld_dinst, Dinst *st_dinst);
-  void VPC_misspredict(Dinst *ld_dinst, AddrType store_pc);
+  void VPC_misspredict(Dinst *ld_dinst, uint64_t store_pc);
   void assign_SSID(Dinst *dinst, SSID_t SSID);
 #endif
 public:
@@ -74,7 +74,7 @@ public:
 
   bool insert(Dinst *dinst);
   void remove(Dinst *dinst);
-  void stldViolation(Dinst *ld_dinst, AddrType st_pc);
+  void stldViolation(Dinst *ld_dinst, uint64_t st_pc);
   void stldViolation(Dinst *ld_dinst, Dinst *st_dinst);
 
   SSID_t mergeset(SSID_t id1, SSID_t id2);

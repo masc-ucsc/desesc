@@ -70,7 +70,9 @@ protected:
   friend class PipeIBucketLess;
 
   Pipeline *const pipeLine;
-  ID(bool fetched;)
+#ifndef NDEBUG
+  bool fetched;
+#endif
 
   Time_t getPipelineId() const {
     return pipeId;

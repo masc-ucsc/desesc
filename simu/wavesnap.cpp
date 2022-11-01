@@ -120,13 +120,13 @@ void wavesnap::update_window(Dinst *dinst, uint64_t committed) {
   // poll the very first window, wait until completed
   if(!this->first_window_completed) {
     this->first_window_completed = true;
-    for(uint32_t i = 0; i < MAX_MOVING_GRAPH_NODES; i++) {
-      if(!this->completed[i]) {
+    for(uint32_t j = 0; j < MAX_MOVING_GRAPH_NODES; j++) {
+      if(!this->completed[j]) {
         this->first_window_completed = false;
         this->current_encoding = "";
         break;
       } else {
-        instruction_info *d = &(dinst_info[wait_buffer[i]]);
+        instruction_info *d = &(dinst_info[wait_buffer[j]]);
         if(i < MAX_MOVING_GRAPH_NODES-1) {
           this->current_encoding += ENCODING[d->opcode];
         }
@@ -156,8 +156,8 @@ void wavesnap::update_window(Dinst *dinst, uint64_t committed) {
             signature_hit[this->current_hash] = true;
           } else {
             pipeline_info next;
-            for (uint32_t i=0; i<MAX_MOVING_GRAPH_NODES; i++) {
-              add_pipeline_info(&next, &(dinst_info[wait_buffer[i]]));
+            for (uint32_t j=0; j<MAX_MOVING_GRAPH_NODES; j++) {
+              add_pipeline_info(&next, &(dinst_info[wait_buffer[j]]));
             }
 
             //record
@@ -488,7 +488,6 @@ void wavesnap::test_uncompleted() {
 
 void wavesnap::add_to_RAT(Dinst *dinst) {
   uint64_t dst, src1, src2;
-  bool     skip = false;
   if(dinst->getInst()->isStore()) {
     // dst =  ((uint64_t)dinst->getAddr()%HASH_SIZE)+REGISTER_NUM;
     dst  = ((uint64_t)dinst->getAddr()) + REGISTER_NUM;
@@ -508,17 +507,13 @@ void wavesnap::add_to_RAT(Dinst *dinst) {
     std::cout << dst << ",";
     std::cout << src1 << ",";
     std::cout << src2 << "," << std::endl;*/
-    skip = true;
   } else {
     dst  = (uint32_t)dinst->getInst()->getDst1();
     src1 = (uint32_t)dinst->getInst()->getSrc1();
     src2 = (uint32_t)dinst->getInst()->getSrc2();
   }
 
-  if(false) {
-    int32_t p1_depth = 0;
-    int32_t p2_depth = 0;
-
+  if(true) {
     RAT[dst];
     RAT[dst].valid       = true;
     RAT[dst].id          = (uint32_t)dinst->getID() + 1;

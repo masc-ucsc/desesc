@@ -3,3 +3,12 @@
 num  = 1
 type = "dromajo"
 
+[soc]
+core = ["c0", "c0"]
+
+[c0]
+decode_delay = 4
+rename_delay = 2
+fetch_width  = 8
+ftq_size     = 12
+instq_size   = 16

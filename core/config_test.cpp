@@ -31,6 +31,13 @@ protected:
     file << "a = -33\n";
     file << "b = 33\n";
 
+    file << "[base]\n";
+    file << "a = [\"leaf1\", \"leaf2\"]\n";
+    file << "[leaf1]\n";
+    file << "v=3\n";
+    file << "[leaf2]\n";
+    file << "v=4\n";
+
     file.close();
   }
 
@@ -59,3 +66,14 @@ TEST_F(Config_test, integers) {
   EXPECT_EQ(Config::get_integer("int_test","b",-100,100), 33);
   EXPECT_EQ(Config::get_integer("int_test","b",-10,10), 0);
 }
+
+TEST_F(Config_test, indirect) {
+
+  Config::init("config_test_sample.toml");
+
+  EXPECT_EQ(Config::get_integer("base","a", 0, "v"), 3);
+  EXPECT_EQ(Config::get_integer("base","a", 1, "v"), 4);
+  EXPECT_EQ(Config::get_integer("base","a", 0, "v", -10,10), 3);
+  EXPECT_EQ(Config::get_integer("base","a", 1, "v", -1,2), 0);
+}
+

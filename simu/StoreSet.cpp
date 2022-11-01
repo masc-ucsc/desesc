@@ -48,7 +48,7 @@ SSID_t StoreSet::create_id() {
 
   return SSID;
 }
-SSID_t StoreSet::create_set(AddrType PC)
+SSID_t StoreSet::create_set(uint64_t PC)
 /* create_set {{{1 */
 {
   SSID_t SSID = create_id();
@@ -69,8 +69,8 @@ SSID_t StoreSet::create_set(AddrType PC)
 void StoreSet::merge_sets(Dinst *m_dinst, Dinst *d_dinst)
 /* merge two loads into the src LD's set {{{1 */
 {
-  AddrType merge_this_set_pc   = m_dinst->getPC(); // <<1 + m_dinst->getUopOffset();
-  AddrType destroy_this_set_pc = d_dinst->getPC(); // <<1 + d_dinst->getUopOffset();
+  uint64_t merge_this_set_pc   = m_dinst->getPC(); // <<1 + m_dinst->getUopOffset();
+  uint64_t destroy_this_set_pc = d_dinst->getPC(); // <<1 + d_dinst->getUopOffset();
   SSID_t   merge_SSID          = get_SSID(merge_this_set_pc);
   if(!isValidSSID(merge_SSID))
     merge_SSID = create_set(merge_this_set_pc);
@@ -114,7 +114,7 @@ void StoreSet::clearStoreSetsTimer()
 bool StoreSet::insert(Dinst *dinst)
 /* insert a store/load in the store set {{{1 */
 {
-  AddrType inst_pc   = dinst->getPC(); // <<1+dinst->getUopOffset();
+  uint64_t inst_pc   = dinst->getPC(); // <<1+dinst->getUopOffset();
   SSID_t   inst_SSID = get_SSID(inst_pc);
 
   if(!isValidSSID(inst_SSID)) {
@@ -166,13 +166,13 @@ void StoreSet::remove(Dinst *dinst)
 }
 /* }}} */
 
-void StoreSet::stldViolation(Dinst *ld_dinst, AddrType st_pc)
+void StoreSet::stldViolation(Dinst *ld_dinst, uint64_t st_pc)
 /* add a new st/ld violation {{{1 */
 {
   return; // FIXME: no store set
   I(ld_dinst->getInst()->isLoad());
 
-  AddrType ld_pc   = ld_dinst->getPC();
+  uint64_t ld_pc   = ld_dinst->getPC();
   SSID_t   ld_SSID = ld_dinst->getSSID();
   if(!isValidSSID(ld_SSID)) {
     ld_SSID = create_set(ld_pc);
@@ -194,8 +194,8 @@ void StoreSet::stldViolation_withmerge(Dinst *ld_dinst, Dinst *st_dinst)
   I(st_dinst->getInst()->isStore());
   I(ld_dinst->getInst()->isLoad());
 
-  AddrType ld_pc   = ld_dinst->getPC();   // <<1 + ld_dinst->getUopOffset();
-  AddrType st_pc   = st_dinst->getPC();   // <<1 + st_dinst->getUopOffset();
+  uint64_t ld_pc   = ld_dinst->getPC();   // <<1 + ld_dinst->getUopOffset();
+  uint64_t st_pc   = st_dinst->getPC();   // <<1 + st_dinst->getUopOffset();
   SSID_t   ld_SSID = ld_dinst->getSSID(); // get_SSID(ld_pc);
   SSID_t   st_SSID = st_dinst->getSSID(); // get_SSID(ld_pc);
   if(!isValidSSID(ld_SSID)) {
@@ -242,12 +242,12 @@ SSID_t StoreSet::mergeset(SSID_t id1, SSID_t id2)
 }
 /* }}} */
 
-void StoreSet::VPC_misspredict(Dinst *ld_dinst, AddrType st_pc)
+void StoreSet::VPC_misspredict(Dinst *ld_dinst, uint64_t st_pc)
 /* add a new st/ld violation {{{1 */
 {
   I(st_pc);
   I(ld_dinst->getInst()->isLoad());
-  AddrType ld_pc   = ld_dinst->getPC();   // <<1 + ld_dinst->getUopOffset();
+  uint64_t ld_pc   = ld_dinst->getPC();   // <<1 + ld_dinst->getUopOffset();
   SSID_t   ld_SSID = ld_dinst->getSSID(); // get_SSID(ld_pc);
   if(!isValidSSID(ld_SSID)) {
     ld_SSID = create_set(ld_pc);
@@ -259,7 +259,7 @@ void StoreSet::VPC_misspredict(Dinst *ld_dinst, AddrType st_pc)
 void StoreSet::assign_SSID(Dinst *dinst, SSID_t target_SSID) {
   /* force this dinst to join the specified set (for merging) {{{1 */
   SSID_t   inst_SSID = dinst->getSSID();
-  AddrType inst_pc   = dinst->getPC();
+  uint64_t inst_pc   = dinst->getPC();
   if(isValidSSID(inst_SSID)) {
     Dinst *lfs_dinst = get_LFS(inst_SSID);
     if(lfs_dinst != NULL) {

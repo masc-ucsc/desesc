@@ -106,6 +106,59 @@ int Config::get_integer(const std::string &block, const std::string &name, int f
   return val;
 }
 
+int Config::get_integer(const std::string &block, const std::string &name, size_t pos, const std::string &name2, int from, int to) {
+
+  if (!check(block,name)) {
+    return 0;
+  }
+
+  auto ent = toml::find(data, block, name);
+  if (!ent.is_array()) {
+    errors.emplace_back(fmt::format("conf:{} section:{} field:{} is not a array needed to chain to {}\n", filename, block, name, name2));
+    return 0;
+  }
+
+  auto ent_array = ent.as_array();
+
+  if (ent_array.size()<=pos) {
+    errors.emplace_back(fmt::format("conf:{} section:{} field:{} out-of-bounds array access {}\n", filename, block, name, pos));
+    return 0;
+  }
+
+  const auto t_block2 = ent_array[pos];
+  if (!t_block2.is_string()) {
+    errors.emplace_back(fmt::format("conf:{} section:{} field:{} should point to a section\n", filename, block, name));
+    return 0;
+  }
+
+  std::string block2{t_block2.as_string()};
+
+  int val = 0;
+  {
+    std::string env_var= fmt::format("DESESC_{}_{}",block2,name2);
+
+    const char *e = getenv(env_var.c_str());
+    if(e) {
+      val = std::atoi(e);
+    }
+  }
+
+  auto ent2 = toml::find(data, block2, name2);
+  if (!ent2.is_integer()) {
+    errors.emplace_back(fmt::format("conf:{} section:{} field:{} is not a integer\n", filename, block2, name2));
+    return 0;
+  }
+
+  val = ent2.as_integer();
+
+  if (val<from || val>to) {
+    errors.emplace_back(fmt::format("conf:{} section:{} field:{} value:{} is not allowed range ({}..<={})\n", filename, block2, name2, val, from, to));
+    return 0;
+  }
+
+  return val;
+}
+
 size_t Config::get_array_size(const std::string &block, const std::string &name) {
 
   if (!check(block,name)) {
@@ -119,5 +172,36 @@ size_t Config::get_array_size(const std::string &block, const std::string &name)
   }
 
   return ent.as_array().size();
+}
+
+int Config::get_array_integer(const std::string &block, const std::string &name, size_t pos) {
+
+  if (!check(block,name)) {
+    return 0;
+  }
+
+  auto ent = toml::find(data, block, name);
+  if (!ent.is_array()) {
+    errors.emplace_back(fmt::format("conf:{} section:{} field:{} is not an array\n", filename, block, name));
+    return 0;
+  }
+
+  if (ent.as_array().size()<=pos) {
+    errors.emplace_back(fmt::format("conf:{} section:{} out of bounds {} array of size {}\n", filename, block, name, ent.as_array().size(), pos));
+    return 0;
+  }
+
+  auto arr = ent.as_array();
+
+  if (!ent.is_integer()) {
+    errors.emplace_back(fmt::format("conf:{} section:{} array entry is not integer\n", filename, block, name));
+    return 0;
+  }
+
+  return arr[pos].as_integer();
+}
+
+void Config::add_error(const std::string &err) {
+  errors.emplace_back(err);
 }
 

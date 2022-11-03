@@ -33,7 +33,7 @@ public:
 
   static void add_error(const std::string &err);
 
-  static bool has_entry(const std::string &block, const std::string field);
+  static bool has_entry(const std::string &block, const std::string &field);
 
   static bool get_bool(const std::string &block, const std::string &name);
   static int  get_power2(const std::string &block, const std::string &name, int from = std::numeric_limits<int>::min(),

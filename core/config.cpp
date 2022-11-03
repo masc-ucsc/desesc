@@ -211,7 +211,7 @@ int Config::get_array_integer(const std::string &block, const std::string &name,
 
 void Config::add_error(const std::string &err) { errors.emplace_back(err); }
 
-bool Config::has_entry(const std::string &block, const std::string field) {
+bool Config::has_entry(const std::string &block, const std::string &name) {
   if (block.empty()) {
     errors.emplace_back(fmt::format("section is empty for configuration:{}\n", filename));
     return false;
@@ -240,7 +240,7 @@ int Config::get_power2(const std::string &block, const std::string &name, int fr
     add_error(fmt::format("entry {} field {}={} is negative, not a power of two", block, name, v));
     return 0;
   }
-  if ((v) & (v - 1) != 0) {
+  if ((v& (v - 1)) != 0) {
     add_error(fmt::format("entry {} field {}={} is not a power of two", block, name, v));
     return 0;
   }

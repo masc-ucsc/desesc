@@ -77,7 +77,7 @@ bool SMTFetch::update(bool space) {
   return false;
 }  // 1}}}
 
-void InOrderProcessor::fetch(FlowID fid) { /*{{{*/
+void InOrderProcessor::fetch(Hartid_t fid) { /*{{{*/
   // TODO: Move this to GProcessor (same as in OoOProcessor)
   I(eint);
   I(active);
@@ -98,7 +98,7 @@ void InOrderProcessor::fetch(FlowID fid) { /*{{{*/
 
 } /*}}}*/
 
-bool InOrderProcessor::advance_clock(FlowID fid) { /*{{{*/
+bool InOrderProcessor::advance_clock(Hartid_t fid) { /*{{{*/
 
   if (!active) {
     I(isROBEmpty());
@@ -168,7 +168,7 @@ void InOrderProcessor::executed(Dinst *dinst) {}
 StallCause InOrderProcessor::addInst(Dinst *dinst) { /*{{{*/
 
   const Instruction *inst = dinst->getInst();
-  FlowID rat_off = 0;  // no need, addInst is private per thread. Cluster is shared (dinst->getFlowId() % getMaxFlows())*LREG_MAX;
+  Hartid_t rat_off = 0;  // no need, addInst is private per thread. Cluster is shared (dinst->getFlowId() % getMaxFlows())*LREG_MAX;
 
 #if 1
 #if 0
@@ -295,9 +295,9 @@ void InOrderProcessor::retire() { /*{{{*/
     rROB.push(dinst);
     ROB.pop();
 #if 0
-    FlowID fid = dinst->getFlowId();
+    Hartid_t fid = dinst->getFlowId();
     if (fid == 1){
-    fprintf(stderr,"\nCommitting from ROB , FlowID(%d), dinst->pc = %llx, dinst->addr = %llx, dinst->pe_id = %d, dinst->warp_id = %d",
+    fprintf(stderr,"\nCommitting from ROB , Hartid_t(%d), dinst->pc = %llx, dinst->addr = %llx, dinst->pe_id = %d, dinst->warp_id = %d",
           fid,
           dinst->getPC(),
           dinst->getAddr(),

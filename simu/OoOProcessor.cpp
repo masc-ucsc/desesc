@@ -182,7 +182,7 @@ OoOProcessor::~OoOProcessor()
 }
 /* }}} */
 
-void OoOProcessor::fetch(FlowID fid)
+void OoOProcessor::fetch(Hartid_t fid)
 /* fetch {{{1 */
 {
   I(fid == cpu_id);
@@ -205,7 +205,7 @@ void OoOProcessor::fetch(FlowID fid)
 }
 /* }}} */
 
-bool OoOProcessor::advance_clock(FlowID fid)
+bool OoOProcessor::advance_clock(Hartid_t fid)
 /* Full execution: fetch|rename|retire {{{1 */
 {
   if (!active) {
@@ -1830,7 +1830,7 @@ void OoOProcessor::retire()
     }
 #endif
 
-    FlowID fid = dinst->getFlowId();
+    Hartid_t fid = dinst->getFlowId();
     if (dinst->isReplay()) {
       flushing     = true;
       flushing_fid = fid;

@@ -16,12 +16,12 @@ private:
 
 protected:
   // BEGIN VIRTUAL FUNCTIONS of GProcessor
-  bool advance_clock(FlowID fid);
+  bool advance_clock(Hartid_t fid);
 
   // Not needed for Acc
   StallCause addInst(Dinst *dinst);
   void       retire();
-  void       fetch(FlowID fid);
+  void       fetch(Hartid_t fid);
   LSQ       *getLSQ();
   bool       isFlushing();
   bool       isReplayRecovering();

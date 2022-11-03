@@ -50,7 +50,7 @@ void AccProcessor::write_performed(uint32_t id, Time_t startTime)
 }
 /* }}} */
 
-bool AccProcessor::advance_clock(FlowID fid)
+bool AccProcessor::advance_clock(Hartid_t fid)
 /* Full execution: fetch|rename|retire {{{1 */
 {
   // MSG("@%lld: AccProcessor::advance_clock(fid=%d) cpu_id=%d\n",(long long int)globalClock,fid,cpu_id);
@@ -99,7 +99,7 @@ void AccProcessor::retire()
 {}
 /* }}} */
 
-void AccProcessor::fetch(FlowID fid) { I(0); }
+void AccProcessor::fetch(Hartid_t fid) { I(0); }
 
 LSQ *AccProcessor::getLSQ() {
   I(0);

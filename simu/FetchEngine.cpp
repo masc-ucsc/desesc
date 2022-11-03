@@ -21,7 +21,7 @@ extern bool MIMDmode;
 
 extern "C" uint64_t esesc_mem_read(uint64_t addr);
 
-FetchEngine::FetchEngine(FlowID id, GMemorySystem *gms_, FetchEngine *fe)
+FetchEngine::FetchEngine(Hartid_t id, GMemorySystem *gms_, FetchEngine *fe)
     : gms(gms_)
     , avgFetchLost("P(%d)_FetchEngine_avgFetchLost", id)
     , avgBranchTime("P(%d)_FetchEngine_avgBranchTime", id)
@@ -226,7 +226,7 @@ void FetchEngine::chainLoadDone(Dinst *dinst) {
 #endif
 }
 
-void FetchEngine::realfetch(IBucket *bucket, EmulInterface *eint, FlowID fid, int32_t n2Fetch) {
+void FetchEngine::realfetch(IBucket *bucket, EmulInterface *eint, Hartid_t fid, int32_t n2Fetch) {
   Addr_t lastpc = 0;
 
 #ifdef USE_FUSE
@@ -993,7 +993,7 @@ Dinst* FetchEngine::init_ldbp(Dinst *dinst, Data_t dd, Addr_t ldpc) {
 #endif
 #endif
 
-void FetchEngine::fetch(IBucket *bucket, EmulInterface *eint, FlowID fid) {
+void FetchEngine::fetch(IBucket *bucket, EmulInterface *eint, Hartid_t fid) {
   // Reset the max number of BB to fetch in this cycle (decreased in processBranch)
   maxBB = BB4Cycle;
 

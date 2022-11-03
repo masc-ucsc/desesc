@@ -73,14 +73,14 @@ private:
   Time_t replayID;
   bool   flushing;
 
-  FlowID flushing_fid;
+  Hartid_t flushing_fid;
 
   RetireState                                                           last_state;
   void                                                                  retire_lock_check();
   bool                                                                  scooreMemory;
   StaticCallbackMember0<OoOProcessor, &OoOProcessor::retire_lock_check> retire_lock_checkCB;
 
-  void fetch(FlowID fid);
+  void fetch(Hartid_t fid);
 
 protected:
   ClusterManager clusterManager;
@@ -181,7 +181,7 @@ protected:
 #endif
 
   // BEGIN VIRTUAL FUNCTIONS of GProcessor
-  bool       advance_clock(FlowID fid);
+  bool       advance_clock(Hartid_t fid);
   StallCause addInst(Dinst *dinst);
   void       retire();
 

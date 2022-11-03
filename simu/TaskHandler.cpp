@@ -16,8 +16,8 @@ volatile bool                             TaskHandler::terminate_all;
 pthread_mutex_t                           TaskHandler::mutex;
 pthread_mutex_t                           TaskHandler::mutex_terminate;
 
-FlowID *TaskHandler::running;
-FlowID  TaskHandler::running_size;
+Hartid_t *TaskHandler::running;
+Hartid_t  TaskHandler::running_size;
 
 std::vector<EmulInterface *> TaskHandler::emulas;  // associated emula
 std::vector<GProcessor *>    TaskHandler::cpus;    // All the CPUs in the system
@@ -28,7 +28,7 @@ void TaskHandler::report(const char *str) {
   Report::field("OSSim:nCPUs=%d", cpus.size());
   size_t cpuid        = 0;
   size_t cpuid_sub    = 0;
-  FlowID samplercount = 0;
+  Hartid_t samplercount = 0;
 
   for (size_t i = 0; i < emulas.size(); i++) {
     Report::field("OSSim:P(%d)_Sampler=%d", cpuid, (emulas[i]->getSampler())->getsFid());
@@ -55,13 +55,13 @@ void TaskHandler::report(const char *str) {
 }
 /* }}} */
 
-void TaskHandler::addEmul(EmulInterface *eint, FlowID fid) {
+void TaskHandler::addEmul(EmulInterface *eint, Hartid_t fid) {
   /* add a new emulator to the system {{{1 */
 
-  FlowID nemul = SescConf->getRecordSize("", "cpuemul");
+  Hartid_t nemul = SescConf->getRecordSize("", "cpuemul");
 
   if (emulas.empty()) {
-    for (FlowID i = 0; i < nemul; i++) {
+    for (Hartid_t i = 0; i < nemul; i++) {
       emulas.push_back(0x0);
     }
   }
@@ -76,17 +76,17 @@ void TaskHandler::addEmul(EmulInterface *eint, FlowID fid) {
 void TaskHandler::addEmulShared(EmulInterface *eint) {
   /* add a new emulator to the system {{{1 */
 
-  FlowID nemul = SescConf->getRecordSize("", "cpuemul");
+  Hartid_t nemul = SescConf->getRecordSize("", "cpuemul");
 
   if (emulas.empty()) {
-    for (FlowID i = 0; i < nemul; i++) {
+    for (Hartid_t i = 0; i < nemul; i++) {
       emulas.push_back(0x0);
     }
   }
 
   I(!emulas.empty());
 
-  for (FlowID i = 0; i < nemul; i++) {
+  for (Hartid_t i = 0; i < nemul; i++) {
     const char *section     = SescConf->getCharPtr("", "cpuemul", i);
     const char *eintsection = eint->getSection();
     if (strcasecmp(section, eintsection) == 0) {
@@ -97,7 +97,7 @@ void TaskHandler::addEmulShared(EmulInterface *eint) {
 
   /*
   // IF DEBUG
-  for(FlowID i=0;i<nemul;i++)
+  for(Hartid_t i=0;i<nemul;i++)
   {
     if (emulas.at(i) != 0x0)
       MSG("Emul[%d] = %s", i, (emulas.at(i))->getSection());
@@ -123,7 +123,7 @@ void TaskHandler::addSimu(GProcessor *gproc) {
 }
 /* }}} */
 
-FlowID TaskHandler::resumeThread(FlowID uid, FlowID fid) {
+Hartid_t TaskHandler::resumeThread(Hartid_t uid, Hartid_t fid) {
   /* activate fid {{{1 */
 
   // I(uid<65535); // No more than 65K threads for the moment
@@ -177,7 +177,7 @@ FlowID TaskHandler::resumeThread(FlowID uid, FlowID fid) {
 
 /* }}} */
 
-FlowID TaskHandler::resumeThread(FlowID fid) {
+Hartid_t TaskHandler::resumeThread(Hartid_t fid) {
   /* activate fid, for GPU flow {{{1 */
 
   I(fid < 65535);  // No more than 65K flows for the moment
@@ -202,7 +202,7 @@ FlowID TaskHandler::resumeThread(FlowID fid) {
 
   pthread_mutex_unlock(&mutex);
 
-  FlowID GPU_fid = (fid);
+  Hartid_t GPU_fid = (fid);
   I(allmaps[GPU_fid].fid == GPU_fid);
 
   pthread_mutex_lock(&mutex);
@@ -237,7 +237,7 @@ FlowID TaskHandler::resumeThread(FlowID fid) {
 }
 /* }}} */
 
-void TaskHandler::removeFromRunning(FlowID fid) {
+void TaskHandler::removeFromRunning(Hartid_t fid) {
   /* remove fid from the running queue {{{1 */
 
   I(allmaps[fid].simu->isROBEmpty());
@@ -264,7 +264,7 @@ void TaskHandler::removeFromRunning(FlowID fid) {
 }
 /* }}} */
 
-void TaskHandler::pauseThread(FlowID fid) {
+void TaskHandler::pauseThread(Hartid_t fid) {
   /* deactivae an fid {{{1 */
 
   fprintf(stderr, "P");
@@ -323,7 +323,7 @@ void TaskHandler::terminate()
 }
 /* }}} */
 
-void TaskHandler::freeze(FlowID fid, Time_t nCycles) {
+void TaskHandler::freeze(Hartid_t fid, Time_t nCycles) {
   /* put a core to sleep (thermal emergency?) fid {{{1 */
   I(allmaps[fid].active);
   I(fid < 65535);  // No more than 65K threads for the moment
@@ -367,7 +367,7 @@ void            TaskHandler::boot()
           one_failed = false;
           all_failed = true;
           for (size_t i = 0; i < running_size; i++) {
-            FlowID fid = running[i];
+            Hartid_t fid = running[i];
             if (allmaps[fid].emul == 0) {
               all_failed = false;
               continue;
@@ -383,7 +383,7 @@ void            TaskHandler::boot()
           break;
         if (retry) {
           for (size_t i = 0; i < running_size; i++) {
-            FlowID fid = running[i];
+            Hartid_t fid = running[i];
             if (!allmaps[fid].active) {
               if (!allmaps[fid].deactivating)
                 removeFromRunning(fid);
@@ -402,7 +402,7 @@ void            TaskHandler::boot()
       } while (running_size);
       // 2nd: advance cores
       for (size_t i = 0; i < running_size; i++) {
-        FlowID fid = running[i];
+        Hartid_t fid = running[i];
         if (allmaps[fid].deactivating) {
 #ifdef DEBUG
           if (!allmaps[fid].simu->isROBEmpty()) {
@@ -474,7 +474,7 @@ void TaskHandler::plugEnd()
   size_t cpuid_sub = 0;
 
   for (size_t i = 0; i < emulas.size(); i++) {
-    allmaps[i].fid  = static_cast<FlowID>(i);
+    allmaps[i].fid  = static_cast<Hartid_t>(i);
     allmaps[i].emul = emulas[i];
     I(allmaps[i].simu == cpus[cpuid]);
 
@@ -500,7 +500,7 @@ void TaskHandler::plugEnd()
   I(running_size > 0);
   /*************************************************/
 
-  running         = new FlowID[allmaps.size()];
+  running         = new Hartid_t[allmaps.size()];
   int running_pos = 0;
   for (size_t i = 0; i < allmaps.size(); i++) {
     if (allmaps[i].emul)
@@ -543,8 +543,8 @@ void TaskHandler::unplug()
 }
 /* }}} */
 
-FlowID TaskHandler::getNumActiveCores() {
-  FlowID numActives = 0;
+Hartid_t TaskHandler::getNumActiveCores() {
+  Hartid_t numActives = 0;
   for (size_t i = 0; i < allmaps.size(); i++) {
     if (allmaps[i].active)
       numActives++;

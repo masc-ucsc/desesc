@@ -74,7 +74,7 @@ GPUSMProcessor::~GPUSMProcessor() { /*{{{*/
   // Nothing to do
 } /*}}}*/
 
-void GPUSMProcessor::fetch(FlowID fid) { /*{{{*/
+void GPUSMProcessor::fetch(Hartid_t fid) { /*{{{*/
   I(eint);
 
   I(active);
@@ -93,7 +93,7 @@ void GPUSMProcessor::fetch(FlowID fid) { /*{{{*/
   }
 } /*}}}*/
 
-bool GPUSMProcessor::advance_clock(FlowID fid) { /*{{{*/
+bool GPUSMProcessor::advance_clock(Hartid_t fid) { /*{{{*/
 
   if (!active) {
     // time to remove from the running queue
@@ -319,7 +319,7 @@ void GPUSMProcessor::retire() { /*{{{*/
     // nCommitted.inc();
 
 #if 0
-    FlowID fid = dinst->getFlowId();
+    Hartid_t fid = dinst->getFlowId();
     if( active) {
       EmulInterface *eint = TaskHandler::getEmul(fid);
       eint->reexecuteTail( fid );

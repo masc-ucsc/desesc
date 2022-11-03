@@ -139,7 +139,7 @@ protected:
   // *******************
 
 public:
-  FetchEngine(FlowID i, GMemorySystem *gms, FetchEngine *fe = 0);
+  FetchEngine(Hartid_t i, GMemorySystem *gms, FetchEngine *fe = 0);
 
   ~FetchEngine();
 
@@ -160,12 +160,12 @@ public:
   uint64_t constant;
 #endif
 
-  void fetch(IBucket *buffer, EmulInterface *eint, FlowID fid);
+  void fetch(IBucket *buffer, EmulInterface *eint, Hartid_t fid);
 
-  typedef CallbackMember3<FetchEngine, IBucket *, EmulInterface *, FlowID, &FetchEngine::fetch> fetchCB;
+  typedef CallbackMember3<FetchEngine, IBucket *, EmulInterface *, Hartid_t, &FetchEngine::fetch> fetchCB;
 
-  void realfetch(IBucket *buffer, EmulInterface *eint, FlowID fid, int32_t n2Fetched);
-  // typedef CallbackMember4<FetchEngine, IBucket *, EmulInterface* , FlowID, int32_t, &FetchEngine::realfetch>  realfetchCB;
+  void realfetch(IBucket *buffer, EmulInterface *eint, Hartid_t fid, int32_t n2Fetched);
+  // typedef CallbackMember4<FetchEngine, IBucket *, EmulInterface* , Hartid_t, int32_t, &FetchEngine::realfetch>  realfetchCB;
 
   void chainPrefDone(Addr_t pc, int distance, Addr_t addr);
   void chainLoadDone(Dinst *dinst);

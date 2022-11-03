@@ -55,12 +55,12 @@ private:
 
   Dinst **RAT;
 
-  void fetch(FlowID fid);
+  void fetch(Hartid_t fid);
 
 protected:
   ClusterManager clusterManager;
   // BEGIN VIRTUAL FUNCTIONS of GProcessor
-  bool advance_clock(FlowID fid);
+  bool advance_clock(Hartid_t fid);
   void retire();
 
   StallCause addInst(Dinst *dinst);

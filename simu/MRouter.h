@@ -4,11 +4,10 @@
 
 #include <vector>
 
+#include "Resource.h"
+#include "estl.h"
 #include "iassert.hpp"
 #include "snippets.hpp"
-
-#include "estl.h"
-#include "Resource.h"
 
 class MemObj;
 class MemRequest;
@@ -77,30 +76,27 @@ public:
 
   void scheduleDispPos(uint32_t pos, MemRequest *mreq, TimeDelta_t lat = 0);
   void scheduleDisp(MemRequest *mreq, TimeDelta_t lat = 0);
-  void sendDirtyDisp(AddrType addr, bool doStats, TimeDelta_t lat = 0);
-  void sendCleanDisp(AddrType addr, bool prefetch, bool doStats, TimeDelta_t lat = 0);
+  void sendDirtyDisp(Addr_t addr, bool doStats, TimeDelta_t lat = 0);
+  void sendCleanDisp(Addr_t addr, bool prefetch, bool doStats, TimeDelta_t lat = 0);
 
   int32_t sendSetStateOthers(MemRequest *mreq, MsgAction ma, TimeDelta_t lat = 0);
   int32_t sendSetStateOthersPos(uint32_t pos, MemRequest *mreq, MsgAction ma, TimeDelta_t lat = 0);
   int32_t sendSetStateAll(MemRequest *mreq, MsgAction ma, TimeDelta_t lat = 0);
 
-  void tryPrefetch(AddrType addr, bool doStats, int degree, AddrType pref_sign, AddrType pc, CallbackBase *cb = 0);
-  void tryPrefetchPos(uint32_t pos, AddrType addr, int degree, bool doStats, AddrType pref_sign, AddrType pc, CallbackBase *cb = 0);
+  void tryPrefetch(Addr_t addr, bool doStats, int degree, Addr_t pref_sign, Addr_t pc, CallbackBase *cb = 0);
+  void tryPrefetchPos(uint32_t pos, Addr_t addr, int degree, bool doStats, Addr_t pref_sign, Addr_t pc, CallbackBase *cb = 0);
 
-  TimeDelta_t ffread(AddrType addr);
-  TimeDelta_t ffwrite(AddrType addr);
-  TimeDelta_t ffreadPos(uint32_t pos, AddrType addr);
-  TimeDelta_t ffwritePos(uint32_t pos, AddrType addr);
+  TimeDelta_t ffread(Addr_t addr);
+  TimeDelta_t ffwrite(Addr_t addr);
+  TimeDelta_t ffreadPos(uint32_t pos, Addr_t addr);
+  TimeDelta_t ffwritePos(uint32_t pos, Addr_t addr);
 
-  bool isBusyPos(uint32_t pos, AddrType addr) const;
+  bool isBusyPos(uint32_t pos, Addr_t addr) const;
 
-  bool isTopLevel() const {
-    return up_node.empty();
-  }
+  bool isTopLevel() const { return up_node.empty(); }
 
   MemObj *getDownNode(int pos = 0) const {
     I(down_node.size() > pos);
     return down_node[pos];
   }
 };
-

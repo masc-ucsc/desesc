@@ -34,6 +34,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "LiveCache.h"
+
 #include <limits.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -42,8 +44,6 @@
 #include <unistd.h>
 
 #include <iostream>
-
-#include "LiveCache.h"
 
 //#define MTRACE(a...)   do{ fprintf(stderr,"@%lld %s %d 0x%x:",(long long int)globalClock,getName(), (int)mreq->getID(), (unsigned
 // int)mreq->getAddr()); fprintf(stderr,##a); fprintf(stderr,"\n"); }while(0)
@@ -54,24 +54,22 @@ LiveCache::LiveCache() {
   lineSize     = cacheBank->getLineSize();
   lineSizeBits = log2i(lineSize);
 
-  I(getLineSize() < 4096); // To avoid bank selection conflict (insane LiveCache line)
+  I(getLineSize() < 4096);  // To avoid bank selection conflict (insane LiveCache line)
 
   lineCount = (uint64_t)cacheBank->getNumLines();
   maxOrder  = 0;
 }
 
-LiveCache::~LiveCache() {
-  cacheBank->destroy();
-}
+LiveCache::~LiveCache() { cacheBank->destroy(); }
 
 void LiveCache::read(uint64_t addr) {
   uint64_t tmp;
-  if(cacheBank->findLine(addr))
+  if (cacheBank->findLine(addr))
     tmp = cacheBank->findLine(addr)->getTag();
   else
     tmp = 0;
   Line *l = cacheBank->fillLine(addr);
-  if(l->getTag() != tmp) {
+  if (l->getTag() != tmp) {
     l->st = false;
   }
   l->order = maxOrder;
@@ -87,10 +85,10 @@ void LiveCache::write(uint64_t addr) {
 
 uint64_t LiveCache::traverse(uint64_t *addrs, bool *st) {
   // Creating an array of cache lines
-  Line *   arr[lineCount];
+  Line    *arr[lineCount];
   uint64_t cnt = 0;
-  for(uint64_t i = 0; i < lineCount; i++) {
-    if(cacheBank->getPLine(i) && cacheBank->getPLine(i)->order) {
+  for (uint64_t i = 0; i < lineCount; i++) {
+    if (cacheBank->getPLine(i) && cacheBank->getPLine(i)->order) {
       arr[cnt] = cacheBank->getPLine(i);
       cnt++;
     }
@@ -99,10 +97,10 @@ uint64_t LiveCache::traverse(uint64_t *addrs, bool *st) {
 
   // creating loads and stores arrays
   uint64_t in = 0;
-  for(uint64_t i = 0; i < cnt; i++) {
-    if(arr[i]->getTag() > 0) {
+  for (uint64_t i = 0; i < cnt; i++) {
+    if (arr[i]->getTag() > 0) {
       addrs[in] = (uint64_t)cacheBank->calcAddr4Tag(arr[i]->getTag());
-      if(arr[i]->st)
+      if (arr[i]->st)
         st[in] = true;
       else
         st[in] = false;
@@ -115,12 +113,12 @@ uint64_t LiveCache::traverse(uint64_t *addrs, bool *st) {
 
 void LiveCache::mergeSort(Line **arr, uint64_t len) {
   // in case we had one element
-  if(len < 2)
+  if (len < 2)
     return;
 
   // in case we had two elements
-  if(len == 2) {
-    if(arr[0]->order > arr[1]->order) {
+  if (len == 2) {
+    if (arr[0]->order > arr[1]->order) {
       // swap
       Line *t = arr[0];
       arr[0]  = arr[1];
@@ -131,20 +129,18 @@ void LiveCache::mergeSort(Line **arr, uint64_t len) {
 
   // divide and conquer
   uint64_t mid = (uint64_t)(len / 2);
-  Line *   arr1[mid];
-  Line *   arr2[len - mid];
-  for(uint64_t i = 0; i < mid; i++)
-    arr1[i] = arr[i];
-  for(uint64_t i = 0; i < len - mid; i++)
-    arr2[i] = arr[mid + i];
+  Line    *arr1[mid];
+  Line    *arr2[len - mid];
+  for (uint64_t i = 0; i < mid; i++) arr1[i] = arr[i];
+  for (uint64_t i = 0; i < len - mid; i++) arr2[i] = arr[mid + i];
   mergeSort(arr1, mid);
   mergeSort(arr2, len - mid);
 
   // merging
   uint64_t m = 0;
   uint64_t n = 0;
-  for(uint64_t i = 0; i < len; i++) {
-    if(n >= (len - mid) || (m < mid && arr1[m]->order <= arr2[n]->order)) {
+  for (uint64_t i = 0; i < len; i++) {
+    if (n >= (len - mid) || (m < mid && arr1[m]->order <= arr2[n]->order)) {
       arr[i] = arr1[m];
       m++;
     } else {

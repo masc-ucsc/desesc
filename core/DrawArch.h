@@ -1,10 +1,11 @@
 
 #pragma once
 
-#include <fstream>
-#include <iostream>
 #include <stdint.h>
 #include <stdio.h>
+
+#include <fstream>
+#include <iostream>
 #include <string>
 #include <vector>
 
@@ -20,21 +21,18 @@ public:
   DrawArch(){
       // Constructor
   };
-  ~DrawArch(){
-  }
+  ~DrawArch() {}
 
-  void addObj(const std::string &mystr) {
-    rows.push_back(mystr);
-  }
+  void addObj(const std::string &mystr) { rows.push_back(mystr); }
 
   void drawArchDot(const char *filename) {
-    if(filename == NULL) {
+    if (filename == NULL) {
       fmt::print("Invalid (NULL) file name. Cannot generate the architecture file\n");
       return;
     }
 
     std::fstream fs(filename, std::fstream::out);
-    if(!fs.good()) {
+    if (!fs.good()) {
       std::cerr << "WriteFile() : Opening file failed." << std::endl;
       return;
     }
@@ -43,7 +41,7 @@ public:
     fs << "\n\nnode [color=Green,fontcolor=Blue,font=Courier,shape=record]\n";
 
     std::string str;
-    for(size_t i = 0; i < rows.size(); i++) {
+    for (size_t i = 0; i < rows.size(); i++) {
       str = rows.at(i);
       fs << "\n";
       fs << str.c_str();
@@ -54,4 +52,3 @@ public:
     fs << "\n}\n";
   }
 };
-

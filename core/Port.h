@@ -42,10 +42,9 @@ Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 //
 // Enjoy!
 
-#include "iassert.hpp"
-
 #include "GStats.h"
 #include "callback.hpp"
+#include "iassert.hpp"
 
 typedef uint16_t NumUnits_t;
 
@@ -63,16 +62,10 @@ public:
   PortGeneric(const char *name);
   virtual ~PortGeneric();
 
-  void subscribe() {
-    nUsers++;
-  }
-  void unsubscribe() {
-    nUsers--;
-  }
+  void subscribe() { nUsers++; }
+  void unsubscribe() { nUsers--; }
 
-  TimeDelta_t nextSlotDelta(bool en) {
-    return nextSlot(en) - globalClock;
-  }
+  TimeDelta_t nextSlotDelta(bool en) { return nextSlot(en) - globalClock; }
   //! occupy a time slot in the port.
   //! Returns when the slot started to be occupied
   virtual Time_t nextSlot(bool en) = 0;
@@ -150,7 +143,7 @@ private:
 protected:
   const TimeDelta_t ocp;
   const NumUnits_t  nUnits;
-  Time_t *          portBusyUntil;
+  Time_t           *portBusyUntil;
 
 public:
   PortNPipe(const char *name, NumUnits_t nFU, TimeDelta_t occ);
@@ -161,4 +154,4 @@ public:
   Time_t calcNextSlot() const;
 };
 
-#endif // PORT_H
+#endif  // PORT_H

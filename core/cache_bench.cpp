@@ -9,12 +9,8 @@ class SampleState : public StateGeneric<long> {
 public:
   int32_t id;
 
-  SampleState(int32_t lineSize) {
-    id = 0;
-  }
-  bool operator==(SampleState s) const {
-    return id == s.id;
-  }
+  SampleState(int32_t lineSize) { id = 0; }
+  bool operator==(SampleState s) const { return id == s.id; }
 };
 
 typedef CacheGeneric<SampleState, long> MyCacheType;
@@ -53,26 +49,26 @@ void benchMatrix(const char *str) {
 
   MyCacheType::CacheLine *line;
 
-  for(int32_t i = 0; i < MSIZE; i++) {
-    for(int32_t j = 0; j < MSIZE; j++) {
+  for (int32_t i = 0; i < MSIZE; i++) {
+    for (int32_t j = 0; j < MSIZE; j++) {
       // A[i][j]=0;
 
       // A[i][j]=...
       line = cache->writeLine((long)&A[i][j]);
       nAccess++;
-      if(line == 0) {
+      if (line == 0) {
         cache->fillLine((long)&A[i][j]);
         nAccess++;
         nMisses++;
       }
 
-      for(int32_t k = 0; k < MSIZE; k++) {
+      for (int32_t k = 0; k < MSIZE; k++) {
         // A[i][j] += B[i][j]*C[j][k];
 
         // = ... A[i][j]
         line = cache->readLine((long)&A[i][j]);
         nAccess++;
-        if(line == 0) {
+        if (line == 0) {
           cache->fillLine((long)&A[i][j]);
           nAccess++;
           nMisses++;
@@ -81,7 +77,7 @@ void benchMatrix(const char *str) {
         // = ... B[i][j]
         line = cache->readLine((long)&B[i][j]);
         nAccess++;
-        if(line == 0) {
+        if (line == 0) {
           cache->fillLine((long)&B[i][j]);
           nAccess++;
           nMisses++;
@@ -90,7 +86,7 @@ void benchMatrix(const char *str) {
         // = ... C[i][j]
         line = cache->readLine((long)&C[i][j]);
         nAccess++;
-        if(line == 0) {
+        if (line == 0) {
           cache->fillLine((long)&C[i][j]);
           nAccess++;
           nMisses++;
@@ -99,7 +95,7 @@ void benchMatrix(const char *str) {
         // A[i][j]=...;
         line = cache->writeLine((long)&A[i][j]);
         nAccess++;
-        if(line == 0) {
+        if (line == 0) {
           cache->fillLine((long)&A[i][j]);
           nAccess++;
           nMisses++;
@@ -112,7 +108,7 @@ void benchMatrix(const char *str) {
 }
 
 int main(int32_t argc, const char **argv) {
-  if(argc != 2) {
+  if (argc != 2) {
     MSG("use: CacheSample <cfg_file>");
     exit(0);
   }
@@ -126,11 +122,11 @@ int main(int32_t argc, const char **argv) {
   cache = MyCacheType::create("DL1_core", "", "tst1");
 
   int32_t assoc = SescConf->getInt("DL1_core", "assoc");
-  for(int32_t i = 0; i < assoc; i++) {
+  for (int32_t i = 0; i < assoc; i++) {
     ulong addr = (i << 8) + 0xfa;
 
     MyCacheType::CacheLine *line = cache->findLine(addr);
-    if(line) {
+    if (line) {
       fprintf(stderr, "ERROR: Line 0x%lX (0x%lX) found\n", cache->calcAddr4Tag(line->getTag()), addr);
       exit(-1);
     }
@@ -138,17 +134,21 @@ int main(int32_t argc, const char **argv) {
     line->id = i;
   }
 
-  for(int32_t i = 0; i < assoc; i++) {
+  for (int32_t i = 0; i < assoc; i++) {
     ulong addr = (i << 8) + 0xFa;
 
     MyCacheType::CacheLine *line = cache->findLine(addr);
-    if(line == 0) {
+    if (line == 0) {
       fprintf(stderr, "ERROR: Line (0x%lX) NOT found\n", addr);
       exit(-1);
     }
-    if(line->id != i) {
-      fprintf(stderr, "ERROR: Line 0x%lX (0x%lX) line->id %d vs id %d (bad LRU policy)\n", cache->calcAddr4Tag(line->getTag()),
-              addr, line->id, i);
+    if (line->id != i) {
+      fprintf(stderr,
+              "ERROR: Line 0x%lX (0x%lX) line->id %d vs id %d (bad LRU policy)\n",
+              cache->calcAddr4Tag(line->getTag()),
+              addr,
+              line->id,
+              i);
       exit(-1);
     }
   }

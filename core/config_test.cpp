@@ -12,10 +12,9 @@
 class Config_test : public ::testing::Test {
 protected:
   void SetUp() override {
-
     std::ofstream file;
 
-    file.open ("config_test_sample.toml");
+    file.open("config_test_sample.toml");
 
     file << "[sec1]\n";
     file << "foo = \"mytxt\"\n";
@@ -47,33 +46,33 @@ protected:
 };
 
 TEST_F(Config_test, trivial) {
-
   Config::init("config_test_sample.toml");
 
-  EXPECT_EQ(Config::get_string("sec1","foo"), "mytxt");
-  EXPECT_EQ(Config::get_array_size("sec2","vfoo1"), 3);
-  EXPECT_EQ(Config::get_array_size("sec2","vfoo2"), 2);
+  EXPECT_EQ(Config::get_string("sec1", "foo"), "mytxt");
+  EXPECT_EQ(Config::get_array_size("sec2", "vfoo1"), 3);
+  EXPECT_EQ(Config::get_array_size("sec2", "vfoo2"), 2);
 
-  EXPECT_EQ(Config::get_string("sec3","vfoo1", {"potato", "rice"}), "potato");
-  EXPECT_EQ(Config::get_string("sec3","vfoo1", {"rice"}), "INVALID");
+  EXPECT_EQ(Config::get_string("sec3", "vfoo1", {"potato", "rice"}), "potato");
+  EXPECT_EQ(Config::get_string("sec3", "vfoo1", {"rice"}), "INVALID");
+
+  EXPECT_TRUE(Config::has_entry("sec3", "vfoo1"));
+  EXPECT_FALSE(Config::has_entry("sec3", "vfoo_not"));
+  EXPECT_FALSE(Config::has_entry("false_entry", "vfoo1"));
 }
 
 TEST_F(Config_test, integers) {
-
   Config::init("config_test_sample.toml");
 
-  EXPECT_EQ(Config::get_integer("int_test","a"), -33);
-  EXPECT_EQ(Config::get_integer("int_test","b",-100,100), 33);
-  EXPECT_EQ(Config::get_integer("int_test","b",-10,10), 0);
+  EXPECT_EQ(Config::get_integer("int_test", "a"), -33);
+  EXPECT_EQ(Config::get_integer("int_test", "b", -100, 100), 33);
+  EXPECT_EQ(Config::get_integer("int_test", "b", -10, 10), 0);
 }
 
 TEST_F(Config_test, indirect) {
-
   Config::init("config_test_sample.toml");
 
-  EXPECT_EQ(Config::get_integer("base","a", 0, "v"), 3);
-  EXPECT_EQ(Config::get_integer("base","a", 1, "v"), 4);
-  EXPECT_EQ(Config::get_integer("base","a", 0, "v", -10,10), 3);
-  EXPECT_EQ(Config::get_integer("base","a", 1, "v", -1,2), 0);
+  EXPECT_EQ(Config::get_integer("base", "a", 0, "v"), 3);
+  EXPECT_EQ(Config::get_integer("base", "a", 1, "v"), 4);
+  EXPECT_EQ(Config::get_integer("base", "a", 0, "v", -10, 10), 3);
+  EXPECT_EQ(Config::get_integer("base", "a", 1, "v", -1, 2), 0);
 }
-

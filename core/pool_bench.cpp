@@ -7,26 +7,22 @@
 #include <stdlib.h>
 #include <sys/time.h>
 #include <unistd.h>
+
 #include <vector>
 
-#include "iassert.hpp"
-#include "snippets.hpp"
 #include "ThreadSafeFIFO.h"
+#include "iassert.hpp"
 #include "pool.hpp"
+#include "snippets.hpp"
 
 class DummyObjTest {
   int32_t c;
   char    x;
 
 public:
-  char get() const {
-    return c + x;
-  };
+  char get() const { return c + x; };
 
-  DummyObjTest()
-      : c(0)
-      , x(0) {
-  }
+  DummyObjTest() : c(0), x(0) {}
 
   void put(int32_t c_, char x_) {
     c = c_;
@@ -39,14 +35,9 @@ class DummyObjTest2 {
   char    x;
 
 public:
-  int32_t get() const {
-    return c + x;
-  };
+  int32_t get() const { return c + x; };
 
-  DummyObjTest2()
-      : c(0)
-      , x(0) {
-  }
+  DummyObjTest2() : c(0), x(0) {}
 
   void put(int32_t c_, char x_) {
     c = c_;
@@ -56,12 +47,9 @@ public:
 
 timeval stTime;
 
-void start() {
-  gettimeofday(&stTime, 0);
-}
+void start() { gettimeofday(&stTime, 0); }
 
 void finish(const char *str, int niters) {
-
   timeval endTime;
   gettimeofday(&endTime, 0);
 
@@ -83,15 +71,15 @@ void pool_test() {
 
   start();
 
-  for(int32_t i = 0; i < 612333; i++) {
-    for(char j = 0; j < 12; j++) {
+  for (int32_t i = 0; i < 612333; i++) {
+    for (char j = 0; j < 12; j++) {
       DummyObjTest *o = pool1.out();
       pooled++;
       o->put(j, j);
       p.push_back(o);
     }
 
-    for(char j = 0; j < 12; j++) {
+    for (char j = 0; j < 12; j++) {
       DummyObjTest *o = p.back();
       total += o->get();
       p.pop_back();
@@ -99,15 +87,15 @@ void pool_test() {
     }
   }
 
-  for(int32_t i = 0; i < 752333; i++) {
-    for(char j = 0; j < 20; j++) {
+  for (int32_t i = 0; i < 752333; i++) {
+    for (char j = 0; j < 20; j++) {
       DummyObjTest *o = pool1.out();
       pooled++;
       o->put(j - 7, j);
       p.push_back(o);
     }
 
-    for(char j = 0; j < 20; j++) {
+    for (char j = 0; j < 20; j++) {
       DummyObjTest *o = p.back();
       total += o->get();
       p.pop_back();
@@ -115,7 +103,7 @@ void pool_test() {
     }
   }
 
-  for(int32_t i = 0; i < 20552333; i++) {
+  for (int32_t i = 0; i < 20552333; i++) {
     DummyObjTest *o = pool1.out();
     pooled++;
     o->put(i - 1952333, 2);
@@ -138,15 +126,15 @@ void tspool_test() {
 
   start();
 
-  for(int32_t i = 0; i < 612333; i++) {
-    for(char j = 0; j < 12; j++) {
+  for (int32_t i = 0; i < 612333; i++) {
+    for (char j = 0; j < 12; j++) {
       DummyObjTest *o = pool1.out();
       pooled++;
       o->put(j, j);
       p.push_back(o);
     }
 
-    for(char j = 0; j < 12; j++) {
+    for (char j = 0; j < 12; j++) {
       DummyObjTest *o = p.back();
       total += o->get();
       p.pop_back();
@@ -154,15 +142,15 @@ void tspool_test() {
     }
   }
 
-  for(int32_t i = 0; i < 752333; i++) {
-    for(char j = 0; j < 20; j++) {
+  for (int32_t i = 0; i < 752333; i++) {
+    for (char j = 0; j < 20; j++) {
       DummyObjTest *o = pool1.out();
       pooled++;
       o->put(j - 7, j);
       p.push_back(o);
     }
 
-    for(char j = 0; j < 20; j++) {
+    for (char j = 0; j < 20; j++) {
       DummyObjTest *o = p.back();
       total += o->get();
       p.pop_back();
@@ -170,7 +158,7 @@ void tspool_test() {
     }
   }
 
-  for(int32_t i = 0; i < 20552333; i++) {
+  for (int32_t i = 0; i < 20552333; i++) {
     DummyObjTest *o = pool1.out();
     pooled++;
     o->put(i - 1952333, 2);
@@ -189,10 +177,10 @@ extern "C" void *bootstrap(void *threadargs) {
   (void)threadargs;
   // Producer
 
-  for(int32_t i = 0; i < 7000000; i++) {
+  for (int32_t i = 0; i < 7000000; i++) {
     DummyObjTest2 obj;
     obj.put(i, 0);
-    while(tsfifo.full()) {
+    while (tsfifo.full()) {
       ;
       // printf("f");
     }
@@ -204,7 +192,6 @@ extern "C" void *bootstrap(void *threadargs) {
 }
 
 void test_tspool_threaded() {
-
   pthread_t qemu_thread;
 
   pthread_create(&qemu_thread, 0, &bootstrap, (void *)0);
@@ -212,22 +199,22 @@ void test_tspool_threaded() {
   // Consumer
   start();
 
-  for(int32_t i = 0; i < 7000000; i++) {
-    while(tsfifo.empty()) {
+  for (int32_t i = 0; i < 7000000; i++) {
+    while (tsfifo.empty()) {
       ;
       // printf("e");
     }
 #if 1
     DummyObjTest2 obj;
     tsfifo.pop(&obj);
-    if(obj.get() != i) {
+    if (obj.get() != i) {
       printf("ERROR %d vs %d\n", obj.get(), i);
       pthread_kill(qemu_thread, SIGKILL);
       exit(-3);
     }
 #else
     uint32_t j = tsfifo.pop();
-    if(j != i) {
+    if (j != i) {
       printf("ERROR %d vs %d\n", j, i);
       pthread_kill(qemu_thread, SIGKILL);
       exit(-3);
@@ -241,7 +228,6 @@ void test_tspool_threaded() {
 }
 
 int main() {
-
   tspool_test();
   pool_test();
   test_tspool_threaded();

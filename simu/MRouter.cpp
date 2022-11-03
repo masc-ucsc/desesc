@@ -34,9 +34,9 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "MRouter.h"
-#include "MemRequest.h"
 
 #include "DrawArch.h"
+#include "MemRequest.h"
 extern DrawArch arch;
 
 /* }}} */
@@ -52,51 +52,49 @@ MRouter::MRouter(MemObj *obj)
 
 MRouter::~MRouter()
 /* destructor {{{1 */
-{
-}
+{}
 /* }}} */
 
 int16_t MRouter::getCreatorPort(const MemRequest *mreq) const {
-  if(up_node.empty())
+  if (up_node.empty())
     return -1;
 
-  if(up_node.size() == 1)
-    return 0; // Most common case
+  if (up_node.size() == 1)
+    return 0;  // Most common case
 
   UPMapType::const_iterator it = up_map.find(mreq->getCreator());
-  if(it == up_map.end()) {
-    return -1; // This happens when a mreq is created by the middle node
+  if (it == up_map.end()) {
+    return -1;  // This happens when a mreq is created by the middle node
   }
 
   MemObj *obj = it->second;
 
-  for(size_t i = 0; i < up_node.size(); i++) {
-    if(up_node[i] == obj)
+  for (size_t i = 0; i < up_node.size(); i++) {
+    if (up_node[i] == obj)
       return i;
   }
 
-  return -1; // Not Found
+  return -1;  // Not Found
 }
 
 void MRouter::fillRouteTables()
 // populate router tables with the up/down nodes {{{1
 {
-
-  I(up_node.size() == 0); // First level cache only
+  I(up_node.size() == 0);  // First level cache only
   I(up_map.size() == 0);
   MSG("Fill router is %s", self_mobj->getName());
 
   // it can be a nicecache I(down_node.size()>=1);
-  for(size_t i = 0; i < down_node.size(); i++) {
+  for (size_t i = 0; i < down_node.size(); i++) {
     down_node[i]->getRouter()->updateRouteTables(self_mobj, self_mobj);
   }
 
   // Look for nicecache or memory, and propagate up to the nodes that do not need coherence (llc)
-  MemObj * bottom = self_mobj;
+  MemObj  *bottom = self_mobj;
   MRouter *rb     = this;
-  while(rb) {
+  while (rb) {
     bottom = rb->self_mobj;
-    if(rb->down_node.empty())
+    if (rb->down_node.empty())
       rb = 0;
     else
       rb = rb->down_node[0]->getRouter();
@@ -104,14 +102,14 @@ void MRouter::fillRouteTables()
   MSG("Bottom:clear router is %s", bottom->getName());
   rb = bottom->getRouter();
   rb->self_mobj->clearNeedsCoherence();
-  while(rb->up_node.size() == 1) {
+  while (rb->up_node.size() == 1) {
     MemObj *uobj = rb->up_node[0];
     MSG("single:clear router is %s", uobj->getName());
     uobj->clearNeedsCoherence();
     rb = uobj->router;
   }
-  if(!rb->up_node.empty()) {
-    for(size_t i = 0; i < rb->up_node.size(); i++) {
+  if (!rb->up_node.empty()) {
+    for (size_t i = 0; i < rb->up_node.size(); i++) {
       MemObj *uobj = rb->up_node[0];
       //      MSG("Use:set router is %s",uobj->getName());
       uobj->setNeedsCoherence();
@@ -129,15 +127,15 @@ void MRouter::updateRouteTables(MemObj *upmobj, MemObj *const top_node)
   up_map[top_node] = upmobj;
   // MSG("Router %s: Setting upmap[%s (Addr = %p)] = %s (Addr =
   // %p)",self_mobj->getName(),top_node->getName(),top_node,upmobj->getName(),upmobj);
-  for(size_t i = 0; i < down_node.size(); i++) {
+  for (size_t i = 0; i < down_node.size(); i++) {
     down_node[i]->getRouter()->updateRouteTables(self_mobj, top_node);
     down_node[i]->getRouter()->updateRouteTables(self_mobj, self_mobj);
   }
 
 #ifdef DEBUG
   bool found = false;
-  for(size_t i = 0; i < up_node.size(); i++) {
-    if(up_node[i] == upmobj) {
+  for (size_t i = 0; i < up_node.size(); i++) {
+    if (up_node[i] == upmobj) {
       found = true;
       break;
     }
@@ -214,7 +212,7 @@ void MRouter::scheduleReqAck(MemRequest *mreq, TimeDelta_t lat)
   I(!up_node.empty());
   MemObj *obj = up_node[0];
 
-  if(up_node.size() > 1) {
+  if (up_node.size() > 1) {
     UPMapType::const_iterator it = up_map.find(mreq->getHomeNode());
     I(it != up_map.end());
     obj = it->second;
@@ -229,7 +227,7 @@ void MRouter::scheduleReqAckAbs(MemRequest *mreq, Time_t w)
 {
   I(!up_node.empty());
   MemObj *obj = up_node[0];
-  if(up_node.size() > 1) {
+  if (up_node.size() > 1) {
     UPMapType::const_iterator it = up_map.find(mreq->getHomeNode());
     I(it != up_map.end());
     obj = it->second;
@@ -293,14 +291,14 @@ void MRouter::scheduleDisp(MemRequest *mreq, TimeDelta_t lat)
 }
 /* }}} */
 
-void MRouter::sendDirtyDisp(AddrType addr, bool doStats, TimeDelta_t lat)
+void MRouter::sendDirtyDisp(Addr_t addr, bool doStats, TimeDelta_t lat)
 /* schedule Displace (down) {{{1 */
 {
   I(down_node.size() == 1);
   MemRequest::sendDirtyDisp(down_node[0], self_mobj, addr, doStats);
 }
 /* }}} */
-void MRouter::sendCleanDisp(AddrType addr, bool prefetch, bool doStats, TimeDelta_t lat)
+void MRouter::sendCleanDisp(Addr_t addr, bool prefetch, bool doStats, TimeDelta_t lat)
 /* schedule Displace (down) {{{1 */
 {
   I(down_node.size() == 1);
@@ -311,24 +309,24 @@ void MRouter::sendCleanDisp(AddrType addr, bool prefetch, bool doStats, TimeDelt
 int32_t MRouter::sendSetStateOthers(MemRequest *mreq, MsgAction ma, TimeDelta_t lat)
 /* send setState to others, return how many {{{1 */
 {
-  if(up_node.size() <= 1)
-    return 0; // if single node, for sure it does not get one
+  if (up_node.size() <= 1)
+    return 0;  // if single node, for sure it does not get one
 
-  bool     doStats = mreq->getStatsFlag();
-  AddrType addr    = mreq->getAddr();
+  bool   doStats = mreq->getStatsFlag();
+  Addr_t addr    = mreq->getAddr();
 
-  MemObj *                  skip_mobj = 0;
+  MemObj                   *skip_mobj = 0;
   UPMapType::const_iterator it        = up_map.find(mreq->getHomeNode());
   I(it != up_map.end());
   skip_mobj = it->second;
 
   int32_t conta = 0;
   I(mreq->isReq() || mreq->isReqAck());
-  for(size_t i = 0; i < up_node.size(); i++) {
-    if(up_node[i] == skip_mobj)
+  for (size_t i = 0; i < up_node.size(); i++) {
+    if (up_node[i] == skip_mobj)
       continue;
 
-    if(addr == 0xa000000005601213) {
+    if (addr == 0xa000000005601213) {
       I(0);
     }
 
@@ -346,13 +344,13 @@ int32_t MRouter::sendSetStateOthers(MemRequest *mreq, MsgAction ma, TimeDelta_t 
 int32_t MRouter::sendSetStateOthersPos(uint32_t pos, MemRequest *mreq, MsgAction ma, TimeDelta_t lat)
 /* send setState to specific pos, return how many {{{1 */
 {
-  if(up_node.size() <= 1)
-    return 0; // if single node, for sure it does not get one
+  if (up_node.size() <= 1)
+    return 0;  // if single node, for sure it does not get one
 
-  bool     doStats = mreq->getStatsFlag();
-  AddrType addr    = mreq->getAddr();
+  bool   doStats = mreq->getStatsFlag();
+  Addr_t addr    = mreq->getAddr();
 
-  if(addr == 0xa000000005601213) {
+  if (addr == 0xa000000005601213) {
     I(0);
   }
 
@@ -368,18 +366,18 @@ int32_t MRouter::sendSetStateOthersPos(uint32_t pos, MemRequest *mreq, MsgAction
 int32_t MRouter::sendSetStateAll(MemRequest *mreq, MsgAction ma, TimeDelta_t lat)
 /* send setState to others, return how many {{{1 */
 {
-  if(up_node.empty())
-    return 0; // top node?
+  if (up_node.empty())
+    return 0;  // top node?
 
-  bool     doStats = mreq->getStatsFlag();
-  AddrType addr    = mreq->getAddr();
-  if(addr == 0xa000000005601213) {
+  bool   doStats = mreq->getStatsFlag();
+  Addr_t addr    = mreq->getAddr();
+  if (addr == 0xa000000005601213) {
     I(0);
   }
 
   I(mreq->isSetState());
   int32_t conta = 0;
-  for(size_t i = 0; i < up_node.size(); i++) {
+  for (size_t i = 0; i < up_node.size(); i++) {
     MemRequest *breq = MemRequest::createSetState(self_mobj, mreq->getCreator(), ma, addr, doStats);
     breq->addPendingSetStateAck(mreq);
 
@@ -391,15 +389,14 @@ int32_t MRouter::sendSetStateAll(MemRequest *mreq, MsgAction ma, TimeDelta_t lat
 }
 /* }}} */
 
-void MRouter::tryPrefetch(AddrType addr, bool doStats, int degree, AddrType pref_sign, AddrType pc, CallbackBase *cb)
+void MRouter::tryPrefetch(Addr_t addr, bool doStats, int degree, Addr_t pref_sign, Addr_t pc, CallbackBase *cb)
 /* propagate the prefetch to the lower level {{{1 */
 {
   down_node[0]->tryPrefetch(addr, doStats, degree, pref_sign, pc, cb);
 }
 /* }}} */
 
-void MRouter::tryPrefetchPos(uint32_t pos, AddrType addr, int degree, bool doStats, AddrType pref_sign, AddrType pc,
-                             CallbackBase *cb)
+void MRouter::tryPrefetchPos(uint32_t pos, Addr_t addr, int degree, bool doStats, Addr_t pref_sign, Addr_t pc, CallbackBase *cb)
 /* propagate the prefetch to the lower level {{{1 */
 {
   I(pos < down_node.size());
@@ -407,21 +404,21 @@ void MRouter::tryPrefetchPos(uint32_t pos, AddrType addr, int degree, bool doSta
 }
 /* }}} */
 
-TimeDelta_t MRouter::ffread(AddrType addr)
+TimeDelta_t MRouter::ffread(Addr_t addr)
 /* propagate the read to the lower level {{{1 */
 {
   return down_node[0]->ffread(addr);
 }
 /* }}} */
 
-TimeDelta_t MRouter::ffwrite(AddrType addr)
+TimeDelta_t MRouter::ffwrite(Addr_t addr)
 /* propagate the read to the lower level {{{1 */
 {
   return down_node[0]->ffwrite(addr);
 }
 /* }}} */
 
-TimeDelta_t MRouter::ffreadPos(uint32_t pos, AddrType addr)
+TimeDelta_t MRouter::ffreadPos(uint32_t pos, Addr_t addr)
 /* propagate the read to the lower level {{{1 */
 {
   I(pos < down_node.size());
@@ -429,7 +426,7 @@ TimeDelta_t MRouter::ffreadPos(uint32_t pos, AddrType addr)
 }
 /* }}} */
 
-TimeDelta_t MRouter::ffwritePos(uint32_t pos, AddrType addr)
+TimeDelta_t MRouter::ffwritePos(uint32_t pos, Addr_t addr)
 /* propagate the read to the lower level {{{1 */
 {
   I(pos < down_node.size());
@@ -437,7 +434,7 @@ TimeDelta_t MRouter::ffwritePos(uint32_t pos, AddrType addr)
 }
 /* }}} */
 
-bool MRouter::isBusyPos(uint32_t pos, AddrType addr) const
+bool MRouter::isBusyPos(uint32_t pos, Addr_t addr) const
 /* propagate the isBusy {{{1 */
 {
   I(pos < down_node.size());

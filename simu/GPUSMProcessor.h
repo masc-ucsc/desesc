@@ -35,12 +35,11 @@
 #ifndef GPUSMProcessor_H_
 #define GPUSMProcessor_H_
 
-#include "nanassert.h"
-
 #include "FetchEngine.h"
 #include "GProcessor.h"
 #include "LSQ.h"
 #include "Pipeline.h"
+#include "nanassert.h"
 
 class GPUSMProcessor : public GProcessor {
 private:
@@ -52,7 +51,7 @@ private:
   LSQNone lsq;
   bool    busy;
 
-  bool *inst_perpe_percyc; // Only needed for the GPUSMProc
+  bool *inst_perpe_percyc;  // Only needed for the GPUSMProc
 
   Dinst **RAT;
 
@@ -71,14 +70,10 @@ public:
   GPUSMProcessor(GMemorySystem *gm, CPU_t i);
   virtual ~GPUSMProcessor();
 
-  LSQ *getLSQ() {
-    return &lsq;
-  }
+  LSQ *getLSQ() { return &lsq; }
   void replay(Dinst *dinst);
 
-  bool isFlushing() {
-    return false;
-  }
+  bool isFlushing() { return false; }
 
   bool isReplayRecovering() {
     I(0);

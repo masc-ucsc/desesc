@@ -23,20 +23,19 @@ Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #ifndef BLOOMFILTER_H
 #define BLOOMFILTER_H
 
-#include "iassert.hpp"
-
 #include "GStats.h"
+#include "iassert.hpp"
 
 class BloomFilter {
 private:
-  int32_t * vSize;
-  int32_t * vBits;
+  int32_t  *vSize;
+  int32_t  *vBits;
   unsigned *vMask;
-  int32_t * rShift;
+  int32_t  *rShift;
   int32_t **countVec;
   int32_t   nVectors;
-  int32_t * nonZeroCount;
-  char *    desc;
+  int32_t  *nonZeroCount;
+  char     *desc;
   int32_t   nElements;
 
   bool BFBuild;
@@ -50,9 +49,7 @@ public:
   // the chunk parameters are from the least significant to
   // the most significant portion of the address
   BloomFilter(int32_t nv, ...);
-  BloomFilter()
-      : BFBuild(false) {
-  }
+  BloomFilter() : BFBuild(false) {}
 
   BloomFilter(const BloomFilter &bf);
 
@@ -78,18 +75,16 @@ public:
   int32_t countAlias(unsigned e);
 
   void        dump(const char *msg);
-  const char *getDesc() {
-    return desc;
-  }
+  const char *getDesc() { return desc; }
 
-  int32_t size() { //# of elements encoded
+  int32_t size() {  //# of elements encoded
     return nElements;
   }
 
-  int32_t getSize(); // size of the vectors in bits
+  int32_t getSize();  // size of the vectors in bits
   int32_t getSizeRLE(int32_t base = 0, int32_t runBits = 7);
 
-  FILE *         dumpPtr;
+  FILE          *dumpPtr;
   static int32_t numDumps;
   void           begin_dump_pychart(const char *bname = "bf");
   void           end_dump_pychart();
@@ -105,23 +100,19 @@ private:
 public:
   BitSelection() {
     nBits = 0;
-    for(int32_t i = 0; i < 32; i++) {
+    for (int32_t i = 0; i < 32; i++) {
       bits[i] = 0;
     }
   }
 
   BitSelection(int32_t *bitPos, int32_t n) {
     nBits = 0;
-    for(int32_t i = 0; i < n; i++)
-      addBit(bitPos[i]);
+    for (int32_t i = 0; i < n; i++) addBit(bitPos[i]);
   }
 
-  ~BitSelection() {
-  }
+  ~BitSelection() {}
 
-  int32_t getNBits() {
-    return nBits;
-  }
+  int32_t getNBits() { return nBits; }
 
   void addBit(int32_t b) {
     bits[nBits] = b;
@@ -131,7 +122,7 @@ public:
 
   unsigned permute(unsigned val) {
     unsigned res = 0;
-    for(int32_t i = 0; i < nBits; i++) {
+    for (int32_t i = 0; i < nBits; i++) {
       unsigned bit = (val & mask[i]) ? 1 : 0;
       res          = res | (bit << i);
     }
@@ -140,11 +131,11 @@ public:
 
   void dump(const char *msg) {
     printf("%s:", msg);
-    for(int32_t i = 0; i < nBits; i++) {
+    for (int32_t i = 0; i < nBits; i++) {
       printf(" %d", bits[i]);
     }
     printf("\n");
   }
 };
 
-#endif // BLOOMFILTER_H
+#endif  // BLOOMFILTER_H

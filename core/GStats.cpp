@@ -23,22 +23,21 @@
    Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 */
 
+#include "GStats.h"
+
 #include <math.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
 
-#include "GStats.h"
 #include "Report.h"
 
 /*********************** GStats */
 
 GStats::Container GStats::store;
 
-GStats::GStats()
-    : name(NULL) {
-}
+GStats::GStats() : name(NULL) {}
 
 GStats::~GStats() {
   unsubscribe();
@@ -54,10 +53,9 @@ char *GStats::getText(const char *format, va_list ap) {
 }
 
 void GStats::subscribe() {
-
   I(strcmp(getName(), "") != 0);
 
-  if(store.find(getName()) != store.end()) {
+  if (store.find(getName()) != store.end()) {
     fmt::print("ERROR: gstats is added twice with name [{}]. Use another name\n", getName());
     I(0);
   }
@@ -69,7 +67,7 @@ void GStats::unsubscribe() {
   I(name);
 
   ContainerIter it = store.find(name);
-  if(it != store.end()) {
+  if (it != store.end()) {
     store.erase(it);
   }
 }
@@ -77,26 +75,24 @@ void GStats::unsubscribe() {
 void GStats::report(const char *str) {
   Report::field("#BEGIN GStats::report %s", str);
 
-  for(ContainerIter it = store.begin(); it != store.end(); it++) {
+  for (ContainerIter it = store.begin(); it != store.end(); it++) {
     it->second->reportValue();
   }
 
   Report::field("#END GStats::report %s", str);
 }
 
-void GStats::flushValue() {
-}
+void GStats::flushValue() {}
 
 void GStats::flush() {
-  for(ContainerIter it = store.begin(); it != store.end(); it++) {
+  for (ContainerIter it = store.begin(); it != store.end(); it++) {
     it->second->flushValue();
   }
 }
 
 GStats *GStats::getRef(const char *str) {
-
   ContainerIter it = store.find(str);
-  if(it != store.end())
+  if (it != store.end())
     return it->second;
 
   return 0;
@@ -105,10 +101,10 @@ GStats *GStats::getRef(const char *str) {
 /*********************** GStatsCntr */
 
 GStatsCntr::GStatsCntr(const char *format, ...) {
-  I(format != 0);    // Mandatory to pass a description
-  I(format[0] != 0); // Empty string not valid
+  I(format != 0);     // Mandatory to pass a description
+  I(format[0] != 0);  // Empty string not valid
 
-  char *  str;
+  char   *str;
   va_list ap;
 
   va_start(ap, format);
@@ -122,26 +118,18 @@ GStatsCntr::GStatsCntr(const char *format, ...) {
   subscribe();
 }
 
-double GStatsCntr::getDouble() const {
-  return data;
-}
+double GStatsCntr::getDouble() const { return data; }
 
-void GStatsCntr::reportValue() const {
-  Report::field("%s=%f", name, data);
-}
+void GStatsCntr::reportValue() const { Report::field("%s=%f", name, data); }
 
-int64_t GStatsCntr::getSamples() const {
-  return (int64_t)data;
-}
+int64_t GStatsCntr::getSamples() const { return (int64_t)data; }
 
-void GStatsCntr::flushValue() {
-  data = 0;
-}
+void GStatsCntr::flushValue() { data = 0; }
 
 /*********************** GStatsAvg */
 
 GStatsAvg::GStatsAvg(const char *format, ...) {
-  char *  str;
+  char   *str;
   va_list ap;
 
   va_start(ap, format);
@@ -155,9 +143,7 @@ GStatsAvg::GStatsAvg(const char *format, ...) {
   subscribe();
 }
 
-double GStatsAvg::getDouble() const {
-  return ((double)data) / nData;
-}
+double GStatsAvg::getDouble() const { return ((double)data) / nData; }
 
 void GStatsAvg::sample(const double v, bool en) {
   data += en ? v : 0;
@@ -165,12 +151,10 @@ void GStatsAvg::sample(const double v, bool en) {
 }
 
 void GStatsAvg::reportValue() const {
-  Report::field("%s:n=%lld::v=%f", name, nData, getDouble()); // n first for power
+  Report::field("%s:n=%lld::v=%f", name, nData, getDouble());  // n first for power
 }
 
-int64_t GStatsAvg::getSamples() const {
-  return nData;
-}
+int64_t GStatsAvg::getSamples() const { return nData; }
 
 void GStatsAvg::flushValue() {
   data  = 0;
@@ -180,7 +164,7 @@ void GStatsAvg::flushValue() {
 /*********************** GStatsMax */
 
 GStatsMax::GStatsMax(const char *format, ...) {
-  char *  str;
+  char   *str;
   va_list ap;
 
   va_start(ap, format);
@@ -195,20 +179,16 @@ GStatsMax::GStatsMax(const char *format, ...) {
   subscribe();
 }
 
-void GStatsMax::reportValue() const {
-  Report::field("%s:max=%f:n=%lld", name, maxValue, nData);
-}
+void GStatsMax::reportValue() const { Report::field("%s:max=%f:n=%lld", name, maxValue, nData); }
 
 void GStatsMax::sample(const double v, bool en) {
-  if(!en)
+  if (!en)
     return;
   maxValue = v > maxValue ? v : maxValue;
   nData++;
 }
 
-int64_t GStatsMax::getSamples() const {
-  return nData;
-}
+int64_t GStatsMax::getSamples() const { return nData; }
 
 void GStatsMax::flushValue() {
   maxValue = 0;
@@ -217,10 +197,8 @@ void GStatsMax::flushValue() {
 
 /*********************** GStatsHist */
 
-GStatsHist::GStatsHist(const char *format, ...)
-    : numSample(0)
-    , cumulative(0) {
-  char *  str;
+GStatsHist::GStatsHist(const char *format, ...) : numSample(0), cumulative(0) {
+  char   *str;
   va_list ap;
 
   va_start(ap, format);
@@ -237,12 +215,12 @@ GStatsHist::GStatsHist(const char *format, ...)
 void GStatsHist::reportValue() const {
   int32_t maxKey = 0;
 
-  for(Histogram::const_iterator it = H.begin(); it != H.end(); it++) {
+  for (Histogram::const_iterator it = H.begin(); it != H.end(); it++) {
     Report::field("%s(%d)=%f", name, it->first, it->second);
-    if(it->first > maxKey)
+    if (it->first > maxKey)
       maxKey = it->first;
   }
-  long double div = cumulative; // cummulative has 64bits (double has 54bits mantisa)
+  long double div = cumulative;  // cummulative has 64bits (double has 54bits mantisa)
   div /= numSample;
 
   Report::field("%s:max=%d", name, maxKey);
@@ -251,8 +229,8 @@ void GStatsHist::reportValue() const {
 }
 
 void GStatsHist::sample(bool enable, int32_t key, double weight) {
-  if(enable) {
-    if(H.find(key) == H.end())
+  if (enable) {
+    if (H.find(key) == H.end())
       H[key] = 0;
 
     H[key] += weight;
@@ -262,9 +240,7 @@ void GStatsHist::sample(bool enable, int32_t key, double weight) {
   }
 }
 
-int64_t GStatsHist::getSamples() const {
-  return static_cast<int64_t>(numSample);
-}
+int64_t GStatsHist::getSamples() const { return static_cast<int64_t>(numSample); }
 
 void GStatsHist::flushValue() {
   H.clear();

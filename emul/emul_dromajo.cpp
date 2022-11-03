@@ -4,4 +4,4 @@
 
 #include <stdio.h>
 
-
+// auto bootroom  = Config::get_string("emul", "bootroom");

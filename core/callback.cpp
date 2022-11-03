@@ -7,6 +7,4 @@ EventScheduler::TimedCallbacksQueue EventScheduler::cbQ(256);
 Time_t globalClock = 0;
 Time_t deadClock   = 0;
 
-void EventScheduler::dump() const {
-  I(0);
-}
+void EventScheduler::dump() const { I(0); }

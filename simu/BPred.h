@@ -13,26 +13,25 @@
  *
  */
 
-#include <iostream>
+#include <algorithm>
 #include <deque>
+#include <iostream>
 #include <map>
 #include <vector>
-#include <algorithm>
 
-#include "iassert.hpp"
-#include "dinst.hpp"
-
-#include "estl.h"
 #include "CacheCore.h"
 #include "DOLC.h"
 #include "GStats.h"
 #include "SCTable.h"
+#include "dinst.hpp"
+#include "estl.h"
+#include "iassert.hpp"
 
 #define RAP_T_NT_ONLY 1
 //#define ENABLE_LDBP
 //#define DOC_SIZE 512 //128
 enum PredType { CorrectPrediction = 0, NoPrediction, NoBTBPrediction, MissPrediction };
-enum BrOpType { BEQ = 0, BNE = 1, BLT = 4, BGE = 5, BLTU = 6, BGEU = 7, ILLEGAL_BR = 8};
+enum BrOpType { BEQ = 0, BNE = 1, BLT = 4, BGE = 5, BLTU = 6, BGEU = 7, ILLEGAL_BR = 8 };
 
 class MemObj;
 
@@ -41,13 +40,11 @@ public:
   typedef int64_t HistoryType;
   class Hash4HistoryType {
   public:
-    size_t operator()(const HistoryType &addr) const {
-      return ((addr) ^ (addr >> 16));
-    }
+    size_t operator()(const HistoryType &addr) const { return ((addr) ^ (addr >> 16)); }
   };
 
-  HistoryType calcHist(AddrType pc) const {
-    HistoryType cid = pc >> 2; // psudo-PC works, no need lower 2 bit
+  HistoryType calcHist(Addr_t pc) const {
+    HistoryType cid = pc >> 2;  // psudo-PC works, no need lower 2 bit
 
     // Remove used bits (restrict predictions per cycle)
     cid = cid >> addrShift;
@@ -60,8 +57,8 @@ public:
 protected:
   const int32_t id;
 
-  GStatsCntr nHit;  // N.B. predictors should not update these counters directly
-  GStatsCntr nMiss; // in their predict() function.
+  GStatsCntr nHit;   // N.B. predictors should not update these counters directly
+  GStatsCntr nMiss;  // in their predict() function.
 
   int32_t addrShift;
   int32_t maxCores;
@@ -71,15 +68,15 @@ public:
   virtual ~BPred();
 
   virtual PredType predict(Dinst *dinst, bool doUpdate, bool doStats) = 0;
-  virtual void     fetchBoundaryBegin(Dinst *dinst); // If the branch predictor support fetch boundary model, do it
-  virtual void     fetchBoundaryEnd();               // If the branch predictor support fetch boundary model, do it
+  virtual void     fetchBoundaryBegin(Dinst *dinst);  // If the branch predictor support fetch boundary model, do it
+  virtual void     fetchBoundaryEnd();                // If the branch predictor support fetch boundary model, do it
 
   PredType doPredict(Dinst *dinst, bool doStats = true) {
     PredType pred = predict(dinst, true, doStats);
-    if(pred == NoPrediction)
+    if (pred == NoPrediction)
       return pred;
 
-    if(dinst->getInst()->isJump())
+    if (dinst->getInst()->isJump())
       return pred;
 
     nHit.inc(pred == CorrectPrediction && dinst->getStatsFlag() && doStats);
@@ -88,9 +85,7 @@ public:
     return pred;
   }
 
-  void update(Dinst *dinst) {
-    predict(dinst, true, false);
-  }
+  void update(Dinst *dinst) { predict(dinst, true, false); }
 };
 
 class BPRas : public BPred {
@@ -98,8 +93,8 @@ private:
   const uint16_t RasSize;
   const uint16_t rasPrefetch;
 
-  AddrType *stack;
-  int32_t   index;
+  Addr_t *stack;
+  int32_t index;
 
 protected:
 public:
@@ -112,25 +107,21 @@ public:
 
 class BPBTB : public BPred {
 private:
-  GStatsCntr nHitLabel; // hits to the icache label (ibtb)
-  DOLC *     dolc;
+  GStatsCntr nHitLabel;  // hits to the icache label (ibtb)
+  DOLC      *dolc;
   bool       btbicache;
   uint64_t   btbHistorySize;
 
-  class BTBState : public StateGeneric<AddrType> {
+  class BTBState : public StateGeneric<Addr_t> {
   public:
-    BTBState(int32_t lineSize) {
-      inst = 0;
-    }
+    BTBState(int32_t lineSize) { inst = 0; }
 
-    AddrType inst;
+    Addr_t inst;
 
-    bool operator==(BTBState s) const {
-      return inst == s.inst;
-    }
+    bool operator==(BTBState s) const { return inst == s.inst; }
   };
 
-  typedef CacheGeneric<BTBState, AddrType> BTBCache;
+  typedef CacheGeneric<BTBState, Addr_t> BTBCache;
 
   BTBCache *data;
 
@@ -149,10 +140,7 @@ private:
 
 protected:
 public:
-  BPOracle(int32_t i, const char *section, const char *sname)
-      : BPred(i, section, sname, "Oracle")
-      , btb(i, section, sname) {
-  }
+  BPOracle(int32_t i, const char *section, const char *sname) : BPred(i, section, sname, "Oracle"), btb(i, section, sname) {}
 
   PredType predict(Dinst *dinst, bool doUpdate, bool doStats);
 };
@@ -163,9 +151,7 @@ private:
 
 protected:
 public:
-  BPNotTaken(int32_t i, const char *section, const char *sname)
-      : BPred(i, section, sname, "NotTaken")
-      , btb(i, section, sname) {
+  BPNotTaken(int32_t i, const char *section, const char *sname) : BPred(i, section, sname, "NotTaken"), btb(i, section, sname) {
     // Done
   }
 
@@ -176,8 +162,7 @@ class BPMiss : public BPred {
 private:
 protected:
 public:
-  BPMiss(int32_t i, const char *section, const char *sname)
-      : BPred(i, section, sname, "Miss") {
+  BPMiss(int32_t i, const char *section, const char *sname) : BPred(i, section, sname, "Miss") {
     // Done
   }
 
@@ -191,8 +176,7 @@ private:
 protected:
 public:
   BPNotTakenEnhanced(int32_t i, const char *section, const char *sname)
-      : BPred(i, section, sname, "NotTakenEnhanced")
-      , btb(i, section, sname) {
+      : BPred(i, section, sname, "NotTakenEnhanced"), btb(i, section, sname) {
     // Done
   }
 
@@ -205,9 +189,7 @@ private:
 
 protected:
 public:
-  BPTaken(int32_t i, const char *section, const char *sname)
-      : BPred(i, section, sname, "Taken")
-      , btb(i, section, sname) {
+  BPTaken(int32_t i, const char *section, const char *sname) : BPred(i, section, sname, "Taken"), btb(i, section, sname) {
     // Done
   }
 
@@ -260,7 +242,7 @@ private:
   SCTable globalTable;
 
   DOLC         dolc;
-  HistoryType *historyTable; // LHR
+  HistoryType *historyTable;  // LHR
   bool         useDolc;
 
 protected:
@@ -280,7 +262,7 @@ private:
 
   SCTable globalTable;
 
-  HistoryType ghr; // Global History Register
+  HistoryType ghr;  // Global History Register
 
   SCTable localTable;
   SCTable metaTable;
@@ -332,13 +314,13 @@ private:
   SCTable ctableTaken;
   SCTable ctableNotTaken;
 
-  HistoryType ghr; // Global History Register
+  HistoryType ghr;  // Global History Register
 
-  uint8_t *   CacheTaken;
+  uint8_t    *CacheTaken;
   HistoryType CacheTakenMask;
   HistoryType CacheTakenTagMask;
 
-  uint8_t *   CacheNotTaken;
+  uint8_t    *CacheNotTaken;
   HistoryType CacheNotTakenMask;
   HistoryType CacheNotTakenTagMask;
 
@@ -375,11 +357,11 @@ private:
   uint8_t *MINITAG;
 
   uint8_t genMiniTag(const Dinst *dinst) const {
-    AddrType t = dinst->getPC() >> 2;
+    Addr_t t = dinst->getPC() >> 2;
     return (uint8_t)((t ^ (t >> 3)) & 3);
   }
 
-  char ** pred;
+  char  **pred;
   int32_t TC;
 
 protected:
@@ -410,7 +392,7 @@ private:
   };
 
   const uint32_t nentries;
-  LoopEntry *    table; // TODO: add assoc, now just BIG
+  LoopEntry     *table;  // TODO: add assoc, now just BIG
 
 public:
   LoopPredictor(int size);
@@ -420,7 +402,6 @@ public:
   bool     isTaken(uint64_t key, uint64_t tag, bool taken);
   uint32_t getLoopIter(uint64_t key, uint64_t tag) const;
 };
-
 
 class BPTData : public BPred {
 private:
@@ -434,25 +415,24 @@ private:
       ctr = 0;
     }
 
-    AddrType tag;
-    int8_t   ctr;
+    Addr_t tag;
+    int8_t ctr;
   };
 
-  HASH_MAP<AddrType, tDataTableEntry> tTable;
+  HASH_MAP<Addr_t, tDataTableEntry> tTable;
 
 protected:
 public:
   BPTData(int32_t i, const char *section, const char *sname);
-  ~BPTData() {
-  }
+  ~BPTData() {}
 
   PredType predict(Dinst *dinst, bool doUpdate, bool doStats);
 };
 
 /*LOAD BRANCH PREDICTOR (LDBP)*/
 class BPLdbp : public BPred {
-  private:
-    BPBTB btb;
+private:
+  BPBTB btb;
 #if 0
     SCTable ldbp_table;
     std::map<uint64_t, bool> ldbp_map;
@@ -463,65 +443,63 @@ class BPLdbp : public BPred {
         ctr = 0;
       }
 
-      AddrType tag;
+      Addr_t tag;
       int8_t ctr;
     };
 #endif
 
-  public:
+public:
+  const int DOC_SIZE;
+  MemObj   *DL1;
 
-    const int DOC_SIZE;
-    MemObj *DL1;
+  BPLdbp(int32_t i, const char *section, const char *sname, MemObj *dl1 = 0);
+  ~BPLdbp() {}
 
-    BPLdbp(int32_t i, const char *section, const char *sname, MemObj *dl1 = 0);
-    ~BPLdbp(){}
+  PredType predict(Dinst *dinst, bool doUpdate, bool doStats);
+  bool     outcome_calculator(BrOpType br_op, Data_t br_data1, Data_t br_data2);
+  BrOpType branch_type(Addr_t brpc);
 
-    PredType predict(Dinst *dinst, bool doUpdate, bool doStats);
-    bool outcome_calculator(BrOpType br_op, DataType br_data1, DataType br_data2);
-    BrOpType branch_type(AddrType brpc);
+  struct data_outcome_correlator {
+    data_outcome_correlator() {
+      tag    = 0;
+      taken  = 0;
+      ntaken = 0;
+    }
+    Addr_t tag;
+    int    taken;   // taken counter
+    int    ntaken;  // not taken counter
 
-    struct data_outcome_correlator {
+    int update_doc(Addr_t _tag, bool doc_miss, bool outcome) {
+      // extract current outcome here
+      int max_counter = 7;
+      int conf_pred   = 0;
 
-      data_outcome_correlator() {
-        tag    = 0;
+      if (!doc_miss) {
+        tag       = _tag;
+        conf_pred = doc_compute();
+      } else {
         taken  = 0;
         ntaken = 0;
       }
-      AddrType tag;
-      int taken;  //taken counter
-      int ntaken; // not taken counter
-
-      int update_doc(AddrType _tag, bool doc_miss, bool outcome) {
-        //extract current outcome here
-        int max_counter = 7;
-        int conf_pred = 0;
-
-        if(!doc_miss) {
-          tag = _tag;
-          conf_pred = doc_compute();
-        }else{
-          taken  = 0;
-          ntaken = 0;
-        }
-        //this if loop updates DOC counters
-        if(outcome == true) {
-          if(taken < max_counter)
-            taken++;
-          else if(ntaken > 0)
-            ntaken--;
-        }else {
-          if(ntaken < max_counter)
-            ntaken++;
-          else if(taken > 0)
-            taken--;
-        }
-        return conf_pred;
+      // this if loop updates DOC counters
+      if (outcome == true) {
+        if (taken < max_counter)
+          taken++;
+        else if (ntaken > 0)
+          ntaken--;
+      } else {
+        if (ntaken < max_counter)
+          ntaken++;
+        else if (taken > 0)
+          taken--;
       }
+      return conf_pred;
+    }
 
-      int doc_compute() {
-        int med = (taken == (2*ntaken + 1)) || (ntaken == (2*taken + 1));
-        int low = (taken < (2*ntaken + 1)) && (ntaken < (2*taken + 1));
-        int m = 2 * low + med;
+    int doc_compute() {
+      int med = (taken == (2 * ntaken + 1)) || (ntaken == (2 * taken + 1));
+      int low = (taken < (2 * ntaken + 1)) && (ntaken < (2 * taken + 1));
+      int m   = 2 * low + med;
 #if 0
         if(taken == 7) {
           return 1;
@@ -531,41 +509,42 @@ class BPLdbp : public BPred {
           return 0;
         }
 #endif
-        if(m < 1) {
-          if(taken > ntaken)
-            return 1;
-          return 2;
-        }
-        return 0;
+      if (m < 1) {
+        if (taken > ntaken)
+          return 1;
+        return 2;
       }
-    };
+      return 0;
+    }
+  };
 
-    std::vector<data_outcome_correlator> doc_table = std::vector<data_outcome_correlator>(DOC_SIZE);
-    //std::vector<data_outcome_correlator> doc_table;
+  std::vector<data_outcome_correlator> doc_table = std::vector<data_outcome_correlator>(DOC_SIZE);
+  // std::vector<data_outcome_correlator> doc_table;
 
-    int outcome_doc(Dinst *dinst, AddrType _tag, bool outcome) {
-      //tag is 2n bits
-      AddrType t         = (_tag >> (int)log2i(DOC_SIZE)) & (DOC_SIZE - 1); //upper n bits for tag
-      int index          = _tag & (DOC_SIZE - 1);  //lower n bits for index
-      if(doc_table[index].tag == t) {
-        //MSG("DOC_TABLE_HIT brpc=%llx index=%d tag=%u T=%d NT=%d conf=%d", dinst->getPC(), index, t, doc_table[index].taken, doc_table[index].ntaken, doc_table[index].doc_compute());
-        return doc_table[index].update_doc(t, false, outcome);
-      }
-
-      //DOC miss
-      doc_table[index].tag  = t;
-      //MSG("DOC_TABLE_MISS brpc=%llx index=%d tag=%u T=%d NT=%d", dinst->getPC(), index, t, doc_table[index].taken, doc_table[index].ntaken);
-      return doc_table[index].update_doc(t, true, outcome);
+  int outcome_doc(Dinst *dinst, Addr_t _tag, bool outcome) {
+    // tag is 2n bits
+    Addr_t t     = (_tag >> (int)log2i(DOC_SIZE)) & (DOC_SIZE - 1);  // upper n bits for tag
+    int    index = _tag & (DOC_SIZE - 1);                            // lower n bits for index
+    if (doc_table[index].tag == t) {
+      // MSG("DOC_TABLE_HIT brpc=%llx index=%d tag=%u T=%d NT=%d conf=%d", dinst->getPC(), index, t, doc_table[index].taken,
+      // doc_table[index].ntaken, doc_table[index].doc_compute());
+      return doc_table[index].update_doc(t, false, outcome);
     }
 
+    // DOC miss
+    doc_table[index].tag = t;
+    // MSG("DOC_TABLE_MISS brpc=%llx index=%d tag=%u T=%d NT=%d", dinst->getPC(), index, t, doc_table[index].taken,
+    // doc_table[index].ntaken);
+    return doc_table[index].update_doc(t, true, outcome);
+  }
 };
 
 class BPredictor {
 private:
   const int32_t id;
   const bool    SMTcopy;
-  MemObj *      il1; // For prefetch
-  MemObj *      dl1; //
+  MemObj       *il1;  // For prefetch
+  MemObj       *dl1;  //
 
   BPRas *ras;
   BPred *pred1;
@@ -584,18 +563,18 @@ private:
   GStatsCntr nBranches;
   GStatsCntr nNoPredict;
   GStatsCntr nTaken;
-  GStatsCntr nMiss; // hits == nBranches - nMiss
+  GStatsCntr nMiss;  // hits == nBranches - nMiss
 
   GStatsCntr nBranches2;
   GStatsCntr nTaken2;
-  GStatsCntr nMiss2; // hits == nBranches - nMiss
+  GStatsCntr nMiss2;  // hits == nBranches - nMiss
 
   GStatsCntr nBranches3;
   GStatsCntr nNoPredict3;
-  GStatsCntr nNoPredict_miss3; // NoPred by bpred 3 and no correct pred by other bpreds
-  GStatsCntr nHit3_miss2; // Mispred of Level 2 which are fixed by level 3 BPred
+  GStatsCntr nNoPredict_miss3;  // NoPred by bpred 3 and no correct pred by other bpreds
+  GStatsCntr nHit3_miss2;       // Mispred of Level 2 which are fixed by level 3 BPred
   GStatsCntr nTaken3;
-  GStatsCntr nMiss3; // hits == nBranches - nMiss
+  GStatsCntr nMiss3;  // hits == nBranches - nMiss
 
   GStatsCntr nFixes1;
   GStatsCntr nFixes2;
@@ -621,14 +600,11 @@ public:
   void        dump(const char *str) const;
 
   void set_Miss_Pred_Bool() {
-    Miss_Pred_Bool = 1; // Correct_Prediction==0 in enum before
+    Miss_Pred_Bool = 1;  // Correct_Prediction==0 in enum before
   }
   void unset_Miss_Pred_Bool() {
-    Miss_Pred_Bool = 0; // Correct_Prediction==0 in enum before
+    Miss_Pred_Bool = 0;  // Correct_Prediction==0 in enum before
   }
 
-  bool get_Miss_Pred_Bool_Val() {
-    return Miss_Pred_Bool;
-  }
+  bool get_Miss_Pred_Bool_Val() { return Miss_Pred_Bool; }
 };
-

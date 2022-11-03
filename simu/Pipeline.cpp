@@ -1,23 +1,19 @@
 // See LICENSE for details.
 
-#include "config.hpp"
-
 #include "Pipeline.h"
 
+#include "config.hpp"
+
 IBucket::IBucket(size_t size, Pipeline *p, bool clean)
-    : FastQueue<Dinst *>(size)
-    , cleanItem(clean)
-    , pipeLine(p)
-    , markFetchedCB(this) {
-}
+    : FastQueue<Dinst *>(size), cleanItem(clean), pipeLine(p), markFetchedCB(this) {}
 
 void IBucket::markFetched() {
 #ifndef NDEBUG
   I(fetched == false);
-  fetched = true; // Only called once
+  fetched = true;  // Only called once
 #endif
 
-  if(!empty()) {
+  if (!empty()) {
     //    if (top()->getFlowId())
     //      MSG("@%lld: markFetched Bucket[%p]",(long long int)globalClock, this);
   }
@@ -25,9 +21,7 @@ void IBucket::markFetched() {
   pipeLine->readyItem(this);
 }
 
-bool PipeIBucketLess::operator()(const IBucket *x, const IBucket *y) const {
-  return x->getPipelineId() > y->getPipelineId();
-}
+bool PipeIBucketLess::operator()(const IBucket *x, const IBucket *y) const { return x->getPipelineId() > y->getPipelineId(); }
 
 Pipeline::Pipeline(size_t s, size_t fetch, int32_t maxReqs)
     : PipeLength(s)
@@ -43,8 +37,8 @@ Pipeline::Pipeline(size_t s, size_t fetch, int32_t maxReqs)
   bucketPool.reserve(bucketPoolMaxSize);
   I(bucketPool.empty());
 
-  for(size_t i = 0; i < bucketPoolMaxSize; i++) {
-    IBucket *ib = new IBucket(fetch + 1, this); // +1 instructions
+  for (size_t i = 0; i < bucketPoolMaxSize; i++) {
+    IBucket *ib = new IBucket(fetch + 1, this);  // +1 instructions
     bucketPool.push_back(ib);
   }
 
@@ -52,15 +46,15 @@ Pipeline::Pipeline(size_t s, size_t fetch, int32_t maxReqs)
 }
 
 Pipeline::~Pipeline() {
-  while(!bucketPool.empty()) {
+  while (!bucketPool.empty()) {
     delete bucketPool.back();
     bucketPool.pop_back();
   }
-  while(!buffer.empty()) {
+  while (!buffer.empty()) {
     delete buffer.top();
     buffer.pop();
   }
-  while(!received.empty()) {
+  while (!received.empty()) {
     delete received.top();
     received.pop();
   }
@@ -70,7 +64,7 @@ void Pipeline::readyItem(IBucket *b) {
   b->setClock();
 
   nIRequests++;
-  if(b->getPipelineId() != minItemCntr) {
+  if (b->getPipelineId() != minItemCntr) {
     received.push(b);
     return;
   }
@@ -80,19 +74,19 @@ void Pipeline::readyItem(IBucket *b) {
   // out-of-order the memory requests)
   minItemCntr++;
 
-  if(b->empty())
+  if (b->empty())
     doneItem(b);
   else
     buffer.push(b);
 
-  clearItems(); // Try to insert on minItem reveiced (OoO) buckets
+  clearItems();  // Try to insert on minItem reveiced (OoO) buckets
 }
 
 void Pipeline::clearItems() {
-  while(!received.empty()) {
+  while (!received.empty()) {
     IBucket *b = received.top();
 
-    if(b->getPipelineId() != minItemCntr) {
+    if (b->getPipelineId() != minItemCntr) {
       break;
     }
 
@@ -100,7 +94,7 @@ void Pipeline::clearItems() {
 
     minItemCntr++;
 
-    if(b->empty())
+    if (b->empty())
       doneItem(b);
     else
       buffer.push(b);
@@ -116,8 +110,8 @@ void Pipeline::doneItem(IBucket *b) {
 }
 
 IBucket *Pipeline::nextItem() {
-  while(1) {
-    if(buffer.empty()) {
+  while (1) {
+    if (buffer.empty()) {
 #ifdef DEBUG
       // It should not be possible to propagate more buckets
       clearItems();
@@ -126,7 +120,7 @@ IBucket *Pipeline::nextItem() {
       return 0;
     }
 
-    if(((buffer.top())->getClock() + PipeLength) > globalClock) {
+    if (((buffer.top())->getClock() + PipeLength) > globalClock) {
 #if 0
       fprintf(stderr,"1 @%lld Buffer[%p] .top.ID (%d) ->getClock(@%lld) to be issued after %d cycles\n"
           ,(long long int) globalClock
@@ -164,12 +158,10 @@ IBucket *Pipeline::nextItem() {
 }
 
 PipeQueue::PipeQueue(CPU_t i)
-    : pipeLine(Config::get_integer("soc", "core", i, "decode_delay", 1, 64)
-              +Config::get_integer("soc", "core", i, "rename_delay", 1, 8)
-              ,Config::get_integer("soc", "core", i, "fetch_width", 1, 64)
-              ,Config::get_integer("soc", "core", i, "ftq_size", 1, 64))
+    : pipeLine(
+        Config::get_integer("soc", "core", i, "decode_delay", 1, 64) + Config::get_integer("soc", "core", i, "rename_delay", 1, 8),
+        Config::get_integer("soc", "core", i, "fetch_width", 1, 64), Config::get_integer("soc", "core", i, "ftq_size", 1, 64))
     , instQueue(Config::get_integer("soc", "core", i, "instq_size", 1, 128)) {
-
   auto fetch_width = Config::get_integer("soc", "core", i, "fetch_width", 1, 64);
   auto instq_size  = Config::get_integer("soc", "core", i, "instq_size", fetch_width, 128);
 }
@@ -179,8 +171,7 @@ PipeQueue::~PipeQueue() {
 }
 
 IBucket *Pipeline::newItem() {
-
-  if(nIRequests == 0 || bucketPool.empty())
+  if (nIRequests == 0 || bucketPool.empty())
     return 0;
 
   nIRequests--;

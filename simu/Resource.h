@@ -2,15 +2,14 @@
 
 #pragma once
 
-#include "callback.hpp"
-#include "iassert.hpp"
-
-#include "GStats.h"
 #include "BloomFilter.h"
 #include "FastQueue.h"
-#include "SCB.h"
+#include "GStats.h"
 #include "Prefetcher.h"
+#include "SCB.h"
 #include "StoreSet.h"
+#include "callback.hpp"
+#include "iassert.hpp"
 
 class PortGeneric;
 class Dinst;
@@ -40,10 +39,10 @@ protected:
   Cluster *const     cluster;
   PortGeneric *const gen;
 
-  GStatsAvg avgRenameTime;
-  GStatsAvg avgIssueTime;
-  GStatsAvg avgExecuteTime;
-  GStatsAvg avgRetireTime;
+  GStatsAvg  avgRenameTime;
+  GStatsAvg  avgIssueTime;
+  GStatsAvg  avgExecuteTime;
+  GStatsAvg  avgRetireTime;
   GStatsHist safeHitTimeHist;
   GStatsHist specHitTimeHist;
   GStatsHist latencyHitTimeHist;
@@ -61,12 +60,8 @@ protected:
 public:
   virtual ~Resource();
 
-  const Cluster *getCluster() const {
-    return cluster;
-  }
-  Cluster *getCluster() {
-    return cluster;
-  }
+  const Cluster *getCluster() const { return cluster; }
+  Cluster       *getCluster() { return cluster; }
 
   // Sequence:
   //
@@ -93,12 +88,8 @@ public:
   typedef CallbackMember1<Resource, Dinst *, &Resource::executed>  executedCB;
   typedef CallbackMember1<Resource, Dinst *, &Resource::performed> performedCB;
 
-  Time_t getUsedTime() const {
-    return usedTime;
-  }
-  void setUsedTime() {
-    usedTime = globalClock;
-  }
+  Time_t getUsedTime() const { return usedTime; }
+  void   setUsedTime() { usedTime = globalClock; }
 };
 
 class GMemorySystem;
@@ -112,10 +103,10 @@ protected:
   struct FailType {
     SSID_t     ssid;
     Time_t     id;
-    AddrType   pc;
-    AddrType   addr;
-    AddrType   data;
-    InstOpcode op;
+    Addr_t     pc;
+    Addr_t     addr;
+    Addr_t     data;
+    Opcode op;
   };
   FailType *lf;
 
@@ -126,21 +117,20 @@ public:
 class MemResource : public MemReplay {
 private:
 protected:
-  MemObj *            firstLevelMemObj;
-  MemObj *            DL1;
-  GMemorySystem *     memorySystem;
-  LSQ *               lsq;
-  Prefetcher *        pref;
-  SCB*                scb;
-  GStatsCntr          stldViolations;
-  
-  bool                LSQlateAlloc;
+  MemObj        *firstLevelMemObj;
+  MemObj        *DL1;
+  GMemorySystem *memorySystem;
+  LSQ           *lsq;
+  Prefetcher    *pref;
+  SCB           *scb;
+  GStatsCntr     stldViolations;
 
-  MemResource(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *lsq, StoreSet *ss, Prefetcher *pref, SCB* scb, TimeDelta_t l,
+  bool LSQlateAlloc;
+
+  MemResource(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *lsq, StoreSet *ss, Prefetcher *pref, SCB *scb, TimeDelta_t l,
               GMemorySystem *ms, int32_t id, const char *cad);
 
 public:
-
 };
 
 class FULoad : public MemResource {
@@ -158,7 +148,8 @@ protected:
   typedef CallbackMember1<FULoad, Dinst *, &FULoad::cacheDispatched> cacheDispatchedCB;
 
 public:
-  FULoad(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *lsq, StoreSet *ss, Prefetcher *pref, SCB* scb,  TimeDelta_t lsdelay, TimeDelta_t l, GMemorySystem *ms, int32_t size, int32_t id, const char *cad);
+  FULoad(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *lsq, StoreSet *ss, Prefetcher *pref, SCB *scb, TimeDelta_t lsdelay,
+         TimeDelta_t l, GMemorySystem *ms, int32_t size, int32_t id, const char *cad);
 
   StallCause canIssue(Dinst *dinst);
   void       executing(Dinst *dinst);
@@ -166,27 +157,25 @@ public:
   bool       preretire(Dinst *dinst, bool flushing);
   bool       retire(Dinst *dinst, bool flushing);
   void       performed(Dinst *dinst);
-  
-  bool       isLoadSpec( Dinst *dinst);
+
+  bool isLoadSpec(Dinst *dinst);
 };
 
 class FUStore : public MemResource {
 private:
-  int32_t  freeEntries;
-  bool     enableDcache;
-  int32_t  scbSize;
-  int32_t  scbEntries;
- // int32_t  scbMerge[1024];
+  int32_t freeEntries;
+  bool    enableDcache;
+  int32_t scbSize;
+  int32_t scbEntries;
+  // int32_t  scbMerge[1024];
   uint32_t lineSizeBits;
 
-  //typedef std::list<Dinst *> SCBQueueType;
- // SCBQueueType               scbQueue;
-
-
+  // typedef std::list<Dinst *> SCBQueueType;
+  // SCBQueueType               scbQueue;
 
 public:
-  FUStore(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *lsq, StoreSet *ss, Prefetcher *pref, SCB* scb, TimeDelta_t l, GMemorySystem *ms,
-          int32_t size, int32_t id, const char *cad);
+  FUStore(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *lsq, StoreSet *ss, Prefetcher *pref, SCB *scb, TimeDelta_t l,
+          GMemorySystem *ms, int32_t size, int32_t id, const char *cad);
 
   StallCause canIssue(Dinst *dinst);
   void       executing(Dinst *dinst);
@@ -244,4 +233,3 @@ public:
   bool       retire(Dinst *dinst, bool flushing);
   void       performed(Dinst *dinst);
 };
-

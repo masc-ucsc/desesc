@@ -2,12 +2,11 @@
 
 #pragma once
 
-#include "dinst.hpp"
-#include "iassert.hpp"
-
 #include "ClusterScheduler.h"
 #include "DepWindow.h"
 #include "GStats.h"
+#include "dinst.hpp"
+#include "iassert.hpp"
 
 class Resource;
 class GMemorySystem;
@@ -21,8 +20,5 @@ protected:
 public:
   ClusterManager(GMemorySystem *ms, uint32_t cpuid, GProcessor *gproc);
 
-  Resource *getResource(Dinst *dinst) const {
-    return scheduler->getResource(dinst);
-  }
+  Resource *getResource(Dinst *dinst) const { return scheduler->getResource(dinst); }
 };
-

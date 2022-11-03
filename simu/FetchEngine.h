@@ -2,12 +2,11 @@
 
 #pragma once
 
-#include "iassert.hpp"
-#include "emul_base.hpp"
-
 #include "AddressPredictor.h"
 #include "BPred.h"
 #include "GStats.h"
+#include "emul_base.hpp"
+#include "iassert.hpp"
 //#define ENABLE_LDBP
 
 class GMemorySystem;
@@ -35,32 +34,30 @@ private:
       used    = 0;
       chained = 0;
     }
-    DataType data;
-    AddrType addr;
-    uint8_t  used;
-    int      chained;
-    bool     delta0;
+    Data_t  data;
+    Addr_t  addr;
+    uint8_t used;
+    int     chained;
+    bool    delta0;
 
-    void clear(DataType d, AddrType a) {
+    void clear(Data_t d, Addr_t a) {
       data = d;
       addr = a;
       used = 0;
     }
-    void set(DataType d, AddrType a) {
+    void set(Data_t d, Addr_t a) {
       data   = d;
       delta0 = (addr == a);
       addr   = a;
-      if(used > 0)
+      if (used > 0)
         used--;
     }
 
-    bool isChained() const {
-      return used >= 6;
-    }
+    bool isChained() const { return used >= 6; }
     void chain() {
-      if(used < 6)
+      if (used < 6)
         used += 2;
-      used = 0; // disable chaining loads
+      used = 0;  // disable chaining loads
     }
 
     int inc_chain() {
@@ -68,15 +65,15 @@ private:
       return chained;
     }
     void dec_chain() {
-      if(chained == 0)
+      if (chained == 0)
         return;
       chained--;
     }
   };
 
-  AddrType lastPredictable_ldpc;
-  AddrType lastPredictable_addr;
-  DataType lastPredictable_data;
+  Addr_t lastPredictable_ldpc;
+  Addr_t lastPredictable_addr;
+  Data_t lastPredictable_data;
 
   SCTable lastData;
 
@@ -85,13 +82,13 @@ private:
       ldpc  = 0;
       depth = 32768;
     }
-    AddrType ldpc;
-    int      depth;
+    Addr_t ldpc;
+    int    depth;
   };
-  HASH_MAP<AddrType, OracleDataLastEntry> oracleDataLast;
-  OracleDataRATEntry                      oracleDataRAT[LREG_MAX];
+  HASH_MAP<Addr_t, OracleDataLastEntry> oracleDataLast;
+  OracleDataRATEntry                    oracleDataRAT[LREG_MAX];
 
-  HASH_MAP<AddrType, AddrType> ldpc2brpc; // FIXME: Only a small table of address to track
+  HASH_MAP<Addr_t, Addr_t> ldpc2brpc;  // FIXME: Only a small table of address to track
 #endif
 
   bool TargetInLine;
@@ -108,11 +105,11 @@ private:
 
   // InstID of the address that generated a misprediction
 
-  bool missInst; // branch missprediction. Stop fetching until solved
+  bool missInst;  // branch missprediction. Stop fetching until solved
   ID(Dinst *missDinst);
   CallbackContainer cbPending;
 
-  Time_t lastMissTime; // FIXME: maybe we need an array
+  Time_t lastMissTime;  // FIXME: maybe we need an array
 
   bool enableICache;
 
@@ -148,16 +145,16 @@ public:
 
 #ifdef ENABLE_LDBP
 
-  Dinst* init_ldbp(Dinst *dinst, DataType dd, AddrType ldpc);
+  Dinst  *init_ldbp(Dinst *dinst, Data_t dd, Addr_t ldpc);
   MemObj *DL1;
-  Dinst *ld_dinst;
-  AddrType dep_pc; //dependent instn's PC
-  int fetch_br_count;
+  Dinst  *ld_dinst;
+  Addr_t  dep_pc;  // dependent instn's PC
+  int     fetch_br_count;
 
-  AddrType pref_addr;
-  AddrType check_line_addr;
-  AddrType base_addr;
-  AddrType tmp_base_addr;
+  Addr_t   pref_addr;
+  Addr_t   check_line_addr;
+  Addr_t   base_addr;
+  Addr_t   tmp_base_addr;
   uint64_t p_delta;
   uint64_t inf;
   uint64_t constant;
@@ -170,9 +167,9 @@ public:
   void realfetch(IBucket *buffer, EmulInterface *eint, FlowID fid, int32_t n2Fetched);
   // typedef CallbackMember4<FetchEngine, IBucket *, EmulInterface* , FlowID, int32_t, &FetchEngine::realfetch>  realfetchCB;
 
-  void chainPrefDone(AddrType pc, int distance, AddrType addr);
+  void chainPrefDone(Addr_t pc, int distance, Addr_t addr);
   void chainLoadDone(Dinst *dinst);
-  typedef CallbackMember3<FetchEngine, AddrType, int, AddrType, &FetchEngine::chainPrefDone> chainPrefDoneCB;
+  typedef CallbackMember3<FetchEngine, Addr_t, int, Addr_t, &FetchEngine::chainPrefDone> chainPrefDoneCB;
 
   void unBlockFetch(Dinst *dinst, Time_t missFetchTime);
   typedef CallbackMember2<FetchEngine, Dinst *, Time_t, &FetchEngine::unBlockFetch> unBlockFetchCB;
@@ -190,16 +187,11 @@ public:
 
   void dump(const char *str) const;
 
-  bool isBlocked() const {
-    return missInst;
-  }
+  bool isBlocked() const { return missInst; }
 #ifdef DEBUG
-  Dinst *getMissDinst() const {
-    return missDinst;
-  }
+  Dinst *getMissDinst() const { return missDinst; }
 #endif
 
   void clearMissInst(Dinst *dinst, Time_t missFetchTime);
   void setMissInst(Dinst *dinst);
 };
-

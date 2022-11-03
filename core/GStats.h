@@ -39,28 +39,26 @@
 
 #pragma once
 
-#include "fmt/format.h"
+#include <stdarg.h>
 
 #include <list>
-#include <stdarg.h>
-#include <vector>
 #include <string>
+#include <vector>
 
-#include "estl.h" // hash_map
+#include "estl.h"  // hash_map
+#include "fmt/format.h"
 #include "iassert.hpp"
 
 class GStats_strcasecmp {
 public:
-  bool operator()(const std::string &s1, const std::string &s2) const noexcept {
-    return ::strcasecmp(s1.c_str(), s2.c_str()) < 0;
-  }
+  bool operator()(const std::string &s1, const std::string &s2) const noexcept { return ::strcasecmp(s1.c_str(), s2.c_str()) < 0; }
 };
 
 class GStats {
 private:
-  typedef std::map<std::string, GStats *, GStats_strcasecmp>           Container;
-  typedef Container::iterator ContainerIter;
-  static Container store;
+  typedef std::map<std::string, GStats *, GStats_strcasecmp> Container;
+  typedef Container::iterator                                ContainerIter;
+  static Container                                           store;
 
 protected:
   char *name;
@@ -92,9 +90,7 @@ public:
     return 0;
   }
 
-  const char *getName() const {
-    return name;
-  }
+  const char     *getName() const { return name; }
   virtual int64_t getSamples() const = 0;
 };
 
@@ -111,16 +107,10 @@ public:
     return *this;
   }
 
-  void add(const double v, bool en = true) {
-    data += en ? v : 0;
-  }
-  void inc(bool en = true) {
-    data += en ? 1 : 0;
-  }
+  void add(const double v, bool en = true) { data += en ? v : 0; }
+  void inc(bool en = true) { data += en ? 1 : 0; }
 
-  void dec(bool en) {
-    data -= en ? 1 : 0;
-  }
+  void dec(bool en) { data -= en ? 1 : 0; }
 
   double  getDouble() const;
   int64_t getSamples() const;
@@ -138,8 +128,7 @@ protected:
 
 public:
   GStatsAvg(const char *format, ...);
-  GStatsAvg() {
-  }
+  GStatsAvg() {}
 
   void reset() {
     data  = 0;
@@ -184,8 +173,7 @@ protected:
 
 public:
   GStatsHist(const char *format, ...);
-  GStatsHist() {
-  }
+  GStatsHist() {}
 
   void    sample(bool enable, int32_t key, double weight = 1);
   int64_t getSamples() const;
@@ -194,4 +182,3 @@ public:
 
   void flushValue();
 };
-

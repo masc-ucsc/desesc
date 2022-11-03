@@ -2,27 +2,26 @@
 
 #pragma once
 
-#include <vector>
 #include <algorithm>
-
-#include "iassert.hpp"
-#include "callback.hpp"
+#include <vector>
 
 #include "CodeProfile.h"
 #include "FastQueue.h"
 #include "FetchEngine.h"
 #include "GOoOProcessor.h"
-#include "Pipeline.h"
 #include "GStats.h"
+#include "Pipeline.h"
+#include "callback.hpp"
+#include "iassert.hpp"
 
 //#define TRACK_FORWARDING 1
 #define TRACK_TIMELEAK 1
-#define DEP_LIST_SIZE 64
+#define DEP_LIST_SIZE  64
 
 //#define BTT_SIZE 512 //16 //512
-#define NUM_LOADS 6 //32 //32 //6 //6 //16 // maximum number of loads trackable by LDBP framework
-#define NUM_OPS 6 //32 //4 //8 //16 // maximum number of operations between LD and BR in code snippet
-#define BTT_MAX_ACCURACY 7
+#define NUM_LOADS               6  // 32 //32 //6 //6 //16 // maximum number of loads trackable by LDBP framework
+#define NUM_OPS                 6  // 32 //4 //8 //16 // maximum number of operations between LD and BR in code snippet
+#define BTT_MAX_ACCURACY        7
 #define MAX_POWER_SAVE_MODE_CTR 100000
 //#define ENABLE_LDBP
 //#define PRINT_LDBP 1
@@ -36,9 +35,7 @@ private:
     Time_t dinst_ID;
     Dinst *r_dinst;
     Dinst *dinst;
-    bool   operator==(const RetireState &a) const {
-      return a.committed == committed;
-    };
+    bool   operator==(const RetireState &a) const { return a.committed == committed; };
     RetireState() {
       committed  = 0;
       r_dinst_ID = 0;
@@ -59,16 +56,16 @@ private:
   uint32_t serialize;
   int32_t  serialize_for;
   uint32_t forwardProg_threshold;
-  Dinst *  last_serialized;
-  Dinst *  last_serializedST;
+  Dinst   *last_serialized;
+  Dinst   *last_serializedST;
 
   int32_t spaceInInstQueue;
-  Dinst * RAT[LREG_MAX];
+  Dinst  *RAT[LREG_MAX];
   int32_t nTotalRegs;
 
-  Dinst *  serializeRAT[LREG_MAX];
-  RegType  last_serializeLogical;
-  AddrType last_serializePC;
+  Dinst  *serializeRAT[LREG_MAX];
+  RegType last_serializeLogical;
+  Addr_t  last_serializePC;
 
   bool   busy;
   bool   replayRecovering;
@@ -109,45 +106,45 @@ protected:
 #ifdef ENABLE_LDBP
   GStatsCntr ldbp_power_mode_cycles;
   GStatsCntr ldbp_power_save_cycles;
-  GStatsCntr num_ldbr; //num ldbr chains
+  GStatsCntr num_ldbr;  // num ldbr chains
   GStatsCntr num_non_ldbr;
-  //GStatsCntr num_non_ldbr; //num of non ldbr chains
+  // GStatsCntr num_non_ldbr; //num of non ldbr chains
   GStatsCntr num_bad_tage_br;
   GStatsCntr num_br;
-  GStatsCntr num_loads; //num of loads in benchmark
+  GStatsCntr num_loads;  // num of loads in benchmark
   GStatsCntr num_ld_conf;
   GStatsCntr num_ld_data_conf;
   GStatsCntr num_chain_child;
   GStatsCntr num_br_1_src;
   GStatsCntr num_br_2_src;
 
-  GStatsCntr num_br_chain; // LD-ld chain count in benchmark
+  GStatsCntr num_br_chain;  // LD-ld chain count in benchmark
   GStatsCntr num_br_chain_ldbp;
   GStatsCntr num_br_chain_non_ldbp;
   GStatsCntr num_br_chain_x_ld;
   GStatsCntr num_br_chain_x_op;
 
-  GStatsCntr num_br_trivial; // LD->BR count in benchmark
-  GStatsCntr num_br_trivial_ldbp; // LD->BR and LDBP predictable
-  GStatsCntr num_br_trivial_non_ldbp; // LD->BR and not LDBP predictable
-  GStatsCntr num_br_trivial_x_ld; // trivial + loads conf + nlds > NLOADS
+  GStatsCntr num_br_trivial;           // LD->BR count in benchmark
+  GStatsCntr num_br_trivial_ldbp;      // LD->BR and LDBP predictable
+  GStatsCntr num_br_trivial_non_ldbp;  // LD->BR and not LDBP predictable
+  GStatsCntr num_br_trivial_x_ld;      // trivial + loads conf + nlds > NLOADS
 
-  GStatsCntr num_br_simple; // LD -> (ALU)*n -> BR // n <= 3
-  GStatsCntr num_br_simple_ldbp; // LD -> (ALU)*n -> BR // n < NUM_OPS
-  GStatsCntr num_br_simple_non_ldbp; // LD -> (ALU)*n -> BR // n < NUM_OPS and not LDBP preditable
-  GStatsCntr num_br_simple_x_ld; // simple + loads conf + nlds > NLOADS
+  GStatsCntr num_br_simple;           // LD -> (ALU)*n -> BR // n <= 3
+  GStatsCntr num_br_simple_ldbp;      // LD -> (ALU)*n -> BR // n < NUM_OPS
+  GStatsCntr num_br_simple_non_ldbp;  // LD -> (ALU)*n -> BR // n < NUM_OPS and not LDBP preditable
+  GStatsCntr num_br_simple_x_ld;      // simple + loads conf + nlds > NLOADS
 
-  GStatsCntr num_br_complex; // src1 and/or src2 has complex/floating-point ALU
+  GStatsCntr num_br_complex;  // src1 and/or src2 has complex/floating-point ALU
 
-  GStatsCntr num_br_excess; // nops > NOPS but not complex
-  GStatsCntr num_br_excess_ldbp; // excess + all_conf + nlds < NLOADS
-  GStatsCntr num_br_excess_non_ldbp; // excess | !all_conf + nlds<NLOADS
-  GStatsCntr num_br_excess_x_ld; // excess + loads conf + nlds > NLOADS
+  GStatsCntr num_br_excess;           // nops > NOPS but not complex
+  GStatsCntr num_br_excess_ldbp;      // excess + all_conf + nlds < NLOADS
+  GStatsCntr num_br_excess_non_ldbp;  // excess | !all_conf + nlds<NLOADS
+  GStatsCntr num_br_excess_x_ld;      // excess + loads conf + nlds > NLOADS
 
-  GStatsCntr num_loads_ldbp; //num loads associated with bad tage but LDBP branches
+  GStatsCntr num_loads_ldbp;  // num loads associated with bad tage but LDBP branches
   GStatsCntr num_ld_conf_ldbp;
   GStatsCntr num_ld_data_conf_ldbp;
-  GStatsCntr num_loads_non_ldbp; //num loads associated with bad tage but non-LDBP branches
+  GStatsCntr num_loads_non_ldbp;  // num loads associated with bad tage but non-LDBP branches
   GStatsCntr num_ld_conf_non_ldbp;
   GStatsCntr num_ld_data_conf_non_ldbp;
   GStatsCntr num_ldbr_2;
@@ -174,7 +171,7 @@ protected:
   GStatsCntr num_ldbr_0;
   GStatsCntr num_ldbr_6L2_3;
   GStatsCntr num_ldbr_6L1;
-  //GStatsCntr num_ldbr_6L4;
+  // GStatsCntr num_ldbr_6L4;
   GStatsCntr num_ldbr_7L1;
   GStatsCntr num_ldbr_7L2_3;
   GStatsCntr num_ldbr_7L4;
@@ -195,46 +192,45 @@ public:
 
 #ifdef ENABLE_LDBP
 
-  int64_t power_save_mode_ctr;
-  int64_t power_clock;
-  int64_t tmp_power_clock;
+  int64_t   power_save_mode_ctr;
+  int64_t   power_clock;
+  int64_t   tmp_power_clock;
   const int BTT_SIZE;
   const int MAX_TRIG_DIST;
 
-  void classify_ld_br_chain(Dinst *dinst, RegType br_src1, int reg_flag);
-  void classify_ld_br_double_chain(Dinst *dinst, RegType br_src1, RegType br_src2, int reg_flag);
-  void ct_br_hit_double(Dinst *dinst, RegType b1, RegType b2, int reg_flag);
-  void lgt_br_miss_double(Dinst *dinst, RegType b1, RegType b2);
-  void lgt_br_hit_double(Dinst *dinst, RegType b1, RegType b2, int idx);
-  DataType extract_load_immediate(AddrType li_pc);
-  void generate_trigger_load(Dinst *dinst, RegType reg, int lgt_index, int tl_type);
-  int hit_on_lgt(Dinst *dinst, int reg_flag, RegType reg1, RegType reg2 = LREG_R0);
+  void   classify_ld_br_chain(Dinst *dinst, RegType br_src1, int reg_flag);
+  void   classify_ld_br_double_chain(Dinst *dinst, RegType br_src1, RegType br_src2, int reg_flag);
+  void   ct_br_hit_double(Dinst *dinst, RegType b1, RegType b2, int reg_flag);
+  void   lgt_br_miss_double(Dinst *dinst, RegType b1, RegType b2);
+  void   lgt_br_hit_double(Dinst *dinst, RegType b1, RegType b2, int idx);
+  Data_t extract_load_immediate(Addr_t li_pc);
+  void   generate_trigger_load(Dinst *dinst, RegType reg, int lgt_index, int tl_type);
+  int    hit_on_lgt(Dinst *dinst, int reg_flag, RegType reg1, RegType reg2 = LREG_R0);
 
-
-  //new interface !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  // new interface !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #if 0
   //LOAD TABLE
   void hit_on_load_table(Dinst *dinst, bool is_li);
-  int return_load_table_index(AddrType pc);
+  int return_load_table_index(Addr_t pc);
 #endif
   void power_save_mode_table_reset();
-  //RTT
+  // RTT
   void rtt_load_hit(Dinst *dinst);
   void rtt_alu_hit(Dinst *dinst);
   void rtt_br_hit(Dinst *dinst);
-  //BTT
-  int return_btt_index(AddrType pc);
+  // BTT
+  int  return_btt_index(Addr_t pc);
   void btt_br_miss(Dinst *dinst);
   void btt_br_hit(Dinst *dinst, int btt_index);
-  void btt_trigger_load(Dinst *dinst, AddrType ld_ptr);
-  int btt_pointer_check(Dinst *dinst, int btt_index);
+  void btt_trigger_load(Dinst *dinst, Addr_t ld_ptr);
+  int  btt_pointer_check(Dinst *dinst, int btt_index);
   // 1 -> btt_ptr == plq_ptr && all tracking set => trigger_loads
   // 2 -> btt_ptr == plq_ptr but all tracking not set => do nothing
   // 3 -> if x in BTT.ptr but not in PLQ.ptr => sp.track++
   // 4 -> if x in PLQ but not in BTT => sp..track = 0
 #if 0
   //PLQ
-  int return_plq_index(AddrType pc);
+  int return_plq_index(Addr_t pc);
 #endif
 
 #if 0
@@ -250,9 +246,9 @@ public:
       tracking     = 0;
       is_li = false;
     }
-    AddrType ldpc;
-    AddrType ld_addr;
-    AddrType prev_ld_addr;
+    Addr_t ldpc;
+    Addr_t ld_addr;
+    Addr_t prev_ld_addr;
     int64_t delta;
     int64_t prev_delta;
     int conf;
@@ -298,65 +294,65 @@ public:
 #endif
 
   struct rename_tracking_table {
-    //tracks number of ops between LD and BR in a snippet
-    //fields: num_ops and load_table_pointer
-    //indexed by DST_REG
+    // tracks number of ops between LD and BR in a snippet
+    // fields: num_ops and load_table_pointer
+    // indexed by DST_REG
     rename_tracking_table() {
-      num_ops = NUM_OPS + 1; //indicates that RTT entry is reset
-      //num_ops = 0; //indicates that RTT entry is reset
+      num_ops = NUM_OPS + 1;  // indicates that RTT entry is reset
+      // num_ops = 0; //indicates that RTT entry is reset
       is_li = 0;
       load_table_pointer.clear();
       chain_length = 0;
       pc_list.clear();
-      set = false;
+      set         = false;
       predictable = false;
-      is_complex = false;
+      is_complex  = false;
     }
-    int num_ops; //num of operations between load and branch in a snippet
-    std::vector<AddrType> load_table_pointer = std::vector<AddrType>(NUM_LOADS); // pointer from Load Table to refer loads
-    int is_li;
-    int chain_length; //num of parent LDs in ld-ld chain. should not be > 1
-    std::vector<AddrType> pc_list = std::vector<AddrType>(NUM_OPS + NUM_LOADS); //ESESC only field
-    bool set; //ESESC only field -> true if field is set
-    bool predictable; //ESESC only field -> true if LD is predictable
-    bool is_complex; //LDBR chain has complex ALU
+    int                 num_ops;  // num of operations between load and branch in a snippet
+    std::vector<Addr_t> load_table_pointer = std::vector<Addr_t>(NUM_LOADS);  // pointer from Load Table to refer loads
+    int                 is_li;
+    int                 chain_length;                                        // num of parent LDs in ld-ld chain. should not be > 1
+    std::vector<Addr_t> pc_list = std::vector<Addr_t>(NUM_OPS + NUM_LOADS);  // ESESC only field
+    bool                set;                                                 // ESESC only field -> true if field is set
+    bool                predictable;                                         // ESESC only field -> true if LD is predictable
+    bool                is_complex;                                          // LDBR chain has complex ALU
 
     void reset_rtt() {
-      num_ops = NUM_OPS + 1; //indicates that RTT entry is reset
-      is_li = 0;
+      num_ops = NUM_OPS + 1;  // indicates that RTT entry is reset
+      is_li   = 0;
       load_table_pointer.clear();
       pc_list.clear();
       chain_length = 0;
-      set = false;
-      predictable = false;
-      is_complex = false;
+      set          = false;
+      predictable  = false;
+      is_complex   = false;
     }
   };
 
   std::vector<rename_tracking_table> rtt_vec = std::vector<rename_tracking_table>(LREG_MAX);
 
   struct dependency_table {
-    AddrType brpc;
+    Addr_t brpc;
   };
 
-  struct branch_trigger_table { //BTT
-    //Fields: brpc(index), br_pred accuracy, stride pointers
+  struct branch_trigger_table {  // BTT
+    // Fields: brpc(index), br_pred accuracy, stride pointers
     branch_trigger_table() {
-      brpc = 0;
+      brpc     = 0;
       accuracy = 0;
       load_table_pointer.clear();
     }
-    AddrType brpc;
-    int accuracy; // MAX 0 to 7
-    std::vector<AddrType> load_table_pointer = std::vector<AddrType>(NUM_LOADS); // pointer from Load Table to refer loads
+    Addr_t              brpc;
+    int                 accuracy;                                             // MAX 0 to 7
+    std::vector<Addr_t> load_table_pointer = std::vector<Addr_t>(NUM_LOADS);  // pointer from Load Table to refer loads
 
     void btt_update_accuracy(Dinst *dinst, int id) {
-      if(dinst->isBranch_hit2_miss3()) {
-        if(accuracy > 0)
+      if (dinst->isBranch_hit2_miss3()) {
+        if (accuracy > 0)
           accuracy--;
-      //}else if(dinst->isBranch_hit3_miss2()) {
-      }else if(dinst->isBranchHit_level3()) {
-        if(accuracy < 7)
+        //}else if(dinst->isBranch_hit3_miss2()) {
+      } else if (dinst->isBranchHit_level3()) {
+        if (accuracy < 7)
           accuracy++;
       }
     }
@@ -371,7 +367,7 @@ public:
       tracking = 0;
       load_pointer = 0;
     }
-    AddrType load_pointer;
+    Addr_t load_pointer;
     int tracking; // 0 to 3 - just like tracking in load_table_vec
 
     void plq_update_tracking(bool inc) {
@@ -411,11 +407,11 @@ public:
     }
 
     RegType dest_reg;
-    AddrType ldpc;
-    AddrType lipc; // Load Immediate PC
-    AddrType ld_addr;
+    Addr_t ldpc;
+    Addr_t lipc; // Load Immediate PC
+    Addr_t ld_addr;
     int dep_depth;
-    AddrType dep_list[DEP_LIST_SIZE]; //list of dependent instruction between LD and BR //FIXME - not static size
+    Addr_t dep_list[DEP_LIST_SIZE]; //list of dependent instruction between LD and BR //FIXME - not static size
     int ldbr_type;
 
     // 1->simple -> R1 => LD->BR && R2 => 0 && dep == 1
@@ -446,7 +442,7 @@ public:
 
     bool ld_used; //is ld inst executed before the current dependent branch inst?
     bool simple; //does BR have only one Src operand
-    DataType li_data;
+    Data_t li_data;
     int is_li; //is one Br data dependent on a Li or Lui instruction
     // 0=>LD->ALU+->BR or LD->BR; 1=>LD->ALU*->Li->BR; 2=>LD->ALU*->Li->ALU+->BR
     bool valid;
@@ -463,8 +459,8 @@ public:
     std::vector<Time_t> mem_lat_vec = std::vector<Time_t>(10);
     Time_t max_mem_lat;
     int num_mem_lat;
-    AddrType goal_addr;
-    AddrType prev_goal_addr;
+    Addr_t goal_addr;
+    Addr_t prev_goal_addr;
 
     void ct_load_hit(Dinst *dinst) { //add/reset entry on CT
       classify_table_entry(); // reset entries
@@ -620,26 +616,26 @@ public:
     }
 
     //ld vars
-    AddrType ldpc;
-    AddrType start_addr;
-    AddrType end_addr;
+    Addr_t ldpc;
+    Addr_t start_addr;
+    Addr_t end_addr;
     int64_t ld_delta;
     int64_t prev_delta;
     uint64_t ld_conf;
-    AddrType constant;
-    AddrType prev_constant;
-    AddrType last_trig_addr;
+    Addr_t constant;
+    Addr_t prev_constant;
+    Addr_t last_trig_addr;
     //mv stats
-    DataType mv_data; // data from a mv inst
+    Data_t mv_data; // data from a mv inst
     int mv_type; //0-> mv inactive, 1 = src1->Src2, 2 = src2->src1
 
     //br fields
     int64_t inf_branch;  //number of inflight branches
-    AddrType brpc;
+    Addr_t brpc;
     BrOpType brop;
     bool br_outcome;
-    DataType br_data1;
-    DataType br_data2;
+    Data_t br_data1;
+    Data_t br_data2;
     int br_mv_outcome; //0->N/A; 1->Not Taken; 2->Taken
     //
     int ldbr_type;
@@ -650,16 +646,16 @@ public:
     int hit3_miss2; // hit in level 3 BP, miss in level 2
 
     //for LD2
-    AddrType ldpc2;
-    AddrType start_addr2;
-    AddrType end_addr2;
+    Addr_t ldpc2;
+    Addr_t start_addr2;
+    Addr_t end_addr2;
     int64_t ld_delta2;
     int64_t prev_delta2;
     uint64_t ld_conf2;
     int dep_depth2;
-    //AddrType constant2;
-    //AddrType prev_constant2;
-    //AddrType last_trig_addr2;
+    //Addr_t constant2;
+    //Addr_t prev_constant2;
+    //Addr_t last_trig_addr2;
 
     void lgt_br_hit_li(Dinst *dinst, int ldbr, int depth) {
       ldbr_type  = ldbr;
@@ -667,7 +663,7 @@ public:
       lgt_update_br_fields(dinst);
     }
 
-    void lgt_br_hit(Dinst *dinst, AddrType ld_addr, int ldbr, int depth, bool is_r1) {
+    void lgt_br_hit(Dinst *dinst, Addr_t ld_addr, int ldbr, int depth, bool is_r1) {
       if(is_r1) {
         prev_delta = ld_delta;
         ld_delta   = ld_addr - start_addr;
@@ -693,7 +689,7 @@ public:
       lgt_update_br_fields(dinst);
     }
 
-    void lgt_br_miss(Dinst *dinst, int ldbr, AddrType _ldpc, AddrType ld_addr, bool is_r1) {
+    void lgt_br_miss(Dinst *dinst, int ldbr, Addr_t _ldpc, Addr_t ld_addr, bool is_r1) {
       if(is_r1) {
         ldpc         = _ldpc;
         start_addr   = ld_addr;
@@ -750,9 +746,9 @@ public:
 #endif
 
   MemObj *DL1;
-  AddrType ldbp_brpc;
-  AddrType ldbp_ldpc;
-  AddrType ldbp_curr_addr;
+  Addr_t  ldbp_brpc;
+  Addr_t  ldbp_ldpc;
+  Addr_t  ldbp_curr_addr;
   int64_t ldbp_delta;
   int64_t inflight_branch;
 #if 0
@@ -774,27 +770,16 @@ public:
 
 #endif
 
-  void executing(Dinst *dinst);
-  void executed(Dinst *dinst);
-  LSQ *getLSQ() {
-    return &lsq;
-  }
-  void replay(Dinst *target);
-  bool isFlushing() {
-    return flushing;
-  }
-  bool isReplayRecovering() {
-    return replayRecovering;
-  }
-  Time_t getReplayID() {
-    return replayID;
-  }
+  void   executing(Dinst *dinst);
+  void   executed(Dinst *dinst);
+  LSQ   *getLSQ() { return &lsq; }
+  void   replay(Dinst *target);
+  bool   isFlushing() { return flushing; }
+  bool   isReplayRecovering() { return replayRecovering; }
+  Time_t getReplayID() { return replayID; }
 
   void dumpROB();
   bool loadIsSpec();
 
-  bool isSerializing() const {
-    return serialize_for != 0;
-  }
+  bool isSerializing() const { return serialize_for != 0; }
 };
-

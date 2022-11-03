@@ -60,26 +60,14 @@ protected:
       state = I;
     }
 
-    bool isModified() const {
-      return state == M;
-    }
-    void setModified() {
-      state = M;
-    }
-    bool isValid() const {
-      return state != I;
-    }
-    bool isInvalid() const {
-      return state == I;
-    }
+    bool isModified() const { return state == M; }
+    void setModified() { state = M; }
+    bool isValid() const { return state != I; }
+    bool isInvalid() const { return state == I; }
 
-    StateType getState() const {
-      return state;
-    };
+    StateType getState() const { return state; };
 
-    void invalidate() {
-      state = I;
-    }
+    void invalidate() { state = I; }
   };
 
   typedef CacheGeneric<CState, uint64_t>            CacheType;
@@ -98,12 +86,9 @@ public:
   LiveCache();
   virtual ~LiveCache();
 
-  int32_t getLineSize() const {
-    return lineSize;
-  }
+  int32_t getLineSize() const { return lineSize; }
 
   void     read(uint64_t addr);
   void     write(uint64_t addr);
   uint64_t traverse(uint64_t *addrs, bool *st);
 };
-

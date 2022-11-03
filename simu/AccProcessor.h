@@ -2,14 +2,13 @@
 
 #pragma once
 
-#include "iassert.hpp"
-#include "callback.hpp"
-
 #include "FastQueue.h"
 #include "FetchEngine.h"
 #include "GOoOProcessor.h"
 #include "GStats.h"
 #include "Pipeline.h"
+#include "callback.hpp"
+#include "iassert.hpp"
 
 class AccProcessor : public GProcessor {
 private:
@@ -23,22 +22,22 @@ protected:
   StallCause addInst(Dinst *dinst);
   void       retire();
   void       fetch(FlowID fid);
-  LSQ *      getLSQ();
+  LSQ       *getLSQ();
   bool       isFlushing();
   bool       isReplayRecovering();
   Time_t     getReplayID();
   void       executing(Dinst *dinst);
   void       executed(Dinst *dinst);
 
-  virtual void replay(Dinst *target){}; // = 0;
+  virtual void replay(Dinst *target){};  // = 0;
 
   // END VIRTUAL FUNCTIONS of GProcessor
 
-  AddrType myAddr;
-  AddrType addrIncr;
-  int      reqid;
-  int      total_accesses;
-  int      outstanding_accesses;
+  Addr_t myAddr;
+  Addr_t addrIncr;
+  int    reqid;
+  int    total_accesses;
+  int    outstanding_accesses;
 
   GStatsCntr accReads;
   GStatsCntr accWrites;
@@ -55,4 +54,3 @@ public:
   AccProcessor(GMemorySystem *gm, CPU_t i);
   virtual ~AccProcessor();
 };
-

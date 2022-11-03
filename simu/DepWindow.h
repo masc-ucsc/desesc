@@ -2,10 +2,9 @@
 
 #pragma once
 
-#include "iassert.hpp"
-
 #include "Port.h"
 #include "Resource.h"
+#include "iassert.hpp"
 
 class Dinst;
 class Cluster;
@@ -36,4 +35,3 @@ public:
   void       addInst(Dinst *dinst);
   void       executed(Dinst *dinst);
 };
-

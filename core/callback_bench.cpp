@@ -1,28 +1,25 @@
 // This file is distributed under the BSD 3-Clause License. See LICENSE for details.
 
+#include "benchmark/benchmark.h"
 #include "callback.hpp"
 
-#include "benchmark/benchmark.h"
-
-void counter_fsm();
+void                                          counter_fsm();
 typedef StaticCallbackFunction0<&counter_fsm> counter_fsmCB;
-typedef CallbackFunction0<&counter_fsm> counter2_fsmCB;
+typedef CallbackFunction0<&counter_fsm>       counter2_fsmCB;
 
-
-int total=0;
+int total = 0;
 
 void counter_fsm() {
-
-  static int local=1;
+  static int local = 1;
 
   local++;
 
-  //printf("counter_fms local:%d clock:@%lld\n", local, (long long)globalClock);
+  // printf("counter_fms local:%d clock:@%lld\n", local, (long long)globalClock);
 
-  if (total&1)
-    counter2_fsmCB::create()->schedule(1); // +1cycle
+  if (total & 1)
+    counter2_fsmCB::create()->schedule(1);  // +1cycle
   else
-    counter2_fsmCB::create()->schedule(3); // +3cycle
+    counter2_fsmCB::create()->schedule(3);  // +3cycle
 
   total++;
 }
@@ -34,10 +31,10 @@ static void BM_callback(benchmark::State& state) {
       counter_fsmCB cb;
       cb.schedule(1);
 
-      for(int i=0;i<j;++i) {
+      for (int i = 0; i < j; ++i) {
         EventScheduler::advanceClock();
       }
-      //printf("total of %d callbacks called\n",total);
+      // printf("total of %d callbacks called\n",total);
     }
   }
   state.counters["speed"] = benchmark::Counter(total, benchmark::Counter::kIsRate);
@@ -53,4 +50,3 @@ int main(int argc, char* argv[]) {
   benchmark::Initialize(&argc, argv);
   benchmark::RunSpecifiedBenchmarks();
 }
-

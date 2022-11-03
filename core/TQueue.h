@@ -21,14 +21,12 @@ Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
 #include <stdlib.h>
 #include <string.h>
-#include <string.h>
 #include <strings.h>
 
 #include <algorithm>
 #include <vector>
 
 #include "fmt/format.h"
-
 #include "iassert.hpp"
 #include "pool.hpp"
 
@@ -39,54 +37,33 @@ Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
  */
 
-template <class Data, class Time> class TQueue {
+template <class Data, class Time>
+class TQueue {
 public:
   class User {
   private:
-    Time time; // when the instruction finishes
+    Time time;  // when the instruction finishes
     Data next;
     enum QueueType { InNoQueue, InFastQueue, InTooFarQueue } qType;
 
   public:
-    User() {
-      qType = InNoQueue;
-    };
+    User() { qType = InNoQueue; };
 
-    void removeFromQueue() {
-      qType = InNoQueue;
-    };
-    bool isInQueue() const {
-      return qType != InNoQueue;
-    };
+    void removeFromQueue() { qType = InNoQueue; };
+    bool isInQueue() const { return qType != InNoQueue; };
 
-    void setInFastQueue() {
-      qType = InFastQueue;
-    };
-    bool isInFastQueue() const {
-      return qType == InFastQueue;
-    };
+    void setInFastQueue() { qType = InFastQueue; };
+    bool isInFastQueue() const { return qType == InFastQueue; };
 
-    void setInTooFarQueue() {
-      qType = InTooFarQueue;
-    };
-    bool isInTooFarQueue() const {
-      return qType == InTooFarQueue;
-    };
+    void setInTooFarQueue() { qType = InTooFarQueue; };
+    bool isInTooFarQueue() const { return qType == InTooFarQueue; };
 
-    void setTQTime(Time t) {
-      time = t;
-    };
+    void setTQTime(Time t) { time = t; };
 
-    Time getTQTime() const {
-      return time;
-    };
+    Time getTQTime() const { return time; };
 
-    void setTQNext(Data n) {
-      next = n;
-    };
-    Data getTQNext() const {
-      return next;
-    };
+    void setTQNext(Data n) { next = n; };
+    Data getTQNext() const { return next; };
   };
 
 private:
@@ -103,9 +80,7 @@ private:
 
   class DLess {
   public:
-    bool operator()(const Data x, const Data y) const {
-      return x->getTQTime() > y->getTQTime();
-    };
+    bool operator()(const Data x, const Data y) const { return x->getTQTime() > y->getTQTime(); };
   } dLess;
 
   std::vector<Data> tooFar;
@@ -113,17 +88,15 @@ private:
   Time minTooFar;
 
   void adjustTooFar() {
-
     I(!tooFar.empty());
 
-    while(((uint32_t)(tooFar.front()->getTQTime() - minTime)) < AccessSize) {
-
+    while (((uint32_t)(tooFar.front()->getTQTime() - minTime)) < AccessSize) {
       addNode(tooFar.front(), tooFar.front()->getTQTime());
 
       std::pop_heap(tooFar.begin(), tooFar.end(), dLess);
       tooFar.pop_back();
 
-      if(tooFar.empty()) {
+      if (tooFar.empty()) {
         minTooFar = MaxTime;
         return;
       }
@@ -138,7 +111,7 @@ private:
 
     uint32_t pos = ((uint32_t)(minPos + time - minTime)) & AccessMask;
 
-    if(access[pos] == 0) {
+    if (access[pos] == 0) {
       access[pos] = node;
     } else {
       accessTail[pos]->setTQNext(node);
@@ -162,7 +135,7 @@ public:
 
     data->setTQTime(time);
 
-    if((uint32_t)(time - minTime) < AccessSize) {
+    if ((uint32_t)(time - minTime) < AccessSize) {
       addNode(data, time);
     } else {
       // Some nodes already exists, and this is too distant in
@@ -172,13 +145,13 @@ public:
       tooFar.push_back(data);
       std::push_heap(tooFar.begin(), tooFar.end(), dLess);
 
-      if(minTooFar > time)
+      if (minTooFar > time)
         minTooFar = time;
     }
   };
 
   Data nextJob(Time cTime) {
-    if(likely(access[minPos] && minTime == cTime)) {
+    if (likely(access[minPos] && minTime == cTime)) {
       /* Common case. Only for speed up reasons */
       Data node = access[minPos];
       nNodes--;
@@ -187,10 +160,10 @@ public:
       return node;
     }
 
-    if(minTooFar <= cTime)
+    if (minTooFar <= cTime)
       adjustTooFar();
 
-    if(nNodes == 0) {
+    if (nNodes == 0) {
       minTime = cTime;
       minPos  = 0;
       return 0;
@@ -198,13 +171,13 @@ public:
 
     Data node = access[minPos];
 
-    while(node == 0 && minTime < cTime) {
+    while (node == 0 && minTime < cTime) {
       minPos = (minPos + 1) & AccessMask;
       minTime++;
       node = access[minPos];
     }
 
-    if(node == 0)
+    if (node == 0)
       return 0;
 
     I(minTime <= cTime);
@@ -218,12 +191,12 @@ public:
   };
 
   void remove(Data node) {
-    if(node->isInTooFarQueue()) {
-      if(tooFar.front() == node) {
+    if (node->isInTooFarQueue()) {
+      if (tooFar.front() == node) {
         std::pop_heap(tooFar.begin(), tooFar.end(), dLess);
         tooFar.pop_back();
 
-        if(tooFar.empty())
+        if (tooFar.empty())
           minTooFar = MaxTime;
         else
           minTooFar = tooFar.front()->getTQTime();
@@ -237,10 +210,10 @@ public:
         I(std::find(tooFar.begin(), tooFar.end(), node) == tooFar.end());
         std::make_heap(tooFar.begin(), tooFar.end(), dLess);
       }
-    } else if(node->isInFastQueue()) {
+    } else if (node->isInFastQueue()) {
       Time time = node->getTQTime();
 
-      if(access[minPos] == node) {
+      if (access[minPos] == node) {
         // First in FastQueue
         nNodes--;
         access[minPos] = access[minPos]->getTQNext();
@@ -251,21 +224,21 @@ public:
         Data prev = 0;
         Data curr = access[pos];
 
-        while(curr != node) {
+        while (curr != node) {
           prev = curr;
           curr = curr->getTQNext();
         }
         I(curr == node);
 
-        if(prev == 0) {
+        if (prev == 0) {
           access[pos] = access[pos]->getTQNext();
         } else {
           prev->setTQNext(curr->getTQNext());
         }
 
-        if(accessTail[pos] == node) {
+        if (accessTail[pos] == node) {
           prev = access[pos];
-          while(prev) {
+          while (prev) {
             prev = prev->getTQNext();
           }
           accessTail[pos] = prev;
@@ -286,21 +259,14 @@ public:
     insert(node, rTime);
   };
 
-  size_t size() const {
-    return nNodes + tooFar.size();
-  };
-  bool empty() const {
-    return nNodes == 0 && tooFar.empty();
-  };
+  size_t size() const { return nNodes + tooFar.size(); };
+  bool   empty() const { return nNodes == 0 && tooFar.empty(); };
 
   void dump();
 };
 
-
 template <class Data, class Time>
-TQueue<Data, Time>::TQueue(uint32_t MaxTimeDiff)
-    : AccessSize(MaxTimeDiff)
-    , AccessMask(AccessSize - 1) {
+TQueue<Data, Time>::TQueue(uint32_t MaxTimeDiff) : AccessSize(MaxTimeDiff), AccessMask(AccessSize - 1) {
   I(AccessSize > 7);
   I((AccessSize & (AccessSize - 1)) == 0);
 
@@ -311,17 +277,19 @@ TQueue<Data, Time>::TQueue(uint32_t MaxTimeDiff)
   reset();
 }
 
-template <class Data, class Time> void TQueue<Data, Time>::reset() {
+template <class Data, class Time>
+void TQueue<Data, Time>::reset() {
   bzero(access, AccessSize * sizeof(Data));
 
   nNodes  = 0;
   minTime = 0;
   minPos  = 0;
 
-  minTooFar = MaxTime; // MaxTime means empty
+  minTooFar = MaxTime;  // MaxTime means empty
 }
 
-template <class Data, class Time> TQueue<Data, Time>::~TQueue() {
+template <class Data, class Time>
+TQueue<Data, Time>::~TQueue() {
   if (nNodes)
     fmt::print("Destroying TQueue {} with pending nodes\n", nNodes);
 
@@ -330,7 +298,8 @@ template <class Data, class Time> TQueue<Data, Time>::~TQueue() {
   free(access);
 }
 
-template <class Data, class Time> void TQueue<Data, Time>::dump() {
+template <class Data, class Time>
+void TQueue<Data, Time>::dump() {
   fmt::print("TQueue dump: size={}\n", size());
 
   int32_t pos   = minPos;
@@ -338,8 +307,8 @@ template <class Data, class Time> void TQueue<Data, Time>::dump() {
 
   Data node = access[pos];
 
-  while(conta) {
-    if(node) {
+  while (conta) {
+    if (node) {
       conta--;
       fmt::print(" {} @ {} ", node, node->getTQTime());
       node = node->getTQNext();

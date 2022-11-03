@@ -20,33 +20,31 @@ ESESC; see the file COPYING.  If not, write to the  Free Software Foundation, 59
 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 */
 
-#include <netdb.h>
-#include <netinet/in.h>
-#include <signal.h>
-#include <sys/socket.h>
-#include <sys/types.h>
+#include "Report.h"
 
 #include <alloca.h>
 #include <ctype.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <signal.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 #include <unistd.h>
 
+#include "config.hpp"
 #include "iassert.hpp"
 
-#include "config.hpp"
-
-#include "Report.h"
-
-FILE *      Report::rfd[MAXREPORTSTACK];
+FILE       *Report::rfd[MAXREPORTSTACK];
 const char *Report::fns[MAXREPORTSTACK];
 int32_t     Report::tos = 0;
 
 Report::Report() {
   rfd[0] = stdout;
-  fns[0] = "stdout"; //?
+  fns[0] = "stdout";  //?
   tos    = 1;
 }
 
@@ -56,17 +54,16 @@ const char *Report::getNameID() {
 }
 
 void Report::openFile(const char *name) {
-
   I(tos < MAXREPORTSTACK);
 
   FILE *ffd;
   char *fname = NULL;
-  if(strstr(name, "XXXXXX")) {
+  if (strstr(name, "XXXXXX")) {
     int32_t fd;
 
     fname = strdup(name);
     fd    = mkstemp(fname);
-    if(fd == -1) {
+    if (fd == -1) {
       perror("Report::openFile could not assign file name:");
       exit(-1);
     }
@@ -78,7 +75,7 @@ void Report::openFile(const char *name) {
     ffd = fopen(name, "a");
   }
 
-  if(ffd == 0) {
+  if (ffd == 0) {
     fprintf(stderr, "NANASSERT::REPORT could not open temporary file [%s]\n", name);
     exit(-3);
   }
@@ -88,7 +85,7 @@ void Report::openFile(const char *name) {
 }
 
 void Report::close() {
-  if(tos) {
+  if (tos) {
     tos--;
     fclose(rfd[tos]);
   }
@@ -124,7 +121,7 @@ void Report::field(const char *format, ...) {
 }
 
 void Report::flush() {
-  if(tos == 0)
+  if (tos == 0)
     return;
 
   fflush(rfd[tos - 1]);

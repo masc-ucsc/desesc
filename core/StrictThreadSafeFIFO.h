@@ -8,14 +8,14 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "iassert.hpp"
-
 #include "Snippets.h"
+#include "iassert.hpp"
 
 #define MAXSIZE 0xFFFFFFFF
 enum QueueState { MostlyFull = 0, SomewhatFull, SomewhatEmpty, MostlyEmpty };
 
-template <class Type> class StrictThreadSafeFIFO {
+template <class Type>
+class StrictThreadSafeFIFO {
 private:
   typedef uint8_t IndexType32;
 
@@ -24,17 +24,12 @@ private:
   IndexType32          max_size;
   volatile IndexType32 valid_size;
   QueueState           state;
-  Type *               array;
+  Type                *array;
 
 public:
-  uint32_t size() const {
-    return max_size;
-  }
+  uint32_t size() const { return max_size; }
 
-  StrictThreadSafeFIFO()
-      : tail(0)
-      , head(0)
-      , valid_size(0) {
+  StrictThreadSafeFIFO() : tail(0), head(0), valid_size(0) {
     tail       = 0;
     head       = 0;
     valid_size = 0;
@@ -42,20 +37,16 @@ public:
   }
 
   void allocate(uint32_t s) {
-    max_size = ((s > 0 && s < MAXSIZE) ? s : 65535); // Assuming upperbound of 65535 entries
+    max_size = ((s > 0 && s < MAXSIZE) ? s : 65535);  // Assuming upperbound of 65535 entries
     // array = new Type[max_size];
     // array = new Type[4096];
     array = new Type[4096];
     state = MostlyEmpty;
   }
 
-  ~StrictThreadSafeFIFO() {
-    delete[] array;
-  }
+  ~StrictThreadSafeFIFO() { delete[] array; }
 
-  Type *getTailRef() {
-    return &array[tail];
-  }
+  Type *getTailRef() { return &array[tail]; }
 
   void push() {
     // Without object !!?? (Trick if the getTailRef was correctly used to save a memcpy
@@ -78,30 +69,28 @@ public:
     return (nextTail == head);
   }
 
-  bool empty() {
-    return (tail == head);
-  }
+  bool empty() { return (tail == head); }
 
   bool isMostlyFull() {
-    if(valid_size > max_size / 4 * 3)
+    if (valid_size > max_size / 4 * 3)
       state = MostlyFull;
     return state == MostlyFull;
   }
 
   bool isSomewhatFull() {
-    if((valid_size <= max_size / 4 * 3) && (valid_size > max_size / 2))
+    if ((valid_size <= max_size / 4 * 3) && (valid_size > max_size / 2))
       state = SomewhatFull;
     return state == SomewhatFull;
   }
 
   bool isSomewhatEmpty() {
-    if((valid_size <= max_size / 2) && (valid_size > max_size / 4))
+    if ((valid_size <= max_size / 2) && (valid_size > max_size / 4))
       state = SomewhatEmpty;
     return state == SomewhatEmpty;
   }
 
   bool isMostlyEmpty() {
-    if(valid_size <= max_size / 4)
+    if (valid_size <= max_size / 4)
       state = MostlyEmpty;
     return state == MostlyEmpty;
   }
@@ -109,7 +98,7 @@ public:
   void pop(Type *obj) {
     I(head != tail);
     *obj = array[head];
-    AtomicAdd(&head, 1); // head = head + 1;
+    AtomicAdd(&head, 1);  // head = head + 1;
     AtomicSub(&valid_size, 1);
   };
 };

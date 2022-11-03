@@ -1,14 +1,15 @@
 // See LICENSE for details.
 
+#include "Prefetcher.h"
+
 #include <math.h>
-#include <iostream>
 #include <stdlib.h>
 
-#include "config.hpp"
+#include <iostream>
 
 #include "FetchEngine.h"
 #include "MemObj.h"
-#include "Prefetcher.h"
+#include "config.hpp"
 
 //#define PREFETCH_HIST 1
 
@@ -26,7 +27,7 @@ Prefetcher::Prefetcher(MemObj *_l1, int cpuID)
   pfStride    = SescConf->getInt(section, "pfStride");
 
   SescConf->isBetween(section, "minDistance", 0, maxPrefetch);
-  SescConf->isBetween(section, "pfStride", 1, 32); // Really?? More than 32??
+  SescConf->isBetween(section, "pfStride", 1, 32);  // Really?? More than 32??
 
   pending_prefetch    = false;
   pending_chain_fetch = 0;
@@ -39,15 +40,15 @@ Prefetcher::Prefetcher(MemObj *_l1, int cpuID)
 
   const char *type = SescConf->getCharPtr(section, "type");
 
-  if(strcasecmp(type, "stride") == 0) {
+  if (strcasecmp(type, "stride") == 0) {
     pref_sign = PSIGN_STRIDE;
 
     apred = new StrideAddressPredictor();
-  } else if(strcasecmp(type, "indirect") == 0) {
-    pref_sign = PSIGN_STRIDE; // STRIDE, Indirect are generated inside the try_chain
+  } else if (strcasecmp(type, "indirect") == 0) {
+    pref_sign = PSIGN_STRIDE;  // STRIDE, Indirect are generated inside the try_chain
 
     apred = new IndirectAddressPredictor();
-  } else if(strcasecmp(type, "tage") == 0) {
+  } else if (strcasecmp(type, "tage") == 0) {
     pref_sign = PSIGN_TAGE;
 
     uint64_t bimodalSize = SescConf->getInt(section, "bimodalSize");
@@ -69,10 +70,10 @@ Prefetcher::Prefetcher(MemObj *_l1, int cpuID)
     SescConf->isGT(section, "nhist", 1);
 
     apred = new vtage(bimodalSize, Log2FetchWidth, bwidth, nhist);
-  } else if(strcasecmp(type, "void") == 0) {
+  } else if (strcasecmp(type, "void") == 0) {
     apred = 0;
   } else {
-    SescConf->notCorrect(); // Unknown prefetcher
+    SescConf->notCorrect();  // Unknown prefetcher
   }
 
   MSG("****PREFETCHING****%s \n", section);
@@ -82,29 +83,29 @@ Prefetcher::Prefetcher(MemObj *_l1, int cpuID)
 void Prefetcher::exe(Dinst *dinst)
 /* forward bus read {{{1 */
 {
-  if(apred == 0)
+  if (apred == 0)
     return;
 
   uint16_t conf = apred->exe_update(dinst->getPC(), dinst->getAddr(), dinst->getData());
 
   GI(!pending_prefetch, pending_preq_conf == 0);
 
-  if(pending_preq_pc == dinst->getPC() && pending_preq_conf > (conf / 2))
-    return; // Do not kill itself
+  if (pending_preq_pc == dinst->getPC() && pending_preq_conf > (conf / 2))
+    return;  // Do not kill itself
 
   static uint8_t rnd_xtra_conf = 0;
-  rnd_xtra_conf                = 0; // (rnd_xtra_conf>>1) ^ (dinst->getPC()>>5) ^ (dinst->getAddr()>>2) ^ (dinst->getPC()>>7);
-  if(conf <= (pending_preq_conf + (rnd_xtra_conf & 0x7)) || conf <= 4)
-    return; // too low of a chance
+  rnd_xtra_conf                = 0;  // (rnd_xtra_conf>>1) ^ (dinst->getPC()>>5) ^ (dinst->getAddr()>>2) ^ (dinst->getPC()>>7);
+  if (conf <= (pending_preq_conf + (rnd_xtra_conf & 0x7)) || conf <= 4)
+    return;  // too low of a chance
 
   avgPrefetchConf.sample(conf, dinst->getStatsFlag());
-  if(pending_prefetch && (curPrefetch - minDistance) > 0)
+  if (pending_prefetch && (curPrefetch - minDistance) > 0)
     avgPrefetchNum.sample(curPrefetch - minDistance, pending_statsFlag);
 
   pending_preq_pc   = dinst->getPC();
   pending_preq_conf = conf;
   pending_statsFlag = dinst->getStatsFlag();
-  if(dinst->getChained()) {
+  if (dinst->getChained()) {
     I(dinst->getFetchEngine());
     curPrefetch         = dinst->getChained();
     pending_chain_fetch = dinst->getFetchEngine();
@@ -115,7 +116,7 @@ void Prefetcher::exe(Dinst *dinst)
   }
   pending_preq_addr = dinst->getAddr();
 
-  if(!pending_prefetch) {
+  if (!pending_prefetch) {
     pending_prefetch = true;
     nextPrefetchCB.schedule(1);
   }
@@ -125,11 +126,11 @@ void Prefetcher::exe(Dinst *dinst)
 void Prefetcher::ret(Dinst *dinst)
 // {{{1 update prefetcher state at retirement
 {
-  if(apred == 0)
+  if (apred == 0)
     return;
 
   int ret = apred->ret_update(dinst->getPC(), dinst->getAddr(), dinst->getData());
-  if(ret) {
+  if (ret) {
     dinst->markPrefetch();
   }
 }
@@ -140,15 +141,15 @@ void Prefetcher::nextPrefetch()
 {
   I(apred);
 
-  if(!pending_prefetch)
+  if (!pending_prefetch)
     return;
 
-  if(pending_preq_conf > 0)
+  if (pending_preq_conf > 0)
     pending_preq_conf--;
 
   curPrefetch++;
 
-  if(curPrefetch >= maxPrefetch || pending_preq_conf <= 1) {
+  if (curPrefetch >= maxPrefetch || pending_preq_conf <= 1) {
     pending_prefetch    = false;
     pending_chain_fetch = 0;
     pending_preq_conf   = 0;
@@ -156,17 +157,17 @@ void Prefetcher::nextPrefetch()
     return;
   }
 
-  AddrType paddr;
-  if(pending_chain_fetch) {
+  Addr_t paddr;
+  if (pending_chain_fetch) {
     paddr = apred->predict(pending_preq_pc, curPrefetch + 4, false);
 
   } else {
     paddr = apred->predict(pending_preq_pc, curPrefetch + (curPrefetch - minDistance) * (pfStride - 1), true);
   }
-  if((paddr >> 12) == 0) {
+  if ((paddr >> 12) == 0) {
     bool chain = apred->try_chain_predict(DL1, pending_preq_pc, curPrefetch + (curPrefetch - minDistance) * (pfStride - 1));
-    if(!chain) {
-      if((curPrefetch - minDistance - 1) > 0)
+    if (!chain) {
+      if ((curPrefetch - minDistance - 1) > 0)
         avgPrefetchNum.sample(curPrefetch - minDistance - 1, pending_statsFlag);
       pending_prefetch    = false;
       pending_chain_fetch = 0;
@@ -179,13 +180,13 @@ void Prefetcher::nextPrefetch()
 #endif
     pending_preq_addr = paddr;
     CallbackBase *cb  = 0;
-    if(pending_chain_fetch) {
+    if (pending_chain_fetch) {
       cb = FetchEngine::chainPrefDoneCB::create(pending_chain_fetch, pending_preq_pc, curPrefetch + 4, paddr);
     }
     DL1->tryPrefetch(paddr, pending_statsFlag, curPrefetch, pref_sign, pending_preq_pc, cb);
   }
 
-  if(paddr == pending_preq_addr) { // Offset 0
+  if (paddr == pending_preq_addr) {  // Offset 0
     pending_prefetch    = false;
     pending_chain_fetch = 0;
     pending_preq_conf   = 0;

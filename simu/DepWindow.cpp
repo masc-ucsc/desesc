@@ -1,21 +1,19 @@
 // See LICENSE for details.
 
-#include "dinst.hpp"
-#include "config.hpp"
-
 #include "DepWindow.h"
+
 #include "GProcessor.h"
 #include "Resource.h"
+#include "config.hpp"
+#include "dinst.hpp"
 
 DepWindow::DepWindow(uint32_t cpuid, Cluster *aCluster, const char *clusterName, uint32_t pos)
-    : srcCluster(aCluster)
-    , Id(cpuid)
-    , wrForwardBus("P(%d)_%s%d_wrForwardBus", cpuid, clusterName, pos) {
+    : srcCluster(aCluster), Id(cpuid), wrForwardBus("P(%d)_%s%d_wrForwardBus", cpuid, clusterName, pos) {
   char cadena[1024];
 
   sprintf(cadena, "P(%d)_%s%d_sched", cpuid, clusterName, pos);
-  schedPort =
-      PortGeneric::create(cadena, SescConf->getInt(clusterName, "SchedNumPorts"), SescConf->getInt(clusterName, "SchedPortOccp"));
+  schedPort
+      = PortGeneric::create(cadena, SescConf->getInt(clusterName, "SchedNumPorts"), SescConf->getInt(clusterName, "SchedPortOccp"));
 
   InterClusterLat = SescConf->getInt("cpusimu", "interClusterLat", cpuid);
   SchedDelay      = SescConf->getInt(clusterName, "schedDelay");
@@ -28,19 +26,14 @@ DepWindow::DepWindow(uint32_t cpuid, Cluster *aCluster, const char *clusterName,
   SescConf->isBetween("cpusimu", "interClusterLat", SchedDelay, 1024, cpuid);
 }
 
-DepWindow::~DepWindow() {
-}
+DepWindow::~DepWindow() {}
 
-StallCause DepWindow::canIssue(Dinst *dinst) const {
-
-  return NoStall;
-}
+StallCause DepWindow::canIssue(Dinst *dinst) const { return NoStall; }
 
 void DepWindow::addInst(Dinst *dinst) {
+  I(dinst->getCluster() != 0);  // Resource::schedule must set the resource field
 
-  I(dinst->getCluster() != 0); // Resource::schedule must set the resource field
-
-  if(!dinst->hasDeps()) {
+  if (!dinst->hasDeps()) {
     preSelect(dinst);
   }
 }
@@ -56,9 +49,8 @@ void DepWindow::preSelect(Dinst *dinst) {
 }
 
 void DepWindow::select(Dinst *dinst) {
-
   Time_t schedTime = schedPort->nextSlot(dinst->getStatsFlag());
-  if(dinst->hasInterCluster())
+  if (dinst->hasInterCluster())
     schedTime += InterClusterLat;
   else
     schedTime += SchedDelay;
@@ -77,7 +69,7 @@ void DepWindow::executed(Dinst *dinst) {
   dinst->markExecuted();
   dinst->clearRATEntry();
 
-  if(!dinst->hasPending())
+  if (!dinst->hasPending())
     return;
 
   // NEVER HERE FOR in-order cores
@@ -86,19 +78,19 @@ void DepWindow::executed(Dinst *dinst) {
   I(srcCluster == dinst->getCluster());
 
   I(dinst->isIssued());
-  while(dinst->hasPending()) {
+  while (dinst->hasPending()) {
     Dinst *dstReady = dinst->getNextPending();
     I(dstReady);
 
     I(!dstReady->isExecuted());
 
-    if(!dstReady->hasDeps()) {
+    if (!dstReady->hasDeps()) {
       // Check dstRes because dstReady may not be issued
       I(dstReady->getCluster());
       const Cluster *dstCluster = dstReady->getCluster();
       I(dstCluster);
 
-      if(dstCluster != srcCluster) {
+      if (dstCluster != srcCluster) {
         wrForwardBus.inc(dstReady->getStatsFlag());
         dstReady->markInterCluster();
       }

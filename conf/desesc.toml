@@ -2,6 +2,7 @@
 [emul]
 num  = 1
 type = "dromajo"
+bootroom = "linux_checkpoint_1"
 
 [soc]
 core = ["c0", "c0"]

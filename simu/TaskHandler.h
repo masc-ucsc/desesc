@@ -3,8 +3,9 @@
 #pragma once
 
 //#define ENABLE_MP 0
-#include <vector>
 #include <pthread.h>
+
+#include <vector>
 
 #include "emul_base.hpp"
 #include "iassert.hpp"
@@ -19,11 +20,11 @@ private:
     bool           active;
     bool           deactivating;
     EmulInterface *emul;
-    GProcessor *   simu;
+    GProcessor    *simu;
   };
 
   typedef std::vector<EmulSimuMapping> AllMapsType;
-  typedef FlowID *                     runningType;
+  typedef FlowID                      *runningType;
 
   static AllMapsType   allmaps;
   static volatile bool terminate_all;
@@ -33,8 +34,8 @@ private:
   static pthread_mutex_t mutex;
   static pthread_mutex_t mutex_terminate;
 
-  static std::vector<EmulInterface *> emulas; // associated emula
-  static std::vector<GProcessor *>    cpus;   // All the CPUs in the system
+  static std::vector<EmulInterface *> emulas;  // associated emula
+  static std::vector<GProcessor *>    cpus;    // All the CPUs in the system
 
   static void removeFromRunning(FlowID fid);
 
@@ -52,9 +53,7 @@ public:
   static void addEmulShared(EmulInterface *eint);
   static void addSimu(GProcessor *gproc);
 
-  static bool isTerminated() {
-    return terminate_all;
-  }
+  static bool isTerminated() { return terminate_all; }
 
   static bool isActive(FlowID fid) {
     I(fid < allmaps.size());
@@ -62,9 +61,7 @@ public:
   }
 
   static FlowID getNumActiveCores();
-  static FlowID getNumCores() {
-    return allmaps.size();
-  }
+  static FlowID getNumCores() { return allmaps.size(); }
 
   static FlowID getNumCPUS() {
     I(cpus.size() > 0);
@@ -89,4 +86,3 @@ public:
 
   static void syncStats();
 };
-

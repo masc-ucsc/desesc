@@ -2,14 +2,13 @@
 
 #pragma once
 
-#include <algorithm> // std::find()..
-#include <vector>    // std::vector<>
+#include <algorithm>  // std::find()..
+#include <vector>     // std::vector<>
 
+#include "TQueue.h"
 #include "fmt/format.h"
 #include "iassert.hpp"
-
 #include "pool.hpp"
-#include "TQueue.h"
 #include "snippets.hpp"
 
 /////////////////////////////////////////////////////////////////////////////
@@ -53,7 +52,7 @@ public:
     exit(1);
   }
   static void schedule(TimeDelta_t delta, EventScheduler *cb) {
-    I(delta); // Only for performance reasons
+    I(delta);  // Only for performance reasons
 #ifndef NDEBUG
     cb->fileName = __FILE__;
     cb->lineno   = __LINE__;
@@ -68,10 +67,10 @@ public:
     exit(1);
   }
   static void scheduleAbs(Time_t tim, EventScheduler *cb) {
-    I(tim > globalClock); // Only for performance reasons
+    I(tim > globalClock);  // Only for performance reasons
 #ifndef NDEBUG
     static bool once = true;
-    GI(globalClock > 10000000 && !once, tim < (2 * globalClock)); // may be fine, but be suspicious if it repeats!!
+    GI(globalClock > 10000000 && !once, tim < (2 * globalClock));  // may be fine, but be suspicious if it repeats!!
     once         = false;
     cb->fileName = __FILE__;
     cb->lineno   = __LINE__;
@@ -83,31 +82,27 @@ public:
     EventScheduler *cb;
 
 #ifndef NDEBUG
-    while((cb = cbQ.nextJob(globalClock))) {
-      I(0); // There should be no job in current cycle (executed before, and not possible to schedule events with 0 delay
+    while ((cb = cbQ.nextJob(globalClock))) {
+      I(0);  // There should be no job in current cycle (executed before, and not possible to schedule events with 0 delay
       cb->call();
     }
 #endif
     globalClock++;
 
     uint32_t cb_per_clock = 0;
-    while((cb = cbQ.nextJob(globalClock))) {
+    while ((cb = cbQ.nextJob(globalClock))) {
       cb->call();
       cb_per_clock++;
     }
 
-    if(cb_per_clock == 0) {
+    if (cb_per_clock == 0) {
       deadClock++;
     }
   }
 
-  static bool empty() {
-    return cbQ.empty();
-  }
+  static bool empty() { return cbQ.empty(); }
 
-  static size_t size() {
-    return cbQ.size();
-  }
+  static size_t size() { return cbQ.size(); }
 
   static void reset() {
     I(empty());
@@ -120,30 +115,19 @@ class CallbackBase : public EventScheduler {
 private:
 protected:
   CallbackBase *nextCB4Container;
-  CallbackBase *getNextCallbackBase() const {
-    return nextCB4Container;
-  }
-  void setNextCallbackBase(CallbackBase *cb) {
-    nextCB4Container = cb;
-  }
+  CallbackBase *getNextCallbackBase() const { return nextCB4Container; }
+  void          setNextCallbackBase(CallbackBase *cb) { nextCB4Container = cb; }
   friend class CallbackContainer;
 #ifndef NDEBUG
-  CallbackBase() {
-    nextCB4Container = 0;
-  }
+  CallbackBase() { nextCB4Container = 0; }
   virtual ~CallbackBase() {
-    I(nextCB4Container == 0); // Destroying a callback still enqueed?
+    I(nextCB4Container == 0);  // Destroying a callback still enqueed?
   }
 #endif
 public:
-  virtual void destroy() {
-  }
-  void schedule(TimeDelta_t delta) {
-    EventScheduler::schedule(delta, this);
-  }
-  void scheduleAbs(Time_t tim) {
-    EventScheduler::scheduleAbs(tim, this);
-  }
+  virtual void destroy() {}
+  void         schedule(TimeDelta_t delta) { EventScheduler::schedule(delta, this); }
+  void         scheduleAbs(Time_t tim) { EventScheduler::scheduleAbs(tim, this); }
 };
 
 class StaticCallbackBase : public CallbackBase {
@@ -173,10 +157,8 @@ private:
   Parameter3 p3;
 
 protected:
-  CallbackFunction3() {
-  }
-  virtual ~CallbackFunction3() {
-  }
+  CallbackFunction3() {}
+  virtual ~CallbackFunction3() {}
 
 public:
   static CallbackFunction3 *create(Parameter1 a1, Parameter2 a2, Parameter3 a3) {
@@ -189,7 +171,7 @@ public:
   }
 
   static void schedule(TimeDelta_t delta, Parameter1 a1, Parameter2 a2, Parameter3 a3) {
-    if(delta == 0) {
+    if (delta == 0) {
       (*funcPtr)(a1, a2, a3);
     } else {
       CallbackFunction3 *cb = create(a1, a2, a3);
@@ -199,7 +181,7 @@ public:
 
   static void scheduleAbs(Time_t tim, Parameter1 a1, Parameter2 a2, Parameter3 a3) {
     I(tim >= globalClock);
-    if(tim == globalClock) {
+    if (tim == globalClock) {
       (*funcPtr)(a1, a2, a3);
     } else {
       CallbackFunction3 *cb = create(a1, a2, a3);
@@ -212,13 +194,9 @@ public:
     destroy();
   }
 
-  void destroy() {
-    cbPool.in(this);
-  }
+  void destroy() { cbPool.in(this); }
 
-  void setParam1(Parameter1 a1) {
-    p1 = a1;
-  }
+  void setParam1(Parameter1 a1) { p1 = a1; }
 };
 
 template <class Parameter1, class Parameter2, class Parameter3, void (*funcPtr)(Parameter1, Parameter2, Parameter3)>
@@ -236,10 +214,8 @@ private:
   Parameter2 p2;
 
 protected:
-  CallbackFunction2() {
-  }
-  virtual ~CallbackFunction2() {
-  }
+  CallbackFunction2() {}
+  virtual ~CallbackFunction2() {}
 
 public:
   static CallbackFunction2 *create(Parameter1 a1, Parameter2 a2) {
@@ -251,7 +227,7 @@ public:
   }
 
   static void schedule(TimeDelta_t delta, Parameter1 a1, Parameter2 a2) {
-    if(delta == 0) {
+    if (delta == 0) {
       (*funcPtr)(a1, a2);
     } else {
       CallbackFunction2 *cb = create(a1, a2);
@@ -260,7 +236,7 @@ public:
   }
 
   static void scheduleAbs(Time_t tim, Parameter1 a1, Parameter2 a2) {
-    if(tim == globalClock) {
+    if (tim == globalClock) {
       (*funcPtr)(a1, a2);
     } else {
       CallbackFunction2 *cb = create(a1, a2);
@@ -273,20 +249,17 @@ public:
     destroy();
   }
 
-  void destroy() {
-    cbPool.in(this);
-  }
+  void destroy() { cbPool.in(this); }
 
-  void setParam1(Parameter1 a1) {
-    p1 = a1;
-  }
+  void setParam1(Parameter1 a1) { p1 = a1; }
 };
 
 template <class Parameter1, class Parameter2, void (*funcPtr)(Parameter1, Parameter2)>
-typename CallbackFunction2<Parameter1, Parameter2, funcPtr>::poolType
-    CallbackFunction2<Parameter1, Parameter2, funcPtr>::cbPool(32, "CBF2");
+typename CallbackFunction2<Parameter1, Parameter2, funcPtr>::poolType CallbackFunction2<Parameter1, Parameter2, funcPtr>::cbPool(
+    32, "CBF2");
 
-template <class Parameter1, void (*funcPtr)(Parameter1)> class CallbackFunction1 : public CallbackBase {
+template <class Parameter1, void (*funcPtr)(Parameter1)>
+class CallbackFunction1 : public CallbackBase {
 private:
   typedef pool<CallbackFunction1> poolType;
   static poolType                 cbPool;
@@ -295,10 +268,8 @@ private:
   Parameter1 p1;
 
 protected:
-  CallbackFunction1() {
-  }
-  virtual ~CallbackFunction1() {
-  }
+  CallbackFunction1() {}
+  virtual ~CallbackFunction1() {}
 
 public:
   static CallbackFunction1 *create(Parameter1 a1) {
@@ -308,7 +279,7 @@ public:
   }
 
   static void schedule(TimeDelta_t delta, Parameter1 a1) {
-    if(delta == 0) {
+    if (delta == 0) {
       (*funcPtr)(a1);
     } else {
       CallbackFunction1 *cb = create(a1);
@@ -317,7 +288,7 @@ public:
   }
 
   static void scheduleAbs(Time_t tim, Parameter1 a1) {
-    if(tim == globalClock) {
+    if (tim == globalClock) {
       (*funcPtr)(a1);
     } else {
       CallbackFunction1 *cb = create(a1);
@@ -330,29 +301,24 @@ public:
     destroy();
   }
 
-  void destroy() {
-    cbPool.in(this);
-  }
+  void destroy() { cbPool.in(this); }
 
-  void setParam1(Parameter1 a1) {
-    p1 = a1;
-  }
+  void setParam1(Parameter1 a1) { p1 = a1; }
 };
 
 template <class Parameter1, void (*funcPtr)(Parameter1)>
 typename CallbackFunction1<Parameter1, funcPtr>::poolType CallbackFunction1<Parameter1, funcPtr>::cbPool(32, "CBF1");
 
-template <void (*funcPtr)()> class CallbackFunction0 : public CallbackBase {
+template <void (*funcPtr)()>
+class CallbackFunction0 : public CallbackBase {
 private:
   typedef pool<CallbackFunction0> poolType;
   static poolType                 cbPool;
   friend class pool<CallbackFunction0>;
 
 protected:
-  CallbackFunction0() {
-  }
-  virtual ~CallbackFunction0() {
-  }
+  CallbackFunction0() {}
+  virtual ~CallbackFunction0() {}
 
 public:
   static CallbackFunction0 *create() {
@@ -361,7 +327,7 @@ public:
   }
 
   static void schedule(TimeDelta_t delta) {
-    if(delta == 0) {
+    if (delta == 0) {
       (*funcPtr)();
     } else {
       CallbackFunction0 *cb = create();
@@ -370,7 +336,7 @@ public:
   }
 
   static void scheduleAbs(Time_t tim) {
-    if(tim == globalClock) {
+    if (tim == globalClock) {
       (*funcPtr)();
     } else {
       CallbackFunction0 *cb = create();
@@ -383,12 +349,11 @@ public:
     destroy();
   }
 
-  void destroy() {
-    cbPool.in(this);
-  }
+  void destroy() { cbPool.in(this); }
 };
 
-template <void (*funcPtr)()> typename CallbackFunction0<funcPtr>::poolType CallbackFunction0<funcPtr>::cbPool(32, "CBF1");
+template <void (*funcPtr)()>
+typename CallbackFunction0<funcPtr>::poolType CallbackFunction0<funcPtr>::cbPool(32, "CBF1");
 
 template <class Parameter1, class Parameter2, void (*funcPtr)(Parameter1, Parameter2)>
 class StaticCallbackFunction2 : public StaticCallbackBase {
@@ -403,17 +368,17 @@ protected:
 public:
   StaticCallbackFunction2() {
 #ifndef NDEBUG
-    isFree = true;;
+    isFree = true;
+    ;
 #endif
   }
-  virtual ~StaticCallbackFunction2() {
-  }
+  virtual ~StaticCallbackFunction2() {}
 
   void schedule(TimeDelta_t delta, Parameter1 a1, Parameter2 a2) {
 #ifndef NDEBUG
     I(isFree);
 #endif
-    if(delta == 0) {
+    if (delta == 0) {
       (*funcPtr)(a1, a2);
     } else {
       p1 = a1;
@@ -429,7 +394,7 @@ public:
 #ifndef NDEBUG
     I(isFree);
 #endif
-    if(tim == globalClock)
+    if (tim == globalClock)
       (*funcPtr)(a1, a2);
     else {
       p1 = a1;
@@ -448,26 +413,21 @@ public:
     (*funcPtr)(p1, p2);
   }
 
-  void setParam1(Parameter1 a1) {
-    p1 = a1;
-  }
+  void setParam1(Parameter1 a1) { p1 = a1; }
 
-  void setParam2(Parameter2 a2) {
-    p2 = a2;
-  }
+  void setParam2(Parameter2 a2) { p2 = a2; }
 };
 
-template <void (*funcPtr)(void)> class StaticCallbackFunction0 : public StaticCallbackBase {
+template <void (*funcPtr)(void)>
+class StaticCallbackFunction0 : public StaticCallbackBase {
 private:
 protected:
 public:
-  StaticCallbackFunction0() {
-  }
-  virtual ~StaticCallbackFunction0() {
-  }
+  StaticCallbackFunction0() {}
+  virtual ~StaticCallbackFunction0() {}
 
   void schedule(TimeDelta_t delta) {
-    if(delta == 0) {
+    if (delta == 0) {
       (*funcPtr)();
     } else {
       EventScheduler::schedule(delta, this);
@@ -475,16 +435,14 @@ public:
   }
 
   void scheduleAbs(Time_t tim) {
-    if(tim == globalClock)
+    if (tim == globalClock)
       (*funcPtr)();
     else {
       EventScheduler::scheduleAbs(tim, this);
     }
   }
 
-  void call() {
-    (*funcPtr)();
-  }
+  void call() { (*funcPtr)(); }
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -516,11 +474,9 @@ private:
   ClassType *instance;
 
 protected:
-  CallbackMember6() {
-  }
+  CallbackMember6() {}
 
-  virtual ~CallbackMember6() {
-  }
+  virtual ~CallbackMember6() {}
 
 public:
   static CallbackMember6 *create(ClassType *i, Parameter1 a1, Parameter2 a2, Parameter3 a3, Parameter4 a4, Parameter5 a5,
@@ -539,7 +495,7 @@ public:
 
   static void schedule(TimeDelta_t delta, ClassType *i, Parameter1 a1, Parameter2 a2, Parameter3 a3, Parameter4 a4, Parameter5 a5,
                        Parameter6 a6) {
-    if(delta == 0) {
+    if (delta == 0) {
       (i->*memberPtr)(a1, a2, a3, a4, a5, a6);
     } else {
       CallbackMember6 *cb = create(i, a1, a2, a3, a4, a5, a6);
@@ -549,7 +505,7 @@ public:
 
   static void scheduleAbs(Time_t tim, ClassType *i, Parameter1 a1, Parameter2 a2, Parameter3 a3, Parameter4 a4, Parameter5 a5,
                           Parameter6 a6) {
-    if(tim == globalClock) {
+    if (tim == globalClock) {
       (i->*memberPtr)(a1, a2, a3, a4, a5, a6);
     } else {
       CallbackMember6 *cb = create(i, a1, a2, a3, a4, a5, a6);
@@ -562,13 +518,9 @@ public:
     destroy();
   }
 
-  void destroy() {
-    cbPool.in(this);
-  }
+  void destroy() { cbPool.in(this); }
 
-  void setParam1(Parameter1 a1) {
-    p1 = a1;
-  }
+  void setParam1(Parameter1 a1) { p1 = a1; }
 };
 
 template <class ClassType, class Parameter1, class Parameter2, class Parameter3, class Parameter4, class Parameter5,
@@ -597,11 +549,9 @@ private:
   ClassType *instance;
 
 protected:
-  CallbackMember5() {
-  }
+  CallbackMember5() {}
 
-  virtual ~CallbackMember5() {
-  }
+  virtual ~CallbackMember5() {}
 
 public:
   static CallbackMember5 *create(ClassType *i, Parameter1 a1, Parameter2 a2, Parameter3 a3, Parameter4 a4, Parameter5 a5) {
@@ -617,7 +567,7 @@ public:
   }
 
   static void schedule(TimeDelta_t delta, ClassType *i, Parameter1 a1, Parameter2 a2, Parameter3 a3, Parameter4 a4, Parameter5 a5) {
-    if(delta == 0) {
+    if (delta == 0) {
       (i->*memberPtr)(a1, a2, a3, a4, a5);
     } else {
       CallbackMember5 *cb = create(i, a1, a2, a3, a4, a5);
@@ -626,7 +576,7 @@ public:
   }
 
   static void scheduleAbs(Time_t tim, ClassType *i, Parameter1 a1, Parameter2 a2, Parameter3 a3, Parameter4 a4, Parameter5 a5) {
-    if(tim == globalClock) {
+    if (tim == globalClock) {
       (i->*memberPtr)(a1, a2, a3, a4, a5);
     } else {
       CallbackMember5 *cb = create(i, a1, a2, a3, a4, a5);
@@ -639,13 +589,9 @@ public:
     destroy();
   }
 
-  void destroy() {
-    cbPool.in(this);
-  }
+  void destroy() { cbPool.in(this); }
 
-  void setParam1(Parameter1 a1) {
-    p1 = a1;
-  }
+  void setParam1(Parameter1 a1) { p1 = a1; }
 };
 
 template <class ClassType, class Parameter1, class Parameter2, class Parameter3, class Parameter4, class Parameter5,
@@ -671,10 +617,8 @@ private:
   ClassType *instance;
 
 protected:
-  CallbackMember4() {
-  }
-  virtual ~CallbackMember4() {
-  }
+  CallbackMember4() {}
+  virtual ~CallbackMember4() {}
 
 public:
   static CallbackMember4 *create(ClassType *i, Parameter1 a1, Parameter2 a2, Parameter3 a3, Parameter4 a4) {
@@ -689,7 +633,7 @@ public:
   }
 
   static void schedule(TimeDelta_t delta, ClassType *i, Parameter1 a1, Parameter2 a2, Parameter3 a3, Parameter4 a4) {
-    if(delta == 0) {
+    if (delta == 0) {
       (i->*memberPtr)(a1, a2, a3, a4);
     } else {
       CallbackMember4 *cb = create(i, a1, a2, a3, a4);
@@ -698,7 +642,7 @@ public:
   }
 
   static void scheduleAbs(Time_t tim, ClassType *i, Parameter1 a1, Parameter2 a2, Parameter3 a3, Parameter4 a4) {
-    if(tim == globalClock) {
+    if (tim == globalClock) {
       (i->*memberPtr)(a1, a2, a3, a4);
     } else {
       CallbackMember4 *cb = create(i, a1, a2, a3, a4);
@@ -711,13 +655,9 @@ public:
     destroy();
   }
 
-  void destroy() {
-    cbPool.in(this);
-  }
+  void destroy() { cbPool.in(this); }
 
-  void setParam1(Parameter1 a1) {
-    p1 = a1;
-  }
+  void setParam1(Parameter1 a1) { p1 = a1; }
 };
 
 template <class ClassType, class Parameter1, class Parameter2, class Parameter3, class Parameter4,
@@ -740,10 +680,8 @@ private:
   ClassType *instance;
 
 protected:
-  CallbackMember3() {
-  }
-  virtual ~CallbackMember3() {
-  }
+  CallbackMember3() {}
+  virtual ~CallbackMember3() {}
 
 public:
   static CallbackMember3 *create(ClassType *i, Parameter1 a1, Parameter2 a2, Parameter3 a3) {
@@ -757,7 +695,7 @@ public:
   }
 
   static void schedule(TimeDelta_t delta, ClassType *i, Parameter1 a1, Parameter2 a2, Parameter3 a3) {
-    if(delta == 0) {
+    if (delta == 0) {
       (i->*memberPtr)(a1, a2, a3);
     } else {
       CallbackMember3 *cb = create(i, a1, a2, a3);
@@ -766,7 +704,7 @@ public:
   }
 
   static void scheduleAbs(Time_t tim, ClassType *i, Parameter1 a1, Parameter2 a2, Parameter3 a3) {
-    if(tim == globalClock) {
+    if (tim == globalClock) {
       (i->*memberPtr)(a1, a2, a3);
     } else {
       CallbackMember3 *cb = create(i, a1, a2, a3);
@@ -779,13 +717,9 @@ public:
     destroy();
   }
 
-  void destroy() {
-    cbPool.in(this);
-  }
+  void destroy() { cbPool.in(this); }
 
-  void setParam1(Parameter1 a1) {
-    p1 = a1;
-  }
+  void setParam1(Parameter1 a1) { p1 = a1; }
 };
 
 template <class ClassType, class Parameter1, class Parameter2, class Parameter3,
@@ -806,10 +740,8 @@ private:
   ClassType *instance;
 
 protected:
-  CallbackMember2() {
-  }
-  virtual ~CallbackMember2() {
-  }
+  CallbackMember2() {}
+  virtual ~CallbackMember2() {}
 
 public:
   static CallbackMember2 *create(ClassType *i, Parameter1 a1, Parameter2 a2) {
@@ -822,7 +754,7 @@ public:
   }
 
   static void schedule(TimeDelta_t delta, ClassType *i, Parameter1 a1, Parameter2 a2) {
-    if(delta == 0) {
+    if (delta == 0) {
       (i->*memberPtr)(a1, a2);
     } else {
       CallbackMember2 *cb = create(i, a1, a2);
@@ -831,7 +763,7 @@ public:
   }
 
   static void scheduleAbs(Time_t tim, ClassType *i, Parameter1 a1, Parameter2 a2) {
-    if(tim == globalClock) {
+    if (tim == globalClock) {
       (i->*memberPtr)(a1, a2);
     } else {
       CallbackMember2 *cb = create(i, a1, a2);
@@ -844,20 +776,17 @@ public:
     destroy();
   }
 
-  void destroy() {
-    cbPool.in(this);
-  }
+  void destroy() { cbPool.in(this); }
 
-  void setParam1(Parameter1 a1) {
-    p1 = a1;
-  }
+  void setParam1(Parameter1 a1) { p1 = a1; }
 };
 
 template <class ClassType, class Parameter1, class Parameter2, void (ClassType::*memberPtr)(Parameter1, Parameter2)>
 typename CallbackMember2<ClassType, Parameter1, Parameter2, memberPtr>::poolType
     CallbackMember2<ClassType, Parameter1, Parameter2, memberPtr>::cbPool(32, "CBM2");
 
-template <class ClassType, class Parameter1, void (ClassType::*memberPtr)(Parameter1)> class CallbackMember1 : public CallbackBase {
+template <class ClassType, class Parameter1, void (ClassType::*memberPtr)(Parameter1)>
+class CallbackMember1 : public CallbackBase {
 private:
   typedef pool<CallbackMember1> poolType;
   static poolType               cbPool;
@@ -868,10 +797,8 @@ private:
   ClassType *instance;
 
 protected:
-  CallbackMember1() {
-  }
-  virtual ~CallbackMember1() {
-  }
+  CallbackMember1() {}
+  virtual ~CallbackMember1() {}
 
 public:
   static CallbackMember1 *create(ClassType *i, Parameter1 a1) {
@@ -883,7 +810,7 @@ public:
   }
 
   static void schedule(TimeDelta_t delta, ClassType *i, Parameter1 a1) {
-    if(delta == 0) {
+    if (delta == 0) {
       (i->*memberPtr)(a1);
     } else {
       CallbackMember1 *cb = create(i, a1);
@@ -892,7 +819,7 @@ public:
   }
 
   static void scheduleAbs(Time_t tim, ClassType *i, Parameter1 a1) {
-    if(tim == globalClock) {
+    if (tim == globalClock) {
       (i->*memberPtr)(a1);
     } else {
       CallbackMember1 *cb = create(i, a1);
@@ -905,20 +832,17 @@ public:
     destroy();
   }
 
-  void destroy() {
-    cbPool.in(this);
-  }
+  void destroy() { cbPool.in(this); }
 
-  void setParam1(Parameter1 a1) {
-    p1 = a1;
-  }
+  void setParam1(Parameter1 a1) { p1 = a1; }
 };
 
 template <class ClassType, class Parameter1, void (ClassType::*memberPtr)(Parameter1)>
-typename CallbackMember1<ClassType, Parameter1, memberPtr>::poolType
-    CallbackMember1<ClassType, Parameter1, memberPtr>::cbPool(32, "CBM1");
+typename CallbackMember1<ClassType, Parameter1, memberPtr>::poolType CallbackMember1<ClassType, Parameter1, memberPtr>::cbPool(
+    32, "CBM1");
 
-template <class ClassType, void (ClassType::*memberPtr)()> class CallbackMember0 : public CallbackBase {
+template <class ClassType, void (ClassType::*memberPtr)()>
+class CallbackMember0 : public CallbackBase {
 private:
   typedef pool<CallbackMember0> poolType;
   static poolType               cbPool;
@@ -927,10 +851,8 @@ private:
   ClassType *instance;
 
 protected:
-  CallbackMember0() {
-  }
-  virtual ~CallbackMember0() {
-  }
+  CallbackMember0() {}
+  virtual ~CallbackMember0() {}
 
 public:
   static CallbackMember0 *create(ClassType *i) {
@@ -941,7 +863,7 @@ public:
   }
 
   static void schedule(TimeDelta_t delta, ClassType *i) {
-    if(delta == 0) {
+    if (delta == 0) {
       (i->*memberPtr)();
     } else {
       CallbackMember0 *cb = create(i);
@@ -950,7 +872,7 @@ public:
   }
 
   static void scheduleAbs(Time_t tim, ClassType *i) {
-    if(tim == globalClock) {
+    if (tim == globalClock) {
       (i->*memberPtr)();
     } else {
       CallbackMember0 *cb = create(i);
@@ -963,9 +885,7 @@ public:
     destroy();
   }
 
-  void destroy() {
-    cbPool.in(this);
-  }
+  void destroy() { cbPool.in(this); }
 };
 
 template <class ClassType, void (ClassType::*memberPtr)()>
@@ -991,14 +911,13 @@ public:
     isFree = true;
 #endif
   }
-  virtual ~StaticCallbackMember2() {
-  }
+  virtual ~StaticCallbackMember2() {}
 
   void schedule(TimeDelta_t delta, Parameter1 a1, Parameter2 a2) {
 #ifndef NDEBUG
     I(isFree);
 #endif
-    if(delta == 0)
+    if (delta == 0)
       (instance->*memberPtr)(a1, a2);
     else {
       p1 = a1;
@@ -1014,7 +933,7 @@ public:
 #ifndef NDEBUG
     I(isFree);
 #endif
-    if(tim == globalClock)
+    if (tim == globalClock)
       (instance->*memberPtr)(a1, a2);
     else {
       p1 = a1;
@@ -1033,13 +952,9 @@ public:
     (instance->*memberPtr)(p1, p2);
   }
 
-  void setParam1(Parameter1 a1) {
-    p1 = a1;
-  }
+  void setParam1(Parameter1 a1) { p1 = a1; }
 
-  void setParam2(Parameter2 a2) {
-    p2 = a2;
-  }
+  void setParam2(Parameter2 a2) { p2 = a2; }
 };
 
 template <class ClassType, class Parameter1, void (ClassType::*memberPtr)(Parameter1)>
@@ -1059,14 +974,13 @@ public:
     isFree = true;
 #endif
   }
-  virtual ~StaticCallbackMember1() {
-  }
+  virtual ~StaticCallbackMember1() {}
 
   void schedule(TimeDelta_t delta, Parameter1 a1) {
 #ifndef NDEBUG
     I(isFree);
 #endif
-    if(delta == 0)
+    if (delta == 0)
       (instance->*memberPtr)(a1);
     else {
       p1 = a1;
@@ -1081,7 +995,7 @@ public:
 #ifndef NDEBUG
     I(isFree);
 #endif
-    if(tim == globalClock)
+    if (tim == globalClock)
       (instance->*memberPtr)(a1);
     else {
       p1 = a1;
@@ -1099,12 +1013,11 @@ public:
     (instance->*memberPtr)(p1);
   }
 
-  void setParam1(Parameter1 a1) {
-    p1 = a1;
-  }
+  void setParam1(Parameter1 a1) { p1 = a1; }
 };
 
-template <class ClassType, void (ClassType::*memberPtr)()> class StaticCallbackMember0 : public StaticCallbackBase {
+template <class ClassType, void (ClassType::*memberPtr)()>
+class StaticCallbackMember0 : public StaticCallbackBase {
 private:
 #ifndef NDEBUG
   bool isFree;
@@ -1119,14 +1032,13 @@ public:
     isFree = true;
 #endif
   }
-  virtual ~StaticCallbackMember0() {
-  }
+  virtual ~StaticCallbackMember0() {}
 
   void schedule(TimeDelta_t delta) {
 #ifndef NDEBUG
     I(isFree);
 #endif
-    if(delta == 0)
+    if (delta == 0)
       call();
     else {
 #ifndef NDEBUG
@@ -1140,7 +1052,7 @@ public:
 #ifndef NDEBUG
     I(isFree);
 #endif
-    if(tim == globalClock)
+    if (tim == globalClock)
       call();
     else {
 #ifndef NDEBUG
@@ -1179,15 +1091,13 @@ public:
     size  = 0;
   }
 
-  ~CallbackContainer() {
-    I(first == 0);
-  }
+  ~CallbackContainer() { I(first == 0); }
 
   void add(CallbackBase *c) {
     I(c->getNextCallbackBase() == 0);
     c->setNextCallbackBase(0);
 
-    if(last == 0) {
+    if (last == 0) {
       first = c;
       last  = c;
     } else {
@@ -1199,7 +1109,7 @@ public:
 
   void call() {
     // optimization for te most common case
-    if(first == 0)
+    if (first == 0)
       return;
 
     do {
@@ -1211,16 +1121,16 @@ public:
 #ifndef NDEBUG
       t->setNextCallbackBase(0);
 #endif
-      if(first == 0)
+      if (first == 0)
         last = 0;
       cb->call();
       size--;
-    } while(first);
+    } while (first);
   }
 
   void mycall() {
     // optimization for te most common case
-    if(first == 0)
+    if (first == 0)
       return;
 
     uint64_t mysize = size;
@@ -1233,16 +1143,16 @@ public:
 #ifndef NDEBUG
       t->setNextCallbackBase(0);
 #endif
-      if(first == 0)
+      if (first == 0)
         last = 0;
       cb->call();
       size--;
       mysize--;
-    } while(first && (mysize > 0));
+    } while (first && (mysize > 0));
   }
 
   void callNext() {
-    if(first == 0)
+    if (first == 0)
       return;
 
     CallbackBase *cb = first;
@@ -1253,18 +1163,13 @@ public:
 #ifndef NDEBUG
     t->setNextCallbackBase(0);
 #endif
-    if(first == 0)
+    if (first == 0)
       last = 0;
 
     cb->call();
   }
 
-  bool empty() const {
-    return first == 0;
-  }
+  bool empty() const { return first == 0; }
 
-  void makeEmpty() {
-    first = 0;
-  }
+  void makeEmpty() { first = 0; }
 };
-

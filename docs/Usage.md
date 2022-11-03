@@ -1,5 +1,17 @@
 # Environment 
-ESESC runs on Linux.  It has been tested on x86-64 and ARM platforms. The x86-64 system is the default, but ESESC also compiles and runs on ARM.
+
+ESESC runs on Linux and OSX. 
+
+## Bazel useful commands
+
+
+If bazel stop building
+```
+bazel clean --expunge
+```
+
+.  It has been tested on x86-64 and ARM platforms. The
+x86-64 system is the default, but ESESC also compiles and runs on ARM.
 
 Previous version of ESESC had ARMv7, currently it only has MIPSR6 and RISCV. The default flow is RISCV.
 

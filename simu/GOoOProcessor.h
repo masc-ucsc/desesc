@@ -1,9 +1,8 @@
 
 #pragma once
 
-#include "iassert.hpp"
-
 #include "GProcessor.h"
+#include "iassert.hpp"
 
 class GOoOProcessor : public GProcessor {
 private:
@@ -18,8 +17,6 @@ protected:
   // END VIRTUAL FUNCTIONS of GProcessor
 public:
   GOoOProcessor(GMemorySystem *gm, CPU_t i);
-  virtual ~GOoOProcessor() {
-  }
+  virtual ~GOoOProcessor() {}
   //  virtual LSQ *getLSQ();
 };
-

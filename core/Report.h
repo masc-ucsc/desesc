@@ -25,13 +25,14 @@ Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
 #include <stdio.h>
 #include <stdlib.h>
+
 #include <string>
 
 class Report {
 private:
   static const int32_t MAXREPORTSTACK = 32;
 
-  static FILE *      rfd[MAXREPORTSTACK];
+  static FILE       *rfd[MAXREPORTSTACK];
   static const char *fns[MAXREPORTSTACK];
   static int32_t     tos;
 
@@ -51,4 +52,4 @@ public:
 
 // Report::field("bla bla bla:",a);
 
-#endif // REPORT_H
+#endif  // REPORT_H

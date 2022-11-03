@@ -2,12 +2,11 @@
 
 #pragma once
 
-#include "iassert.hpp"
-
 #include "FetchEngine.h"
 #include "GProcessor.h"
 #include "LSQ.h"
 #include "Pipeline.h"
+#include "iassert.hpp"
 
 struct SMTFetch {
   FetchEngine *fe;
@@ -61,9 +60,7 @@ public:
 
   void executing(Dinst *dinst);
   void executed(Dinst *dinst);
-  LSQ *getLSQ() {
-    return &lsq;
-  }
+  LSQ *getLSQ() { return &lsq; }
   void replay(Dinst *dinst);
   bool isFlushing() {
     I(0);
@@ -78,4 +75,3 @@ public:
     return false;
   }
 };
-

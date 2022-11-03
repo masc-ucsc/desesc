@@ -21,19 +21,18 @@ ESESC; see the file COPYING.  If not, write to the  Free Software Foundation, 59
 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 */
 
-#include "fmt/format.h"
 #include "SCTable.h"
 
+#include "fmt/format.h"
+
 SCTable::SCTable(const char *str, size_t size, uint8_t bits)
-    : sizeMask(size - 1)
-    , Saturate(bits > 1 ? (1 << (bits - 1)) : 1)
-    , MaxValue((1 << bits) - 1) {
-  if((size & (size - 1)) != 0) {
+    : sizeMask(size - 1), Saturate(bits > 1 ? (1 << (bits - 1)) : 1), MaxValue((1 << bits) - 1) {
+  if ((size & (size - 1)) != 0) {
     fmt::print("SCTable ({}) size [{}] a power of two\n", str, (int)size);
     I(0);
     return;
   }
-  if(bits > 7 || bits < 1) {
+  if (bits > 7 || bits < 1) {
     fmt::print("SCTable ({}) bits [{}] should be between 1 and 7\n", str, bits);
     I(0);
     return;
@@ -44,19 +43,15 @@ SCTable::SCTable(const char *str, size_t size, uint8_t bits)
 
   uint8_t flipflop = 1;
 
-  for(size_t cnt = 0; cnt < size; cnt++) {
+  for (size_t cnt = 0; cnt < size; cnt++) {
     table[cnt] = flipflop;
     flipflop   = Saturate - flipflop;
   }
 }
 
-SCTable::~SCTable(void) {
-  delete[] table;
-}
+SCTable::~SCTable(void) { delete[] table; }
 
-void SCTable::reset(uint32_t cid, bool taken) {
-  table[cid & sizeMask] = taken ? Saturate : Saturate - 1;
-}
+void SCTable::reset(uint32_t cid, bool taken) { table[cid & sizeMask] = taken ? Saturate : Saturate - 1; }
 
 void SCTable::clear(uint32_t cid) {
   // Bias to not-taken
@@ -68,11 +63,11 @@ bool SCTable::predict(uint32_t cid, bool taken) {
 
   bool ptaken = ((*entry) >= Saturate);
 
-  if(taken) {
-    if(*entry < MaxValue)
+  if (taken) {
+    if (*entry < MaxValue)
       *entry = (*entry) + 1;
   } else {
-    if(*entry > 0)
+    if (*entry > 0)
       *entry = (*entry) - 1;
   }
 
@@ -81,7 +76,7 @@ bool SCTable::predict(uint32_t cid, bool taken) {
 
 void SCTable::inc(uint32_t cid, int d) {
   uint8_t *entry = &table[cid & sizeMask];
-  if((d + *entry) < MaxValue)
+  if ((d + *entry) < MaxValue)
     *entry = (*entry) + d;
   else
     *entry = MaxValue;
@@ -89,7 +84,7 @@ void SCTable::inc(uint32_t cid, int d) {
 
 void SCTable::dec(uint32_t cid, int d) {
   uint8_t *entry = &table[cid & sizeMask];
-  if((d - *entry) > 0)
+  if ((d - *entry) > 0)
     *entry = (*entry) + d;
   else
     *entry = 0;
@@ -98,11 +93,11 @@ void SCTable::dec(uint32_t cid, int d) {
 void SCTable::update(uint32_t cid, bool taken) {
   uint8_t *entry = &table[cid & sizeMask];
 
-  if(taken) {
-    if(*entry < MaxValue)
+  if (taken) {
+    if (*entry < MaxValue)
       *entry = (*entry) + 1;
   } else {
-    if(*entry > 0)
+    if (*entry > 0)
       *entry = (*entry) - 1;
   }
 }

@@ -24,12 +24,12 @@ Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 // Diferent compilers have slightly different calling conventions for
 // STL. This file has a cross-compiler implementation.
 
-#include <unordered_map>
-#include <set>
 #include <map>
-#define HASH_MAP std::unordered_map
-#define HASH_SET std::set
-#define HASH     std::hash
+#include <set>
+#include <unordered_map>
+#define HASH_MAP      std::unordered_map
+#define HASH_SET      std::set
+#define HASH          std::hash
 #define HASH_MULTIMAP std::multimap
 
-#endif // ESTL_H
+#endif  // ESTL_H

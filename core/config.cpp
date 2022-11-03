@@ -1,15 +1,14 @@
 // This file is distributed under the BSD 3-Clause License. See LICENSE for details.
 
-#include "fmt/format.h"
-
 #include "config.hpp"
 
-void Config::init(const std::string f) {
+#include "fmt/format.h"
 
+void Config::init(const std::string f) {
   filename = f;
 
   const char *e = getenv("DESESCCONF");
-  if(e)
+  if (e)
     filename = e;
 
   data = toml::parse(filename);
@@ -26,7 +25,7 @@ bool Config::check(const std::string &block, const std::string &name) {
     return false;
   }
 
-  auto sec = toml::find(data,block);
+  auto sec = toml::find(data, block);
   if (!sec.contains(name)) {
     errors.emplace_back(fmt::format("section:{} does not have field named {} in configuration:{}\n", block, name, filename));
     return false;
@@ -36,16 +35,15 @@ bool Config::check(const std::string &block, const std::string &name) {
 }
 
 std::string Config::get_string(const std::string &block, const std::string &name, const std::vector<std::string> allowed) {
-
-  if (!check(block,name)) {
+  if (!check(block, name)) {
     return "INVALID";
   }
 
   {
-    std::string env_var= fmt::format("DESESC_{}_{}",block,name);
+    std::string env_var = fmt::format("DESESC_{}_{}", block, name);
 
     const char *e = getenv(env_var.c_str());
-    if(e)
+    if (e)
       return e;
   }
 
@@ -57,10 +55,10 @@ std::string Config::get_string(const std::string &block, const std::string &name
 
   std::string val{ent.as_string()};
   if (!allowed.empty()) {
-    for(auto e:allowed) {
-      auto same = std::equal(e.cbegin(), e.cend(), val.cbegin(), val.cend()
-                             ,[](auto c1, auto c2) { return std::toupper(c1) == std::toupper(c2); }
-                             );
+    for (auto e : allowed) {
+      auto same = std::equal(e.cbegin(), e.cend(), val.cbegin(), val.cend(), [](auto c1, auto c2) {
+        return std::toupper(c1) == std::toupper(c2);
+      });
       if (same) {
         return e;
       }
@@ -74,18 +72,17 @@ std::string Config::get_string(const std::string &block, const std::string &name
 }
 
 int Config::get_integer(const std::string &block, const std::string &name, int from, int to) {
-
-  if (!check(block,name)) {
+  if (!check(block, name)) {
     return 0;
   }
 
   int val = 0;
 
   {
-    std::string env_var= fmt::format("DESESC_{}_{}",block,name);
+    std::string env_var = fmt::format("DESESC_{}_{}", block, name);
 
     const char *e = getenv(env_var.c_str());
-    if(e) {
+    if (e) {
       val = std::atoi(e);
     }
   }
@@ -98,8 +95,14 @@ int Config::get_integer(const std::string &block, const std::string &name, int f
 
   val = ent.as_integer();
 
-  if (val<from || val>to) {
-    errors.emplace_back(fmt::format("conf:{} section:{} field:{} value:{} is not allowed range ({}..<={})\n", filename, block, name, val, from, to));
+  if (val < from || val > to) {
+    errors.emplace_back(fmt::format("conf:{} section:{} field:{} value:{} is not allowed range ({}..<={})\n",
+                                    filename,
+                                    block,
+                                    name,
+                                    val,
+                                    from,
+                                    to));
     return 0;
   }
 
@@ -107,20 +110,20 @@ int Config::get_integer(const std::string &block, const std::string &name, int f
 }
 
 int Config::get_integer(const std::string &block, const std::string &name, size_t pos, const std::string &name2, int from, int to) {
-
-  if (!check(block,name)) {
+  if (!check(block, name)) {
     return 0;
   }
 
   auto ent = toml::find(data, block, name);
   if (!ent.is_array()) {
-    errors.emplace_back(fmt::format("conf:{} section:{} field:{} is not a array needed to chain to {}\n", filename, block, name, name2));
+    errors.emplace_back(
+        fmt::format("conf:{} section:{} field:{} is not a array needed to chain to {}\n", filename, block, name, name2));
     return 0;
   }
 
   auto ent_array = ent.as_array();
 
-  if (ent_array.size()<=pos) {
+  if (ent_array.size() <= pos) {
     errors.emplace_back(fmt::format("conf:{} section:{} field:{} out-of-bounds array access {}\n", filename, block, name, pos));
     return 0;
   }
@@ -135,10 +138,10 @@ int Config::get_integer(const std::string &block, const std::string &name, size_
 
   int val = 0;
   {
-    std::string env_var= fmt::format("DESESC_{}_{}",block2,name2);
+    std::string env_var = fmt::format("DESESC_{}_{}", block2, name2);
 
     const char *e = getenv(env_var.c_str());
-    if(e) {
+    if (e) {
       val = std::atoi(e);
     }
   }
@@ -151,8 +154,14 @@ int Config::get_integer(const std::string &block, const std::string &name, size_
 
   val = ent2.as_integer();
 
-  if (val<from || val>to) {
-    errors.emplace_back(fmt::format("conf:{} section:{} field:{} value:{} is not allowed range ({}..<={})\n", filename, block2, name2, val, from, to));
+  if (val < from || val > to) {
+    errors.emplace_back(fmt::format("conf:{} section:{} field:{} value:{} is not allowed range ({}..<={})\n",
+                                    filename,
+                                    block2,
+                                    name2,
+                                    val,
+                                    from,
+                                    to));
     return 0;
   }
 
@@ -160,8 +169,7 @@ int Config::get_integer(const std::string &block, const std::string &name, size_
 }
 
 size_t Config::get_array_size(const std::string &block, const std::string &name) {
-
-  if (!check(block,name)) {
+  if (!check(block, name)) {
     return 0;
   }
 
@@ -175,8 +183,7 @@ size_t Config::get_array_size(const std::string &block, const std::string &name)
 }
 
 int Config::get_array_integer(const std::string &block, const std::string &name, size_t pos) {
-
-  if (!check(block,name)) {
+  if (!check(block, name)) {
     return 0;
   }
 
@@ -186,8 +193,9 @@ int Config::get_array_integer(const std::string &block, const std::string &name,
     return 0;
   }
 
-  if (ent.as_array().size()<=pos) {
-    errors.emplace_back(fmt::format("conf:{} section:{} out of bounds {} array of size {}\n", filename, block, name, ent.as_array().size(), pos));
+  if (ent.as_array().size() <= pos) {
+    errors.emplace_back(
+        fmt::format("conf:{} section:{} out of bounds {} array of size {}\n", filename, block, name, ent.as_array().size(), pos));
     return 0;
   }
 
@@ -201,7 +209,41 @@ int Config::get_array_integer(const std::string &block, const std::string &name,
   return arr[pos].as_integer();
 }
 
-void Config::add_error(const std::string &err) {
-  errors.emplace_back(err);
+void Config::add_error(const std::string &err) { errors.emplace_back(err); }
+
+bool Config::has_entry(const std::string &block, const std::string field) {
+  if (block.empty()) {
+    errors.emplace_back(fmt::format("section is empty for configuration:{}\n", filename));
+    return false;
+  }
+
+  if (!data.contains(block)) {
+    return false;
+  }
+
+  auto sec = toml::find(data, block);
+  return sec.contains(name);
 }
 
+bool Config::get_bool(const std::string &block, const std::string &name) {
+  auto v = get_string(block, name, {"true", "false"});
+
+  return v == "true";
+}
+
+int Config::get_power2(const std::string &block, const std::string &name, int from, int to) {
+  int v = get_integer(block, name, from, to);
+  if (v == 0)
+    return 0;
+
+  if (v < 0) {
+    add_error(fmt::format("entry {} field {}={} is negative, not a power of two", block, name, v));
+    return 0;
+  }
+  if ((v) & (v - 1) != 0) {
+    add_error(fmt::format("entry {} field {}={} is not a power of two", block, name, v));
+    return 0;
+  }
+
+  return v;
+}

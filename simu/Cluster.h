@@ -3,21 +3,21 @@
 #pragma once
 
 #include <limits.h>
+
 #include <vector>
 
-#include "iassert.hpp"
-#include "instruction.hpp"
-
-#include "estl.h"
 #include "DepWindow.h"
 #include "GStats.h"
+#include "estl.h"
+#include "iassert.hpp"
+#include "instruction.hpp"
 
 class Resource;
 class GMemorySystem;
 
 class Cluster {
 private:
-  void buildUnit(const char *clusterName, uint32_t pos, GMemorySystem *ms, Cluster *cluster, uint32_t cpuid, InstOpcode type,
+  void buildUnit(const char *clusterName, uint32_t pos, GMemorySystem *ms, Cluster *cluster, uint32_t cpuid, Opcode type,
                  GProcessor *gproc);
 
 protected:
@@ -64,37 +64,30 @@ public:
 
   static Cluster *create(const char *clusterName, uint32_t pos, GMemorySystem *ms, uint32_t cpuid, GProcessor *gproc);
 
-  Resource *getResource(InstOpcode type) const {
+  Resource *getResource(Opcode type) const {
     I(type < iMAX);
     return res[type];
   }
 
-  const char *getName() const {
-    return name;
-  }
+  const char *getName() const { return name; }
 
   StallCause canIssue(Dinst *dinst) const;
   void       addInst(Dinst *dinst);
 
   int32_t getAvailSpace() const {
-    if(regPool < windowSize)
+    if (regPool < windowSize)
       return regPool;
     return windowSize;
   }
-  int32_t getNReady() const {
-    return nready;
-  }
+  int32_t getNReady() const { return nready; }
 };
 
 class ExecutingCluster : public Cluster {
   // This is SCOORE style. The instruction is removed from the queue at dispatch time
 public:
-  virtual ~ExecutingCluster() {
-  }
+  virtual ~ExecutingCluster() {}
 
-  ExecutingCluster(const char *clusterName, uint32_t pos, uint32_t cpuid)
-      : Cluster(clusterName, pos, cpuid) {
-  }
+  ExecutingCluster(const char *clusterName, uint32_t pos, uint32_t cpuid) : Cluster(clusterName, pos, cpuid) {}
 
   void executing(Dinst *dinst);
   void executed(Dinst *dinst);
@@ -103,12 +96,9 @@ public:
 
 class ExecutedCluster : public Cluster {
 public:
-  virtual ~ExecutedCluster() {
-  }
+  virtual ~ExecutedCluster() {}
 
-  ExecutedCluster(const char *clusterName, uint32_t pos, uint32_t cpuid)
-      : Cluster(clusterName, pos, cpuid) {
-  }
+  ExecutedCluster(const char *clusterName, uint32_t pos, uint32_t cpuid) : Cluster(clusterName, pos, cpuid) {}
 
   void executing(Dinst *dinst);
   void executed(Dinst *dinst);
@@ -117,14 +107,10 @@ public:
 
 class RetiredCluster : public Cluster {
 public:
-  virtual ~RetiredCluster() {
-  }
-  RetiredCluster(const char *clusterName, uint32_t pos, uint32_t cpuid)
-      : Cluster(clusterName, pos, cpuid) {
-  }
+  virtual ~RetiredCluster() {}
+  RetiredCluster(const char *clusterName, uint32_t pos, uint32_t cpuid) : Cluster(clusterName, pos, cpuid) {}
 
   void executing(Dinst *dinst);
   void executed(Dinst *dinst);
   bool retire(Dinst *dinst, bool replay);
 };
-

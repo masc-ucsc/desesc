@@ -27,29 +27,29 @@ private:
     histBits = new uint64_t[depth];
     histMask = new uint64_t[depth];
 
-    phase    = 0;
-    rl1      = 0;
-    rl2      = 0;
-    rl3      = 0;
+    phase = 0;
+    rl1   = 0;
+    rl2   = 0;
+    rl3   = 0;
 
     uint64_t obits = olderBits;
-    for(uint64_t i = 0; i < depth; i++) {
+    for (uint64_t i = 0; i < depth; i++) {
       hist[i] = 0;
 #if 1
-      if(i == 2) {
+      if (i == 2) {
         obits = 4;
-      }else if(i == 3) {
+      } else if (i == 3) {
         obits = 2;
-      }else if(i == 6) {
+      } else if (i == 6) {
         obits = 1;
       }
-      if(obits < 1)
+      if (obits < 1)
         obits = 1;
 #else
-      if((i == 128) || (i == 256) || (i == 64) || (i == 32) || (i == 3316)) {
+      if ((i == 128) || (i == 256) || (i == 64) || (i == 32) || (i == 3316)) {
         obits--;
       }
-      if(obits < 1)
+      if (obits < 1)
         obits = 1;
 #endif
 
@@ -65,21 +65,16 @@ private:
   }
 
 public:
-  DOLC(int d, int o, int l, int c)
-      : depth(d)
-      , olderBits(o)
-      , lastBits(l)
-      , currBits(c) {
-
-    if(o > 63 || l > 63 || c > 63) {
+  DOLC(int d, int o, int l, int c) : depth(d), olderBits(o), lastBits(l), currBits(c) {
+    if (o > 63 || l > 63 || c > 63) {
       printf("ERROR: DOLC out of limits 64bits per entry\n");
       exit(-1);
     }
 
     allocate();
 
-    for(uint64_t i = 0; i < depth; i++) {
-      hist[i] = 0; // Just for being deterministic :)
+    for (uint64_t i = 0; i < depth; i++) {
+      hist[i] = 0;  // Just for being deterministic :)
     }
   }
 
@@ -121,19 +116,17 @@ public:
 #endif
 
   void update(uint64_t addr) {
-
 #ifdef DOLC_RLE
-    if (hist[0] == addr) { // Same patter, RLE compress
-      //MSG("rl1 %lx %d",addr,rl1);
+    if (hist[0] == addr) {  // Same patter, RLE compress
+      // MSG("rl1 %lx %d",addr,rl1);
       rl1++;
       return;
     }
     hist[0] ^= rl1;
     rl1 = 0;
 
-    if ((addr==hist[1] || addr==hist[2])
-        && (hist[0]==hist[1] || hist[0]==hist[2])) {
-      //MSG("rl2 %lx %d",addr,rl2);
+    if ((addr == hist[1] || addr == hist[2]) && (hist[0] == hist[1] || hist[0] == hist[2])) {
+      // MSG("rl2 %lx %d",addr,rl2);
       rl2++;
 
       hist[0] = addr;
@@ -141,10 +134,9 @@ public:
     }
     hist[0] ^= rl2;
     rl2 = 0;
-    if ((addr==hist[2] || addr==hist[3] || addr==hist[4])
-        && (hist[0]==hist[2] || hist[0]==hist[3] || hist[0]==hist[4])
-        && (hist[1]==hist[2] || hist[1]==hist[3] || hist[1]==hist[4])) {
-      //MSG("rl3 %lx %d",addr,rl3);
+    if ((addr == hist[2] || addr == hist[3] || addr == hist[4]) && (hist[0] == hist[2] || hist[0] == hist[3] || hist[0] == hist[4])
+        && (hist[1] == hist[2] || hist[1] == hist[3] || hist[1] == hist[4])) {
+      // MSG("rl3 %lx %d",addr,rl3);
       rl3++;
 
       hist[2] = hist[1];
@@ -154,30 +146,27 @@ public:
     }
     hist[0] ^= rl2;
     rl3 = 0;
-    //MSG("xxx %lx",addr);
+    // MSG("xxx %lx",addr);
 #endif
 
-    for(int i = depth-1; i > 0; i--) {
+    for (int i = depth - 1; i > 0; i--) {
       hist[i] = hist[i - 1];
     }
 
     hist[0] = addr;
   }
 
-  void setPhase(uint64_t addr) {
-    phase = addr;
-  }
+  void setPhase(uint64_t addr) { phase = addr; }
 
   uint64_t getSign(uint16_t bits, uint16_t m) const {
-
     uint16_t nbits = 0;
     uint64_t sign  = 0;
 
     int i_max = m;
-    if(i_max > static_cast<int>(depth))
+    if (i_max > static_cast<int>(depth))
       i_max = depth;
 
-    for(int i = 0; i < i_max; i++) {
+    for (int i = 0; i < i_max; i++) {
       uint64_t oBits = histBits[i];
       uint64_t h     = hist[i] & histMask[i];
 
@@ -191,15 +180,15 @@ public:
 
     sign = sign ^ phase;
 
-    if(bits > nbits) {
+    if (bits > nbits) {
       int nfolds = bits / nbits;
-      for(int i = 0; i < nfolds; i++) {
+      for (int i = 0; i < nfolds; i++) {
         sign = sign + (sign << (i * bits));
       }
     } else {
       int nfolds = nbits / bits;
 
-      for(int i = 0; i < nfolds; i++) {
+      for (int i = 0; i < nfolds; i++) {
         sign = sign + (sign >> (i * bits));
       }
     }

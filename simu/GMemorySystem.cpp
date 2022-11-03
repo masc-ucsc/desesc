@@ -1,12 +1,12 @@
 // See LICENSE for details.
 
+#include "GMemorySystem.h"
+
 #include <math.h>
 
-#include "config.hpp"
-
 #include "DrawArch.h"
-#include "GMemorySystem.h"
 #include "MemObj.h"
+#include "config.hpp"
 
 MemoryObjContainer            GMemorySystem::sharedMemoryObjContainer;
 GMemorySystem::StrCounterType GMemorySystem::usedNames;
@@ -27,12 +27,10 @@ MemObj *MemoryObjContainer::searchMemoryObj(const char *descr_section, const cha
 
   StrToMemoryObjMapper::const_iterator it = intlMemoryObjContainer.find(device_name);
 
-  if(it != intlMemoryObjContainer.end()) {
-
+  if (it != intlMemoryObjContainer.end()) {
     const char *descrSection = (*it).second->getSection();
 
-    if(strcasecmp(descrSection, descr_section)) {
-
+    if (strcasecmp(descrSection, descr_section)) {
       MSG("Two versions of MemoryObject [%s] with different definitions [%s] and [%s]", device_name, descrSection, descr_section);
       exit(-1);
     }
@@ -47,21 +45,18 @@ MemObj *MemoryObjContainer::searchMemoryObj(const char *descr_section, const cha
 MemObj *MemoryObjContainer::searchMemoryObj(const char *device_name) const {
   I(device_name);
 
-  if(intlMemoryObjContainer.count(device_name) != 1)
+  if (intlMemoryObjContainer.count(device_name) != 1)
     return NULL;
 
   return (*(intlMemoryObjContainer.find(device_name))).second;
 }
 
-void MemoryObjContainer::clear() {
-  intlMemoryObjContainer.clear();
-}
+void MemoryObjContainer::clear() { intlMemoryObjContainer.clear(); }
 
 //////////////////////////////////////////////
 // GMemorySystem
 
-GMemorySystem::GMemorySystem(int32_t processorId)
-    : coreId(processorId) {
+GMemorySystem::GMemorySystem(int32_t processorId) : coreId(processorId) {
   localMemoryObjContainer = new MemoryObjContainer();
 
   DL1  = 0;
@@ -73,32 +68,32 @@ GMemorySystem::GMemorySystem(int32_t processorId)
 }
 
 GMemorySystem::~GMemorySystem() {
-  if(DL1)
+  if (DL1)
     delete DL1;
 
-  if(IL1 && DL1 != IL1)
+  if (IL1 && DL1 != IL1)
     delete IL1;
 
-  if(vpc)
+  if (vpc)
     delete vpc;
 
-  if(pref)
+  if (pref)
     delete pref;
 
   delete localMemoryObjContainer;
 }
 
 MemObj *GMemorySystem::buildMemoryObj(const char *type, const char *section, const char *name) {
-  if(!(strcasecmp(type, "dummy") == 0 || strcasecmp(type, "cache") == 0 || strcasecmp(type, "icache") == 0 ||
-       strcasecmp(type, "scache") == 0
-       /* prefetcher */
-       || strcasecmp(type, "markovPrefetcher") == 0 || strcasecmp(type, "stridePrefetcher") == 0 ||
-       strcasecmp(type, "Prefetcher") == 0
-       /* #ifdef FERMI {{{1 */
-       || strcasecmp(type, "splitter") == 0 ||
-       strcasecmp(type, "siftsplitter") == 0
-       /* #endif }}} */
-       || strcasecmp(type, "smpcache") == 0 || strcasecmp(type, "memxbar") == 0)) {
+  if (!(strcasecmp(type, "dummy") == 0 || strcasecmp(type, "cache") == 0 || strcasecmp(type, "icache") == 0
+        || strcasecmp(type, "scache") == 0
+        /* prefetcher */
+        || strcasecmp(type, "markovPrefetcher") == 0 || strcasecmp(type, "stridePrefetcher") == 0
+        || strcasecmp(type, "Prefetcher") == 0
+        /* #ifdef FERMI {{{1 */
+        || strcasecmp(type, "splitter") == 0
+        || strcasecmp(type, "siftsplitter") == 0
+        /* #endif }}} */
+        || strcasecmp(type, "smpcache") == 0 || strcasecmp(type, "memxbar") == 0)) {
     MSG("Invalid memory type [%s]", type);
     SescConf->notCorrect();
   }
@@ -114,34 +109,33 @@ void GMemorySystem::buildMemorySystem() {
   IL1 = declareMemoryObj(def_block, "IL1");
   IL1->getRouter()->fillRouteTables();
   IL1->setCoreIL1(coreId);
-  if(strcasecmp(IL1->getDeviceType(), "TLB") == 0)
+  if (strcasecmp(IL1->getDeviceType(), "TLB") == 0)
     IL1->getRouter()->getDownNode()->setCoreIL1(coreId);
 
-  if(SescConf->checkCharPtr("cpusimu", "VPC", coreId)) {
-
+  if (SescConf->checkCharPtr("cpusimu", "VPC", coreId)) {
     vpc = declareMemoryObj(def_block, "VPC");
     vpc->getRouter()->fillRouteTables();
 
-    if(vpc == IL1) {
+    if (vpc == IL1) {
       MSG("ERROR: you can not set the VPC to the same cache as the IL1");
       SescConf->notCorrect();
     }
 
     DL1 = declareMemoryObj(def_block, "DL1");
     DL1->setCoreDL1(coreId);
-    if(strcasecmp(DL1->getDeviceType(), "TLB") == 0)
+    if (strcasecmp(DL1->getDeviceType(), "TLB") == 0)
       DL1->getRouter()->getDownNode()->setCoreDL1(coreId);
   } else {
     DL1 = declareMemoryObj(def_block, "DL1");
     DL1->getRouter()->fillRouteTables();
     DL1->setCoreDL1(coreId);
-    if(strcasecmp(DL1->getDeviceType(), "TLB") == 0)
+    if (strcasecmp(DL1->getDeviceType(), "TLB") == 0)
       DL1->getRouter()->getDownNode()->setCoreDL1(coreId);
-    else if(strcasecmp(DL1->getDeviceType(), "Prefetcher") == 0)
+    else if (strcasecmp(DL1->getDeviceType(), "Prefetcher") == 0)
       DL1->getRouter()->getDownNode()->setCoreDL1(coreId);
   }
 
-  if(DL1 == vpc) {
+  if (DL1 == vpc) {
     MSG("ERROR: you can not set the VPC to the same cache as the DL1");
     SescConf->notCorrect();
   }
@@ -151,8 +145,7 @@ char *GMemorySystem::buildUniqueName(const char *device_type) {
   int32_t num;
 
   StrCounterType::iterator it = usedNames.find(device_type);
-  if(it == usedNames.end()) {
-
+  if (it == usedNames.end()) {
     usedNames[device_type] = 0;
     num                    = 0;
 
@@ -160,7 +153,7 @@ char *GMemorySystem::buildUniqueName(const char *device_type) {
     num = ++(*it).second;
 
   size_t size = strlen(device_type);
-  char * ret  = (char *)malloc(size + 6 + (int)log10((float)num + 10));
+  char  *ret  = (char *)malloc(size + 6 + (int)log10((float)num + 10));
   sprintf(ret, "%s(%d)", device_type, num);
 
   return ret;
@@ -197,35 +190,32 @@ MemObj *GMemorySystem::declareMemoryObj_uniqueName(char *name, char *device_desc
 MemObj *GMemorySystem::declareMemoryObj(const char *block, const char *field) {
   SescConf->isCharPtr(block, field);
   std::vector<char *> vPars = SescConf->getSplitCharPtr(block, field);
-  if(!vPars.size()) {
+  if (!vPars.size()) {
     MSG("ERROR: Section [%s] field [%s] does not describe a MemoryObj\n", block, field);
     MSG("ERROR: Required format: memoryDevice = descriptionSection [name] [shared|private]\n");
     SescConf->notCorrect();
     I(0);
-    return 0; // Known-error mode
+    return 0;  // Known-error mode
   }
 
   MemObj *ret = finishDeclareMemoryObj(vPars);
-  I(ret); // Users of declareMemoryObj dereference without NULL check so pointer must be valid
+  I(ret);  // Users of declareMemoryObj dereference without NULL check so pointer must be valid
   return ret;
 }
 
 MemObj *GMemorySystem::finishDeclareMemoryObj(std::vector<char *> vPars, char *name_suffix) {
-  bool shared     = false; // Private by default
+  bool shared     = false;  // Private by default
   bool privatized = false;
 
   const char *device_descr_section = vPars[0];
-  char *      device_name          = (vPars.size() > 1) ? vPars[1] : 0;
+  char       *device_name          = (vPars.size() > 1) ? vPars[1] : 0;
 
-  if(vPars.size() > 2) {
-
-    if(strcasecmp(vPars[2], "shared") == 0) {
-
+  if (vPars.size() > 2) {
+    if (strcasecmp(vPars[2], "shared") == 0) {
       I(vPars.size() == 3);
       shared = true;
 
-    } else if(strcasecmp(vPars[2], "sharedBy") == 0) {
-
+    } else if (strcasecmp(vPars[2], "sharedBy") == 0) {
       I(vPars.size() == 4);
       int32_t sharedBy = atoi(vPars[3]);
       // delete[] vPars[3];
@@ -238,8 +228,8 @@ MemObj *GMemorySystem::finishDeclareMemoryObj(std::vector<char *> vPars, char *n
       privatized  = true;
     }
 
-  } else if(device_name) {
-    if(strcasecmp(device_name, "shared") == 0) {
+  } else if (device_name) {
+    if (strcasecmp(device_name, "shared") == 0) {
       shared = true;
     }
   }
@@ -253,10 +243,9 @@ MemObj *GMemorySystem::finishDeclareMemoryObj(std::vector<char *> vPars, char *n
    * one reference to them may exist in the system.
    */
 
-  if(device_name) {
-
-    if(!privatized) {
-      if(shared) {
+  if (device_name) {
+    if (!privatized) {
+      if (shared) {
         device_name = privatizeDeviceName(device_name, 0);
       } else {
         // device_name = privatizeDeviceName(device_name, priv_counter++);
@@ -265,7 +254,7 @@ MemObj *GMemorySystem::finishDeclareMemoryObj(std::vector<char *> vPars, char *n
     }
     char *final_dev_name = device_name;
 
-    if(name_suffix != NULL) {
+    if (name_suffix != NULL) {
       final_dev_name = new char[strlen(device_name) + strlen(name_suffix) + 8];
       sprintf(final_dev_name, "%s%s", device_name, name_suffix);
     }
@@ -274,7 +263,7 @@ MemObj *GMemorySystem::finishDeclareMemoryObj(std::vector<char *> vPars, char *n
 
     MemObj *memdev = searchMemoryObj(shared, device_descr_section, device_name);
 
-    if(memdev) {
+    if (memdev) {
       // delete[] device_name;
       // delete[] device_descr_section;
       return memdev;
@@ -285,14 +274,13 @@ MemObj *GMemorySystem::finishDeclareMemoryObj(std::vector<char *> vPars, char *n
 
   MemObj *newMem = buildMemoryObj(device_type, device_descr_section, device_name);
 
-  if(newMem) // Would be 0 in known-error mode
+  if (newMem)  // Would be 0 in known-error mode
     getMemoryObjContainer(shared)->addMemoryObj(device_name, newMem);
 
   return newMem;
 }
 
-DummyMemorySystem::DummyMemorySystem(int32_t coreId)
-    : GMemorySystem(coreId) {
+DummyMemorySystem::DummyMemorySystem(int32_t coreId) : GMemorySystem(coreId) {
   // Do nothing
 }
 

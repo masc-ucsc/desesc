@@ -1,18 +1,18 @@
 // See LICENSE for details.
 
-#include <set>
+#include "MemRequest.h"
+
 #include <string.h>
 
-#include "config.hpp"
-
-#include "GMemorySystem.h"
+#include <set>
 
 #include "Cluster.h"
+#include "GMemorySystem.h"
 #include "MemObj.h"
-#include "MemRequest.h"
 #include "MemStruct.h"
 #include "Pipeline.h"
 #include "Resource.h"
+#include "config.hpp"
 
 pool<MemRequest> MemRequest::actPool(2048, "MemRequest");
 
@@ -30,8 +30,7 @@ MemRequest::MemRequest()
     , startReqAckCB(this)
     , startSetStateCB(this)
     , startSetStateAckCB(this)
-    , startDispCB(this) {
-}
+    , startDispCB(this) {}
 /*  */
 
 MemRequest::~MemRequest()
@@ -96,20 +95,20 @@ void MemRequest::addPendingSetStateAck(MemRequest *mreq) {
 
 void MemRequest::setStateAckDone(TimeDelta_t lat) {
   MemRequest *orig = setStateAckOrig;
-  if(orig == 0)
+  if (orig == 0)
     return;
-  if(orig->mt == mt_setState)
+  if (orig->mt == mt_setState)
     orig->needsDisp |= needsDisp;
 
   setStateAckOrig = 0;
   I(orig->pendingSetStateAck > 0);
   orig->pendingSetStateAck--;
-  if(orig->pendingSetStateAck <= 0) {
-    if(orig->mt == mt_req) {
+  if (orig->pendingSetStateAck <= 0) {
+    if (orig->mt == mt_req) {
       orig->redoReqCB.schedule(lat);
-    } else if(orig->mt == mt_reqAck) {
+    } else if (orig->mt == mt_reqAck) {
       orig->redoReqAckCB.schedule(lat);
-    } else if(orig->mt == mt_setState) {
+    } else if (orig->mt == mt_setState) {
       // I(orig->setStateAckOrig==0);
       // orig->ack();
       orig->convert2SetStateAck(orig->ma, orig->needsDisp);
@@ -124,12 +123,10 @@ void MemRequest::setStateAckDone(TimeDelta_t lat) {
   }
 }
 
-MemRequest *MemRequest::create(MemObj *mobj, AddrType addr, bool doStats, CallbackBase *cb) {
-
+MemRequest *MemRequest::create(MemObj *mobj, Addr_t addr, bool doStats, CallbackBase *cb) {
   I(mobj);
 
   MemRequest *r = actPool.out();
-
 
   r->addr                    = addr;
   r->homeMemObj              = mobj;
@@ -164,9 +161,8 @@ MemRequest *MemRequest::create(MemObj *mobj, AddrType addr, bool doStats, Callba
 
 #ifdef DEBUG_CALLPATH
 void MemRequest::dump_all() {
-
   MemRequest *mreq = actPool.firstInUse();
-  while(mreq) {
+  while (mreq) {
     mreq->dump_calledge(0, true);
     mreq = actPool.nextInUse(mreq);
   }
@@ -174,19 +170,19 @@ void MemRequest::dump_all() {
 
 void MemRequest::dump_calledge(TimeDelta_t lat, bool interesting) {
 #if 1
-  if(!interesting && !forcemsgdump)
+  if (!interesting && !forcemsgdump)
     return;
 #endif
 
   Time_t total      = 0;
   Time_t last_tismo = 0;
-  for(size_t i = 0; i < calledge.size(); i++) {
+  for (size_t i = 0; i < calledge.size(); i++) {
     CallEdge ce = calledge[i];
-    if(last_tismo == 0)
+    if (last_tismo == 0)
       last_tismo = ce.tismo;
     total += ce.tismo - last_tismo;
     last_tismo = ce.tismo;
-    if(ce.mt == mt_setState || ce.mt == mt_disp) {
+    if (ce.mt == mt_setState || ce.mt == mt_disp) {
       interesting = true;
       break;
     }
@@ -196,7 +192,7 @@ void MemRequest::dump_calledge(TimeDelta_t lat, bool interesting) {
 }
 
 void MemRequest::rawdump_calledge(TimeDelta_t lat, Time_t total) {
-  if(calledge.empty())
+  if (calledge.empty())
     return;
 
   printf("digraph path{\n");
@@ -207,65 +203,39 @@ void MemRequest::rawdump_calledge(TimeDelta_t lat, Time_t total) {
 
   char   gname[1024];
   Time_t last_tismo = 0xdeadbeef;
-  for(size_t i = 0; i < calledge.size(); i++) {
+  for (size_t i = 0; i < calledge.size(); i++) {
     CallEdge ce = calledge[i];
     // get Type
     const char *t;
-    switch(ce.mt) {
-    case mt_req:
-      t = "RQ";
-      break;
-    case mt_reqAck:
-      t = "RA";
-      break;
-    case mt_setState:
-      t = "SS";
-      break;
-    case mt_setStateAck:
-      t = "SA";
-      break;
-    case mt_disp:
-      t = "DI";
-      break;
-    default:
-      I(0);
+    switch (ce.mt) {
+      case mt_req: t = "RQ"; break;
+      case mt_reqAck: t = "RA"; break;
+      case mt_setState: t = "SS"; break;
+      case mt_setStateAck: t = "SA"; break;
+      case mt_disp: t = "DI"; break;
+      default: I(0);
     }
     const char *a;
-    switch(ce.ma) {
-    case ma_setInvalid:
-      a = "I";
-      break;
-    case ma_setValid:
-      a = "V";
-      break;
-    case ma_setDirty:
-      a = "D";
-      break;
-    case ma_setShared:
-      a = "S";
-      break;
-    case ma_setExclusive:
-      a = "E";
-      break;
-    case ma_VPCWU:
-      a = "VPC";
-      break;
-    case ma_MMU:
-      a = "MMU";
-      break;
-    default:
-      I(0);
+    switch (ce.ma) {
+      case ma_setInvalid: a = "I"; break;
+      case ma_setValid: a = "V"; break;
+      case ma_setDirty: a = "D"; break;
+      case ma_setShared: a = "S"; break;
+      case ma_setExclusive: a = "E"; break;
+      case ma_VPCWU: a = "VPC"; break;
+      case ma_MMU: a = "MMU"; break;
+      default: I(0);
     }
     int         k;
     const char *name;
     // get START NAME
     k = 0;
-    if(ce.s == 0) {
+    if (ce.s == 0) {
       printf("  CPU ");
     } else {
       name = ce.s->getName();
-      for(int j = 0; name[j] != 0; j++) {
-        if(isalnum(name[j])) {
+      for (int j = 0; name[j] != 0; j++) {
+        if (isalnum(name[j])) {
           gname[k++] = name[j];
         }
       }
@@ -277,15 +247,15 @@ void MemRequest::rawdump_calledge(TimeDelta_t lat, Time_t total) {
     // get END NAME
     k    = 0;
     name = ce.e->getName();
-    for(int j = 0; name[j] != 0; j++) {
-      if(isalnum(name[j])) {
+    for (int j = 0; name[j] != 0; j++) {
+      if (isalnum(name[j])) {
         gname[k++] = name[j];
       }
     }
     gname[k] = 0;
     printf(" -> %s", gname);
 
-    if(last_tismo == 0xdeadbeef)
+    if (last_tismo == 0xdeadbeef)
       last_tismo = ce.tismo;
     printf(" [label=\"%d%s_%s_%lld_d%d\"]\n", (int)i, t, a, (long long int)ce.tismo, (int)(ce.tismo - last_tismo));
     last_tismo = ce.tismo;
@@ -308,7 +278,7 @@ void MemRequest::upce() {
     else
       MSG("mreq %d: starts:%s ends:%s",id, ce.s->getName(), ce.e->getName());
   */
-  ce.tismo = globalClock; // -lastCallTime;
+  ce.tismo = globalClock;  // -lastCallTime;
   ce.mt    = mt;
   ce.ma    = ma;
   I(globalClock >= lastCallTime);

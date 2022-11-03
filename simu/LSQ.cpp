@@ -1,22 +1,20 @@
 // See LICENSE for details.
 
-#include "config.hpp"
-
 #include "LSQ.h"
+
 #include "GProcessor.h"
+#include "config.hpp"
 
 LSQFull::LSQFull(const int32_t id, int32_t size)
     /* constructor {{{1 */
-    : LSQ(size)
-    , stldForwarding("P(%d):stldForwarding", id) {
-}
+    : LSQ(size), stldForwarding("P(%d):stldForwarding", id) {}
 /* }}} */
 
 bool LSQFull::insert(Dinst *dinst)
 /* Insert dinst in LSQ (in-order) {{{1 */
 {
   I(dinst->getAddr());
-  instMap.insert(std::pair<AddrType, Dinst *>(calcWord(dinst), dinst));
+  instMap.insert(std::pair<Addr_t, Dinst *>(calcWord(dinst), dinst));
 
   return true;
 }
@@ -27,10 +25,10 @@ Dinst *LSQFull::executing(Dinst *dinst)
 {
   I(dinst->getAddr());
 
-  AddrType tag = calcWord(dinst);
+  Addr_t tag = calcWord(dinst);
 
   const Instruction *inst   = dinst->getInst();
-  Dinst *            faulty = 0;
+  Dinst             *faulty = 0;
 
 #if 0
   AddrDinstQMap::const_iterator instIt = instMap.begin();
@@ -46,12 +44,12 @@ Dinst *LSQFull::executing(Dinst *dinst)
 #endif
   std::pair<AddrDinstQMap::iterator, AddrDinstQMap::iterator> ret;
   ret = instMap.equal_range(tag);
-  for(AddrDinstQMap::iterator instIt = ret.first; instIt != ret.second; ++instIt) {
+  for (AddrDinstQMap::iterator instIt = ret.first; instIt != ret.second; ++instIt) {
     I(instIt->first == tag);
 
     // inst->dump("Executed");
     Dinst *qdinst = instIt->second;
-    if(qdinst == dinst) {
+    if (qdinst == dinst) {
       continue;
     }
 
@@ -59,19 +57,17 @@ Dinst *LSQFull::executing(Dinst *dinst)
 
     // bool beforeInst = qdinst->getID() < dinst->getID();
     bool oooExecuted = qdinst->getID() > dinst->getID();
-    if(oooExecuted) {
-
-      if(qdinst->isExecuted() && qdinst->getPC() != dinst->getPC()) {
-
-        if(inst->isStore() && qinst->isLoad()) {
-          if(faulty == 0)
+    if (oooExecuted) {
+      if (qdinst->isExecuted() && qdinst->getPC() != dinst->getPC()) {
+        if (inst->isStore() && qinst->isLoad()) {
+          if (faulty == 0)
             faulty = qdinst;
-          else if(faulty->getID() < qdinst->getID())
+          else if (faulty->getID() < qdinst->getID())
             faulty = qdinst;
         }
       }
     } else {
-      if(!dinst->isLoadForwarded() && inst->isLoad() && qinst->isStore() && qdinst->isExecuted()) {
+      if (!dinst->isLoadForwarded() && inst->isLoad() && qinst->isStore() && qdinst->isExecuted()) {
         dinst->setLoadForwarded();
         stldForwarding.inc(dinst->getStatsFlag());
       }
@@ -79,7 +75,7 @@ Dinst *LSQFull::executing(Dinst *dinst)
   }
 
   unresolved--;
-  I(!dinst->isExecuted()); // first clear, then mark executed
+  I(!dinst->isExecuted());  // first clear, then mark executed
   return faulty;
 }
 /* }}} */
@@ -96,8 +92,8 @@ void LSQFull::remove(Dinst *dinst)
   AddrDinstQMap::iterator instIt = instMap.begin();
 
   // for(AddrDinstQMap::iterator it = rangeIt.first; it != rangeIt.second ; it++) {
-  while(instIt != instMap.end()) {
-    if(instIt->second == dinst) {
+  while (instIt != instMap.end()) {
+    if (instIt->second == dinst) {
       instMap.erase(instIt);
       return;
     }
@@ -109,9 +105,7 @@ void LSQFull::remove(Dinst *dinst)
 LSQNone::LSQNone(const int32_t id, int32_t size)
     /* constructor {{{1 */
     : LSQ(size) {
-
-  for(int i = 0; i < 128; i++)
-    addrTable[i] = 0;
+  for (int i = 0; i < 128; i++) addrTable[i] = 0;
 }
 /* }}} */
 
@@ -119,7 +113,7 @@ bool LSQNone::insert(Dinst *dinst)
 /* Insert dinst in LSQ (in-order) {{{1 */
 {
   int i = getEntry(dinst->getAddr());
-  if(addrTable[i])
+  if (addrTable[i])
     return false;
 
   addrTable[i] = dinst;
@@ -142,22 +136,19 @@ Dinst *LSQNone::executing(Dinst *dinst)
 
 void LSQNone::remove(Dinst *dinst)
 /* Remove from the LSQ {{{1 (in-order) */
-{
-}
+{}
 /* }}} */
 
 LSQVPC::LSQVPC(int32_t size)
     /* constructor {{{1 */
-    : LSQ(size)
-    , LSQVPC_replays("LSQVPC_replays") {
-}
+    : LSQ(size), LSQVPC_replays("LSQVPC_replays") {}
 /* }}} */
 
 bool LSQVPC::insert(Dinst *dinst)
 /* Insert dinst in LSQ (in-order) {{{1 */
 {
   I(dinst->getAddr());
-  instMap.insert(std::pair<AddrType, Dinst *>(calcWord(dinst), dinst));
+  instMap.insert(std::pair<Addr_t, Dinst *>(calcWord(dinst), dinst));
 
   return true;
 }
@@ -169,22 +160,22 @@ Dinst *LSQVPC::executing(Dinst *dinst) {
   return 0;
 }
 
-AddrType LSQVPC::replayCheck(Dinst *dinst) // return non-zero if replay needed
+Addr_t LSQVPC::replayCheck(Dinst *dinst)  // return non-zero if replay needed
 /* dinst got executed (out-of-order) {{{1 */
 {
-  AddrType                                   tag = calcWord(dinst);
-  std::multimap<AddrType, Dinst *>::iterator instIt;
+  Addr_t                                   tag = calcWord(dinst);
+  std::multimap<Addr_t, Dinst *>::iterator instIt;
   // instIt = instMap.begin();
   instIt = instMap.find(tag);
-  // AddrType storefound = 0;
+  // Addr_t storefound = 0;
   // while(instIt != instMap.end()){
-  while(instIt->first == tag) {
-    if(instIt->first != tag) {
+  while (instIt->first == tag) {
+    if (instIt->first != tag) {
       instIt++;
       continue;
     }
-    if(instIt->second->getID() < dinst->getID()) {
-      if(instIt->second->getAddr() == dinst->getAddr()) {
+    if (instIt->second->getID() < dinst->getID()) {
+      if (instIt->second->getAddr() == dinst->getAddr()) {
         LSQVPC_replays.inc(dinst->getStatsFlag());
         return 1;
       }
@@ -204,18 +195,18 @@ void LSQVPC::remove(Dinst *dinst)
 /* Remove from the LSQ {{{1 (in-order) */
 {
   I(dinst->getAddr());
-  std::multimap<AddrType, Dinst *>::iterator instIt;
+  std::multimap<Addr_t, Dinst *>::iterator instIt;
   // instIt = instMap.begin();
-  AddrType tag = calcWord(dinst);
-  instIt       = instMap.find(tag);
+  Addr_t tag = calcWord(dinst);
+  instIt     = instMap.find(tag);
   // while(instIt != instMap.end()){
-  while(instIt->first == tag) {
-    if(instIt->second == dinst) {
+  while (instIt->first == tag) {
+    if (instIt->second == dinst) {
       instMap.erase(instIt);
       return;
     }
     instIt++;
-    if(instIt == instMap.end())
+    if (instIt == instMap.end())
       return;
   }
 }

@@ -1,14 +1,13 @@
 // See LICENSE for details.
 
+#include "AccProcessor.h"
+
 #include <math.h>
 
-#include "config.hpp"
-
-#include "AccProcessor.h"
 #include "GMemorySystem.h"
 #include "MemRequest.h"
 #include "TaskHandler.h"
-
+#include "config.hpp"
 
 AccProcessor::AccProcessor(GMemorySystem *gm, CPU_t i)
     /* constructor {{{1 */
@@ -55,11 +54,14 @@ bool AccProcessor::advance_clock(FlowID fid)
 /* Full execution: fetch|rename|retire {{{1 */
 {
   // MSG("@%lld: AccProcessor::advance_clock(fid=%d) cpu_id=%d\n",(long long int)globalClock,fid,cpu_id);
-  if(globalClock > 500 && ((globalClock % 10) == (fid))) {
-    if(reqid & 1) {
+  if (globalClock > 500 && ((globalClock % 10) == (fid))) {
+    if (reqid & 1) {
       // MSG("@%lld: AccProcessor::advance_clock(fid=%d) memRequest write cpu_id=%d myAddr=%016llx\n",(long long
       // int)globalClock,fid,cpu_id,(long long int)myAddr);
-      MemRequest::sendReqWrite(memorySystem->getDL1(), true, myAddr += addrIncr, 0,
+      MemRequest::sendReqWrite(memorySystem->getDL1(),
+                               true,
+                               myAddr += addrIncr,
+                               0,
                                write_performedCB::create(this, reqid++, globalClock));
     } else {
       // MSG("@%lld: AccProcessor::advance_clock(fid=%d) memRequest read cpu_id=%d myAddr=%016llx\n",(long long
@@ -68,7 +70,7 @@ bool AccProcessor::advance_clock(FlowID fid)
     }
   }
 
-  if(!active) {
+  if (!active) {
     return false;
   }
 
@@ -79,11 +81,9 @@ bool AccProcessor::advance_clock(FlowID fid)
 }
 /* }}} */
 
-void AccProcessor::executing(Dinst *dinst) {
-}
+void AccProcessor::executing(Dinst *dinst) {}
 
-void AccProcessor::executed(Dinst *dinst) {
-}
+void AccProcessor::executed(Dinst *dinst) {}
 
 StallCause AccProcessor::addInst(Dinst *dinst)
 /* rename (or addInst) a new instruction {{{1 */
@@ -96,13 +96,10 @@ StallCause AccProcessor::addInst(Dinst *dinst)
 
 void AccProcessor::retire()
 /* Try to retire instructions {{{1 */
-{
-}
+{}
 /* }}} */
 
-void AccProcessor::fetch(FlowID fid) {
-  I(0);
-}
+void AccProcessor::fetch(FlowID fid) { I(0); }
 
 LSQ *AccProcessor::getLSQ() {
   I(0);

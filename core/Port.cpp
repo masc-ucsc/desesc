@@ -25,10 +25,7 @@ Software Foundation, 59 Temple Place - Suite 330, Boston, MA
 
 #include "Port.h"
 
-PortGeneric::PortGeneric(const char *name)
-    : avgTime(name) {
-  nUsers = 0;
-}
+PortGeneric::PortGeneric(const char *name) : avgTime(name) { nUsers = 0; }
 
 PortGeneric::~PortGeneric() {
   if (nUsers) {
@@ -46,16 +43,16 @@ PortGeneric *PortGeneric::create(const char *unitName, NumUnits_t nUnits, TimeDe
 
   PortGeneric *gen;
 
-  if(occ == 0 || nUnits == 0) {
+  if (occ == 0 || nUnits == 0) {
     gen = new PortUnlimited(name);
-  } else if(occ == 1) {
-    if(nUnits == 1) {
+  } else if (occ == 1) {
+    if (nUnits == 1) {
       gen = new PortFullyPipe(name);
     } else {
       gen = new PortFullyNPipe(name, nUnits);
     }
   } else {
-    if(nUnits == 1) {
+    if (nUnits == 1) {
       gen = new PortPipe(name, occ);
     } else {
       gen = new PortNPipe(name, nUnits, occ);
@@ -67,47 +64,35 @@ PortGeneric *PortGeneric::create(const char *unitName, NumUnits_t nUnits, TimeDe
   return gen;
 }
 
-void PortGeneric::destroy() {
-  delete this;
-}
+void PortGeneric::destroy() { delete this; }
 
 void PortGeneric::occupyUntil(Time_t u) {
   Time_t t = globalClock;
 
-  while(t < u) {
+  while (t < u) {
     t = nextSlot(false);
   }
 }
 
-PortUnlimited::PortUnlimited(const char *name)
-    : PortGeneric(name) {
-}
+PortUnlimited::PortUnlimited(const char *name) : PortGeneric(name) {}
 
 Time_t PortUnlimited::nextSlot(bool en) {
-
-  avgTime.sample(0, en); // Just to keep usage statistics
+  avgTime.sample(0, en);  // Just to keep usage statistics
   return globalClock;
 }
 
-void PortUnlimited::occupyUntil(Time_t u) {
-  (void)u;
-}
+void PortUnlimited::occupyUntil(Time_t u) { (void)u; }
 
-Time_t PortUnlimited::calcNextSlot() const {
-  return globalClock;
-}
+Time_t PortUnlimited::calcNextSlot() const { return globalClock; }
 
-PortFullyPipe::PortFullyPipe(const char *name)
-    : PortGeneric(name) {
-  lTime = globalClock;
-}
+PortFullyPipe::PortFullyPipe(const char *name) : PortGeneric(name) { lTime = globalClock; }
 
 Time_t PortFullyPipe::nextSlot(bool en) {
 #ifndef NDEBUG
   Time_t cns = calcNextSlot();
 #endif
 
-  if(lTime < globalClock)
+  if (lTime < globalClock)
     lTime = globalClock;
 
 #ifndef NDEBUG
@@ -117,14 +102,10 @@ Time_t PortFullyPipe::nextSlot(bool en) {
   return lTime++;
 }
 
-Time_t PortFullyPipe::calcNextSlot() const {
-  return ((lTime < globalClock) ? globalClock : lTime);
-}
+Time_t PortFullyPipe::calcNextSlot() const { return ((lTime < globalClock) ? globalClock : lTime); }
 
-PortFullyNPipe::PortFullyNPipe(const char *name, NumUnits_t nFU)
-    : PortGeneric(name)
-    , nUnitsMinusOne(nFU - 1) {
-  I(nFU > 0); // For unlimited resources use the FUUnlimited
+PortFullyNPipe::PortFullyNPipe(const char *name, NumUnits_t nFU) : PortGeneric(name), nUnitsMinusOne(nFU - 1) {
+  I(nFU > 0);  // For unlimited resources use the FUUnlimited
 
   lTime = globalClock;
 
@@ -136,10 +117,10 @@ Time_t PortFullyNPipe::nextSlot(bool en) {
   Time_t cns = calcNextSlot();
 #endif
 
-  if(lTime < globalClock) {
+  if (lTime < globalClock) {
     lTime     = globalClock;
     freeUnits = nUnitsMinusOne;
-  } else if(freeUnits > 0) {
+  } else if (freeUnits > 0) {
     freeUnits--;
   } else {
     lTime++;
@@ -153,13 +134,9 @@ Time_t PortFullyNPipe::nextSlot(bool en) {
   return lTime;
 }
 
-Time_t PortFullyNPipe::calcNextSlot() const {
-  return ((lTime < globalClock) ? globalClock : (lTime + (freeUnits == 0)));
-}
+Time_t PortFullyNPipe::calcNextSlot() const { return ((lTime < globalClock) ? globalClock : (lTime + (freeUnits == 0))); }
 
-PortPipe::PortPipe(const char *name, TimeDelta_t occ)
-    : PortGeneric(name)
-    , ocp(occ) {
+PortPipe::PortPipe(const char *name, TimeDelta_t occ) : PortGeneric(name), ocp(occ) {
   lTime = (globalClock > ocp) ? globalClock - ocp : 0;
 }
 
@@ -168,7 +145,7 @@ Time_t PortPipe::nextSlot(bool en) {
   Time_t cns = calcNextSlot();
 #endif
 
-  if(lTime < globalClock)
+  if (lTime < globalClock)
     lTime = globalClock;
 
   Time_t st = lTime;
@@ -181,27 +158,17 @@ Time_t PortPipe::nextSlot(bool en) {
   return st;
 }
 
-Time_t PortPipe::calcNextSlot() const {
-  return ((lTime < globalClock) ? globalClock : lTime);
-}
+Time_t PortPipe::calcNextSlot() const { return ((lTime < globalClock) ? globalClock : lTime); }
 
-PortNPipe::PortNPipe(const char *name, NumUnits_t nFU, TimeDelta_t occ)
-    : PortGeneric(name)
-    , ocp(occ)
-    , nUnits(nFU) {
+PortNPipe::PortNPipe(const char *name, NumUnits_t nFU, TimeDelta_t occ) : PortGeneric(name), ocp(occ), nUnits(nFU) {
   portBusyUntil = (Time_t *)malloc(sizeof(Time_t) * nFU);
 
-  for(int32_t i = 0; i < nFU; i++)
-    portBusyUntil[i] = globalClock;
+  for (int32_t i = 0; i < nFU; i++) portBusyUntil[i] = globalClock;
 }
 
-PortNPipe::~PortNPipe() {
-  free(portBusyUntil);
-}
+PortNPipe::~PortNPipe() { free(portBusyUntil); }
 
-Time_t PortNPipe::nextSlot(bool en) {
-  return nextSlot(ocp, en);
-}
+Time_t PortNPipe::nextSlot(bool en) { return nextSlot(ocp, en); }
 
 Time_t PortNPipe::nextSlot(int32_t occupancy, bool en) {
 #ifndef NDEBUG
@@ -209,7 +176,7 @@ Time_t PortNPipe::nextSlot(int32_t occupancy, bool en) {
 #endif
   Time_t bufTime = portBusyUntil[0];
 
-  if(bufTime < globalClock) {
+  if (bufTime < globalClock) {
     portBusyUntil[0] = globalClock + occupancy;
 #ifndef NDEBUG
     I(cns == globalClock);
@@ -220,8 +187,8 @@ Time_t PortNPipe::nextSlot(int32_t occupancy, bool en) {
 
   NumUnits_t bufPort = 0;
 
-  for(NumUnits_t i = 1; i < nUnits; i++) {
-    if(portBusyUntil[i] < globalClock) {
+  for (NumUnits_t i = 1; i < nUnits; i++) {
+    if (portBusyUntil[i] < globalClock) {
       portBusyUntil[i] = globalClock + occupancy;
 #ifndef NDEBUG
       I(cns == globalClock);
@@ -229,7 +196,7 @@ Time_t PortNPipe::nextSlot(int32_t occupancy, bool en) {
       avgTime.sample(0, en);
       return globalClock;
     }
-    if(portBusyUntil[i] < bufTime) {
+    if (portBusyUntil[i] < bufTime) {
       bufPort = i;
       bufTime = portBusyUntil[i];
     }
@@ -247,8 +214,8 @@ Time_t PortNPipe::nextSlot(int32_t occupancy, bool en) {
 Time_t PortNPipe::calcNextSlot() const {
   Time_t firsttime = portBusyUntil[0];
 
-  for(NumUnits_t i = 1; i < nUnits; i++)
-    if(portBusyUntil[i] < firsttime)
+  for (NumUnits_t i = 1; i < nUnits; i++)
+    if (portBusyUntil[i] < firsttime)
       firsttime = portBusyUntil[i];
   return (firsttime < globalClock) ? globalClock : firsttime;
 }

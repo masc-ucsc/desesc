@@ -6,10 +6,9 @@
 #include <set>
 #include <vector>
 
-#include "iassert.hpp"
-#include "dinst.hpp"
-
 #include "FastQueue.h"
+#include "dinst.hpp"
+#include "iassert.hpp"
 
 typedef uint32_t CPU_t;
 class IBucket;
@@ -53,9 +52,7 @@ public:
   void     doneItem(IBucket *b);
   IBucket *nextItem();
 
-  size_t size() const {
-    return buffer.size();
-  }
+  size_t size() const { return buffer.size(); }
 };
 
 class IBucket : public FastQueue<Dinst *> {
@@ -74,26 +71,17 @@ protected:
   bool fetched;
 #endif
 
-  Time_t getPipelineId() const {
-    return pipeId;
-  }
-  void setPipelineId(Time_t i) {
-    pipeId = i;
-  }
+  Time_t getPipelineId() const { return pipeId; }
+  void   setPipelineId(Time_t i) { pipeId = i; }
 
   void markFetched();
 
-  Time_t getClock() const {
-    return clock;
-  }
-  void setClock() {
-    clock = globalClock;
-  }
+  Time_t getClock() const { return clock; }
+  void   setClock() { clock = globalClock; }
 
 public:
   IBucket(size_t size, Pipeline *p, bool clean = false);
-  virtual ~IBucket() {
-  }
+  virtual ~IBucket() {}
 
   StaticCallbackMember0<IBucket, &IBucket::markFetched> markFetchedCB;
 };
@@ -106,4 +94,3 @@ public:
   Pipeline             pipeLine;
   FastQueue<IBucket *> instQueue;
 };
-

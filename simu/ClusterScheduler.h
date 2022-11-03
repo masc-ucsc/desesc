@@ -3,12 +3,12 @@
 #pragma once
 
 #include <stdio.h>
-#include <vector>
 
-#include "dinst.hpp"
+#include <vector>
 
 #include "GStats.h"
 #include "Resource.h"
+#include "dinst.hpp"
 
 typedef std::vector<std::vector<Resource *>> ResourcesPoolType;
 
@@ -49,7 +49,7 @@ class UseClusterScheduler : public ClusterScheduler {
 private:
   std::vector<unsigned int> nres;
   std::vector<unsigned int> pos;
-  Cluster *                 cused[LREG_MAX];
+  Cluster                  *cused[LREG_MAX];
 
 public:
   UseClusterScheduler(const ResourcesPoolType res);
@@ -57,4 +57,3 @@ public:
 
   Resource *getResource(Dinst *dinst);
 };
-

@@ -24,12 +24,12 @@ Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
 #ifdef SUNSTUDIO
 #include "/usr/include/alloca.h"
-#elif(defined __GNUC__)
+#elif (defined __GNUC__)
 #include <stdlib.h>
 #define alloca __builtin_alloca
-#elif(defined _AIX)
+#elif (defined _AIX)
 #pragma alloca
-#elif(defined __ICC)
+#elif (defined __ICC)
 /* Allocate a block.  */
 
 extern void *_alloca(size_t __size);

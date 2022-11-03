@@ -2,36 +2,35 @@
 
 #pragma once
 
-#include <vector>
 #include <queue>
-
-#include "dinst.hpp"
-#include "iassert.hpp"
-#include "callback.hpp"
+#include <vector>
 
 #include "MRouter.h"
-#include "Resource.h"
 #include "Port.h"
+#include "Resource.h"
+#include "callback.hpp"
+#include "dinst.hpp"
+#include "iassert.hpp"
 
 class MemRequest;
 
-#define PSIGN_NONE 0
-#define PSIGN_RAS 1
-#define PSIGN_NLINE 2
-#define PSIGN_STRIDE 3
-#define PSIGN_TAGE 4
-#define PSIGN_INDIRECT 5
-#define PSIGN_CHASE 6
-#define PSIGN_MEGA 7
-#define LDBUFF_SIZE 512
-#define CIR_QUEUE_WINDOW 512 //FIXME: need to change this to a conf variable
+#define PSIGN_NONE       0
+#define PSIGN_RAS        1
+#define PSIGN_NLINE      2
+#define PSIGN_STRIDE     3
+#define PSIGN_TAGE       4
+#define PSIGN_INDIRECT   5
+#define PSIGN_CHASE      6
+#define PSIGN_MEGA       7
+#define LDBUFF_SIZE      512
+#define CIR_QUEUE_WINDOW 512  // FIXME: need to change this to a conf variable
 
-#define LOT_QUEUE_SIZE 64 //512 //FIXME: need to change this to a conf variable
+#define LOT_QUEUE_SIZE 64  // 512 //FIXME: need to change this to a conf variable
 //#define BOT_SIZE 512 //16 //512
 //#define LOR_SIZE 512
 //#define LOAD_TABLE_SIZE 512 //64 //512
 //#define PLQ_SIZE 512 //512
-#define LOAD_TABLE_CONF 63
+#define LOAD_TABLE_CONF      63
 #define LOAD_TABLE_DATA_CONF 63
 //#define NUM_FSM_ALU 32
 //#define ENABLE_LDBP
@@ -41,7 +40,7 @@ private:
 protected:
   friend class MRouter;
 
-  MRouter *   router;
+  MRouter    *router;
   const char *section;
   const char *name;
   const char *deviceType;
@@ -52,13 +51,10 @@ protected:
   bool            firstLevelIL1;
   bool            firstLevelDL1;
   bool            isLLC;
-  void addLowerLevel(MemObj *obj);
-  void addUpperLevel(MemObj *obj);
-
+  void            addLowerLevel(MemObj *obj);
+  void            addUpperLevel(MemObj *obj);
 
 public:
-
-
   MemObj(const char *section, const char *sName);
   MemObj();
   virtual ~MemObj();
@@ -78,22 +74,22 @@ public:
 #if 0
   const int BOT_SIZE;
   //Load data buffer interface functions
-  int hit_on_ldbuff(AddrType pc);
-  void fill_ldbuff_mem(AddrType pc, AddrType sa, AddrType ea, int64_t del, AddrType raddr, int q_idx, int tl_type);
-  void shift_load_data_buffer(AddrType pc, int tl_type);
-  void flush_ldbuff_mem(AddrType pc);
+  int hit_on_ldbuff(Addr_t pc);
+  void fill_ldbuff_mem(Addr_t pc, Addr_t sa, Addr_t ea, int64_t del, Addr_t raddr, int q_idx, int tl_type);
+  void shift_load_data_buffer(Addr_t pc, int tl_type);
+  void flush_ldbuff_mem(Addr_t pc);
 
   //BOT interface functions
   void find_cir_queue_index(MemRequest *mreq);
-  int hit_on_bot(AddrType pc);
+  int hit_on_bot(Addr_t pc);
   void flush_bot_mem(int idx);
-  void shift_cir_queue(AddrType pc, int tl_type);
-  void fill_fetch_count_bot(AddrType pc);
-  void fill_retire_count_bot(AddrType pc);
-  void fill_bpred_use_count_bot(AddrType pc, int _hit2_miss3, int _hit3_miss2);
-  void fill_bot_retire(AddrType pc, AddrType ldpc, AddrType saddr, AddrType eaddr, int64_t del, int lbtype, int tl_type);
-  void fill_mv_stats(AddrType pc, int ldbr, DataType d1, DataType d2, bool swap, int mv_out);
-  void fill_li_at_retire(AddrType brpc, int ldbr, bool d1_valid, bool d2_valid, int depth1, int depth2, DataType li1, DataType li2 = 0);
+  void shift_cir_queue(Addr_t pc, int tl_type);
+  void fill_fetch_count_bot(Addr_t pc);
+  void fill_retire_count_bot(Addr_t pc);
+  void fill_bpred_use_count_bot(Addr_t pc, int _hit2_miss3, int _hit3_miss2);
+  void fill_bot_retire(Addr_t pc, Addr_t ldpc, Addr_t saddr, Addr_t eaddr, int64_t del, int lbtype, int tl_type);
+  void fill_mv_stats(Addr_t pc, int ldbr, Data_t d1, Data_t d2, bool swap, int mv_out);
+  void fill_li_at_retire(Addr_t brpc, int ldbr, bool d1_valid, bool d2_valid, int depth1, int depth2, Data_t li1, Data_t li2 = 0);
 
   int getQSize() {
     return CIR_QUEUE_WINDOW;
@@ -117,41 +113,32 @@ public:
   }
 #endif
 
-  //NEW INTERFACE !!!!!! Nov 20, 2019
+  // NEW INTERFACE !!!!!! Nov 20, 2019
   ////Load Table
   void hit_on_load_table(Dinst *dinst, bool is_li);
-  int return_load_table_index(AddrType pc);
-  int getLoadTableConf() const {
-    return LOAD_TABLE_CONF;
-  }
-  int getLoadDataConf() const {
-    return LOAD_TABLE_DATA_CONF;
-  }
-  //PLQ
-  int return_plq_index(AddrType pc);
-  //LOR
-  void lor_allocate(AddrType brpc, AddrType ld_ptr, AddrType ld_start, int64_t ld_del, int data_pos, bool is_li);
-  //void lor_find_index(MemRequest *mreq);
-  void lor_find_index(AddrType mreq_addr);
-  void lor_trigger_load_complete(AddrType mreq_addr);
-  typedef CallbackMember1<MemObj, AddrType, &MemObj::lor_trigger_load_complete> lor_trigger_load_completeCB;
-  int return_lor_index(AddrType ld_ptr);
-  int compute_lor_index(AddrType brpc, AddrType ld_ptr);
-  //LOT
-  void lot_fill_data(int lot_index, int lot_queue_index, AddrType tl_addr);
-  bool lot_tl_addr_range(AddrType tl_addr, AddrType start_addr, AddrType end_addr, int64_t delta);
-  int getBotSize() const {
-    return BOT_SIZE;
-  }
-  int getLotQueueSize() const {
-    return LOT_QUEUE_SIZE;
-  }
-  //BOT
-  int return_bot_index(AddrType brpc);
-  void bot_allocate(AddrType brpc, AddrType ld_ptr, AddrType ld_ptr_addr);
+  int  return_load_table_index(Addr_t pc);
+  int  getLoadTableConf() const { return LOAD_TABLE_CONF; }
+  int  getLoadDataConf() const { return LOAD_TABLE_DATA_CONF; }
+  // PLQ
+  int return_plq_index(Addr_t pc);
+  // LOR
+  void lor_allocate(Addr_t brpc, Addr_t ld_ptr, Addr_t ld_start, int64_t ld_del, int data_pos, bool is_li);
+  // void lor_find_index(MemRequest *mreq);
+  void                                                                        lor_find_index(Addr_t mreq_addr);
+  void                                                                        lor_trigger_load_complete(Addr_t mreq_addr);
+  typedef CallbackMember1<MemObj, Addr_t, &MemObj::lor_trigger_load_complete> lor_trigger_load_completeCB;
+  int                                                                         return_lor_index(Addr_t ld_ptr);
+  int                                                                         compute_lor_index(Addr_t brpc, Addr_t ld_ptr);
+  // LOT
+  void lot_fill_data(int lot_index, int lot_queue_index, Addr_t tl_addr);
+  bool lot_tl_addr_range(Addr_t tl_addr, Addr_t start_addr, Addr_t end_addr, int64_t delta);
+  int  getBotSize() const { return BOT_SIZE; }
+  int  getLotQueueSize() const { return LOT_QUEUE_SIZE; }
+  // BOT
+  int  return_bot_index(Addr_t brpc);
+  void bot_allocate(Addr_t brpc, Addr_t ld_ptr, Addr_t ld_ptr_addr);
 
-
-  struct load_table { //store stride pref info
+  struct load_table {  // store stride pref info
     // fields: LDPC, last_addr, delta, conf
     load_table() {
       ldpc         = 0;
@@ -162,54 +149,55 @@ public:
       conf         = 0;
       use_slice    = 0;
       tracking     = 0;
-      is_li = false;
-      chain_set = false;
-      chain_parent     = false;
-      chain_child      = false;
-      //chain_parent_ptr.clear();
-      chain_child_ptr  = 0;
+      is_li        = false;
+      chain_set    = false;
+      chain_parent = false;
+      chain_child  = false;
+      // chain_parent_ptr.clear();
+      chain_child_ptr = 0;
       data_delta      = 0;
       prev_data_delta = 0;
       data_conf       = 0;
-      for(int i = 0; i < 16; i++) {
+      for (int i = 0; i < 16; i++) {
         chain_parent_ptr.push_back(0);
       }
     }
-    AddrType ldpc;
-    AddrType ld_addr;
-    AddrType prev_ld_addr;
+    Addr_t  ldpc;
+    Addr_t  ld_addr;
+    Addr_t  prev_ld_addr;
     int64_t delta;
     int64_t prev_delta;
-    int conf;
-    bool is_li;
-    int use_slice; // set to 1 when Ld retires, reset to 0 when Br retires
+    int     conf;
+    bool    is_li;
+    int     use_slice;  // set to 1 when Ld retires, reset to 0 when Br retires
     //-> if 1, indicates Br went through Ld else Br didn't use LD(and we don't have to trigger LD)
-    int tracking; //0 to 3 -> useful counter
-    //ld-ld chain params
-    bool chain_set; //flag to avoid overwriting of ld-ld chain fields; if true
-    //the above flag is false if LD is not a chain child, else true
-    bool chain_child; //child LD in a ld-ld chain
-    bool chain_parent; //parent LD in ld-ld chain
-    std::vector<AddrType> chain_parent_ptr = std::vector<AddrType>(16); //pointer to chain parent -> says which LD is this entry's parent
-    AddrType chain_child_ptr; //pointer to chain child -> says which LD is this entry's child
-    //LD data stats - ESESC only params
-    DataType ld_data;
-    DataType prev_ld_data;
-    DataType data_delta;
-    DataType prev_data_delta;
-    int data_conf;
+    int tracking;  // 0 to 3 -> useful counter
+    // ld-ld chain params
+    bool chain_set;  // flag to avoid overwriting of ld-ld chain fields; if true
+    // the above flag is false if LD is not a chain child, else true
+    bool                chain_child;   // child LD in a ld-ld chain
+    bool                chain_parent;  // parent LD in ld-ld chain
+    std::vector<Addr_t> chain_parent_ptr
+        = std::vector<Addr_t>(16);  // pointer to chain parent -> says which LD is this entry's parent
+    Addr_t chain_child_ptr;         // pointer to chain child -> says which LD is this entry's child
+    // LD data stats - ESESC only params
+    Data_t ld_data;
+    Data_t prev_ld_data;
+    Data_t data_delta;
+    Data_t prev_data_delta;
+    int    data_conf;
 
     void clear_chain_parent_ptr() {
       chain_parent_ptr.clear();
-      for(int i = 0; i < 16; i++) {
+      for (int i = 0; i < 16; i++) {
         chain_parent_ptr.push_back(0);
       }
     }
 
     void lt_load_miss(Dinst *dinst) {
       load_table();
-      ldpc         = dinst->getPC();
-      ld_addr      = dinst->getAddr();
+      ldpc    = dinst->getPC();
+      ld_addr = dinst->getAddr();
       ld_data = dinst->getData();
     }
 
@@ -220,29 +208,29 @@ public:
       prev_ld_addr = ld_addr;
       ld_addr      = dinst->getAddr();
       delta        = ld_addr - prev_ld_addr;
-      if(delta == prev_delta) {
-        if(conf < (LOAD_TABLE_CONF + 1))
+      if (delta == prev_delta) {
+        if (conf < (LOAD_TABLE_CONF + 1))
           conf++;
-      }else {
-        //conf = conf / 2;
+      } else {
+        // conf = conf / 2;
 #if 1
-        if(conf > (LOAD_TABLE_CONF/2))
+        if (conf > (LOAD_TABLE_CONF / 2))
           conf = conf - 4;
         else
           conf = conf / 2;
 #endif
       }
-      prev_data_delta   = data_delta;
-      prev_ld_data = ld_data;
-      ld_data      = dinst->getData();
-      data_delta        = ld_data - prev_ld_data;
-      if(data_delta == prev_data_delta) {
-        if(data_conf < (LOAD_TABLE_DATA_CONF + 1))
+      prev_data_delta = data_delta;
+      prev_ld_data    = ld_data;
+      ld_data         = dinst->getData();
+      data_delta      = ld_data - prev_ld_data;
+      if (data_delta == prev_data_delta) {
+        if (data_conf < (LOAD_TABLE_DATA_CONF + 1))
           data_conf++;
-      }else {
-        //conf = conf / 2;
+      } else {
+        // conf = conf / 2;
 #if 1
-        if(data_conf > (LOAD_TABLE_DATA_CONF/2))
+        if (data_conf > (LOAD_TABLE_DATA_CONF / 2))
           data_conf = data_conf - 4;
         else
           data_conf = data_conf / 2;
@@ -257,83 +245,82 @@ public:
     void lt_load_imm(Dinst *dinst) {
       ldpc  = dinst->getPC();
       is_li = true;
-      conf = 4096;
+      conf  = 4096;
     }
 
     void lt_update_tracking(bool inc) {
-      if(inc && tracking < 3) {
+      if (inc && tracking < 3) {
         tracking++;
-      }else if(!inc && tracking > 0) {
-        tracking --;
+      } else if (!inc && tracking > 0) {
+        tracking--;
       }
     }
   };
 
   std::vector<load_table> load_table_vec = std::vector<load_table>(LOAD_TABLE_SIZE);
 
-  struct pending_load_queue { //queue of LOADS
-    //fields: stride_ptr and tracking
+  struct pending_load_queue {  // queue of LOADS
+    // fields: stride_ptr and tracking
     pending_load_queue() {
-      tracking = 0;
+      tracking     = 0;
       load_pointer = 0;
     }
-    AddrType load_pointer;
-    int tracking; // 0 to 3 - just like tracking in load_table_vec
+    Addr_t load_pointer;
+    int    tracking;  // 0 to 3 - just like tracking in load_table_vec
 
     void plq_update_tracking(bool inc) {
-      if(inc && tracking < 3) {
+      if (inc && tracking < 3) {
         tracking++;
-      }else if(!inc && tracking > 0) {
-        tracking --;
+      } else if (!inc && tracking > 0) {
+        tracking--;
       }
     }
-
   };
 
   std::vector<pending_load_queue> plq_vec = std::vector<pending_load_queue>(PLQ_SIZE);
 
   struct load_outcome_reg {
-    //tracks trigger load info as each TL completes execution
-    //fields: load start, delta, index(or n data), stride pointer, data position
+    // tracks trigger load info as each TL completes execution
+    // fields: load start, delta, index(or n data), stride pointer, data position
 
     load_outcome_reg() {
-      brpc = 0;
-      ld_pointer = 0;
-      ld_start = 0;
-      ld_delta = 0;
-      data_pos = 0; // ++ @Fetch and 0 @flush
-      use_slice = 0;
+      brpc         = 0;
+      ld_pointer   = 0;
+      ld_start     = 0;
+      ld_delta     = 0;
+      data_pos     = 0;  // ++ @Fetch and 0 @flush
+      use_slice    = 0;
       trig_ld_dist = 4;
-      is_li = false;
+      is_li        = false;
     }
-    AddrType ld_start; //load start addr
+    Addr_t  ld_start;  // load start addr
     int64_t ld_delta;
-    AddrType ld_pointer; //load pointer from stride pref table
-    AddrType brpc; //helps differentiate LOR entries when 2 Brs use same LD pair
-    //int64_t data_pos; //
-    int data_pos; //
-    //tracks data position in LOT queue; used to index lot queue when TL returns
-    int use_slice; //LOR's use_slice variable
+    Addr_t  ld_pointer;  // load pointer from stride pref table
+    Addr_t  brpc;        // helps differentiate LOR entries when 2 Brs use same LD pair
+    // int64_t data_pos; //
+    int data_pos;  //
+    // tracks data position in LOT queue; used to index lot queue when TL returns
+    int use_slice;  // LOR's use_slice variable
     // init to 0, LOR accessed at fetch only when use_slice == 1
-    bool is_li; //ESESC flag to not trigger load if Li
-    int64_t trig_ld_dist; //
+    bool    is_li;         // ESESC flag to not trigger load if Li
+    int64_t trig_ld_dist;  //
 
     void reset_entry() {
-      brpc = 0;
-      ld_pointer = 0;
-      ld_start = 0;
-      ld_delta = 0;
-      data_pos = 0;
-      use_slice = 0;
+      brpc         = 0;
+      ld_pointer   = 0;
+      ld_start     = 0;
+      ld_delta     = 0;
+      data_pos     = 0;
+      use_slice    = 0;
       trig_ld_dist = 4;
-      is_li = false;
+      is_li        = false;
     }
   };
 
   std::vector<load_outcome_reg> lor_vec = std::vector<load_outcome_reg>(LOR_SIZE);
 
-  struct load_outcome_table { //same number of entries as LOR
-    //stores trigger load data
+  struct load_outcome_table {  // same number of entries as LOR
+    // stores trigger load data
     load_outcome_table() {
 #if 0
       for(int i = 0; i < LOT_QUEUE_SIZE; i++) {
@@ -344,9 +331,9 @@ public:
       std::fill(tl_addr.begin(), tl_addr.end(), 0);
       std::fill(valid.begin(), valid.end(), 0);
     }
-    //std::vector<DataType> data = std::vector<DataType>(LOT_QUEUE_SIZE);
-    std::vector<AddrType> tl_addr = std::vector<AddrType>(LOT_QUEUE_SIZE);
-    std::vector<int> valid = std::vector<int>(LOT_QUEUE_SIZE);
+    // std::vector<Data_t> data = std::vector<Data_t>(LOT_QUEUE_SIZE);
+    std::vector<Addr_t> tl_addr = std::vector<Addr_t>(LOT_QUEUE_SIZE);
+    std::vector<int>    valid   = std::vector<int>(LOT_QUEUE_SIZE);
 
     void reset_valid() {
       std::fill(tl_addr.begin(), tl_addr.end(), 0);
@@ -364,9 +351,9 @@ public:
 
   struct branch_outcome_table {
     branch_outcome_table() {
-      brpc      = 0;
+      brpc        = 0;
       outcome_ptr = 0;
-      br_flip = -1;
+      br_flip     = -1;
       load_ptr.clear();
       curr_br_addr.clear();
       std::fill(valid.begin(), valid.end(), 0);
@@ -377,14 +364,14 @@ public:
 #endif
     }
 
-    AddrType brpc;
-    //int64_t outcome_ptr; //Br count at fetch; used to index BOT queue at fetch
-    int outcome_ptr; //Br count at fetch; used to index BOT queue at fetch
-    int br_flip; // stop LOT update when br-flips
+    Addr_t brpc;
+    // int64_t outcome_ptr; //Br count at fetch; used to index BOT queue at fetch
+    int outcome_ptr;  // Br count at fetch; used to index BOT queue at fetch
+    int br_flip;      // stop LOT update when br-flips
     // init to -1; 0 -> flip on NT; 1 -> flip on T
-    std::vector<AddrType> load_ptr = std::vector<AddrType>(16);
-    std::vector<AddrType> curr_br_addr = std::vector<AddrType>(16); //current ld addr used by Br (ESESC only param - for debugging)
-    std::vector<int> valid = std::vector<int>(LOT_QUEUE_SIZE);
+    std::vector<Addr_t> load_ptr     = std::vector<Addr_t>(16);
+    std::vector<Addr_t> curr_br_addr = std::vector<Addr_t>(16);  // current ld addr used by Br (ESESC only param - for debugging)
+    std::vector<int>    valid        = std::vector<int>(LOT_QUEUE_SIZE);
 
     void reset_valid() {
       outcome_ptr = 0;
@@ -441,11 +428,11 @@ public:
       }
     }
     //LD fields'
-    AddrType seq_start_addr; //start addr of a sequence of LDs (is reset only when we flush on delta change)
-    AddrType ldpc;
-    AddrType req_addr;
-    AddrType start_addr; //start addr when TL is triggered (changes with each TL)
-    AddrType end_addr; //end addr when TL is triggered (changes with each TL)
+    Addr_t seq_start_addr; //start addr of a sequence of LDs (is reset only when we flush on delta change)
+    Addr_t ldpc;
+    Addr_t req_addr;
+    Addr_t start_addr; //start addr when TL is triggered (changes with each TL)
+    Addr_t end_addr; //end addr when TL is triggered (changes with each TL)
     int64_t delta;
     //
     int ldbr;  //ldbr type
@@ -454,39 +441,39 @@ public:
     int hit2_miss3;
     int hit3_miss2;
     //br fields
-    AddrType brpc;
-    DataType br_data1;
-    DataType br_data2;
+    Addr_t brpc;
+    Data_t br_data1;
+    Data_t br_data2;
     int br_mv_outcome;
     bool br_mv_init; //when this flag is false, LDBP doesn't swap data mandatorily
     //mv stats
-    DataType mv_data;
+    Data_t mv_data;
     int mv_type;
     //circular queues
     std::vector<int> set_flag  = std::vector<int>(CIR_QUEUE_WINDOW);
     std::vector<bool> ld_used  = std::vector<bool>(CIR_QUEUE_WINDOW);
     std::vector<int> ldbr_type = std::vector<int>(CIR_QUEUE_WINDOW);
     std::vector<int> dep_depth = std::vector<int>(CIR_QUEUE_WINDOW);
-    std::vector<AddrType> trig_addr = std::vector<AddrType>(CIR_QUEUE_WINDOW);
+    std::vector<Addr_t> trig_addr = std::vector<Addr_t>(CIR_QUEUE_WINDOW);
 
     //for LD2
-    AddrType ldpc2;
-    AddrType seq_start_addr2; //start addr of a sequence of LDs (is reset only when we flush on delta change)
-    AddrType req_addr2;
-    AddrType start_addr2;
-    AddrType end_addr2;
+    Addr_t ldpc2;
+    Addr_t seq_start_addr2; //start addr of a sequence of LDs (is reset only when we flush on delta change)
+    Addr_t req_addr2;
+    Addr_t start_addr2;
+    Addr_t end_addr2;
     int64_t delta2;
     int ldbr2;
     std::vector<int> set_flag2  = std::vector<int>(CIR_QUEUE_WINDOW);
     std::vector<bool> ld_used2  = std::vector<bool>(CIR_QUEUE_WINDOW);
     std::vector<int> ldbr_type2 = std::vector<int>(CIR_QUEUE_WINDOW);
     std::vector<int> dep_depth2 = std::vector<int>(CIR_QUEUE_WINDOW);
-    std::vector<AddrType> trig_addr2 = std::vector<AddrType>(CIR_QUEUE_WINDOW);
+    std::vector<Addr_t> trig_addr2 = std::vector<Addr_t>(CIR_QUEUE_WINDOW);
 
     //Li Fields
-    DataType li_data;
+    Data_t li_data;
     bool li_data_valid;
-    DataType li_data2;
+    Data_t li_data2;
     bool li_data2_valid;
 
   };
@@ -513,22 +500,22 @@ public:
         valid2[i]     = false;
       }
     }
-    AddrType brpc;
-    AddrType ldpc;
-    AddrType start_addr;
-    AddrType end_addr;
+    Addr_t brpc;
+    Addr_t ldpc;
+    Addr_t start_addr;
+    Addr_t end_addr;
     int64_t delta;
-    std::vector<AddrType> req_addr = std::vector<AddrType>(CIR_QUEUE_WINDOW);
-    std::vector<DataType> req_data = std::vector<DataType>(CIR_QUEUE_WINDOW);
+    std::vector<Addr_t> req_addr = std::vector<Addr_t>(CIR_QUEUE_WINDOW);
+    std::vector<Data_t> req_data = std::vector<Data_t>(CIR_QUEUE_WINDOW);
     std::vector<bool> marked = std::vector<bool>(CIR_QUEUE_WINDOW);
     std::vector<bool> valid  = std::vector<bool>(CIR_QUEUE_WINDOW);
     //for LD2
-    AddrType ldpc2;
-    AddrType start_addr2;
-    AddrType end_addr2;
+    Addr_t ldpc2;
+    Addr_t start_addr2;
+    Addr_t end_addr2;
     int64_t delta2;
-    std::vector<AddrType> req_addr2 = std::vector<AddrType>(CIR_QUEUE_WINDOW);
-    std::vector<DataType> req_data2 = std::vector<DataType>(CIR_QUEUE_WINDOW);
+    std::vector<Addr_t> req_addr2 = std::vector<Addr_t>(CIR_QUEUE_WINDOW);
+    std::vector<Data_t> req_data2 = std::vector<Data_t>(CIR_QUEUE_WINDOW);
     std::vector<bool> marked2 = std::vector<bool>(CIR_QUEUE_WINDOW);
     std::vector<bool> valid2  = std::vector<bool>(CIR_QUEUE_WINDOW);
 
@@ -543,51 +530,32 @@ public:
   //std::vector<load_data_buffer_entry> load_data_buffer = std::vector<load_data_buffer_entry>(CIR_QUEUE_WINDOW);
 #endif
 
-
 #endif
 
-  const char *getSection() const {
-    return section;
-  }
-  const char *getName() const {
-    return name;
-  }
-  const char *getDeviceType() const {
-    return deviceType;
-  }
-  uint16_t getID() const {
-    return id;
-  }
-  int16_t getCoreID() const {
-    return coreid;
-  }
-  void setCoreDL1(int16_t cid) {
-    coreid        = cid;
-    firstLevelDL1 = true;
+  const char *getSection() const { return section; }
+  const char *getName() const { return name; }
+  const char *getDeviceType() const { return deviceType; }
+  uint16_t    getID() const { return id; }
+  int16_t     getCoreID() const { return coreid; }
+  void        setCoreDL1(int16_t cid) {
+           coreid        = cid;
+           firstLevelDL1 = true;
   }
   void setCoreIL1(int16_t cid) {
     coreid        = cid;
     firstLevelIL1 = true;
   }
-  bool isFirstLevel() const {
-    return coreid != -1;
-  };
-  bool isFirstLevelDL1() const {
-    return firstLevelDL1;
-  };
-  bool isFirstLevelIL1() const {
-    return firstLevelIL1;
-  };
+  bool isFirstLevel() const { return coreid != -1; };
+  bool isFirstLevelDL1() const { return firstLevelDL1; };
+  bool isFirstLevelIL1() const { return firstLevelIL1; };
 
-  MRouter *getRouter() {
-    return router;
-  }
+  MRouter *getRouter() { return router; }
 
-  virtual void tryPrefetch(AddrType addr, bool doStats, int degree, AddrType pref_sign, AddrType pc, CallbackBase *cb = 0) = 0;
+  virtual void tryPrefetch(Addr_t addr, bool doStats, int degree, Addr_t pref_sign, Addr_t pc, CallbackBase *cb = 0) = 0;
 
   // Interface for fast-forward (no BW, just warmup caches)
-  virtual TimeDelta_t ffread(AddrType addr)  = 0;
-  virtual TimeDelta_t ffwrite(AddrType addr) = 0;
+  virtual TimeDelta_t ffread(Addr_t addr)  = 0;
+  virtual TimeDelta_t ffwrite(Addr_t addr) = 0;
 
   // DOWN
   virtual void req(MemRequest *req)         = 0;
@@ -606,7 +574,7 @@ public:
   virtual void doReqAck(MemRequest *req)   = 0;
   virtual void doSetState(MemRequest *req) = 0;
 
-  virtual bool isBusy(AddrType addr) const = 0;
+  virtual bool isBusy(Addr_t addr) const = 0;
 
   // Print stats
   virtual void dump() const;
@@ -614,7 +582,7 @@ public:
   // Optional virtual methods
   virtual bool checkL2TLBHit(MemRequest *req);
   virtual void replayCheckLSQ_removeStore(Dinst *);
-  virtual void updateXCoreStores(AddrType addr);
+  virtual void updateXCoreStores(Addr_t addr);
   virtual void replayflush();
   virtual void setTurboRatio(float r);
   virtual void plug();
@@ -622,9 +590,9 @@ public:
   virtual void setNeedsCoherence();
   virtual void clearNeedsCoherence();
 
-  virtual bool Invalid(AddrType addr) const;
+  virtual bool Invalid(Addr_t addr) const;
 #if 0
-  virtual bool get_cir_queue(int index ,AddrType pc);
+  virtual bool get_cir_queue(int index ,Addr_t pc);
 #endif
 };
 
@@ -636,21 +604,11 @@ public:
   DummyMemObj(const char *section, const char *sName);
 
   // Entry points to schedule that may schedule a do?? if needed
-  void req(MemRequest *req) {
-    doReq(req);
-  };
-  void reqAck(MemRequest *req) {
-    doReqAck(req);
-  };
-  void setState(MemRequest *req) {
-    doSetState(req);
-  };
-  void setStateAck(MemRequest *req) {
-    doSetStateAck(req);
-  };
-  void disp(MemRequest *req) {
-    doDisp(req);
-  }
+  void req(MemRequest *req) { doReq(req); };
+  void reqAck(MemRequest *req) { doReqAck(req); };
+  void setState(MemRequest *req) { doSetState(req); };
+  void setStateAck(MemRequest *req) { doSetStateAck(req); };
+  void disp(MemRequest *req) { doDisp(req); }
 
   // This do the real work
   void doReq(MemRequest *req);
@@ -659,11 +617,10 @@ public:
   void doSetStateAck(MemRequest *req);
   void doDisp(MemRequest *req);
 
-  TimeDelta_t ffread(AddrType addr);
-  TimeDelta_t ffwrite(AddrType addr);
+  TimeDelta_t ffread(Addr_t addr);
+  TimeDelta_t ffwrite(Addr_t addr);
 
-  void tryPrefetch(AddrType addr, bool doStats, int degree, AddrType pref_sign, AddrType pc, CallbackBase *cb = 0);
+  void tryPrefetch(Addr_t addr, bool doStats, int degree, Addr_t pref_sign, Addr_t pc, CallbackBase *cb = 0);
 
-  bool isBusy(AddrType addr) const;
+  bool isBusy(Addr_t addr) const;
 };
-

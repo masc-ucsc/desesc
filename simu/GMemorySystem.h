@@ -3,12 +3,12 @@
 #pragma once
 
 #include <strings.h>
+
 #include <string>
 #include <vector>
 
-#include "iassert.hpp"
-
 #include "estl.h"
+#include "iassert.hpp"
 
 class MemObj;
 
@@ -16,9 +16,7 @@ class MemObj;
 // content is to be compared
 class MemObjCaseeqstr {
 public:
-  inline bool operator()(const char *s1, const char *s2) const {
-    return strcasecmp(s1, s2) == 0;
-  }
+  inline bool operator()(const char *s1, const char *s2) const { return strcasecmp(s1, s2) == 0; }
 };
 
 class MemoryObjContainer {
@@ -44,7 +42,7 @@ private:
   static StrCounterType usedNames;
 
   static MemoryObjContainer sharedMemoryObjContainer;
-  MemoryObjContainer *      localMemoryObjContainer;
+  MemoryObjContainer       *localMemoryObjContainer;
 
   const MemoryObjContainer *getMemoryObjContainer(bool shared) const {
     MemoryObjContainer *mo = shared ? &sharedMemoryObjContainer : localMemoryObjContainer;
@@ -60,10 +58,10 @@ private:
 
   static std::vector<std::string> MemObjNames;
 
-  MemObj *DL1;  // Data L1 cache
-  MemObj *IL1;  // Instruction L1 cache
-  MemObj *pref; // Prefetcher
-  MemObj *vpc;  // Speculative virtual predictor cache
+  MemObj *DL1;   // Data L1 cache
+  MemObj *IL1;   // Instruction L1 cache
+  MemObj *pref;  // Prefetcher
+  MemObj *vpc;   // Speculative virtual predictor cache
 
 protected:
   const uint32_t coreId;
@@ -91,31 +89,15 @@ public:
   MemObj *declareMemoryObj(const char *block, const char *field);
   MemObj *finishDeclareMemoryObj(std::vector<char *> vPars, char *name_suffix = NULL);
 
-  uint32_t getNumMemObjs() {
-    return MemObjNames.size();
-  }
-  void addMemObjName(const char *name) {
-    MemObjNames.push_back(name);
-  }
-  std::string getMemObjName(uint32_t i) {
-    return MemObjNames[i];
-  }
+  uint32_t    getNumMemObjs() { return MemObjNames.size(); }
+  void        addMemObjName(const char *name) { MemObjNames.push_back(name); }
+  std::string getMemObjName(uint32_t i) { return MemObjNames[i]; }
 
-  uint32_t getCoreId() const {
-    return coreId;
-  };
-  MemObj *getDL1() const {
-    return DL1;
-  };
-  MemObj *getIL1() const {
-    return IL1;
-  };
-  MemObj *getvpc() const {
-    return vpc;
-  };
-  MemObj *getPrefetcher() const {
-    return pref;
-  };
+  uint32_t getCoreId() const { return coreId; };
+  MemObj  *getDL1() const { return DL1; };
+  MemObj  *getIL1() const { return IL1; };
+  MemObj  *getvpc() const { return vpc; };
+  MemObj  *getPrefetcher() const { return pref; };
 };
 
 class DummyMemorySystem : public GMemorySystem {
@@ -125,4 +107,3 @@ public:
   DummyMemorySystem(int32_t coreId);
   ~DummyMemorySystem();
 };
-

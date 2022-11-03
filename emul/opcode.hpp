@@ -10,22 +10,22 @@ enum Opcode {
   //-----------------
   iRALU,
   //-----------------
-  iAALU, // Can got to BUNIT/AUNIT/SUNIT in scoore
+  iAALU,  // Can got to BUNIT/AUNIT/SUNIT in scoore
   //-----------------
-  iBALU_LBRANCH, // branch label/immediate
-  iBALU_RBRANCH, // branch register
-  iBALU_LJUMP,   // jump label/immediate
-  iBALU_RJUMP,   // jump register
-  iBALU_LCALL,   // call label/immediate
-  iBALU_RCALL,   // call register (same as RBRANCH, but notify predictor)
-  iBALU_RET,     // func return (same as RBRANCH, but notify predictor)
+  iBALU_LBRANCH,  // branch label/immediate
+  iBALU_RBRANCH,  // branch register
+  iBALU_LJUMP,    // jump label/immediate
+  iBALU_RJUMP,    // jump register
+  iBALU_LCALL,    // call label/immediate
+  iBALU_RCALL,    // call register (same as RBRANCH, but notify predictor)
+  iBALU_RET,      // func return (same as RBRANCH, but notify predictor)
   //-----------------
   iLALU_LD,
   //-----------------
   iSALU_ST,
   iSALU_LL,
   iSALU_SC,
-  iSALU_ADDR, // plain add, but it has a store address (break down st addr and data)
+  iSALU_ADDR,  // plain add, but it has a store address (break down st addr and data)
   //-----------------
   iCALU_FPMULT,
   iCALU_FPDIV,
@@ -38,7 +38,7 @@ enum Opcode {
 
 // enum RegType:short {
 enum RegType {
-  LREG_R0 = 0, // No dependence
+  LREG_R0 = 0,  // No dependence
   LREG_R1,
   LREG_R2,
   LREG_R3,
@@ -71,7 +71,7 @@ enum RegType {
   LREG_R30,
   LREG_R31,
 
-  LREG_FP0, // FP Boundary
+  LREG_FP0,  // FP Boundary
   LREG_FP1,
   LREG_FP2,
   LREG_FP3,
@@ -104,7 +104,7 @@ enum RegType {
   LREG_FP30,
   LREG_FP31,
 
-  LREG_VECTOR0, // FP Boundary
+  LREG_VECTOR0,  // FP Boundary
   LREG_VECTOR1,
   LREG_VECTOR2,
   LREG_VECTOR3,
@@ -137,7 +137,7 @@ enum RegType {
   LREG_VECTOR30,
   LREG_VECTOR31,
 
-  LREG_RND = 64 + 32, // FP Rounding Register
+  LREG_RND = 64 + 32,  // FP Rounding Register
 
   // Begin SPARC/ARM names
   LREG_ARCH0 = 65 + 32,
@@ -161,14 +161,14 @@ enum RegType {
   LREG_TMP6,
   LREG_TMP7,
   LREG_TMP8,
-  LREG_SYSMEM, // syscall memory
-  LREG_TTYPE,  // Translation type
+  LREG_SYSMEM,  // syscall memory
+  LREG_TTYPE,   // Translation type
 
   LREG_SCLAST = 86 + 32,
   // This is the end of the RAT for SCOORE
 
-  LREG_INVALID,       // For debug reasons, nobody should use this ID
-  LREG_InvalidOutput, // To optimize the RAT code, nobody can read this one, but they can write
+  LREG_INVALID,        // For debug reasons, nobody should use this ID
+  LREG_InvalidOutput,  // To optimize the RAT code, nobody can read this one, but they can write
   LREG_MAX
 };
 
@@ -176,29 +176,28 @@ enum RegType {
 enum TranslationType { ARM = 0, THUMB, THUMB32, SPARC32 };
 
 // Common alias
-#define LREG_ZERO LREG_R0
+#define LREG_ZERO         LREG_R0
 #define LREG_NoDependence LREG_R0
-#define NoDependence LREG_R0
+#define NoDependence      LREG_R0
 
 // SPARC Mappings
-#define LREG_PSR LREG_ARCH0
-#define LREG_ICC LREG_ARCH1
-#define LREG_CWP LREG_ARCH2
-#define LREG_Y LREG_ARCH3
-#define LREG_TBR LREG_ARCH4
-#define LREG_WIM LREG_ARCH5
-#define LREG_FSR LREG_ARCH6
-#define LREG_FCC LREG_ARCH7
+#define LREG_PSR  LREG_ARCH0
+#define LREG_ICC  LREG_ARCH1
+#define LREG_CWP  LREG_ARCH2
+#define LREG_Y    LREG_ARCH3
+#define LREG_TBR  LREG_ARCH4
+#define LREG_WIM  LREG_ARCH5
+#define LREG_FSR  LREG_ARCH6
+#define LREG_FCC  LREG_ARCH7
 #define LREG_CEXC LREG_ARCH8
 #define LREG_FRS1 LREG_FRN
 #define LREG_FRS2 LREG_FRS
 
 // ARM Mappings
-#define LREG_CPSR LREG_ARCH0
+#define LREG_CPSR    LREG_ARCH0
 #define LREG_GE_FLAG LREG_ARCH3
-#define LREG_Q_FLAG LREG_ARCH4
-#define LREG_PC LREG_R16
-#define LREG_LINK LREG_R15
-#define LREG_SP LREG_R14
-#define LREG_IP LREG_R13
-
+#define LREG_Q_FLAG  LREG_ARCH4
+#define LREG_PC      LREG_R16
+#define LREG_LINK    LREG_R15
+#define LREG_SP      LREG_R14
+#define LREG_IP      LREG_R13

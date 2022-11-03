@@ -4,15 +4,14 @@
 
 #include <vector>
 
-#include "dinst.hpp"
-#include "callback.hpp"
-
-#include "estl.h"
 #include "GStats.h"
+#include "callback.hpp"
+#include "dinst.hpp"
+#include "estl.h"
 
-#define STORESET_MERGING 1
+#define STORESET_MERGING  1
 #define STORESET_CLEARING 1
-#define CLR_INTRVL 90000000
+#define CLR_INTRVL        90000000
 
 class StoreSet {
 private:
@@ -35,30 +34,22 @@ private:
     return ((((PC >> 2) ^ (PC >> 11)) + PC) >> 2) & (StoreSetSize - 1);
   }
 
-  bool isValidSSID(SSID_t SSID) const {
-    return SSID != -1;
-  }
+  bool isValidSSID(SSID_t SSID) const { return SSID != -1; }
 
   // SSIT Functions
-  SSID_t get_SSID(uint64_t PC) const {
-    return SSIT[hashPC(PC)];
-  };
-  void clear_SSIT();
+  SSID_t get_SSID(uint64_t PC) const { return SSIT[hashPC(PC)]; };
+  void   clear_SSIT();
 
   // LFST Functions
   Dinst *get_LFS(SSID_t SSID) const {
     I(SSID <= (int32_t)LFST.size());
     return LFST[SSID];
   };
-  void set_LFS(SSID_t SSID, Dinst *dinst) {
-    LFST[SSID] = dinst;
-  }
+  void set_LFS(SSID_t SSID, Dinst *dinst) { LFST[SSID] = dinst; }
   void clear_LFST(void);
 
   SSID_t create_id();
-  void   set_SSID(uint64_t PC, SSID_t SSID) {
-    SSIT[hashPC(PC)] = SSID;
-  };
+  void   set_SSID(uint64_t PC, SSID_t SSID) { SSIT[hashPC(PC)] = SSID; };
   SSID_t create_set(uint64_t);
 
 #if 1
@@ -69,8 +60,7 @@ private:
 #endif
 public:
   StoreSet(const int32_t cpu_id);
-  ~StoreSet() {
-  }
+  ~StoreSet() {}
 
   bool insert(Dinst *dinst);
   void remove(Dinst *dinst);
@@ -86,4 +76,3 @@ public:
   void merge_sets(Dinst *m_dinst, Dinst *d_dinst){};
 #endif
 };
-

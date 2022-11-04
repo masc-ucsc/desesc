@@ -6,7 +6,9 @@
 #include "MemObj.h"
 #include "iassert.hpp"
 
+#ifndef NDEBUG
 //#define DEBUG_CALLPATH 1
+#endif
 
 class MemRequest {
 private:
@@ -17,9 +19,8 @@ private:
   void startSetStateAck();
   void startDisp();
 
-  //#ifdef DEBUG
   uint64_t id;
-  //#endif
+
   // memRequest pool {{{1
   static pool<MemRequest> actPool;
   friend class pool<MemRequest>;
@@ -468,10 +469,9 @@ public:
     needsDisp = true;
   }
 
-  //#ifdef DEBUG
   void     resetID(uint64_t _id) { id = _id; }
   uint64_t getID() { return id; }
-  //#endif
+
   void destroy();
 
   void resetStart(MemObj *obj) {

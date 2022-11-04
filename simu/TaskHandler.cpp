@@ -19,8 +19,8 @@ pthread_mutex_t                           TaskHandler::mutex_terminate;
 Hartid_t *TaskHandler::running;
 Hartid_t  TaskHandler::running_size;
 
-std::vector<EmulInterface *> TaskHandler::emulas;  // associated emula
-std::vector<GProcessor *>    TaskHandler::cpus;    // All the CPUs in the system
+std::vector<Emul_base  *> TaskHandler::emulas;  // associated emula
+std::vector<GProcessor *> TaskHandler::cpus;    // All the CPUs in the system
 
 void TaskHandler::report(const char *str) {
   /* dump statistics to report file {{{1 */
@@ -55,7 +55,7 @@ void TaskHandler::report(const char *str) {
 }
 /* }}} */
 
-void TaskHandler::addEmul(EmulInterface *eint, Hartid_t fid) {
+void TaskHandler::addEmul(Emul_base *eint, Hartid_t fid) {
   /* add a new emulator to the system {{{1 */
 
   Hartid_t nemul = SescConf->getRecordSize("", "cpuemul");
@@ -73,7 +73,7 @@ void TaskHandler::addEmul(EmulInterface *eint, Hartid_t fid) {
 }
 /* }}} */
 
-void TaskHandler::addEmulShared(EmulInterface *eint) {
+void TaskHandler::addEmulShared(Emul_base *eint) {
   /* add a new emulator to the system {{{1 */
 
   Hartid_t nemul = SescConf->getRecordSize("", "cpuemul");
@@ -165,7 +165,7 @@ Hartid_t TaskHandler::resumeThread(Hartid_t uid, Hartid_t fid) {
     running_size++;
   }
 
-#ifdef DEBUG2
+#ifndef NDEBUG
   fprintf(stderr, "CPUResume: fid=%d running_size=%d running=", fid, running_size);
   for (int i = 0; i < running_size; i++) fprintf(stderr, "%d:", running[i]);
   fprintf(stderr, "\n");
@@ -253,7 +253,7 @@ void TaskHandler::removeFromRunning(Hartid_t fid) {
     }
     running_size--;
 
-#ifdef DEBUG2
+#ifndef NDEBUG
     fprintf(stderr, "removeFromRunning: fid=%d running_size=%d : running=", fid, running_size);
     for (int j = 0; j < running_size; j++) fprintf(stderr, "%d:", running[j]);
     fprintf(stderr, "\n");
@@ -355,7 +355,7 @@ void            TaskHandler::boot()
       bool all_failed;
       bool retry = false;
       do {
-#ifdef DEBUG
+#ifndef NDEBUG
         static int conta = 0;
         conta++;
         if (conta > 1000000) {
@@ -404,7 +404,7 @@ void            TaskHandler::boot()
       for (size_t i = 0; i < running_size; i++) {
         Hartid_t fid = running[i];
         if (allmaps[fid].deactivating) {
-#ifdef DEBUG
+#ifndef NDEBUG
           if (!allmaps[fid].simu->isROBEmpty()) {
             MSG("@%lld drain fid:%d rob:%d", globalClock, fid, allmaps[fid].simu->getROBsize());
           }
@@ -418,7 +418,7 @@ void            TaskHandler::boot()
           allmaps[fid].simu->advance_clock(fid);
         }
       }
-#ifdef DEBUG
+#ifndef NDEBUG
       for (size_t i = 0; i < allmaps.size(); i++) {
         if (allmaps[i].active)
           continue;
@@ -484,7 +484,7 @@ void TaskHandler::plugEnd()
       I(allmaps[i].active == false);
     }
 
-    allmaps[i].simu->setEmulInterface(emulas[i]);
+    allmaps[i].simu->set_emul(emulas[i]);
 
     cpuid_sub++;
     // if (cpuid_sub>=cpus[cpuid]->getMaxFlows()) {

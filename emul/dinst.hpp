@@ -198,12 +198,12 @@ private:
 
   static Time_t currentID;
   Time_t        ID;  // static ID, increased every create (currentID). pointer to the
-#ifdef DEBUG
+#ifndef NDEBUG
   uint64_t mreq_id;
 #endif
   void setup() {
     ID = currentID++;
-#ifdef DEBUG
+#ifndef NDEBUG
     mreq_id = 0;
 #endif
     first = 0;
@@ -780,7 +780,7 @@ public:
 
   Time_t getID() const { return ID; }
 
-#ifdef DEBUG
+#ifndef NDEBUG
   uint64_t getmreq_id() { return mreq_id; }
   void     setmreq_id(uint64_t _mreq_id) { mreq_id = _mreq_id; }
 #endif

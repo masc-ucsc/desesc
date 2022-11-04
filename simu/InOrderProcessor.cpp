@@ -328,7 +328,7 @@ void InOrderProcessor::retire() { /*{{{*/
     if (!done)
       return;
 
-#ifdef DEBUG
+#ifndef NDEBUG
     if (!dinst->getInst()->isStore())  // Stores can perform after retirement
       I(dinst->isPerformed());
 #endif

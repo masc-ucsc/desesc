@@ -1041,7 +1041,7 @@ void FetchEngine::clearMissInst(Dinst *dinst, Time_t missFetchTime) {
   missInst = false;
 
   I(dinst == missDinst);
-#ifdef DEBUG
+#ifndef NDEBUG
   missDinst = 0;
 #endif
 
@@ -1055,7 +1055,7 @@ void FetchEngine::setMissInst(Dinst *dinst) {
   I(!missInst);
 
   missInst = true;
-#ifdef DEBUG
+#ifndef NDEBUG
   missDinst = dinst;
 #endif
 }

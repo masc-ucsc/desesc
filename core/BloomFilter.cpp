@@ -129,7 +129,7 @@ BloomFilter &BloomFilter::operator=(const BloomFilter &bf) {
   BFBuild = true;
 
   I(nVectors == bf.nVectors);
-#ifdef DEBUG
+#ifndef NDEBUG
   for (int32_t i = 0; i < nVectors; i++) {
     I(vSize[i] == bf.vSize[i]);
   }
@@ -299,7 +299,7 @@ bool BloomFilter::mayIntersect(BloomFilter &otherbf) {
     return true;
 
   I(nVectors == otherbf.nVectors);
-#ifdef DEBUG
+#ifndef NDEBUG
   for (int32_t i = 0; i < nVectors; i++) {
     I(vSize[i] == otherbf.vSize[i]);
   }
@@ -327,7 +327,7 @@ void BloomFilter::mergeWith(BloomFilter &otherbf) {
     return;
 
   I(nVectors == otherbf.nVectors);
-#ifdef DEBUG
+#ifndef NDEBUG
   for (int32_t i = 0; i < nVectors; i++) {
     I(vSize[i] == otherbf.vSize[i]);
   }
@@ -348,7 +348,7 @@ void BloomFilter::subtract(BloomFilter &otherbf) {
     return;
 
   I(nVectors == otherbf.nVectors);
-#ifdef DEBUG
+#ifndef NDEBUG
   for (int32_t i = 0; i < nVectors; i++) {
     I(vSize[i] == otherbf.vSize[i]);
   }
@@ -420,7 +420,7 @@ bool BloomFilter::isSubsetOf(BloomFilter &otherbf) {
     return true;
 
   I(nVectors == otherbf.nVectors);
-#ifdef DEBUG
+#ifndef NDEBUG
   for (int32_t i = 0; i < nVectors; i++) {
     I(vSize[i] == otherbf.vSize[i]);
   }

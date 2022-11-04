@@ -16,10 +16,10 @@ class TaskHandler {
 private:
   class EmulSimuMapping {
   public:
-    Hartid_t         fid;
+    Hartid_t       fid;
     bool           active;
     bool           deactivating;
-    EmulInterface *emul;
+    Emul_base     *emul;
     GProcessor    *simu;
   };
 
@@ -34,8 +34,8 @@ private:
   static pthread_mutex_t mutex;
   static pthread_mutex_t mutex_terminate;
 
-  static std::vector<EmulInterface *> emulas;  // associated emula
-  static std::vector<GProcessor *>    cpus;    // All the CPUs in the system
+  static std::vector<Emul_base  *> emulas;  // associated emula
+  static std::vector<GProcessor *> cpus;    // All the CPUs in the system
 
   static void removeFromRunning(Hartid_t fid);
 
@@ -49,8 +49,8 @@ public:
 
   static void report(const char *str);
 
-  static void addEmul(EmulInterface *eint, Hartid_t fid = 0);
-  static void addEmulShared(EmulInterface *eint);
+  static void addEmul(Emul_base *eint, Hartid_t fid = 0);
+  static void addEmulShared(Emul_base *eint);
   static void addSimu(GProcessor *gproc);
 
   static bool isTerminated() { return terminate_all; }
@@ -68,7 +68,7 @@ public:
     return cpus.size();
   }
 
-  static EmulInterface *getEmul(Hartid_t fid) {
+  static Emul_base *get_emul(Hartid_t fid) {
     I(fid < emulas.size());
     return emulas[fid];
   };

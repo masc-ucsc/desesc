@@ -112,7 +112,7 @@ void Pipeline::doneItem(IBucket *b) {
 IBucket *Pipeline::nextItem() {
   while (1) {
     if (buffer.empty()) {
-#ifdef DEBUG
+#ifndef NDEBUG
       // It should not be possible to propagate more buckets
       clearItems();
       I(buffer.empty());

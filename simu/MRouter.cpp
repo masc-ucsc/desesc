@@ -132,7 +132,7 @@ void MRouter::updateRouteTables(MemObj *upmobj, MemObj *const top_node)
     down_node[i]->getRouter()->updateRouteTables(self_mobj, self_mobj);
   }
 
-#ifdef DEBUG
+#ifndef NDEBUG
   bool found = false;
   for (size_t i = 0; i < up_node.size(); i++) {
     if (up_node[i] == upmobj) {

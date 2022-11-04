@@ -13,7 +13,7 @@
 
 extern "C" uint64_t esesc_mem_read(uint64_t addr);
 
-#ifdef DEBUG
+#ifndef NDEBUG
 /* Debug class to search for duplicate names {{{1 */
 class Setltstr {
 public:
@@ -48,7 +48,7 @@ MemObj::MemObj(const char *sSection, const char *sName)
   /*if(strcmp(section, "DL1_core") == 0){
   }*/
 
-#ifdef DEBUG
+#ifndef NDEBUG
   static std::set<const char *, Setltstr> usedNames;
   if (sName) {
     // Verify that one else uses the same name

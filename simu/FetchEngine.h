@@ -106,7 +106,9 @@ private:
   // InstID of the address that generated a misprediction
 
   bool missInst;  // branch missprediction. Stop fetching until solved
-  ID(Dinst *missDinst);
+#ifndef NDEBUG
+  Dinst *missDinst;
+#endif
   CallbackContainer cbPending;
 
   Time_t lastMissTime;  // FIXME: maybe we need an array
@@ -160,12 +162,12 @@ public:
   uint64_t constant;
 #endif
 
-  void fetch(IBucket *buffer, EmulInterface *eint, Hartid_t fid);
+  void fetch(IBucket *buffer, Emul_base *eint, Hartid_t fid);
 
-  typedef CallbackMember3<FetchEngine, IBucket *, EmulInterface *, Hartid_t, &FetchEngine::fetch> fetchCB;
+  typedef CallbackMember3<FetchEngine, IBucket *, Emul_base *, Hartid_t, &FetchEngine::fetch> fetchCB;
 
-  void realfetch(IBucket *buffer, EmulInterface *eint, Hartid_t fid, int32_t n2Fetched);
-  // typedef CallbackMember4<FetchEngine, IBucket *, EmulInterface* , Hartid_t, int32_t, &FetchEngine::realfetch>  realfetchCB;
+  void realfetch(IBucket *buffer, Emul_base *eint, Hartid_t fid, int32_t n2Fetched);
+  // typedef CallbackMember4<FetchEngine, IBucket *, Emul_base* , Hartid_t, int32_t, &FetchEngine::realfetch>  realfetchCB;
 
   void chainPrefDone(Addr_t pc, int distance, Addr_t addr);
   void chainLoadDone(Dinst *dinst);
@@ -188,7 +190,7 @@ public:
   void dump(const char *str) const;
 
   bool isBlocked() const { return missInst; }
-#ifdef DEBUG
+#ifndef NDEBUG
   Dinst *getMissDinst() const { return missDinst; }
 #endif
 

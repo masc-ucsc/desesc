@@ -114,7 +114,7 @@ private:
 
   class BTBState : public StateGeneric<Addr_t> {
   public:
-    BTBState(int32_t lineSize) { inst = 0; }
+    BTBState(int32_t lineSize) { (void)lineSize; inst = 0; }
 
     Addr_t inst;
 
@@ -522,6 +522,7 @@ public:
   // std::vector<data_outcome_correlator> doc_table;
 
   int outcome_doc(Dinst *dinst, Addr_t _tag, bool outcome) {
+    (void)dinst;
     // tag is 2n bits
     Addr_t t     = (_tag >> (int)log2i(DOC_SIZE)) & (DOC_SIZE - 1);  // upper n bits for tag
     int    index = _tag & (DOC_SIZE - 1);                            // lower n bits for index

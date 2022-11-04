@@ -49,7 +49,7 @@ protected:
   const size_t  MaxROBSize;
 
   Hartid_t         maxFlows;
-  EmulInterface *eint;
+  Emul_base     *eint;
   GMemorySystem *memorySystem;
 
   StoreSet           storeset;
@@ -149,7 +149,7 @@ public:
   // Processor.
   virtual bool advance_clock(Hartid_t fid) = 0;
 
-  void setEmulInterface(EmulInterface *e) { eint = e; }
+  void set_emul(Emul_base *e) { eint = e; }
 
   void freeze(Time_t nCycles) {
     nFreeze.add(nCycles);

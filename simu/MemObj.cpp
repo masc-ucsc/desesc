@@ -29,16 +29,16 @@ MemObj::MemObj(const char *sSection, const char *sName)
     : section(sSection)
     , name(sName)
 #ifdef ENABLE_LDBP
-    , BOT_SIZE(SescConf->getInt(section, "bot_size"))
-    , LOR_SIZE(SescConf->getInt(section, "lor_size"))
-    , LOAD_TABLE_SIZE(SescConf->getInt(section, "pref_size"))
-    , PLQ_SIZE(SescConf->getInt(section, "pref_size"))
-    , CODE_SLICE_DELAY(SescConf->getInt(section, "cs_delay"))
-    , NUM_FSM_ALU(SescConf->getInt(section, "num_fsm"))
-//, lor_index_track(0)
+    , BOT_SIZE(Config::get_integer(section, "bot_size"))
+    , LOR_SIZE(Config::get_integer(section, "lor_size"))
+    , LOAD_TABLE_SIZE(Config::get_integer(section, "pref_size"))
+    , PLQ_SIZE(Config::get_integer(section, "pref_size"))
+    , CODE_SLICE_DELAY(Config::get_integer(section, "cs_delay"))
+    , NUM_FSM_ALU(Config::get_integer(section, "num_fsm"))
 #endif
     , id(id_counter++) {
-  deviceType = SescConf->getCharPtr(section, "deviceType");
+
+  deviceType = Config::get_string(section, "deviceType");
 
   coreid        = -1;  // No first Level cache by default
   firstLevelIL1 = false;
@@ -53,7 +53,7 @@ MemObj::MemObj(const char *sSection, const char *sName)
   if (sName) {
     // Verify that one else uses the same name
     if (usedNames.find(sName) != usedNames.end()) {
-      MSG("Creating multiple memory objects with the same name '%s' (rename one of them)", sName);
+      Config::add_error(fmt::format("multiple memory objects have same name '{}' (rename one of them)", sName));
     } else {
       usedNames.insert(sName);
     }
@@ -65,10 +65,6 @@ MemObj::MemObj(const char *sSection, const char *sName)
 MemObj::~MemObj()
 /* destructor {{{1 */
 {
-  if (section != 0)
-    delete[] section;
-  if (name != 0)
-    delete[] name;
 }
 /* }}} */
 
@@ -310,7 +306,6 @@ void MemObj::lot_fill_data(int lot_id, int lot_queue_id, Addr_t tl_addr) {
   // data_pos updated @F -> use ld_ptr info from BOT @Br fetch; ++ data_pos when we ++ outcome_ptr
   // lot_queue_pos => [curr_br_count + lor_id(based on mreq_addr)] % lot_q_size
   int lot_queue_entry = (lor_vec[lot_id].data_pos + lot_queue_id) % getLotQueueSize();
-  // MSG("TL_RETURN clk=%d lot_id=%d q_id=%d data_pos=%d actual_q=%d", globalClock, lot_id, lot_queue_entry,
   // lor_vec[lot_id].data_pos, lot_queue_id);
   lot_vec[lot_id].tl_addr[lot_queue_entry] = tl_addr;
   lot_vec[lot_id].valid[lot_queue_entry]   = 1;

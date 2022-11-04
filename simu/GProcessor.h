@@ -58,17 +58,12 @@ protected:
   FastQueue<Dinst *> rROB;  // ready/retiring/executed ROB
   FastQueue<Dinst *> ROB;
 
-  // Updated by Processor or SMTProcessor. Shows the number of clocks
-  // that the processor have been active (fetch + exe engine)
-  ID(int32_t prevDinstID);
-
   uint32_t smt;      // 1...
   uint32_t smt_ctx;  // 0... smt_ctx = cpu_id % smt
 
   bool active;
 
   // BEGIN  Statistics
-  //
   GStatsCntr *nStall[MaxStall];
   GStatsCntr *nInst[iMAX];
 
@@ -127,7 +122,7 @@ public:
   virtual bool   isReplayRecovering()    = 0;
   virtual Time_t getReplayID()           = 0;
 
-  virtual void replay(Dinst *target){};  // = 0;
+  virtual void replay(Dinst *target){ (void)target; };  // = 0;
 
   bool isROBEmpty() const { return (ROB.empty() && rROB.empty()); }
   int  getROBsize() const { return (ROB.size() + rROB.size()); }
@@ -203,6 +198,4 @@ public:
   Prefetcher         *getPrefetcher() { return &prefetcher; }
   FastQueue<Dinst *> *getROB() { return &ROB; }
   SCB                *getSCB() { return scb; }
-
-  float getTurboRatio() { return EmuSampler::getTurboRatio(); };
 };

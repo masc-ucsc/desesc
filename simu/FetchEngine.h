@@ -18,10 +18,8 @@ private:
 
   BPredictor *bpred;
 
-  uint16_t FetchWidth;
-  uint16_t FetchWidthBits;
-  uint16_t Fetch2Width;
-  uint16_t Fetch2WidthBits;
+  uint16_t fetch_width;
+  uint16_t half_fetch_width;
 
 #ifdef ESESC_TRACE_DATA
 
@@ -91,17 +89,16 @@ private:
   HASH_MAP<Addr_t, Addr_t> ldpc2brpc;  // FIXME: Only a small table of address to track
 #endif
 
-  bool TargetInLine;
-  bool FetchOneLine;
-  bool AlignedFetch;
-  bool TraceAlign;
+  bool traget_inline_opt;
+  bool fetch_align;
+  bool trace_align;
 
-  uint16_t BB4Cycle;
+  uint16_t max_bb_cycle;
   uint16_t maxBB;
 
-  TimeDelta_t IL1HitDelay;
-  uint16_t    LineSize;
-  uint16_t    LineSizeBits;
+  TimeDelta_t il1_hit_delay;
+  uint16_t    il1_line_size;
+  uint16_t    il1_line_bits;
 
   // InstID of the address that generated a misprediction
 
@@ -113,7 +110,7 @@ private:
 
   Time_t lastMissTime;  // FIXME: maybe we need an array
 
-  bool enableICache;
+  bool il1_enable;
 
 protected:
   // bool processBranch(Dinst *dinst, uint16_t n2Fetched);

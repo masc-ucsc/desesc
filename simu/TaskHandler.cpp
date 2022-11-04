@@ -28,13 +28,8 @@ void TaskHandler::report(const char *str) {
   Report::field("OSSim:nCPUs=%d", cpus.size());
   size_t cpuid        = 0;
   size_t cpuid_sub    = 0;
-  Hartid_t samplercount = 0;
 
   for (size_t i = 0; i < emulas.size(); i++) {
-    Report::field("OSSim:P(%d)_Sampler=%d", cpuid, (emulas[i]->getSampler())->getsFid());
-    if ((emulas[i]->getSampler())->getsFid() > samplercount) {
-      samplercount = (emulas[i]->getSampler())->getsFid();
-    }
     Report::field("OSSim:P(%d)_Type=%d", cpuid, emulas[i]->cputype);
 
     cpuid_sub++;
@@ -44,21 +39,15 @@ void TaskHandler::report(const char *str) {
     cpuid = cpuid + 1;
     //}
   }
-  Report::field("OSSim:nSampler=%d", samplercount + 1);
-  Report::field("OSSim:globalClock=%lld", globalClock);
 
-  /*
-   *
-     for(size_t i=0;i<cpus.size();i++) {
-     cpus[i]->report(str);
-     }*/
+  Report::field("OSSim:globalClock=%lld", globalClock);
 }
 /* }}} */
 
 void TaskHandler::addEmul(Emul_base *eint, Hartid_t fid) {
   /* add a new emulator to the system {{{1 */
 
-  Hartid_t nemul = SescConf->getRecordSize("", "cpuemul");
+  Hartid_t nemul = Config::get_array_size("soc", "core");
 
   if (emulas.empty()) {
     for (Hartid_t i = 0; i < nemul; i++) {
@@ -76,7 +65,7 @@ void TaskHandler::addEmul(Emul_base *eint, Hartid_t fid) {
 void TaskHandler::addEmulShared(Emul_base *eint) {
   /* add a new emulator to the system {{{1 */
 
-  Hartid_t nemul = SescConf->getRecordSize("", "cpuemul");
+  Hartid_t nemul = Config::get_array_size("soc", "core");
 
   if (emulas.empty()) {
     for (Hartid_t i = 0; i < nemul; i++) {
@@ -87,7 +76,7 @@ void TaskHandler::addEmulShared(Emul_base *eint) {
   I(!emulas.empty());
 
   for (Hartid_t i = 0; i < nemul; i++) {
-    const char *section     = SescConf->getCharPtr("", "cpuemul", i);
+    const char *section     = Config::get_string("soc", "emul", i);
     const char *eintsection = eint->getSection();
     if (strcasecmp(section, eintsection) == 0) {
       emulas.erase(emulas.begin() + i);
@@ -460,13 +449,12 @@ void TaskHandler::plugEnd()
     nCPUThreads += 1;  // cpus[i]->getMaxFlows();
   }
   if (emulas.size() > nCPUThreads) {
-    MSG("ERROR: There are more emul (%zu) than cpu flows (%zu) available. Increase the number of cores or emulas can starve",
+    Config::add_error(fmt::format("There are more emul ({}) than cpu flows ({}) available. Increase the number of cores or emulas can starve",
         emulas.size(),
         nCPUThreads);
-    SescConf->notCorrect();
   } else if (emulas.size() < nCPUThreads) {
     if (emulas.size() != 0)
-      MSG("Warning: There are more cores than threads (%zu vs %zu). Powering down unusable cores", emulas.size(), nCPUThreads);
+      fmt::print("Warning: There are more cores than threads ({} vs {}). Powering down unusable cores\n", emulas.size(), nCPUThreads);
   }
 
   // Tie the emulas to the all maps

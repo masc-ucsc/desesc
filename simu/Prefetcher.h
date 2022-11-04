@@ -13,6 +13,8 @@ class MemObj;
 
 class Prefetcher {
 private:
+  MemObj *DL1;  // L1 cache
+
   GStatsAvg  avgPrefetchNum;
   GStatsAvg  avgPrefetchConf;
   GStatsHist histPrefetchDelta;
@@ -38,7 +40,6 @@ private:
 
   void nextPrefetch();
 
-  MemObj *DL1;  // L1 cache
 
   StaticCallbackMember0<Prefetcher, &Prefetcher::nextPrefetch> nextPrefetchCB;
 

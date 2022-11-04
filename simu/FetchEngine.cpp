@@ -48,39 +48,26 @@ FetchEngine::FetchEngine(Hartid_t id, GMemorySystem *gms_, FetchEngine *fe)
 //,unBlockFetchCB(this)
 //,unBlockFetchBPredDelayCB(this)
 {
-  // Constraints
-  SescConf->isInt("cpusimu", "fetchWidth", id);
-  SescConf->isBetween("cpusimu", "fetchWidth", 1, 1024, id);
-  SescConf->isPower2("cpusimu", "fetchWidth", id);
+  fetch_width     = Config::get_power2("soc", "core", id, "fetch_width", 1, 1024);
 
-  FetchWidth     = SescConf->getInt("cpusimu", "fetchWidth", id);
-  FetchWidthBits = log2i(FetchWidth);
+  half_fetch_width     = fetch_width / 2;
 
-  Fetch2Width     = FetchWidth / 2;
-  Fetch2WidthBits = log2i(Fetch2Width);
+  fetch_align = Config::get_bool("soc", "core", id, "fetch_align");
+  trace_align = Config::get_bool("soc", "core", id, "trace_align");
 
-  AlignedFetch = SescConf->getBool("cpusimu", "alignedFetch", id);
-  if (SescConf->checkBool("cpusimu", "traceAlign", id)) {
-    TraceAlign = SescConf->getBool("cpusimu", "TraceAlign", id);
+  if (Config::has_field("soc", "core", id, "target_inline_opt")) {
+    target_inline_opt = Config::get_bool("soc", "core", id, "target_inline_opt");
   } else {
-    TraceAlign = false;
-  }
-  if (SescConf->checkBool("cpusimu", "TargetInLine", id)) {
-    TargetInLine = SescConf->getBool("cpusimu", "TargetInLine", id);
-  } else {
-    TargetInLine = false;
+    target_inline_opt = false;
   }
 
-  if (SescConf->checkBool("cpusimu", "fetchOneLine", id)) {
-    FetchOneLine = SescConf->getBool("cpusimu", "fetchOneLine", id);
+  if (Config::has_field("soc", "core", id, "fetch_one_line")) {
+    fetch_one_line = Config::get_bool("soc", "core", id, "fetch_one_line");
   } else {
-    FetchOneLine = !TraceAlign;
+    fetch_one_line = !trace_align;
   }
 
-  SescConf->isBetween("cpusimu", "bb4Cycle", 0, 1024, id);
-  BB4Cycle = SescConf->getInt("cpusimu", "bb4Cycle", id);
-  if (BB4Cycle == 0)
-    BB4Cycle = USHRT_MAX;
+  max_bb_cycle = Config->get_integer("soc", "core", id, "max_bb_cycle", 1, 1024);
 
   if (fe)
     bpred = new BPredictor(id, gms->getIL1(), gms->getDL1(), fe->bpred);
@@ -99,40 +86,19 @@ FetchEngine::FetchEngine(Hartid_t id, GMemorySystem *gms_, FetchEngine *fe)
   // ideal_apred = new vtage(9, 4, 1, 3);
 #endif
 
-  const char *isection = SescConf->getCharPtr("cpusimu", "IL1", id);
-  const char *pos      = strchr(isection, ' ');
-  if (pos) {
-    char *pos         = strdup(isection);
-    *strchr(pos, ' ') = 0;
-    isection          = pos;
-  }
+  const std::string sec_name = Config::get_string("soc", "core", id, "IL1");
+  auto v = absl::StrSplit(sec_name, ' ');
+  auto isection = v[0];
 
-  const char *itype = SescConf->getCharPtr(isection, "deviceType");
+  auto itype = Config::get_string(isection, "type", {"cache", "nice", "bus"});
+  if (itype != "nice")
+    il1_enable = true;
 
-  if (strcasecmp(itype, "icache") != 0) {
-    isection        = SescConf->getCharPtr(isection, "lowerLevel");
-    const char *pos = strchr(isection, ' ');
-    if (pos) {
-      char *pos         = strdup(isection);
-      *strchr(pos, ' ') = 0;
-      isection          = pos;
-    }
-    itype = SescConf->getCharPtr(isection, "deviceType");
-    if (strcasecmp(itype, "icache") != 0) {
-      MSG("ERROR: the icache should be the first or second after IL1 in the core");
-      SescConf->notCorrect();
-    }
-  }
-  LineSize = SescConf->getInt(isection, "bsize");
-  if ((LineSize / 4) < FetchWidth) {
-    MSG("ERROR: icache line size should be larger than fetch width LineSize=%d fetchWidth=%d [%s]", LineSize, FetchWidth, isection);
-    SescConf->notCorrect();
-  }
-  LineSizeBits = log2i(LineSize);
+  il1_line_size = Config::get_power2(isection, "line_size", fetch_width*2, 8192);
+  il1_line_bits = log2i(il1_line_size);
 
   // Get some icache L1 parameters
-  enableICache = SescConf->getBool("cpusimu", "enableICache", id);
-  IL1HitDelay  = SescConf->getInt(isection, "hitDelay");
+  il1_hit_delay  = Config::get_integer(isection, "delay");
 
   lastMissTime = 0;
 
@@ -674,22 +640,22 @@ void FetchEngine::realfetch(IBucket *bucket, EmulInterface *eint, Hartid_t fid, 
 #endif
     if (lastpc == 0) {
       bpred->fetchBoundaryBegin(dinst);
-      if (!TraceAlign) {
+      if (!trace_align) {
         uint64_t entryPC = dinst->getPC() >> 2;
 
         uint16_t fetchLost;
 
-        if (AlignedFetch) {
-          fetchLost = (entryPC) & (FetchWidth - 1);
+        if (fetch_align) {
+          fetchLost = (entryPC) & (fetch_width - 1);
         } else {
-          fetchLost = (entryPC) & (Fetch2Width - 1);
+          fetchLost = (entryPC) & (half_fetch_width - 1);
         }
 
         // No matter what, do not pass cache line boundary
-        uint16_t fetchMaxPos = (entryPC & (LineSize / 4 - 1)) + FetchWidth;
-        if (fetchMaxPos > (LineSize / 4)) {
-          // MSG("entryPC=0x%llx lost1=%d lost2=%d",entryPC, fetchLost, (fetchMaxPos-LineSize/4));
-          fetchLost += (fetchMaxPos - LineSize / 4);
+        uint16_t fetchMaxPos = (entryPC & (il1_line_size / 4 - 1)) + fetch_width;
+        if (fetchMaxPos > (il1_line_size / 4)) {
+          // MSG("entryPC=0x%llx lost1=%d lost2=%d",entryPC, fetchLost, (fetchMaxPos-il1_line_size/4));
+          fetchLost += (fetchMaxPos - il1_line_size / 4);
         } else {
           // MSG("entryPC=0x%llx lost1=%d",entryPC, fetchLost);
         }
@@ -710,7 +676,7 @@ void FetchEngine::realfetch(IBucket *bucket, EmulInterface *eint, Hartid_t fid, 
       } else if((lastpc + 4) == dinst->getPC()) {
         n2Fetch--;
       } else if((lastpc + 8) != dinst->getPC()) {
-        if(!TargetInLine || (lastpc >> LineSizeBits) != (dinst->getPC() >> LineSizeBits))
+        if(!target_inline_opt || (lastpc >> il1_line_bits) != (dinst->getPC() >> il1_line_bits))
           maxBB--;
         if(maxBB < 1) {
           nDelayInst2.add(n2Fetch, dinst->getStatsFlag());
@@ -731,8 +697,8 @@ void FetchEngine::realfetch(IBucket *bucket, EmulInterface *eint, Hartid_t fid, 
       }
       n2Fetch--;
 #endif
-      if (FetchOneLine) {
-        if ((lastpc >> LineSizeBits) != (dinst->getPC() >> LineSizeBits)) {
+      if (fetch_one_line) {
+        if ((lastpc >> il1_line_bits) != (dinst->getPC() >> il1_line_bits)) {
           break;
         }
       }
@@ -884,7 +850,7 @@ void FetchEngine::realfetch(IBucket *bucket, EmulInterface *eint, Hartid_t fid, 
 
   bpred->fetchBoundaryEnd();
 
-  if (enableICache && !bucket->empty()) {
+  if (il1_enable && !bucket->empty()) {
     avgFetched.sample(bucket->size(), bucket->top()->getStatsFlag());
     MemRequest::sendReqRead(gms->getIL1(),
                             bucket->top()->getStatsFlag(),
@@ -892,15 +858,15 @@ void FetchEngine::realfetch(IBucket *bucket, EmulInterface *eint, Hartid_t fid, 
                             0xdeaddead,
                             &(bucket->markFetchedCB));  // 0xdeaddead as PC signature
   } else {
-    bucket->markFetchedCB.schedule(IL1HitDelay);
+    bucket->markFetchedCB.schedule(il1_hit_delay);
 #if 0
     if (bucket->top() != NULL)
     MSG("@%lld: Bucket [%p] (Top ID = %d) to be markFetched after %d cycles i.e. @%lld"
         ,(long long int)globalClock
         , bucket
         , (int) bucket->top()->getID()
-        , IL1HitDelay
-        , (long long int)(globalClock)+IL1HitDelay
+        , il1_hit_delay
+        , (long long int)(globalClock)+il1_hit_delay
         );
 #endif
   }
@@ -995,11 +961,11 @@ Dinst* FetchEngine::init_ldbp(Dinst *dinst, Data_t dd, Addr_t ldpc) {
 
 void FetchEngine::fetch(IBucket *bucket, EmulInterface *eint, Hartid_t fid) {
   // Reset the max number of BB to fetch in this cycle (decreased in processBranch)
-  maxBB = BB4Cycle;
+  maxBB = max_bb_cycle;
 
   // You pass maxBB because there may be many fetches calls to realfetch in one cycle
   // (thanks to the callbacks)
-  realfetch(bucket, eint, fid, FetchWidth);
+  realfetch(bucket, eint, fid, fetch_width);
 }
 
 void FetchEngine::dump(const char *str) const {
@@ -1013,7 +979,7 @@ void FetchEngine::unBlockFetchBPredDelay(Dinst *dinst, Time_t missFetchTime) {
 
   Time_t n = (globalClock - missFetchTime);
   avgBranchTime2.sample(n, dinst->getStatsFlag());  // Not short branches
-  // n *= FetchWidth; // FOR CPU
+  // n *= fetch_width; // FOR CPU
   n *= 1;  // FOR GPU
 
   nDelayInst3.add(n, dinst->getStatsFlag());
@@ -1027,7 +993,7 @@ void FetchEngine::unBlockFetch(Dinst *dinst, Time_t missFetchTime) {
   I(globalClock > missFetchTime);
   Time_t n = (globalClock - missFetchTime);
   avgBranchTime.sample(n, dinst->getStatsFlag());  // Not short branches
-  // n *= FetchWidth;  //FOR CPU
+  // n *= fetch_width;  //FOR CPU
   n *= 1;  // FOR GPU and for MIMD
   nDelayInst1.add(n, dinst->getStatsFlag());
 

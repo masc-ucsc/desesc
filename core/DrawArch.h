@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 
+#include "fmt/format.h"
 #include "iassert.hpp"
 
 using namespace std;
@@ -25,15 +26,11 @@ public:
 
   void addObj(const std::string &mystr) { rows.push_back(mystr); }
 
-  void drawArchDot(const char *filename) {
-    if (filename == NULL) {
-      fmt::print("Invalid (NULL) file name. Cannot generate the architecture file\n");
-      return;
-    }
+  void drawArchDot(const std::string &filename) {
 
     std::fstream fs(filename, std::fstream::out);
     if (!fs.good()) {
-      std::cerr << "WriteFile() : Opening file failed." << std::endl;
+      std::cerr << "WriteFile() : Opening " << filename << " file failed." << std::endl;
       return;
     }
 

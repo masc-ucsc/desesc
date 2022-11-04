@@ -1,15 +1,42 @@
 
-[emul]
-num  = 1
-type = "dromajo"
-bootroom = "linux_checkpoint_1"
 
 [soc]
 core = ["c0", "c0"]
+emul = ["drom", "drom"]
+
+[drom]
+type      = "dromajo"
+bootroom  = "linux_checkpoint_1"
+start_roi = false
+rabbit    = 1*1024*1024
+detail    = 1*1024*1024
+time      = 2*1024*1024
+
+[rand]
+type = "random"  # Generate random instructions (coverage testing?)
 
 [c0]
+# Fetch parameters
+fetch_align  = true
+trace_align  = false
+target_inline_opt = true   # jumps within cacheline do not flush
+fetch_one_line = true   # jumps within cacheline do not flush
+max_bb_cycle   = 1
+
+# Cache Pointers
+IL1 = "il1_cache"
+
 decode_delay = 4
 rename_delay = 2
 fetch_width  = 8
 ftq_size     = 12
 instq_size   = 16
+
+[il1_cache]
+type       = "cache"   # or nice
+size       = 32*1024
+line_size  = 64
+delay      = 2         # hit delay
+miss_delay = 8
+assoc      = 4
+

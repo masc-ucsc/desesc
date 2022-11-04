@@ -4,6 +4,7 @@
 
 #include <queue>
 #include <vector>
+#include <string>
 
 #include "MRouter.h"
 #include "Port.h"
@@ -41,9 +42,9 @@ protected:
   friend class MRouter;
 
   MRouter    *router;
-  const char *section;
-  const char *name;
-  const char *deviceType;
+  std::string section;
+  std::string name;
+  std::string deviceType;
 
   const uint16_t  id;
   static uint16_t id_counter;
@@ -532,14 +533,14 @@ public:
 
 #endif
 
-  const char *getSection() const { return section; }
-  const char *getName() const { return name; }
-  const char *getDeviceType() const { return deviceType; }
+  const std::string &getSection() const { return section; }
+  const std::string &getName() const { return name; }
+  const std::string &getDeviceType() const { return deviceType; }
   uint16_t    getID() const { return id; }
   int16_t     getCoreID() const { return coreid; }
   void        setCoreDL1(int16_t cid) {
-           coreid        = cid;
-           firstLevelDL1 = true;
+    coreid        = cid;
+    firstLevelDL1 = true;
   }
   void setCoreIL1(int16_t cid) {
     coreid        = cid;

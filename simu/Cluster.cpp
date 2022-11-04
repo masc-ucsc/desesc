@@ -28,9 +28,9 @@ public:
 // typedef HASH_MAP<const char *,UnitEntry , HASH<const char*>, eqstr>     UnitMapType;
 // typedef HASH_MAP<const char *,Resource *, HASH<const char*>, eqstr> ResourceMapType;
 // typedef HASH_MAP<const char *,Cluster  *, HASH<const char*>, eqstr>  ClusterMapType;
-typedef std::map<string, UnitEntry>  UnitMapType;
-typedef std::map<string, Resource *> ResourceMapType;
-typedef std::map<string, Cluster *>  ClusterMapType;
+typedef std::map<std::string, UnitEntry>  UnitMapType;
+typedef std::map<std::string, Resource *> ResourceMapType;
+typedef std::map<std::string, Cluster *>  ClusterMapType;
 
 static UnitMapType     unitMap;
 static ResourceMapType resourceMap;

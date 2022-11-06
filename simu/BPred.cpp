@@ -28,18 +28,16 @@ extern "C" uint64_t esesc_mem_read(uint64_t addr);
 
 BPred::BPred(int32_t i, const char *sec, const char *sname, const char *name)
     : id(i), nHit("P(%d)_BPred%s_%s:nHit", i, sname, name), nMiss("P(%d)_BPred%s_%s:nMiss", i, sname, name) {
-  if (SescConf->checkInt(sec, "addrShift")) {
-    SescConf->isBetween(sec, "addrShift", 0, 8);
-    addrShift = SescConf->getInt(sec, "addrShift");
-  } else {
-    addrShift = 0;
-  }
-  maxCores = SescConf->getRecordSize("", "cpuemul");
+
+  addrShift = Config::get_integer(sec,"bp_addr_shift");
+
+  maxCores = Config::get_array_size("soc", "core");
 }
 
 BPred::~BPred() {}
 
 void BPred::fetchBoundaryBegin(Dinst *dinst) {
+  (void)dinst;
   // No fetch boundary implemented (must be specialized per predictor if supported)
 }
 
@@ -50,24 +48,18 @@ void BPred::fetchBoundaryEnd() {}
  */
 BPRas::BPRas(int32_t i, const char *section, const char *sname)
     : BPred(i, section, sname, "RAS")
-    , RasSize(SescConf->getInt(section, "rasSize"))
-    , rasPrefetch(SescConf->getInt(section, "rasPrefetch")) {
-  // Constraints
-  SescConf->isInt(section, "rasSize");
-  SescConf->isBetween(section, "rasSize", 0, 128);  // More than 128???
+    , RasSize(Config::get_integer(section, "ras_size", 0, 128))
+    , rasPrefetch(Config::get_bool(section, "ras_prefetch")) {
 
   if (RasSize == 0) {
-    stack = 0;
     return;
   }
 
-  stack = new Addr_t[RasSize];
-  I(stack);
-
+  stack.resize(RasSize);
   index = 0;
 }
 
-BPRas::~BPRas() { delete stack; }
+BPRas::~BPRas() { }
 
 void BPRas::tryPrefetch(MemObj *il1, bool doStats, int degree) {
   if (rasPrefetch == 0)
@@ -88,7 +80,7 @@ PredType BPRas::predict(Dinst *dinst, bool doUpdate, bool doStats) {
   // tables when predict is called. The update only actualizes the statistics.
 
   if (dinst->getInst()->isFuncRet()) {
-    if (stack == 0)
+    if (RasSize == 0)
       return CorrectPrediction;
 
     if (doUpdate) {
@@ -116,7 +108,7 @@ PredType BPRas::predict(Dinst *dinst, bool doUpdate, bool doStats) {
     // MSG("RET  %llx -> %llx  (stack=%llx) miss",dinst->getPC(),dinst->getAddr(), stack[index]);
 
     return MissPrediction;
-  } else if (dinst->getInst()->isFuncCall() && stack) {
+  } else if (dinst->getInst()->isFuncCall() && RasSize) {
     // MSG("CALL %llx -> %llx  (stack=%llx)",dinst->getPC(),dinst->getAddr(), stack[index]);
 
     if (doUpdate) {
@@ -135,23 +127,19 @@ PredType BPRas::predict(Dinst *dinst, bool doUpdate, bool doStats) {
  * BTB
  */
 BPBTB::BPBTB(int32_t i, const char *section, const char *sname, const char *name)
-    : BPred(i, section, sname, name ? name : "BTB"), nHitLabel("P(%d)_BPred%s_%s:nHitLabel", i, sname, name ? name : "BTB") {
-  if (SescConf->checkInt(section, "btbHistorySize"))
-    btbHistorySize = SescConf->getInt(section, "btbHistorySize");
-  else
-    btbHistorySize = 0;
+    : BPred(i, section, sname, name ? name : "btb"), nHitLabel("P(%d)_BPred%s_%s:nHitLabel", i, sname, name ? name : "btb") {
+
+  btbHistorySize = Config::get_integer(section,"btb_history_size");
 
   if (btbHistorySize)
     dolc = new DOLC(btbHistorySize + 1, 5, 2, 2);
   else
     dolc = 0;
 
-  if (SescConf->checkBool(section, "btbicache"))
-    btbicache = SescConf->getBool(section, "btbicache");
-  else
-    btbicache = false;
+  btbicache = Config::get_bool(section,"btb_split_il1");
 
-  if (SescConf->getInt(section, "btbSize") == 0) {
+
+  if (Config::get_integer(section, "btb_size") == 0) {
     // Oracle
     data = 0;
     return;

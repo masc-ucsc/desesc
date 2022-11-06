@@ -57,7 +57,7 @@ void Report::openFile(const char *name) {
   I(tos < MAXREPORTSTACK);
 
   FILE *ffd;
-  char *fname = NULL;
+  char *fname = nullptr;
   if (strstr(name, "XXXXXX")) {
     int32_t fd;
 
@@ -107,7 +107,7 @@ void Report::field(int32_t fn, const char *format, ...) {
 }
 
 void Report::field(const char *format, ...) {
-  FILE *ffd = NULL;
+  FILE *ffd = nullptr;
 
   I(tos);
   ffd = rfd[tos - 1];

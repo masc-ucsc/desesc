@@ -226,13 +226,73 @@ bool Config::has_entry(const std::string &block, const std::string &name) {
 }
 
 bool Config::get_bool(const std::string &block, const std::string &name) {
-  auto v = get_string(block, name, {"true", "false"});
+  if (!check(block, name)) {
+    return false;
+  }
 
-  return v == "true";
+  {
+    std::string env_var = fmt::format("DESESC_{}_{}", block, name);
+
+    const char *e = getenv(env_var.c_str());
+    if (e) {
+      return strcasecmp(e,"true")==0;
+    }
+  }
+
+  auto ent = toml::find(data, block, name);
+  if (!ent.is_bool()) {
+    errors.emplace_back(fmt::format("conf:{} section:{} field:{} is not a boolean\n", filename, block, name));
+    return false;
+  }
+
+  return ent.as_boolean();
 }
 
-int Config::get_power2(const std::string &block, const std::string &name, int from, int to) {
-  int v = get_integer(block, name, from, to);
+bool Config::get_bool(const std::string &block, const std::string &name, size_t pos, const std::string &name2) {
+  if (!check(block, name)) {
+    return false;
+  }
+
+  auto ent = toml::find(data, block, name);
+  if (!ent.is_array()) {
+    errors.emplace_back(
+        fmt::format("conf:{} section:{} field:{} is not a array needed to chain to {}\n", filename, block, name, name2));
+    return 0;
+  }
+
+  auto ent_array = ent.as_array();
+
+  if (ent_array.size() <= pos) {
+    errors.emplace_back(fmt::format("conf:{} section:{} field:{} out-of-bounds array access {}\n", filename, block, name, pos));
+    return 0;
+  }
+
+  const auto t_block2 = ent_array[pos];
+  if (!t_block2.is_string()) {
+    errors.emplace_back(fmt::format("conf:{} section:{} field:{} should point to a section\n", filename, block, name));
+    return 0;
+  }
+
+  std::string block2{t_block2.as_string()};
+  {
+    std::string env_var = fmt::format("DESESC_{}_{}", block, name);
+
+    const char *e = getenv(env_var.c_str());
+    if (e) {
+      return strcasecmp(e,"true")==0;
+    }
+  }
+
+  auto ent2 = toml::find(data, block2, name2);
+  if (!ent2.is_bool()) {
+    errors.emplace_back(fmt::format("conf:{} section:{} field:{} is not a boolean\n", filename, block2, name2));
+    return false;
+  }
+
+  return ent2.as_boolean();
+}
+
+int Config::check_power2(int v) {
   if (v == 0)
     return 0;
 
@@ -246,4 +306,17 @@ int Config::get_power2(const std::string &block, const std::string &name, int fr
   }
 
   return v;
+}
+
+int Config::get_power2(const std::string &block, const std::string &name, int from, int to) {
+  int v = get_integer(block, name, from, to);
+
+  return check_power2(v);
+}
+
+int Config::get_power2(const std::string &block, const std::string &name, size_t pos, const std::string &name2, int from, int to) {
+  int v = get_integer(block, name, pos, name2, from, to);
+
+  return check_power2(v);
+
 }

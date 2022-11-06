@@ -21,9 +21,9 @@ private:
 
   AddressPredictor *apred;
 
-  int32_t  maxPrefetch;
-  int32_t  minDistance;
-  int32_t  pfStride;
+  int32_t  degree;
+  int32_t  distance;
+
   int32_t  curPrefetch;
   uint32_t lineSizeBits;
 

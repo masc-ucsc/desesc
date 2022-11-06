@@ -272,9 +272,9 @@ void MemRequest::upce() {
   ce.e = currMemObj;
   /*
     if (ce.s == 0x0)
-      MSG("mreq %d: starts:NULL  ends:%s",id, ce.e->getName());
+      MSG("mreq %d: starts:nullptr  ends:%s",id, ce.e->getName());
     else if (ce.s == 0x0)
-      MSG("mreq %d: starts:%s ends:NULL",id, ce.s->getName());
+      MSG("mreq %d: starts:%s ends:nullptr",id, ce.s->getName());
     else
       MSG("mreq %d: starts:%s ends:%s",id, ce.s->getName(), ce.e->getName());
   */

@@ -12,25 +12,22 @@
 
 class MemObj;
 
-// Class for comparison to be used in hashes of char * where the
-// content is to be compared
 class MemObjCaseeqstr {
 public:
-  inline bool operator()(const char *s1, const char *s2) const { return strcasecmp(s1, s2) == 0; }
+  inline bool operator()(const std::string &s1, const std::string &s2) const { return strcasecmp(s1.c_str(), s2.c_str()) == 0; }
 };
 
 class MemoryObjContainer {
 private:
   std::vector<MemObj *>                   mem_node;
   typedef std::map<std::string, MemObj *> StrToMemoryObjMapper;
-  // typedef HASH_MAP<const char *, MemObj *, HASH<const char*>, MemObjCaseeqstr> StrToMemoryObjMapper;
   StrToMemoryObjMapper intlMemoryObjContainer;
 
 public:
-  void addMemoryObj(const char *device_name, MemObj *obj);
+  void addMemoryObj(const std::string &device_name, MemObj *obj);
 
-  MemObj *searchMemoryObj(const char *section, const char *name) const;
-  MemObj *searchMemoryObj(const char *name) const;
+  MemObj *searchMemoryObj(const std::string &section, const std::string &name) const;
+  MemObj *searchMemoryObj(const std::string &name) const;
 
   void clear();
 };
@@ -38,7 +35,6 @@ public:
 class GMemorySystem {
 private:
   typedef std::map<std::string, uint32_t> StrCounterType;
-  // typedef HASH_MAP<const char*, uint32_t, HASH<const char*>, MemObjCaseeqstr > StrCounterType;
   static StrCounterType usedNames;
 
   static MemoryObjContainer sharedMemoryObjContainer;
@@ -66,13 +62,13 @@ private:
 protected:
   const uint32_t coreId;
 
-  char *buildUniqueName(const char *device_type);
+  std::string buildUniqueName(const std::string &device_type);
 
   uint32_t priv_counter;
 
-  static char *privatizeDeviceName(char *given_name, int32_t num);
+  static std::string privatizeDeviceName(const std::string &given_name, int32_t num);
 
-  virtual MemObj *buildMemoryObj(const char *type, const char *section, const char *name);
+  virtual MemObj *buildMemoryObj(const std::string &type, const std::string &section, const std::string &name);
 
 public:
   GMemorySystem(int32_t processorId);
@@ -82,15 +78,15 @@ public:
   // operate with virtual functions at construction time
   virtual void buildMemorySystem();
 
-  MemObj *searchMemoryObj(bool shared, const char *section, const char *name) const;
-  MemObj *searchMemoryObj(bool shared, const char *name) const;
+  MemObj *searchMemoryObj(bool shared, const std::string &section, const std::string &name) const;
+  MemObj *searchMemoryObj(bool shared, const std::string &name) const;
 
-  MemObj *declareMemoryObj_uniqueName(char *name, char *device_descr_section);
-  MemObj *declareMemoryObj(const char *block, const char *field);
-  MemObj *finishDeclareMemoryObj(std::vector<char *> vPars, char *name_suffix = NULL);
+  MemObj *declareMemoryObj_uniqueName(const std::string &name, const std::string &device_descr_section);
+  MemObj *declareMemoryObj(const std::string &block, const std::string &field);
+  MemObj *finishDeclareMemoryObj(const std::vector<std::string> &vPars, const std::string &name_suffix = "");
 
   uint32_t    getNumMemObjs() { return MemObjNames.size(); }
-  void        addMemObjName(const char *name) { MemObjNames.push_back(name); }
+  void        addMemObjName(const std::string &name) { MemObjNames.push_back(name); }
   std::string getMemObjName(uint32_t i) { return MemObjNames[i]; }
 
   uint32_t getCoreId() const { return coreId; };

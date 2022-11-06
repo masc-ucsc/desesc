@@ -37,7 +37,7 @@
 
 GStats::Container GStats::store;
 
-GStats::GStats() : name(NULL) {}
+GStats::GStats() : name(nullptr) {}
 
 GStats::~GStats() {
   unsubscribe();

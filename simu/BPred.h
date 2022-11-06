@@ -93,7 +93,7 @@ private:
   const uint16_t RasSize;
   const uint16_t rasPrefetch;
 
-  Addr_t *stack;
+  std::vector<Addr_t> stack;
   int32_t index;
 
 protected:

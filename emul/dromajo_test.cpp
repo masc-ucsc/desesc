@@ -248,7 +248,7 @@ static void sigintr_handler(int dummy) {
 }
 
 int main(int argc, char **argv) {
-  const char *port_name = NULL;
+  const char *port_name = nullptr;
   int         port_num  = 0;
   for (;;) {
     int option_index = 0;

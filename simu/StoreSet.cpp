@@ -56,10 +56,10 @@ SSID_t StoreSet::create_set(uint64_t PC)
   // I(LFST[SSID]==0);
 
   set_SSID(PC, SSID);
-  LFST[SSID] = NULL;
+  LFST[SSID] = nullptr;
 
   I(SSID < StoreSetSize);
-  IS(if (isValidSSID(oldSSID)) { LFST[oldSSID] = NULL; });  // debug only
+  IS(if (isValidSSID(oldSSID)) { LFST[oldSSID] = nullptr; });  // debug only
 
   return SSID;
 }
@@ -90,7 +90,7 @@ void StoreSet::clear_SSIT()
 void StoreSet::clear_LFST(void)
 /* clear all the LFST entries {{{1 */
 {
-  for (size_t i = 0; i < LFST.size(); i++) LFST[i] = NULL;
+  for (size_t i = 0; i < LFST.size(); i++) LFST[i] = nullptr;
 }
 /* }}} */
 
@@ -205,7 +205,7 @@ void StoreSet::stldViolation_withmerge(Dinst *ld_dinst, Dinst *st_dinst)
         if (SSIT[i] == st_SSID)
           SSIT[i] = ld_SSID;
       }
-      LFST[st_SSID] = NULL;  // Wipe out any pending LFST for the destroyed set.
+      LFST[st_SSID] = nullptr;  // Wipe out any pending LFST for the destroyed set.
     }
   }
   set_SSID(st_pc, ld_SSID);
@@ -260,10 +260,10 @@ void StoreSet::assign_SSID(Dinst *dinst, SSID_t target_SSID) {
   uint64_t inst_pc   = dinst->getPC();
   if (isValidSSID(inst_SSID)) {
     Dinst *lfs_dinst = get_LFS(inst_SSID);
-    if (lfs_dinst != NULL) {
+    if (lfs_dinst != nullptr) {
       // if(dinst->getID() == lfs_dinst->getID()){ //is this store or load the most recent from the set
       // if(dinst->getpersistentID() == lfs_dinst->getpersistentID()){ //is this store or load the most recent from the set
-      if ((lfs_dinst == NULL) || (lfs_dinst == dinst)) {
+      if ((lfs_dinst == nullptr) || (lfs_dinst == dinst)) {
         if (inst_pc == lfs_dinst->getPC())
           set_LFS(inst_SSID, 0);  // remove self from LFS to prevent a deadlock after leaving this set
       }

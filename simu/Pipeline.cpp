@@ -163,7 +163,7 @@ PipeQueue::PipeQueue(CPU_t i)
         Config::get_integer("soc", "core", i, "fetch_width", 1, 64), Config::get_integer("soc", "core", i, "ftq_size", 1, 64))
     , instQueue(Config::get_integer("soc", "core", i, "instq_size", 1, 128)) {
   auto fetch_width = Config::get_integer("soc", "core", i, "fetch_width", 1, 64);
-  auto instq_size  = Config::get_integer("soc", "core", i, "instq_size", fetch_width, 128);
+  Config::get_integer("soc", "core", i, "instq_size", fetch_width, 128);
 }
 
 PipeQueue::~PipeQueue() {

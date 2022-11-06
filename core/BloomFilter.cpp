@@ -461,7 +461,7 @@ void BloomFilter::end_dump_pychart() {
   fprintf(dumpPtr, "ar.draw()\n");
 
   fclose(dumpPtr);
-  dumpPtr = NULL;
+  dumpPtr = nullptr;
 
   if (numDumps > 200) {
     exit(-1);

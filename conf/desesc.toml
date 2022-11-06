@@ -15,13 +15,39 @@ time      = 2*1024*1024
 [rand]
 type = "random"  # Generate random instructions (coverage testing?)
 
+[bp0]
+delay             = 1
+btb_history_size  = 0
+btb_split_il1     = false  # do not cache entries that can be computed by IL1
+btb_size          = 32
+btb_line_size     = 1
+btb_assoc         = 4
+btb_repl_policy   = "LRU"
+
+[bp1]
+delay             = 2
+btb_history_size  = 0
+btb_split_il1     = false  # do not cache entries that can be computed by IL1
+btb_size          = 8192
+btb_line_size     = 1
+btb_assoc         = 4
+btb_repl_policy   = "LRU"
+
 [c0]
+# Branch Predictor[s] parameters
+bp_addr_shift = 0      # bits shifted by branch predictor PC
+ras_size      = 32
+ras_prefetch  = false
+bpred         = ["bp0", "bp1"]
+
+
 # Fetch parameters
-fetch_align  = true
-trace_align  = false
+fetch_align       = true
+trace_align       = false
 target_inline_opt = true   # jumps within cacheline do not flush
-fetch_one_line = true   # jumps within cacheline do not flush
-max_bb_cycle   = 1
+fetch_one_line    = true   # jumps within cacheline do not flush
+max_bb_cycle      = 1
+prefetcher        = "pref_opt"
 
 # Cache Pointers
 IL1 = "il1_cache"
@@ -39,4 +65,14 @@ line_size  = 64
 delay      = 2         # hit delay
 miss_delay = 8
 assoc      = 4
+
+[pref_opt]
+type       = "stride"
+degree     = 10
+distance   = 0
+
+# vtage entries
+bimodal_size = 1024
+bimodal_width = 8
+ntables      = 4
 

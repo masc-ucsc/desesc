@@ -29,3 +29,15 @@ desesc: Dromajo Based ESESC
  Rename class name to avoid CamelCase to Non_camel_case
  Rename file name from CamelCase.h to Non_camel_case.hpp and Non_camel_case.cpp
 
+=Remove VPC left-overs
+
+=Make Config and name match with a "cfg_" starting
+
+E.g:
+
+   btbHistorySize = Config::get_integer(section,"btb_history_size");
+
+Should become (and rename any variable use/declaration)
+
+   cfg_btb_history_size = Config::get_integer(section,"btb_history_size");
+

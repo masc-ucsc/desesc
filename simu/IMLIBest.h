@@ -31,6 +31,14 @@
 
 #pragma once
 
+#include <inttypes.h>
+#include <math.h>
+
+#include <vector>
+
+#include "DOLC.h"
+#include "dinst.hpp"   // AddrType and Opcode
+
 //#define MEDIUM_TAGE 1
 //#define IMLI_150K 1
 #define IMLI_256K 1
@@ -115,14 +123,6 @@
 #endif
 */
 // To get the predictor storage budget on stderr  uncomment the next line
-#include <assert.h>
-#include <inttypes.h>
-#include <math.h>
-
-#include <vector>
-
-#include "DOLC.h"
-#include "opcode.hpp"
 
 #define SUBENTRIES 1
 
@@ -1053,7 +1053,7 @@ public:
     return (A);
   }
 
-  int gindex(unsigned int PC, int bank, long long hist, folded_history *ch_i, bool use_dolc_next) {
+  int gindex(unsigned int PC, int bank, long long hist) {
     int index;
 #ifdef USE_DOLC
     // Dual bank per bank (lower bit is PC based)
@@ -1118,7 +1118,7 @@ public:
     return (false);
   }
 
-  void loopupdate(Addr_t PC, bool Taken, bool ALLOC) {
+  void loopupdate(bool Taken, bool ALLOC) {
     if (LHIT >= 0) {
       int index = (LI ^ ((LIB >> LHIT) << 2)) + LHIT;
       // already a hit
@@ -1178,8 +1178,8 @@ public:
 
       if ((MYRANDOM() & 3) == 0)
         for (int i = 0; i < 4; i++) {
-          int LHIT  = (X + i) & 3;
-          int index = (LI ^ ((LIB >> LHIT) << 2)) + LHIT;
+          int LHIT2  = (X + i) & 3;
+          int index = (LI ^ ((LIB >> LHIT2) << 2)) + LHIT2;
           if (ltable[index].age == 0) {
             ltable[index].dir = !Taken;
             // most of mispredictions are on last iterations
@@ -1214,7 +1214,7 @@ public:
 
     GI[0] = lastBoundaryPC >> 2;  // Remove 2 lower useless bits
     for (int i = 1; i <= nhist; i++) {
-      GI[i]   = gindex(pcSign(lastBoundaryPC, i), i, phist, ch_i, false);
+      GI[i]   = gindex(pcSign(lastBoundaryPC, i), i, phist);
       GTAG[i] = ((GI[i - 1] << (logg[i] / 2)) ^ GI[i - 1]) & ((1 << TB[i]) - 1);
     }
   }
@@ -1310,7 +1310,7 @@ public:
 
 #ifdef POSTPREDICT
     ppi = postp_index(HitBank, AltBank, WeakBank);
-    assert(ppi < postpsize);
+    I(ppi < postpsize);
     // printf("postp[%d]=%d\n", ppi, postp[ppi]);
     tage_pred = (postp[ppi] >= 0);
 #endif
@@ -1481,8 +1481,7 @@ public:
   }
 
   void HistoryUpdate(Addr_t PC, Opcode brtype, bool taken, Addr_t target, long long &X, int &Y, folded_history *H,
-                     folded_history *G, folded_history *J, long long &LH, long long &SH, long long &TH, long long &PH,
-                     long long &GBRHIST) {
+                     folded_history *G, folded_history *J, long long &LH, long long &GBRHIST) {
     // special treatment for unconditional branchs;
     int maxt;
     if (brtype == iBALU_LBRANCH)
@@ -1563,6 +1562,7 @@ public:
   // PREDICTOR UPDATE
 
   void updatePredictor(Addr_t PC, bool resolveDir, bool predDir, Addr_t branchTarget, bool no_alloc) {
+    (void)predDir;
     // MSG("pc:%x t:%d p:%d ghr:%lx",PC, resolveDir, predDir, GI[nhist]);
 
 #if 0
@@ -1589,20 +1589,21 @@ public:
         ctrupdate(WITHLOOP, (predloop == resolveDir), 7);
     }
 
-    loopupdate(PC, resolveDir, (pred_taken != resolveDir));
+    loopupdate(resolveDir, (pred_taken != resolveDir));
 #endif
 
     if (sc) {
       bool SCPRED = (LSUM >= 0);
       if (HighConf) {
         if (pred_inter != SCPRED) {
-          if ((abs(LSUM) < Pupdatethreshold[INDUPD]))
-            if ((abs(LSUM) < Pupdatethreshold[INDUPD] / 3))
+          if ((abs(LSUM) < Pupdatethreshold[INDUPD])) {
+            if ((abs(LSUM) < Pupdatethreshold[INDUPD] / 3)) 
               ctrupdate(FirstH, (pred_inter == resolveDir), CONFWIDTH);
             else if ((abs(LSUM) < 2 * Pupdatethreshold[INDUPD] / 3))
               ctrupdate(SecondH, (pred_inter == resolveDir), CONFWIDTH);
             else if ((abs(LSUM) < Pupdatethreshold[INDUPD]))
               ctrupdate(ThirdH, (pred_inter == resolveDir), CONFWIDTH);
+          }
         }
       }
 
@@ -1692,9 +1693,7 @@ public:
 
         int weakBank = HitBank + A;
 #ifdef SUBENTRIES
-        bool skip[nhist + 1] = {
-            false,
-        };
+        std::vector<bool> skip(nhist+1, false);
 
         // First try tag (but not offset hit)
         for (int i = weakBank; i <= nhist; i += 1) {
@@ -1731,11 +1730,11 @@ public:
                 gtable[i][GI[i]].ctr_force_steal(resolveDir);
                 // gtable[i][GI[i]].dump(); printf(" alloc2 pc=%x\n",PC);
               } else {
-                gtable[i][GI[i]].reset(i, GTAG[i], resolveDir);
+                gtable[i][GI[i]].reset(GTAG[i], resolveDir);
                 // gtable[i][GI[i]].dump(); printf(" alloc3 pc=%x\n",PC);
               }
 #else
-              gtable[i][GI[i]].reset(i, GTAG[i], resolveDir);
+              gtable[i][GI[i]].reset(GTAG[i], resolveDir);
 #endif
 
               NA++;
@@ -1797,9 +1796,9 @@ public:
 #endif
 
       if (HitBank > 0) {
-        gtable[HitBank][GI[HitBank]].ctr_update(HitBank, resolveDir);
+        gtable[HitBank][GI[HitBank]].ctr_update(resolveDir);
         if (gtable[HitBank][GI[HitBank]].u_get() == 0 && AltBank > 0) {
-          gtable[AltBank][GI[AltBank]].ctr_update(0, resolveDir);
+          gtable[AltBank][GI[AltBank]].ctr_update(resolveDir);
         } else {
           bimodal.update(resolveDir);
         }
@@ -1815,7 +1814,7 @@ public:
       }
     }
 #ifdef POSTPREDICT
-    assert(ppi < postpsize);
+    I(ppi < postpsize);
     ctrupdate(postp[ppi], resolveDir, POSTPBITS);
 #endif
     // END TAGE UPDATE
@@ -1830,9 +1829,6 @@ public:
                   ch_t[0],
                   ch_t[1],
                   L_shist[INDLOCAL],
-                  S_slhist[INDSLOCAL],
-                  T_slhist[INDTLOCAL],
-                  HSTACK[pthstack],
                   GHIST);
     // END PREDICTOR UPDATE
   }
@@ -1875,9 +1871,9 @@ public:
                   ch_t[0],
                   ch_t[1],
                   L_shist[INDLOCAL],
-                  S_slhist[INDSLOCAL],
-                  T_slhist[INDTLOCAL],
-                  HSTACK[pthstack],
+                  // S_slhist[INDSLOCAL],
+                  // T_slhist[INDTLOCAL],
+                  // HSTACK[pthstack],
                   GHIST);
   }
 };

@@ -860,7 +860,7 @@ void FetchEngine::realfetch(IBucket *bucket, EmulInterface *eint, Hartid_t fid, 
   } else {
     bucket->markFetchedCB.schedule(il1_hit_delay);
 #if 0
-    if (bucket->top() != NULL)
+    if (bucket->top() != nullptr)
     MSG("@%lld: Bucket [%p] (Top ID = %d) to be markFetched after %d cycles i.e. @%lld"
         ,(long long int)globalClock
         , bucket

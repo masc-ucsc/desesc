@@ -748,49 +748,44 @@ void CacheGeneric<State, Addr_t>::createStats(const char *section, const char *n
 template <class State, class Addr_t>
 CacheGeneric<State, Addr_t> *CacheGeneric<State, Addr_t>::create(const char *section, const char *append, const char *format, ...) {
   CacheGeneric *cache = 0;
-  char          size[STR_BUF_SIZE];
-  char          bsize[STR_BUF_SIZE];
-  char          addrUnit[STR_BUF_SIZE];
-  char          assoc[STR_BUF_SIZE];
-  char          repl[STR_BUF_SIZE];
-  char          skew[STR_BUF_SIZE];
 
-  snprintf(size, STR_BUF_SIZE, "%sSize", append);
-  snprintf(bsize, STR_BUF_SIZE, "%sBsize", append);
-  snprintf(addrUnit, STR_BUF_SIZE, "%sAddrUnit", append);
-  snprintf(assoc, STR_BUF_SIZE, "%sAssoc", append);
-  snprintf(repl, STR_BUF_SIZE, "%sReplPolicy", append);
-  snprintf(skew, STR_BUF_SIZE, "%sSkew", append);
+  auto size_sec        = fmt::format("{}_size", append);
+  auto line_size_sec   = fmt::format("{}_line_size", append);
+  auto addrUnit_sec    = fmt::format("{}_addrUnit", append);
+  auto assoc_sec       = fmt::format("{}_assoc", append);
+  auto repl_policy_sec = fmt::format("{}_replPolicy", append);
+  auto skew_sec        = fmt::format("{}_skew", append);
+  auto xor_sec         = fmt::format("{}_xor", append);
+  auto ship_sec        = fmt::format("{}_ship_sign_bits", append);
 
-  int32_t s  = Config::get_power2(section, size);
-  int32_t a  = Config::get_power2(section, assoc);
-  int32_t b  = Config::get_power2(section, bsize, 1, 1024);
+  int32_t s  = Config::get_power2(section, size_sec);
+  int32_t a  = Config::get_power2(section, assoc_sec);
+  int32_t b  = Config::get_power2(section, line_size_sec, 1, 1024);
   bool    xr = false;
-  if (Config::has_entry(section, "xorIndex")) {
-    xr = Config::get_bool(section, "xorIndex");
+  if (Config::has_entry(section, xor_sec)) {
+    xr = Config::get_bool(section, xor_sec);
   }
   // printf("Created %s cache, with size:%d, assoc %d, bsize %d\n",section,s,a,b);
   bool sk = false;
-  if (Config::has_entry(section, skew))
-    sk = Config::get_bool(section, skew);
-  // For now, tolerate caches that don't have this defined.
+  if (Config::has_entry(section, skew_sec))
+    sk = Config::get_bool(section, skew_sec);
   int32_t u = 1;
-  if (Config::has_entry(section, addrUnit)) {
-    u = Config::get_power2(section, addrUnit, 0, b);
+  if (Config::has_entry(section, addrUnit_sec)) {
+    u = Config::get_power2(section, addrUnit_sec, 0, b);
   }
 
-  const char *pStr = Config::get_string(section, repl, {k_RANDOM, k_LRU, k_SHIP, k_LRUp, k_HAWKEYE, k_PAR, k_UAR});
+  auto pStr = Config::get_string(section, repl_policy_sec, {k_RANDOM, k_LRU, k_SHIP, k_LRUp, k_HAWKEYE, k_PAR, k_UAR});
 
   // SHIP
   uint32_t shct_size = 0;
-  if (strcasecmp(pStr, k_SHIP) == 0) {
-    shct_size = Config::get_integer(section, "ship_signature_bits");
+  if (strcasecmp(pStr.c_str(), k_SHIP) == 0) {
+    shct_size = Config::get_integer(section, ship_sec);
   }
 
   if (Config::has_errors()) {
-    cache = new CacheAssoc<State, Addr_t>(2, 1, 1, 1, pStr, xr);
+    cache = new CacheAssoc<State, Addr_t>(2, 1, 1, 1, pStr.c_str(), xr);
   } else {
-    cache = create(s, a, b, u, pStr, sk, xr, shct_size);
+    cache = create(s, a, b, u, pStr.c_str(), sk, xr, shct_size);
   }
 
   I(cache);

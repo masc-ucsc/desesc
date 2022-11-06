@@ -16,39 +16,37 @@ DrawArch                      arch;
 //////////////////////////////////////////////
 // MemoryObjContainer
 
-void MemoryObjContainer::addMemoryObj(const char *device_name, MemObj *obj) {
+void MemoryObjContainer::addMemoryObj(const std::string &device_name, MemObj *obj) {
   intlMemoryObjContainer[device_name] = obj;
   mem_node.push_back(obj);
 }
 
-MemObj *MemoryObjContainer::searchMemoryObj(const char *descr_section, const char *device_name) const {
-  I(descr_section);
-  I(device_name);
+MemObj *MemoryObjContainer::searchMemoryObj(const std::string &descr_section, const std::string &device_name) const {
+  I(!descr_section.empty());
+  I(!device_name.empty());
 
   StrToMemoryObjMapper::const_iterator it = intlMemoryObjContainer.find(device_name);
 
-  if (it != intlMemoryObjContainer.end()) {
-    const char *descrSection = (*it).second->getSection();
+  if (it == intlMemoryObjContainer.end())
+    return nullptr;
 
-    if (strcasecmp(descrSection, descr_section)) {
-      MSG("Two versions of MemoryObject [%s] with different definitions [%s] and [%s]", device_name, descrSection, descr_section);
-      exit(-1);
-    }
-
-    return (*it).second;
+  const auto sec = it->second->getSection();
+  if (sec == descr_section) {
+    Config::add_error(fmt::format("Two versions of MemoryObject [{}] with different definitions [{}] and [{}]", device_name, sec, descr_section));
+    return nullptr;
   }
 
-  return NULL;
+  return it->second;
 }
 
 /* Only returns a pointer if there is only one with that name */
-MemObj *MemoryObjContainer::searchMemoryObj(const char *device_name) const {
+MemObj *MemoryObjContainer::searchMemoryObj(const std::string &device_name) const {
   I(device_name);
 
   if (intlMemoryObjContainer.count(device_name) != 1)
-    return NULL;
+    return nullptr;
 
-  return (*(intlMemoryObjContainer.find(device_name))).second;
+  return intlMemoryObjContainer.find(device_name)->second;
 }
 
 void MemoryObjContainer::clear() { intlMemoryObjContainer.clear(); }
@@ -83,28 +81,27 @@ GMemorySystem::~GMemorySystem() {
   delete localMemoryObjContainer;
 }
 
-MemObj *GMemorySystem::buildMemoryObj(const char *type, const char *section, const char *name) {
+MemObj *GMemorySystem::buildMemoryObj(const std::string &type, const std::string &section, const std::string &name) {
   if (!(strcasecmp(type, "dummy") == 0 || strcasecmp(type, "cache") == 0 || strcasecmp(type, "icache") == 0
         || strcasecmp(type, "scache") == 0
-        /* prefetcher */
-        || strcasecmp(type, "markovPrefetcher") == 0 || strcasecmp(type, "stridePrefetcher") == 0
+
+        || strcasecmp(type, "markovPrefetcher") == 0 
+        || strcasecmp(type, "stridePrefetcher") == 0
         || strcasecmp(type, "Prefetcher") == 0
-        /* #ifdef FERMI {{{1 */
+
         || strcasecmp(type, "splitter") == 0
         || strcasecmp(type, "siftsplitter") == 0
-        /* #endif }}} */
+
         || strcasecmp(type, "smpcache") == 0 || strcasecmp(type, "memxbar") == 0)) {
-    MSG("Invalid memory type [%s]", type);
-    SescConf->notCorrect();
+    Config::add_error(fmt::format("Invalid memory type [{}]", type));
   }
 
   return new DummyMemObj(section, name);
 }
 
 void GMemorySystem::buildMemorySystem() {
-  SescConf->isCharPtr("", "cpusimu", coreId);
 
-  const char *def_block = SescConf->getCharPtr("", "cpusimu", coreId);
+  std::string def_block = Config::get_string("soc", "core", coreId);
 
   IL1 = declareMemoryObj(def_block, "IL1");
   IL1->getRouter()->fillRouteTables();
@@ -141,73 +138,62 @@ void GMemorySystem::buildMemorySystem() {
   }
 }
 
-char *GMemorySystem::buildUniqueName(const char *device_type) {
+std::string GMemorySystem::buildUniqueName(const std::string &device_type) {
   int32_t num;
 
-  StrCounterType::iterator it = usedNames.find(device_type);
+  auto it = usedNames.find(device_type);
   if (it == usedNames.end()) {
     usedNames[device_type] = 0;
     num                    = 0;
-
-  } else
+  } else {
     num = ++(*it).second;
+  }
 
-  size_t size = strlen(device_type);
-  char  *ret  = (char *)malloc(size + 6 + (int)log10((float)num + 10));
-  sprintf(ret, "%s(%d)", device_type, num);
-
-  return ret;
+  return fmt::format("{}({})", device_type, num);
 }
 
-char *GMemorySystem::privatizeDeviceName(char *given_name, int32_t num) {
-  char *ret = new char[strlen(given_name) + 8 + (int)log10((float)num + 10)];
-
-  sprintf(ret, "%s(%d)", given_name, num);
-
-  delete[] given_name;
-
-  return ret;
+std::string GMemorySystem::privatizeDeviceName(const std::string &given_name, int32_t num) {
+  return fmt::format("{}({})", given_name, num);
 }
 
-MemObj *GMemorySystem::searchMemoryObj(bool shared, const char *section, const char *name) const {
+MemObj *GMemorySystem::searchMemoryObj(bool shared, const std::string &section, const std::string &name) const {
   return getMemoryObjContainer(shared)->searchMemoryObj(section, name);
 }
 
-MemObj *GMemorySystem::searchMemoryObj(bool shared, const char *name) const {
+MemObj *GMemorySystem::searchMemoryObj(bool shared, const std::string &name) const {
   return getMemoryObjContainer(shared)->searchMemoryObj(name);
 }
 
-MemObj *GMemorySystem::declareMemoryObj_uniqueName(char *name, char *device_descr_section) {
-  std::vector<char *> vPars;
+MemObj *GMemorySystem::declareMemoryObj_uniqueName(const std::string &name, const std::string &device_descr_section) {
+  std::vector<std::string> vPars;
   vPars.push_back(device_descr_section);
   vPars.push_back(name);
-  vPars.push_back(strdup("shared"));
-  // TODO: add a third vPars here to be compatible with the code below
-  MemObj *ret = finishDeclareMemoryObj(vPars);
-  return ret;
+  vPars.push_back("shared");
+
+  return finishDeclareMemoryObj({device_descr_section, name, "shared"});
 }
 
-MemObj *GMemorySystem::declareMemoryObj(const char *block, const char *field) {
-  SescConf->isCharPtr(block, field);
-  std::vector<char *> vPars = SescConf->getSplitCharPtr(block, field);
+MemObj *GMemorySystem::declareMemoryObj(const std::string &block, const std::string &field) {
+
+  auto str = Config::get_string(block, field);
+  auto vPars = absl::StrSplit(str, ' ');
+
   if (!vPars.size()) {
-    MSG("ERROR: Section [%s] field [%s] does not describe a MemoryObj\n", block, field);
-    MSG("ERROR: Required format: memoryDevice = descriptionSection [name] [shared|private]\n");
-    SescConf->notCorrect();
-    I(0);
-    return 0;  // Known-error mode
+    Config::add_error(fmt::format("section [{}] field [{}] does not describe a MemoryObj", block, field));
+    Config::add_error("required format: memoryDevice = descriptionSection [name] [shared|private]");
+    return nullptr;
   }
 
   MemObj *ret = finishDeclareMemoryObj(vPars);
-  I(ret);  // Users of declareMemoryObj dereference without NULL check so pointer must be valid
+  I(ret);  // Users of declareMemoryObj dereference without nullptr check so pointer must be valid
   return ret;
 }
 
-MemObj *GMemorySystem::finishDeclareMemoryObj(std::vector<char *> vPars, char *name_suffix) {
+MemObj *GMemorySystem::finishDeclareMemoryObj(const std::vector<std::string> &vPars, char *name_suffix) {
   bool shared     = false;  // Private by default
   bool privatized = false;
 
-  const char *device_descr_section = vPars[0];
+  const std::string &device_descr_section = vPars[0];
   char       *device_name          = (vPars.size() > 1) ? vPars[1] : 0;
 
   if (vPars.size() > 2) {
@@ -235,7 +221,7 @@ MemObj *GMemorySystem::finishDeclareMemoryObj(std::vector<char *> vPars, char *n
   }
 
   SescConf->isCharPtr(device_descr_section, "deviceType");
-  const char *device_type = SescConf->getCharPtr(device_descr_section, "deviceType");
+  const std::string &device_type = SescConf->getCharPtr(device_descr_section, "deviceType");
 
   /* If the device has been given a name, we may be refering to an
    * already existing device in the system, so let's search
@@ -254,7 +240,7 @@ MemObj *GMemorySystem::finishDeclareMemoryObj(std::vector<char *> vPars, char *n
     }
     char *final_dev_name = device_name;
 
-    if (name_suffix != NULL) {
+    if (name_suffix != nullptr) {
       final_dev_name = new char[strlen(device_name) + strlen(name_suffix) + 8];
       sprintf(final_dev_name, "%s%s", device_name, name_suffix);
     }

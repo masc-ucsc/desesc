@@ -434,7 +434,7 @@ void TaskHandler::plugBegin()
   I(cpus.empty());
   terminate_all = false;
 
-  running      = NULL;
+  running      = nullptr;
   running_size = 0;
 
   pthread_mutex_lock(&mutex_terminate);

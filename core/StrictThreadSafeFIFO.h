@@ -33,7 +33,7 @@ public:
     tail       = 0;
     head       = 0;
     valid_size = 0;
-    array      = NULL;
+    array      = nullptr;
   }
 
   void allocate(uint32_t s) {

@@ -8,6 +8,7 @@ Emul_base::Emul_base(const std::string &sect)
     : section(sect)
 /* Base class Emul_base constructor  */
 {
+  Config::init(sect);
   num  = Config::get_integer("emul", "num");
   type = Config::get_string("emul", "type", {"dromajo", "trace"});
 

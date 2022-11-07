@@ -3,12 +3,21 @@
 #pragma once
 
 #include "emul_base.hpp"
+#include "dromajo.h"
 
 class Emul_dromajo : public Emul_base {
 protected:
+  RISCVMachine *machine = NULL;
 public:
-  Emul_dromajo();
+  Emul_dromajo(const std::string &sect);
   virtual ~Emul_dromajo();
+
+  bool init_dromajo_machine(int argc, char **argv) {
+    machine = virt_machine_main(argc, argv);
+    if (machine == NULL)
+      return false;
+    return true;
+  }
 
   virtual Dinst *peek(Hartid_t fid) final;
   virtual void   execute(Hartid_t fid) final;

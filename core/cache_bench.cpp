@@ -2,8 +2,9 @@
 #include <sys/time.h>
 
 #include "CacheCore.h"
-#include "Report.h"
-#include "SescConf.h"
+
+#include "report.hpp"
+#include "config.hpp"
 
 class SampleState : public StateGeneric<long> {
 public:
@@ -167,8 +168,7 @@ int main(int32_t argc, const char **argv) {
   benchMatrix("DM");
 #endif
 
-  GStats::report("Cache Stats");
-
+  Stats::report("Cache Stats");
   Report::close();
 
   // cache->destroy();

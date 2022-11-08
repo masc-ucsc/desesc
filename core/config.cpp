@@ -43,8 +43,13 @@ std::string Config::get_string(const std::string &block, const std::string &name
     std::string env_var = fmt::format("DESESC_{}_{}", block, name);
 
     const char *e = getenv(env_var.c_str());
-    if (e)
-      return e;
+    if (e) {
+      std::string v{e};
+
+      std::transform(v.begin(), v.end(), v.begin(), [](unsigned char c){ return std::tolower(c); });
+
+      return v;
+    }
   }
 
   auto ent = toml::find(data, block, name);
@@ -68,6 +73,7 @@ std::string Config::get_string(const std::string &block, const std::string &name
     return "INVALID";
   }
 
+  std::transform(val.begin(), val.end(), val.begin(), [](unsigned char c){ return std::tolower(c); });
   return val;
 }
 
@@ -240,7 +246,7 @@ bool Config::get_bool(const std::string &block, const std::string &name) {
   }
 
   auto ent = toml::find(data, block, name);
-  if (!ent.is_bool()) {
+  if (!ent.is_boolean()) {
     errors.emplace_back(fmt::format("conf:{} section:{} field:{} is not a boolean\n", filename, block, name));
     return false;
   }
@@ -284,7 +290,7 @@ bool Config::get_bool(const std::string &block, const std::string &name, size_t 
   }
 
   auto ent2 = toml::find(data, block2, name2);
-  if (!ent2.is_bool()) {
+  if (!ent2.is_boolean()) {
     errors.emplace_back(fmt::format("conf:{} section:{} field:{} is not a boolean\n", filename, block2, name2));
     return false;
   }
@@ -292,7 +298,7 @@ bool Config::get_bool(const std::string &block, const std::string &name, size_t 
   return ent2.as_boolean();
 }
 
-int Config::check_power2(int v) {
+int Config::check_power2(const std::string &block, const std::string &name, int v) {
   if (v == 0)
     return 0;
 
@@ -311,12 +317,12 @@ int Config::check_power2(int v) {
 int Config::get_power2(const std::string &block, const std::string &name, int from, int to) {
   int v = get_integer(block, name, from, to);
 
-  return check_power2(v);
+  return check_power2(block, name, v);
 }
 
 int Config::get_power2(const std::string &block, const std::string &name, size_t pos, const std::string &name2, int from, int to) {
   int v = get_integer(block, name, pos, name2, from, to);
 
-  return check_power2(v);
+  return check_power2(block, name, v);
 
 }

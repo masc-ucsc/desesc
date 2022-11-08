@@ -17,14 +17,14 @@ extern "C" uint64_t esesc_mem_read(uint64_t addr);
 /* Debug class to search for duplicate names {{{1 */
 class Setltstr {
 public:
-  bool operator()(const char *s1, const char *s2) const { return strcasecmp(s1, s2) < 0; }
+  bool operator()(const std::string &s1, const std::string &s2) const { return strcasecmp(s1.c_str(), s2.c_str()) < 0; }
 };
 /* }}} */
 #endif
 
 uint16_t MemObj::id_counter = 0;
 
-MemObj::MemObj(const char *sSection, const char *sName)
+MemObj::MemObj(const std::string &sSection, const std::string &sName)
     /* constructor {{{1 */
     : section(sSection)
     , name(sName)
@@ -48,9 +48,8 @@ MemObj::MemObj(const char *sSection, const char *sName)
   /*if(strcmp(section, "DL1_core") == 0){
   }*/
 
-#ifndef NDEBUG
-  static std::set<const char *, Setltstr> usedNames;
-  if (sName) {
+  static std::set<std::string, Setltstr> usedNames;
+  if (!sName.empty()) {
     // Verify that one else uses the same name
     if (usedNames.find(sName) != usedNames.end()) {
       Config::add_error(fmt::format("multiple memory objects have same name '{}' (rename one of them)", sName));
@@ -58,7 +57,6 @@ MemObj::MemObj(const char *sSection, const char *sName)
       usedNames.insert(sName);
     }
   }
-#endif
 }
 /* }}} */
 
@@ -73,12 +71,13 @@ void MemObj::addLowerLevel(MemObj *obj) {
   I(obj);
   obj->addUpperLevel(this);
   // printf("****%s with lower level %s\n",getName(),obj->getName());
-  const char *name = obj->getName();
+  auto name = obj->getName();
   if (name[0] == 'L' && name[1] == '3') {
     isLLC = true;
-    // printf("***Last Level Cache is  %s  \n",obj->getName());
-  } else
+    fmt::print("***Last Level Cache is {}\n",obj->getName());
+  } else {
     isLLC = false;
+  }
 }
 
 void MemObj::addUpperLevel(MemObj *obj) {
@@ -113,7 +112,7 @@ DummyMemObj::DummyMemObj()
     : MemObj("dummySection", "dummyMem") {}
 /* }}} */
 
-DummyMemObj::DummyMemObj(const char *section, const char *sName)
+DummyMemObj::DummyMemObj(const std::string &section, const std::string &sName)
     /* dummy constructor {{{1 */
     : MemObj(section, sName) {}
 /* }}} */
@@ -235,10 +234,7 @@ void MemObj::lor_find_index(Addr_t tl_addr) {
   // lor_trigger_load_completeCB::schedule(CODE_SLICE_DELAY, this, tl_addr);
 
   if (!fsm_alu_port) {
-    char        fsm_name[1024];
-    const char *name = "fsm_alu";
-    sprintf(fsm_name, "%s_%d", name, 0);
-    fsm_alu_port = PortGeneric::create(fsm_name, NUM_FSM_ALU, 1);
+    fsm_alu_port = PortGeneric::create("fsm_alu_0", NUM_FSM_ALU, 1);
   }
 
   Time_t fsm_alu_time = fsm_alu_port->nextSlot(false);

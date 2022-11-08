@@ -1,27 +1,6 @@
-/*
-   ESESC: Super ESCalar simulator
-   Copyright (C) 2003 University of Illinois.
+// See LICESEN for details.
 
-   Contributed by Jose Renau
-                  Basilio Fraguela
-
-This file is part of ESESC.
-
-ESESC is free software; you can redistribute it and/or modify it under the terms
-of the GNU General Public License as published by the Free Software Foundation;
-either version 2, or (at your option) any later version.
-
-ESESC is    distributed in the  hope that  it will  be  useful, but  WITHOUT ANY
-WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-
-You should  have received a copy of  the GNU General  Public License along with
-ESESC; see the file COPYING.  If not, write to the  Free Software Foundation, 59
-Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-*/
-
-#ifndef PORT_H
-#define PORT_H
+#pragma once
 
 // Clean and Fast interface to implement any kind of contention for a
 // bus.  This resource is typically used to model the number of ports
@@ -42,7 +21,7 @@ Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 //
 // Enjoy!
 
-#include "GStats.h"
+#include "stats.hpp"
 #include "callback.hpp"
 #include "iassert.hpp"
 
@@ -56,10 +35,10 @@ private:
   int32_t nUsers;
 
 protected:
-  GStatsAvg avgTime;
+  Stats_avg avgTime;
 
 public:
-  PortGeneric(const char *name);
+  PortGeneric(const std::string &name);
   virtual ~PortGeneric();
 
   void subscribe() { nUsers++; }
@@ -84,14 +63,14 @@ public:
   //! returns when the next slot can be free without occupying any slot
   virtual Time_t calcNextSlot() const = 0;
 
-  static PortGeneric *create(const char *name, NumUnits_t nUnits, TimeDelta_t occ);
+  static PortGeneric *create(const std::string &name, NumUnits_t nUnits, TimeDelta_t occ);
   void                destroy();
 };
 
 class PortUnlimited : public PortGeneric {
 protected:
 public:
-  PortUnlimited(const char *name);
+  PortUnlimited(const std::string &name);
 
   void   occupyUntil(Time_t t);
   Time_t nextSlot(bool en);
@@ -105,7 +84,7 @@ protected:
   Time_t lTime;
 
 public:
-  PortFullyPipe(const char *name);
+  PortFullyPipe(const std::string &name);
 
   Time_t nextSlot(bool en);
   Time_t calcNextSlot() const;
@@ -119,7 +98,7 @@ protected:
   Time_t           lTime;
 
 public:
-  PortFullyNPipe(const char *name, NumUnits_t nFU);
+  PortFullyNPipe(const std::string &name, NumUnits_t nFU);
 
   Time_t nextSlot(bool en);
   Time_t calcNextSlot() const;
@@ -132,7 +111,7 @@ protected:
   Time_t            lTime;
 
 public:
-  PortPipe(const char *name, TimeDelta_t occ);
+  PortPipe(const std::string &name, TimeDelta_t occ);
 
   Time_t nextSlot(bool en);
   Time_t calcNextSlot() const;
@@ -143,10 +122,10 @@ private:
 protected:
   const TimeDelta_t ocp;
   const NumUnits_t  nUnits;
-  Time_t           *portBusyUntil;
+  std::vector<Time_t> portBusyUntil;
 
 public:
-  PortNPipe(const char *name, NumUnits_t nFU, TimeDelta_t occ);
+  PortNPipe(const std::string &name, NumUnits_t nFU, TimeDelta_t occ);
   virtual ~PortNPipe();
 
   Time_t nextSlot(bool en);
@@ -154,4 +133,3 @@ public:
   Time_t calcNextSlot() const;
 };
 
-#endif  // PORT_H

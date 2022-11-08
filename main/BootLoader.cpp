@@ -1,62 +1,21 @@
-// Contributed by Jose Renau
-//
-// The ESESC/BSD License
-//
-// Copyright (c) 2005-2013, Regents of the University of California and
-// the ESESC Project.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-//   - Redistributions of source code must retain the above copyright notice,
-//   this list of conditions and the following disclaimer.
-//
-//   - Redistributions in binary form must reproduce the above copyright
-//   notice, this list of conditions and the following disclaimer in the
-//   documentation and/or other materials provided with the distribution.
-//
-//   - Neither the name of the University of California, Santa Cruz nor the
-//   names of its contributors may be used to endorse or promote products
-//   derived from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// See LICENSE for details.
 
 #include <pthread.h>
 #include <signal.h>
 #include <stdlib.h>
 
 #include "BootLoader.h"
-
-#ifndef ENABLE_NOEMU
-#include "QEMUEmulInterface.h"
-#endif
-
-#include "SamplerPeriodic.h"
-#include "SamplerSMARTS.h"
-#include "SamplerSync.h"
-
-#include "../libmem/MemorySystem.h"
+#include "MemorySystem.h"
 #include "AccProcessor.h"
 #include "GMemorySystem.h"
 #include "GPUSMProcessor.h"
 #include "GProcessor.h"
 #include "InOrderProcessor.h"
 #include "OoOProcessor.h"
-
 #include "DrawArch.h"
-#include "Report.h"
-#include "SescConf.h"
+
+#include "report.hpp"
+#include "config.hpp"
 
 extern DrawArch arch;
 
@@ -103,56 +62,26 @@ PowerModel *BootLoader::pwrmodel;
 bool        BootLoader::doPower;
 
 void BootLoader::check() {
-  if(!SescConf->check()) {
-    Report::field("**** ESESC CONFIGURATION INCORRECT ****");
-    fprintf(stderr, "\n\n**** ESESC CONFIGURATION INCORRECT ****\n\nDeleting report File %s\n\n", Report::getNameID());
-    remove(Report::getNameID());
+  if(Config::has_errors()) {
     exit(-1);
   }
 }
 
-void BootLoader::reportOnTheFly(const char *file) {
-  char *tmp;
+void BootLoader::reportOnTheFly() {
 
-  if(!file)
-    file = reportFile;
+  Report::field("partial=true");
 
-  tmp = (char *)malloc(strlen(file) + 1);
-  strcpy(tmp, file);
+  Report::reinit();
+  Config::dump(Report::raw_file_descriptor());
 
-  Report::openFile(tmp);
-
-  SescConf->dump();
-
-  report("partial");
-
-  free(tmp);
-}
-
-void BootLoader::startReportOnTheFly() {
-  char *tmp;
-
-  const char *file = reportFile;
-
-  tmp = (char *)malloc(strlen(file) + 1);
-  strcpy(tmp, file);
-
-  Report::openFile(tmp);
-
-  SescConf->dump();
   pwrmodel->startDump();
-  report("partial");
-
-  free(tmp);
-}
-
-void BootLoader::stopReportOnTheFly() {
   pwrmodel->stopDump();
 }
 
 void BootLoader::report(const char *str) {
   timeval endTime;
   gettimeofday(&endTime, 0);
+
   Report::field("OSSim:reportName=%s", str);
   Report::field("OSSim:beginTime=%s", ctime(&stTime.tv_sec));
   Report::field("OSSim:endTime=%s", ctime(&endTime.tv_sec));
@@ -282,28 +211,17 @@ void BootLoader::createSimuInterface(const char *section, FlowID i) {
 
   CPU_t cpuid = static_cast<CPU_t>(i);
 
+
+  auto type = Config::get_string("soc", "core", cpuid, "type", {"inorder", "ooo", "accel"});
+  if (type.empty())
+    return;
+
   GProcessor *gproc = 0;
-  if(!SescConf->checkCharPtr("cpusimu", "type", cpuid)) {
-    MSG("error: we expect a type for the cpu type : ooo or inorder or accel or ???");
-    SescConf->notCorrect();
-    return;
-  }
-
-  const char *type = SescConf->getCharPtr("cpusimu", "type", cpuid);
-
-  if(strcasecmp(type, "inorder") == 0) {
-    MSG("Creating inorder processor %d", cpuid);
-    gproc = new InOrderProcessor(gms, cpuid);
-  } else if(strcasecmp(type, "accel") == 0) {
-    MSG("Creating accelerator core %d", cpuid);
-    gproc = new AccProcessor(gms, cpuid);
-  } else if(strcasecmp(type, "ooo") == 0) {
-    MSG("Creating ooorder processor %d", cpuid);
-    gproc = new OoOProcessor(gms, cpuid);
-  } else {
-    MSG("error: we expect a type for the cpu type : ooo or inorder or accel or ???");
-    SescConf->notCorrect();
-    return;
+  if(type == "inorder")    { gproc = new InOrderProcessor(gms, cpuid); }
+  else if(type == "accel") { gproc = new AccProcessor(gms, cpuid); }
+  else if(type == "ooo")   { gproc = new OoOProcessor(gms, cpuid); }
+  else {
+    I(false);
   }
 
   I(gproc);
@@ -312,12 +230,12 @@ void BootLoader::createSimuInterface(const char *section, FlowID i) {
 
 void BootLoader::plug(int argc, const char **argv) {
   // Before boot
-  SescConf = new SConfig(argc, argv);
 
-  pwrmodel = new PowerModel;
+  Config::init();  // FIXME: -c desesc2.conf
 
   TaskHandler::plugBegin();
   plugSimuInterfaces();
+
   check();
 
   if(argc > 1 && strcmp(argv[1], "check") == 0) {
@@ -325,51 +243,31 @@ void BootLoader::plug(int argc, const char **argv) {
     exit(0);
   }
 
-  const char *tmp;
-  if(getenv("REPORTFILE")) {
-    tmp = strdup(getenv("REPORTFILE"));
-  } else {
-    tmp = SescConf->getCharPtr("", "reportFile", 0);
-  }
-  if(getenv("REPORTFILE2")) {
-    const char *tmp2 = strdup(getenv("REPORTFILE2"));
-    reportFile       = (char *)malloc(30 + strlen(tmp) + strlen(tmp2));
-    sprintf(reportFile, "esesc_%s_%s.XXXXXX", tmp, tmp2);
-  } else {
-    reportFile = (char *)malloc(30 + strlen(tmp));
-    sprintf(reportFile, "esesc_%s.XXXXXX", tmp);
-  }
 
-  Report::openFile(reportFile);
-
-  SescConf->getDouble("technology", "frequency"); // Just read it to get it in the dump
-
-  check();
   plugEmulInterfaces();
   check();
 
   arch.drawArchDot("memory-arch.dot");
 
-  const char *pwrsection = SescConf->getCharPtr("", "pwrmodel", 0);
-  doPower                = SescConf->getBool(pwrsection, "doPower", 0);
-  if(doPower) {
+#if 0
+  if (Config::has_entry("soc","pwdmode")) {
+    auto pwdsection = Config::get_string("soc", "pwrmodel");
     pwrmodel->plug(pwrsection);
     check();
-  } else {
-    MSG("Power calculations disabled");
   }
+#endif
 
-  check();
   TaskHandler::plugEnd();
 }
 
 void BootLoader::boot() {
   gettimeofday(&stTime, 0);
 
-  if(!SescConf->lock())
+  if(!Config::has_errors())
     exit(-1);
 
-  SescConf->dump();
+  Report::init();
+  Config::dump(Report::raw_file_descriptor());
 
   TaskHandler::boot();
 }

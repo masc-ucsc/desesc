@@ -16,7 +16,7 @@ private:
 
   static bool check(const std::string &block, const std::string &name);
 
-  static int check_power2(int power2);
+  static int check_power2(const std::string &block, const std::string &name, int power2);
 
 protected:
 public:
@@ -50,4 +50,5 @@ public:
                         int from = std::numeric_limits<int>::min(), int to = std::numeric_limits<int>::max());
 
   static bool has_errors() { return !errors.empty(); }
+  static void dump(int fd);
 };

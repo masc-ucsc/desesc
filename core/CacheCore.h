@@ -6,7 +6,7 @@
 #include <string.h>
 #include <strings.h>
 
-#include "GStats.h"
+#include "stats.hpp"
 #include "config.hpp"
 #include "iassert.hpp"
 #include "snippets.hpp"
@@ -47,22 +47,22 @@ protected:
 
   bool goodInterface;
 
-  GStatsCntr *trackstats[16];
-  GStatsCntr *trackerZero;
-  GStatsCntr *trackerOne;
-  GStatsCntr *trackerTwo;
-  GStatsCntr *trackerMore;
+  Stats_cntr *trackstats[16];
+  Stats_cntr *trackerZero;
+  Stats_cntr *trackerOne;
+  Stats_cntr *trackerTwo;
+  Stats_cntr *trackerMore;
 
-  GStatsCntr *trackerUp1;
-  GStatsCntr *trackerUp1n;
-  GStatsCntr *trackerDown1;
-  GStatsCntr *trackerDown2;
-  GStatsCntr *trackerDown3;
-  GStatsCntr *trackerDown4;
-  GStatsCntr *trackerDown1n;
-  GStatsCntr *trackerDown2n;
-  GStatsCntr *trackerDown3n;
-  GStatsCntr *trackerDown4n;
+  Stats_cntr *trackerUp1;
+  Stats_cntr *trackerUp1n;
+  Stats_cntr *trackerDown1;
+  Stats_cntr *trackerDown2;
+  Stats_cntr *trackerDown3;
+  Stats_cntr *trackerDown4;
+  Stats_cntr *trackerDown1n;
+  Stats_cntr *trackerDown2n;
+  Stats_cntr *trackerDown3n;
+  Stats_cntr *trackerDown4n;
 
 public:
   class CacheLine : public State {
@@ -718,23 +718,23 @@ CacheGeneric<State, Addr_t> *CacheGeneric<State, Addr_t>::create(int32_t size, i
 template <class State, class Addr_t>
 void CacheGeneric<State, Addr_t>::createStats(const char *section, const char *name) {
   for (int i = 0; i < 16; i++) {
-    trackstats[i] = new GStatsCntr("%s_tracker%d", name, i);
+    trackstats[i] = new Stats_cntr(fmt::format("{}_tracker{}", name, i));
   }
-  trackerZero = new GStatsCntr("%s_trackerZero", name);
-  trackerOne  = new GStatsCntr("%s_trackerOne", name);
-  trackerTwo  = new GStatsCntr("%s_trackerTwo", name);
-  trackerMore = new GStatsCntr("%s_trackerMore", name);
+  trackerZero = new Stats_cntr(fmt::format("{}_trackerZero", name));
+  trackerOne  = new Stats_cntr(fmt::format("{}_trackerOne", name));
+  trackerTwo  = new Stats_cntr(fmt::format("{}_trackerTwo", name));
+  trackerMore = new Stats_cntr(fmt::format("{}_trackerMore", name));
 
-  trackerUp1    = new GStatsCntr("%s_trackerUp1", name);
-  trackerUp1n   = new GStatsCntr("%s_trackerUp1n", name);
-  trackerDown1  = new GStatsCntr("%s_trackerDown1", name);
-  trackerDown2  = new GStatsCntr("%s_trackerDown2", name);
-  trackerDown3  = new GStatsCntr("%s_trackerDown3", name);
-  trackerDown4  = new GStatsCntr("%s_trackerDown4", name);
-  trackerDown1n = new GStatsCntr("%s_trackerDown1n", name);
-  trackerDown2n = new GStatsCntr("%s_trackerDown2n", name);
-  trackerDown3n = new GStatsCntr("%s_trackerDown3n", name);
-  trackerDown4n = new GStatsCntr("%s_trackerDown4n", name);
+  trackerUp1    = new Stats_cntr(fmt::format("{}_trackerUp1", name));
+  trackerUp1n   = new Stats_cntr(fmt::format("{}_trackerUp1n", name));
+  trackerDown1  = new Stats_cntr(fmt::format("{}_trackerDown1", name));
+  trackerDown2  = new Stats_cntr(fmt::format("{}_trackerDown2", name));
+  trackerDown3  = new Stats_cntr(fmt::format("{}_trackerDown3", name));
+  trackerDown4  = new Stats_cntr(fmt::format("{}_trackerDown4", name));
+  trackerDown1n = new Stats_cntr(fmt::format("{}_trackerDown1n", name));
+  trackerDown2n = new Stats_cntr(fmt::format("{}_trackerDown2n", name));
+  trackerDown3n = new Stats_cntr(fmt::format("{}_trackerDown3n", name));
+  trackerDown4n = new Stats_cntr(fmt::format("{}_trackerDown4n", name));
 #if 0
   int32_t procId = 0;
   if ( name[0] == 'P' && name[1] == '(' ) {

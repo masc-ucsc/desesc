@@ -1,10 +1,12 @@
-#ifndef CODEPROFILE_H
-#define CODEPROFILE_H
+// See LICENSE for details.
 
-#include "GStats.h"
-#include "estl.h"
+#pragma once
 
-class CodeProfile : public GStats {
+#include "absl/container/flat_hash_map.h"
+
+#include "stats.hpp"
+
+class Stats_code : public Stats {
 private:
   class ProfEntry {
   public:
@@ -55,9 +57,7 @@ private:
     uint64_t sum_prefetch;
   };
 
-  typedef HASH_MAP<uint64_t, ProfEntry> Prof;
-
-  Prof prof;
+  absl::flat_hash_map<uint64_t, ProfEntry> prof;
 
   double last_nCommitted;
   double last_clockTicks;
@@ -65,21 +65,15 @@ private:
 
 protected:
 public:
-  CodeProfile(const char *format, ...);
+  Stats_code(const char *format);
 
   void sample(const uint64_t pc, const double nCommitted, const double clockTicks, double wt, double et, bool flush, bool prefetch,
               int ldbr = 0, bool bp1_miss = 0, bool bp2_miss = 0, bool bp3_miss = 0, bool bp1_hit = 0, bool bp2_hit = 0,
               bool bp3_hit = 0, bool hit2_miss3 = 0, bool hit3_miss2 = 0, bool tl1_pred = 0, bool tl1_unpred = 0, bool tl2_pred = 0,
               bool tl2_unpred = 0, int trig_ld_status = -1);
 
-  double  getDouble() const;
-  int64_t getSamples() const;
 
-  void reportValue() const;
-  void reportBinValue() const;
-  void reportScheme() const;
-
-  void flushValue();
+  void report() const final;
+  void reset() final;
 };
 
-#endif

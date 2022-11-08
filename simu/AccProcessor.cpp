@@ -13,7 +13,7 @@ AccProcessor::AccProcessor(GMemorySystem *gm, CPU_t i)
     /* constructor {{{1 */
     : GProcessor(gm, i)
     , myAddr((i + 1) * 128 * 1024)
-    , addrIncr(SescConf->getInt("cpusimu", "addrIncr", i))
+    , addrIncr(Config::get_integer("soc", "core", i, "addr_incr"))
     , reqid(0)
     , accReads("P(%d)_acc_reads", i)
     , accWrites("P(%d)_acc_writes", i)

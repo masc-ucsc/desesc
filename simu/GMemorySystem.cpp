@@ -41,7 +41,7 @@ MemObj *MemoryObjContainer::searchMemoryObj(const std::string &descr_section, co
 
 /* Only returns a pointer if there is only one with that name */
 MemObj *MemoryObjContainer::searchMemoryObj(const std::string &device_name) const {
-  I(device_name);
+  I(!device_name.empty());
 
   if (intlMemoryObjContainer.count(device_name) != 1)
     return nullptr;
@@ -82,17 +82,20 @@ GMemorySystem::~GMemorySystem() {
 }
 
 MemObj *GMemorySystem::buildMemoryObj(const std::string &type, const std::string &section, const std::string &name) {
-  if (!(strcasecmp(type, "dummy") == 0 || strcasecmp(type, "cache") == 0 || strcasecmp(type, "icache") == 0
-        || strcasecmp(type, "scache") == 0
+  if (!(type == "dummy"
+        || type == "cache"
+        || type == "icache"
+        || type == "scache"
 
-        || strcasecmp(type, "markovPrefetcher") == 0 
-        || strcasecmp(type, "stridePrefetcher") == 0
-        || strcasecmp(type, "Prefetcher") == 0
+        || type == "markovPrefetcher"
+        || type == "stridePrefetcher"
+        || type == "Prefetcher"
 
-        || strcasecmp(type, "splitter") == 0
-        || strcasecmp(type, "siftsplitter") == 0
+        || type == "splitter"
+        || type == "siftsplitter"
 
-        || strcasecmp(type, "smpcache") == 0 || strcasecmp(type, "memxbar") == 0)) {
+        || type == "smpcache"
+        || type == "memxbar")) {
     Config::add_error(fmt::format("Invalid memory type [{}]", type));
   }
 
@@ -103,39 +106,21 @@ void GMemorySystem::buildMemorySystem() {
 
   std::string def_block = Config::get_string("soc", "core", coreId);
 
-  IL1 = declareMemoryObj(def_block, "IL1");
+  IL1 = declareMemoryObj(def_block, "il1");
   IL1->getRouter()->fillRouteTables();
   IL1->setCoreIL1(coreId);
-  if (strcasecmp(IL1->getDeviceType(), "TLB") == 0)
+
+  if (IL1->getDeviceType() == "tlb"))
     IL1->getRouter()->getDownNode()->setCoreIL1(coreId);
 
-  if (SescConf->checkCharPtr("cpusimu", "VPC", coreId)) {
-    vpc = declareMemoryObj(def_block, "VPC");
-    vpc->getRouter()->fillRouteTables();
+  DL1 = declareMemoryObj(def_block, "dl1");
+  DL1->getRouter()->fillRouteTables();
+  DL1->setCoreDL1(coreId);
 
-    if (vpc == IL1) {
-      MSG("ERROR: you can not set the VPC to the same cache as the IL1");
-      SescConf->notCorrect();
-    }
-
-    DL1 = declareMemoryObj(def_block, "DL1");
-    DL1->setCoreDL1(coreId);
-    if (strcasecmp(DL1->getDeviceType(), "TLB") == 0)
+  if (DL1->getDeviceType() == "tlb")
+    DL1->getRouter()->getDownNode()->setCoreDL1(coreId);
+  else if (DL1->getDeviceType() == "prefetcher")
       DL1->getRouter()->getDownNode()->setCoreDL1(coreId);
-  } else {
-    DL1 = declareMemoryObj(def_block, "DL1");
-    DL1->getRouter()->fillRouteTables();
-    DL1->setCoreDL1(coreId);
-    if (strcasecmp(DL1->getDeviceType(), "TLB") == 0)
-      DL1->getRouter()->getDownNode()->setCoreDL1(coreId);
-    else if (strcasecmp(DL1->getDeviceType(), "Prefetcher") == 0)
-      DL1->getRouter()->getDownNode()->setCoreDL1(coreId);
-  }
-
-  if (DL1 == vpc) {
-    MSG("ERROR: you can not set the VPC to the same cache as the DL1");
-    SescConf->notCorrect();
-  }
 }
 
 std::string GMemorySystem::buildUniqueName(const std::string &device_type) {
@@ -165,10 +150,12 @@ MemObj *GMemorySystem::searchMemoryObj(bool shared, const std::string &name) con
 }
 
 MemObj *GMemorySystem::declareMemoryObj_uniqueName(const std::string &name, const std::string &device_descr_section) {
+#if 0
   std::vector<std::string> vPars;
   vPars.push_back(device_descr_section);
   vPars.push_back(name);
   vPars.push_back("shared");
+#endif
 
   return finishDeclareMemoryObj({device_descr_section, name, "shared"});
 }
@@ -205,8 +192,10 @@ MemObj *GMemorySystem::finishDeclareMemoryObj(const std::vector<std::string> &vP
       I(vPars.size() == 4);
       int32_t sharedBy = atoi(vPars[3]);
       // delete[] vPars[3];
-      GMSG(sharedBy <= 0, "ERROR: SharedBy should be bigger than zero (field %s)", device_name);
-      I(sharedBy > 0);
+      if (sharedBy<0) {
+        Config::add_error(fmt::format("sharedby should be bigger than zero (field {})", device_name));
+        return nullptr;
+      }
 
       int32_t nId = coreId / sharedBy;
       device_name = privatizeDeviceName(device_name, nId);
@@ -220,8 +209,7 @@ MemObj *GMemorySystem::finishDeclareMemoryObj(const std::vector<std::string> &vP
     }
   }
 
-  SescConf->isCharPtr(device_descr_section, "deviceType");
-  const std::string &device_type = SescConf->getCharPtr(device_descr_section, "deviceType");
+  std::string device_type = config::get_string(device_descr_section, "type");
 
   /* If the device has been given a name, we may be refering to an
    * already existing device in the system, so let's search

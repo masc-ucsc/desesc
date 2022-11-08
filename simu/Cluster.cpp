@@ -22,12 +22,9 @@ struct UnitEntry {
 // Class for comparison to be used in hashes of char * where the content is to be compared
 class eqstr {
 public:
-  inline bool operator()(const char *s1, const char *s2) const { return strcasecmp(s1, s2) == 0; }
+  inline bool operator()(const std::string &s1, const std::string &s2) const { return strcasecmp(s1.c_str(), s2.c_str()) == 0; }
 };
 
-// typedef HASH_MAP<const char *,UnitEntry , HASH<const char*>, eqstr>     UnitMapType;
-// typedef HASH_MAP<const char *,Resource *, HASH<const char*>, eqstr> ResourceMapType;
-// typedef HASH_MAP<const char *,Cluster  *, HASH<const char*>, eqstr>  ClusterMapType;
 typedef std::map<std::string, UnitEntry>  UnitMapType;
 typedef std::map<std::string, Resource *> ResourceMapType;
 typedef std::map<std::string, Cluster *>  ClusterMapType;
@@ -40,66 +37,53 @@ Cluster::~Cluster() {
   // Nothing to do
 }
 
-Cluster::Cluster(const char *clusterName, uint32_t pos, uint32_t _cpuid)
+Cluster::Cluster(const std::string &clusterName, uint32_t pos, uint32_t _cpuid)
     : window(_cpuid, this, clusterName, pos)
-    , MaxWinSize(SescConf->getInt(clusterName, "winSize"))
-    , windowSize(SescConf->getInt(clusterName, "winSize"))
+    , MaxWinSize(Config::get_integer(clusterName, "win_size", 1, 32768))
+    , windowSize(Config::get_integer(clusterName, "win_size"))
     , winNotUsed("P(%d)_%s%d_winNotUsed", _cpuid, clusterName, pos)
     , rdRegPool("P(%d)_%s%d_rdRegPool", _cpuid, clusterName, pos)
     , wrRegPool("P(%d)_%s%d_wrRegPool", _cpuid, clusterName, pos)
     , cpuid(_cpuid) {
-  name = (char *)malloc(strlen(clusterName) + 32);
-  sprintf(name, "%s%d", clusterName, pos);
+
+  name = fmt::format("{}{}", clusterName, pos);
 
   bzero(res, sizeof(Resource *) * iMAX);
 
   nready = 0;
 }
 
-void Cluster::buildUnit(const char *clusterName, uint32_t pos, GMemorySystem *ms, Cluster *cluster, uint32_t cpuid, Opcode type,
+void Cluster::buildUnit(const std::string &clusterName, uint32_t pos, GMemorySystem *ms, Cluster *cluster, uint32_t cpuid, Opcode type,
                         GProcessor *gproc) {
-  const char *unitType = Instruction::opcode2Name(type);
+  auto unitType = Instruction::opcode2Name(type);
 
-  char utUnit[1024];
-  char utLat[1024];
-  sprintf(utUnit, "%sUnit", unitType);
-  sprintf(utLat, "%sLat", unitType);
-
-  if (!SescConf->checkCharPtr(clusterName, utUnit))
+  if (!Config::has_entry(clusterName, unitType))
     return;
+  auto sUnitName = Config::get_string(clusterName, unitType);
 
-  int smt = 1;
   int id  = cpuid;
-  if (SescConf->checkInt("cpusimu", "smt", id))
-    smt = SescConf->getInt("cpusimu", "smt", id);
+  int smt = Config::get_integer("soc", "core", id, "smt", 1, 1024);
   int smt_ctx = id - (id % smt);
 
-  const char *sUnitName = SescConf->getCharPtr(clusterName, utUnit);
-  char        unitName[1024];
-  sprintf(unitName, "P(%d)_%s%d_%s", smt_ctx, clusterName, pos, sUnitName);
 
-  TimeDelta_t  lat = SescConf->getInt(clusterName, utLat);
+  TimeDelta_t  lat = Config::get_integer(sUnitName, "lat", 0, 1024);
   PortGeneric *gen;
 
-  SescConf->isBetween(clusterName, utLat, 0, 1024);
-  UnitMapType::const_iterator it = unitMap.find(unitName);
-
+  auto unitName = fmt::format("P({})_{}{}_{}", smt_ctx, clusterName, pos, sUnitName));
+  auto it = unitMap.find(unitName);
   if (it != unitMap.end()) {
     gen = it->second.gen;
   } else {
     UnitEntry e;
-    e.num = SescConf->getInt(sUnitName, "Num");
-    SescConf->isLT(sUnitName, "Num", 1024);
-
-    e.occ = SescConf->getInt(sUnitName, "occ");
-    SescConf->isBetween(sUnitName, "occ", 0, 1024);
+    e.num = Config::get_integer(sUnitName, "num",0, 1024);
+    e.occ = Config::get_integer(sUnitName, "occ", 0, 1024);
 
     e.gen = PortGeneric::create(unitName, e.num, e.occ);
+    gen   = e.gen;
 
     unitMap[unitName] = e;
-    gen               = e.gen;
   }
-  char resourceName[1024];
+
   int  unitID = 0;
   switch (type) {
     case iBALU_LBRANCH:
@@ -117,7 +101,7 @@ void Cluster::buildUnit(const char *clusterName, uint32_t pos, GMemorySystem *ms
     default: unitID = 0; break;
   }
 
-  sprintf(resourceName, "P(%d)_%s%d_%d_%s", smt_ctx, clusterName, pos, unitID, sUnitName);
+  auto resourceName = fmt::format("P({})_{}{}_{}_{}", smt_ctx, clusterName, pos, unitID, sUnitName);
   ResourceMapType::const_iterator it2 = resourceMap.find(resourceName);
 
   Resource *r = 0;
@@ -141,20 +125,18 @@ void Cluster::buildUnit(const char *clusterName, uint32_t pos, GMemorySystem *ms
       case iBALU_RJUMP:
       case iBALU_RCALL:
       case iBALU_RET: {
-        int32_t MaxBranches = SescConf->getInt("cpusimu", "maxBranches", cpuid);
-        if (MaxBranches == 0)
-          MaxBranches = INT_MAX;
-        bool drainOnMiss = SescConf->getBool("cpusimu", "drainOnMiss", cpuid);
+        auto max_branches = Config::get_integer("soc","core", cpuid, "max_branches")
+        if (max_branches == 0)
+          max_branches = INT_MAX;
+        bool drain_on_miss = Config::get_bool("soc", "core", cpuid, "drain_on_miss");
 
-        r = new FUBranch(type, cluster, gen, lat, cpuid, MaxBranches, drainOnMiss);
+        r = new FUBranch(type, cluster, gen, lat, cpuid, max_branches, drain_on_miss);
       } break;
       case iLALU_LD: {
-        TimeDelta_t ldstdelay = SescConf->getInt("cpusimu", "stForwardDelay", cpuid);
-        SescConf->isInt("cpusimu", "maxLoads", cpuid);
-        SescConf->isBetween("cpusimu", "maxLoads", 0, 256 * 1024, cpuid);
-        int32_t maxLoads = SescConf->getInt("cpusimu", "maxLoads", cpuid);
-        if (maxLoads == 0)
-          maxLoads = 256 * 1024;
+        TimeDelta_t st_fwd_delay = Config::get_integer("soc", "core", cpuid, "st_fwd_delay");
+        int32_t ldq_size        = Config::get_integer("soc", "core", cpuid, "ldq_size", 0, 256*1024);
+        if (ldq_size == 0)
+          ldq_size = 256 * 1024;
 
         r = new FULoad(type,
                        cluster,
@@ -163,10 +145,10 @@ void Cluster::buildUnit(const char *clusterName, uint32_t pos, GMemorySystem *ms
                        gproc->getSS(),
                        gproc->getPrefetcher(),
                        gproc->getSCB(),
-                       ldstdelay,
+                       st_fwd_delay,
                        lat,
                        ms,
-                       maxLoads,
+                       ldq_size,
                        cpuid,
                        "specld");
       } break;
@@ -174,11 +156,9 @@ void Cluster::buildUnit(const char *clusterName, uint32_t pos, GMemorySystem *ms
       case iSALU_SC:
       case iSALU_ST:
       case iSALU_ADDR: {
-        SescConf->isInt("cpusimu", "maxStores", cpuid);
-        SescConf->isBetween("cpusimu", "maxStores", 0, 256 * 1024, cpuid);
-        int32_t maxStores = SescConf->getInt("cpusimu", "maxStores", cpuid);
-        if (maxStores == 0)
-          maxStores = 256 * 1024;
+        int32_t stq_size = Config::get_integer("soc", "core", cpuid, "stq_size", 0, 256*1024);
+        if (stq_size == 0)
+          stq_size = 256 * 1024;
 
         r = new FUStore(type,
                         cluster,
@@ -189,11 +169,13 @@ void Cluster::buildUnit(const char *clusterName, uint32_t pos, GMemorySystem *ms
                         gproc->getSCB(),
                         lat,
                         ms,
-                        maxStores,
+                        stq_size,
                         cpuid,
                         Instruction::opcode2Name(type));
       } break;
-      default: I(0); MSG("Unknown unit type [%d] [%s]", type, Instruction::opcode2Name(type));
+      default:
+        Config::add_error(fmt::format("unknown unit type [{}] [{}]", type, Instruction::opcode2Name(type)));
+        I(0);
     }
     I(r);
     resourceMap[resourceName] = r;
@@ -205,46 +187,31 @@ void Cluster::buildUnit(const char *clusterName, uint32_t pos, GMemorySystem *ms
 
 Cluster *Cluster::create(const char *clusterName, uint32_t pos, GMemorySystem *ms, uint32_t cpuid, GProcessor *gproc) {
   // Constraints
-  SescConf->isCharPtr(clusterName, "recycleAt");
-  SescConf->isInList(clusterName, "recycleAt", "Executing", "Execute", "Retire");
-  const char *recycleAt = SescConf->getCharPtr(clusterName, "recycleAt");
 
-  SescConf->isInt(clusterName, "winSize");
-  SescConf->isBetween(clusterName, "winSize", 1, 262144);
+  auto recycleAt = Config::get_string("soc","core", cpuid, "recycle_at", {"executing", "executed", "retired"});
 
-  int smt = 1;
-  int id  = cpuid;
-  if (SescConf->checkInt("cpusimu", "smt", id))
-    smt = SescConf->getInt("cpusimu", "smt", id);
+  int smt = Config::get_integer("soc","core", cpuid, "smt");
   int smt_ctx = id - (id % smt);
 
-  char cName[1024];
-  sprintf(cName, "cluster(%d)_%s%d", smt_ctx, clusterName, pos);
-  ClusterMapType::const_iterator it = clusterMap.find(cName);
+  auto cName = fmt::format("cluster({})_{}{}", smt_ctx, clusterName, pos);
 
-  Cluster *cluster = 0;
-
+  Cluster *cluster = nullptr;
+  const auto it = clusterMap.find(cName);
   if (it != clusterMap.end()) {
     cluster = it->second;
   } else {
-    if (strcasecmp(recycleAt, "retire") == 0) {
+    if (recycleAt == "retire") {
       cluster = new RetiredCluster(clusterName, pos, cpuid);
-    } else if (strcasecmp(recycleAt, "executing") == 0) {
+    } else if (recycleAt == "executing") {
       cluster = new ExecutingCluster(clusterName, pos, cpuid);
     } else {
-      I(strcasecmp(recycleAt, "execute") == 0);
+      I(recycleAt == "execute");
       cluster = new ExecutedCluster(clusterName, pos, cpuid);
     }
 
-    cluster->nRegs   = SescConf->getInt(clusterName, "nRegs");
+    cluster->nRegs   = Config::get_integer(clusterName, "num_regs",2, 262144);
     cluster->regPool = cluster->nRegs;
-    if (SescConf->checkBool(clusterName, "lateAlloc"))
-      cluster->lateAlloc = SescConf->getBool(clusterName, "lateAlloc");
-    else
-      cluster->lateAlloc = false;
-
-    SescConf->isInt(clusterName, "nRegs");
-    SescConf->isBetween(clusterName, "nRegs", 2, 262144);
+    cluster->lateAlloc = Config::get_bool(clusterName, "late_alloc");
 
     for (int32_t t = 0; t < iMAX; t++) {
       cluster->buildUnit(clusterName, pos, ms, cluster, cpuid, static_cast<Opcode>(t), gproc);

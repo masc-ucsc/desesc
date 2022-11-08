@@ -2,9 +2,9 @@
 
 [soc]
 core = ["c0", "c0"]
-emul = ["drom", "drom"]
+emul = ["drom_emu", "drom_emu"]
 
-[drom]
+[drom_emu]
 type      = "dromajo"
 bootroom  = "linux_checkpoint_1"
 start_roi = false
@@ -12,7 +12,7 @@ rabbit    = 1*1024*1024
 detail    = 1*1024*1024
 time      = 2*1024*1024
 
-[rand]
+[rand_emu]
 type = "random"  # Generate random instructions (coverage testing?)
 
 [bp0]
@@ -34,6 +34,7 @@ btb_assoc         = 4
 btb_repl_policy   = "LRU"
 
 [c0]
+type  = "ooo"  # ooo or inorder or accel
 # Branch Predictor[s] parameters
 bp_addr_shift = 0      # bits shifted by branch predictor PC
 ras_size      = 32
@@ -49,14 +50,37 @@ fetch_one_line    = true   # jumps within cacheline do not flush
 max_bb_cycle      = 1
 prefetcher        = "pref_opt"
 
-# Cache Pointers
-IL1 = "il1_cache"
+smt = 1 # Number of STM context
+
+# Memory Parameters
+st_fwd_delay = 2
+ldq_size     = 96
+stq_size     = 64
+IL1          = "il1_cache"
 
 decode_delay = 4
 rename_delay = 2
 fetch_width  = 8
 ftq_size     = 12
 instq_size   = 16
+
+# Exe Parameters
+cluster = ["aunit", "bunit", "cunit"]
+max_branches      = 30
+drain_on_miss     = false
+
+[alu0]
+num = 4
+lat = 1
+
+[aunit]
+win_size   = 16
+recyle_at  = "executed"
+num_regs   = 64
+late_alloc = false
+iAALU      = "alu0"
+iRALU      = "alu0"
+
 
 [il1_cache]
 type       = "cache"   # or nice

@@ -56,7 +56,7 @@ protected:
   void            addUpperLevel(MemObj *obj);
 
 public:
-  MemObj(const char *section, const char *sName);
+  MemObj(const std::string &section, const std::string &sName);
   MemObj();
   virtual ~MemObj();
 
@@ -602,7 +602,7 @@ private:
 protected:
 public:
   DummyMemObj();
-  DummyMemObj(const char *section, const char *sName);
+  DummyMemObj(const std::string &section, const std::string &sName);
 
   // Entry points to schedule that may schedule a do?? if needed
   void req(MemRequest *req) { doReq(req); };

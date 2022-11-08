@@ -15,7 +15,7 @@
 
 #include "IMLIBest.h"
 #include "MemObj.h"
-#include "Report.h"
+#include "report.hpp"
 #include "config.hpp"
 
 extern "C" uint64_t esesc_mem_read(uint64_t addr);
@@ -74,6 +74,7 @@ void BPRas::tryPrefetch(MemObj *il1, bool doStats, int degree) {
 }
 
 PredType BPRas::predict(Dinst *dinst, bool doUpdate, bool doStats) {
+  (void)doStats;
   // RAS is a little bit different than other predictors because it can update
   // the state without knowing the oracleNextPC. All the other predictors update the
   // statistics when the branch is resolved. RAS automatically updates the
@@ -284,7 +285,7 @@ PredType BPNotTaken::predict(Dinst *dinst, bool doUpdate, bool doStats) {
  * BPMiss
  */
 
-PredType BPMiss::predict(Dinst *dinst, bool doUpdate, bool doStats) { return MissPrediction; }
+PredType BPMiss::predict(Dinst *dinst, bool doUpdate, bool doStats) { (void)dinst; (void)doUpdate; (void)doStats; return MissPrediction; }
 
 /*****************************************
  * BPNotTakenEnhaced
@@ -312,15 +313,7 @@ PredType BPNotTakenEnhanced::predict(Dinst *dinst, bool doUpdate, bool doStats) 
 BP2bit::BP2bit(int32_t i, const char *section, const char *sname)
     : BPred(i, section, sname, "2bit")
     , btb(i, section, sname)
-    , table(section, SescConf->getInt(section, "size"), SescConf->getInt(section, "bits")) {
-  // Constraints
-  SescConf->isInt(section, "size");
-  SescConf->isPower2(section, "size");
-  SescConf->isGT(section, "size", 1);
-
-  SescConf->isBetween(section, "bits", 1, 7);
-
-  // Done
+    , table(section, Config::get_power2(section, "size", 1), Config::get_integer(section, "bits", 1, 7)) {
 }
 
 PredType BP2bit::predict(Dinst *dinst, bool doUpdate, bool doStats) {
@@ -328,7 +321,7 @@ PredType BP2bit::predict(Dinst *dinst, bool doUpdate, bool doStats) {
     return btb.predict(dinst, doUpdate, doStats);
 
   bool     taken = dinst->isTaken();
-  uint64_t pc    = dinst->getPC();
+  // uint64_t pc    = dinst->getPC();
   // uint64_t raw_op = esesc_mem_read(pc);
   // checking if br data is working fine
   // MSG("pc=%llx raw_op=%llx data1=%llx data2=%llx taken=%d",pc, raw_op, dinst->getBrData1(), dinst->getBrData2(), taken);
@@ -358,18 +351,8 @@ PredType BP2bit::predict(Dinst *dinst, bool doUpdate, bool doStats) {
  */
 
 BPLdbp::BPLdbp(int32_t i, const char *section, const char *sname, MemObj *dl1)
-    : BPred(i, section, sname, "ldbp"), btb(i, section, sname), DOC_SIZE(SescConf->getInt(section, "doc_size")) {
-  // Constraints
-  SescConf->isInt(section, "size");
-  SescConf->isPower2(section, "size");
-  SescConf->isGT(section, "size", 1);
-
-  SescConf->isBetween(section, "bits", 1, 7);
-
-  SescConf->isPower2(section, "doc_size");
+    : BPred(i, section, sname, "ldbp"), btb(i, section, sname), DOC_SIZE(Config::get_power2(section, "doc_size")) {
   DL1 = dl1;
-
-  // Done
 }
 
 PredType BPLdbp::predict(Dinst *dinst, bool doUpdate, bool doStats) {
@@ -481,15 +464,7 @@ bool BPLdbp::outcome_calculator(BrOpType br_op, Data_t br_data1, Data_t br_data2
 BPTData::BPTData(int32_t i, const char *section, const char *sname)
     : BPred(i, section, sname, "tdata")
     , btb(i, section, sname)
-    , tDataTable(section, SescConf->getInt(section, "size"), SescConf->getInt(section, "bits")) {
-  // Constraints
-  SescConf->isInt(section, "size");
-  SescConf->isPower2(section, "size");
-  SescConf->isGT(section, "size", 1);
-
-  SescConf->isBetween(section, "bits", 1, 7);
-
-  // Done
+    , tDataTable(section, Config::get_power2(section, "size",1), Config::get_integer(section, "bits", 1, 7)) {
 }
 
 PredType BPTData::predict(Dinst *dinst, bool doUpdate, bool doStats) {

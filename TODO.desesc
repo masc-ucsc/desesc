@@ -41,3 +41,25 @@ Should become (and rename any variable use/declaration)
 
    cfg_btb_history_size = Config::get_integer(section,"btb_history_size");
 
+=remove strcasecmp (and strcmp)
+
+Config always returns a lower_case, no need to do strcasecmp
+
+=Create unit tests
+
+ Major blocks should have unit tests
+
+ E.g: FetchEngine or ExecuteEngine....
+
+ but also some simpler tests for smaller blocks covering corner cases
+
+=Add a Config::dump
+
+ Each parameter read/used should be kept and dumped with Config::dump
+
+ The dump includes the getenv parameter value used. It allows to cut&paste and reproduce the simulation results.
+
+=Remove typedef
+
+ Most are useless with new C++17, but if needed (really? auto should avoid it), use an "using" instead
+

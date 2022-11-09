@@ -28,3 +28,14 @@ cc_binary(
         ":emul",
     ],
 )
+
+cc_binary(
+    name = "emul_dromajo_test",
+    srcs = [
+        "emul_dromajo_test.cpp",
+        "emul_dromajo.cpp",
+    ],
+    deps = [
+        ":emul",
+    ],
+)

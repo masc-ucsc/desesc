@@ -7,8 +7,9 @@
 #include <vector>
 
 #include "DepWindow.h"
-#include "GStats.h"
 #include "estl.h"
+
+#include "stats.hpp"
 #include "iassert.hpp"
 #include "instruction.hpp"
 
@@ -28,9 +29,9 @@ protected:
 
   int32_t nready;
 
-  GStatsAvg  winNotUsed;
-  GStatsCntr rdRegPool;
-  GStatsCntr wrRegPool;
+  Stats_avg  winNotUsed;
+  Stats_cntr rdRegPool;
+  Stats_cntr wrRegPool;
 
   Resource *res[iMAX];
 

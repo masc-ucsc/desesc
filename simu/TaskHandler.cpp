@@ -301,8 +301,6 @@ void TaskHandler::terminate()
     allmaps[i].deactivating = false;
   }
 
-  // GStats::stopAll(1);
-
   running_size = 0;
 
   // LOCK thread until TaskHandler::unplug is called (otherwise, there could be a race)

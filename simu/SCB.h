@@ -7,12 +7,12 @@
 #include <set>
 #include <vector>
 
-#include "GStats.h"
 #include "Resource.h"
 #include "SCBEntryType.h"
+#include "estl.h"
+
 #include "callback.hpp"
 #include "dinst.hpp"
-#include "estl.h"
 
 class MemObj;
 class SCB {

@@ -15,25 +15,24 @@
 #include "Cluster.h"
 #include "ClusterManager.h"
 #include "FastQueue.h"
-#include "GStats.h"
 #include "LSQ.h"
 #include "Pipeline.h"
 #include "Prefetcher.h"
 #include "Resource.h"
 #include "SCB.h"
+#include "estl.h"
+
 #include "callback.hpp"
 #include "emul_base.hpp"
-#include "estl.h"
+#include "stats.hpp"
 #include "iassert.hpp"
 #include "instruction.hpp"
 #include "snippets.hpp"
+#include "wavesnap.hpp"
 
 class GMemorySystem;
 class BPredictor;
 
-#ifdef WAVESNAP_EN
-#include "wavesnap.h"
-#endif
 
 class GProcessor {
 private:
@@ -54,7 +53,9 @@ protected:
 
   StoreSet           storeset;
   Prefetcher         prefetcher;
-  SCB               *scb;
+
+  std::unique_ptr<SCB> scb;
+
   FastQueue<Dinst *> rROB;  // ready/retiring/executed ROB
   FastQueue<Dinst *> ROB;
 
@@ -64,27 +65,27 @@ protected:
   bool active;
 
   // BEGIN  Statistics
-  GStatsCntr *nStall[MaxStall];
-  GStatsCntr *nInst[iMAX];
+  std::array<std::unique_ptr<Stats_cntr>,MaxStall> nStall;
+  std::array<std::unique_ptr<Stats_cntr>,iMAX    > nInst;
 
   // OoO Stats
-  GStatsAvg  rrobUsed;
-  GStatsAvg  robUsed;
-  GStatsAvg  nReplayInst;
-  GStatsCntr nCommitted;  // committed instructions
+  Stats_avg  rrobUsed;
+  Stats_avg  robUsed;
+  Stats_avg  nReplayInst;
+  Stats_cntr nCommitted;  // committed instructions
 
   // "Lack of Retirement" Stats
-  GStatsCntr noFetch;
-  GStatsCntr noFetch2;
+  Stats_cntr noFetch;
+  Stats_cntr noFetch2;
 
-  GStatsCntr nFreeze;
-  GStatsCntr clockTicks;
+  Stats_cntr nFreeze;
+  Stats_cntr clockTicks;
 
   static Time_t      lastWallClock;
   Time_t             lastUpdatedWallClock;
   Time_t             activeclock_start;
   Time_t             activeclock_end;
-  static GStatsCntr *wallClock;
+  static inline Stats_cntr wallclock("OS:wallclock");
 
   // END Statistics
   float    throttlingRatio;
@@ -93,9 +94,9 @@ protected:
   uint64_t lastReplay;
 
   // Construction
-  void buildInstStats(GStatsCntr *i[iMAX], const char *txt);
-  void buildUnit(const char *clusterName, GMemorySystem *ms, Cluster *cluster, Opcode type);
-  void buildCluster(const char *clusterName, GMemorySystem *ms);
+  void buildInstStats(const std::string &txt);
+  void buildUnit(const std::string &clusterName, GMemorySystem *ms, Cluster *cluster, Opcode type);
+  void buildCluster(const std::string &clusterName, GMemorySystem *ms);
   void buildClusters(GMemorySystem *ms);
 
   GProcessor(GMemorySystem *gm, CPU_t i);
@@ -108,11 +109,10 @@ protected:
 
 public:
 #ifdef WAVESNAP_EN
-  wavesnap *snap;
+  std::unique_ptr<Wavesnap> snap;
 #endif
   virtual ~GProcessor();
   int         getID() const { return cpu_id; }
-  GStatsCntr *getnCommitted() { return &nCommitted; }
 
   GMemorySystem *getMemorySystem() const { return memorySystem; }
   virtual void   executing(Dinst *dinst) = 0;
@@ -138,7 +138,7 @@ public:
   // Returns the maximum number of flows this processor can support
   Hartid_t getMaxFlows(void) const { return maxFlows; }
 
-  void report(const char *str);
+  void report(const std::string &str);
 
   // Different types of cores extend this function. See SMTProcessor and
   // Processor.
@@ -167,7 +167,7 @@ public:
       return;
 
     lastWallClock = globalClock;
-    wallClock->inc(en);
+    wallclock.inc(en);
   }
   static Time_t getWallClock() { return lastWallClock; }
 

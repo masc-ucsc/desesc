@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "GStats.h"
+#include "stats.hpp"
 #include "dinst.hpp"
 #include "estl.h"
 #include "iassert.hpp"
@@ -226,8 +226,8 @@ protected:
   LastAccess last[1024];  // FIXME: Use a fix size table (configuration time)
 
   BimodalStride bimodal;
-  GStatsCntr    tagePrefetchHistNum;
-  GStatsCntr    tagePrefetchBaseNum;
+  Stats_cntr    tagePrefetchHistNum;
+  Stats_cntr    tagePrefetchBaseNum;
 
   int pred_delta;  // overall predicted delta
   int pred_conf;

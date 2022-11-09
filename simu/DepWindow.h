@@ -2,8 +2,10 @@
 
 #pragma once
 
-#include "Port.h"
 #include "Resource.h"
+
+#include "stats.hpp"
+#include "port.hpp"
 #include "iassert.hpp"
 
 class Dinst;
@@ -15,10 +17,10 @@ private:
 
   const int32_t Id;
 
-  TimeDelta_t InterClusterLat;
-  TimeDelta_t SchedDelay;
+  TimeDelta_t inter_cluster_lat;
+  TimeDelta_t sched_lat;
 
-  GStatsCntr wrForwardBus;
+  Stats_cntr inter_cluster_fwd;
 
   PortGeneric *schedPort;
 

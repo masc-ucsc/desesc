@@ -3,7 +3,7 @@
 #pragma once
 // functional defines
 
-// general wavesnap defines
+// general Wavesnap defines
 #define SINGLE_WINDOW false
 #define WITH_SAMPLING true
 #define RECORD_ONCE
@@ -73,7 +73,7 @@ public:
   }
 };
 
-class wavesnap {
+class Wavesnap {
 private:
   class dependence_info {
   public:
@@ -160,8 +160,7 @@ private:
 #endif
 
 public:
-  wavesnap();
-  ~wavesnap();
+  Wavesnap();
 
   // many windows
   void                                 update_window(Dinst* dinst, uint64_t committed);

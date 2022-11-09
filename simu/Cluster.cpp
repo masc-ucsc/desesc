@@ -1,15 +1,15 @@
 // See LICENSE for details.
 
 #include "Cluster.h"
-
 #include "GMemorySystem.h"
 #include "GProcessor.h"
-#include "Port.h"
 #include "Resource.h"
 #include "SCB.h"
 #include "TaskHandler.h"
-#include "config.hpp"
 #include "estl.h"
+
+#include "port.hpp"
+#include "config.hpp"
 
 // Begin: Fields used during constructions
 

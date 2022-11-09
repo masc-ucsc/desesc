@@ -1,15 +1,19 @@
 // See LICENSE for details.
 
-#include "FetchEngine.h"
 
 #include <climits>
 
+#include "fmt/format.h"
+
+#include "FetchEngine.h"
 #include "GMemorySystem.h"
 #include "MemObj.h"
 #include "MemRequest.h"
 #include "Pipeline.h"
 #include "alloca.h"
+
 #include "config.hpp"
+
 extern bool MIMDmode;
 
 //#define ENABLE_FAST_WARMUP 1
@@ -23,23 +27,23 @@ extern "C" uint64_t esesc_mem_read(uint64_t addr);
 
 FetchEngine::FetchEngine(Hartid_t id, GMemorySystem *gms_, FetchEngine *fe)
     : gms(gms_)
-    , avgFetchLost("P(%d)_FetchEngine_avgFetchLost", id)
-    , avgBranchTime("P(%d)_FetchEngine_avgBranchTime", id)
-    , avgBranchTime2("P(%d)_FetchEngine_avgBranchTime2", id)
-    , avgFetchTime("P(%d)_FetchEngine_avgFetchTime", id)
-    , avgFetched("P(%d)_FetchEngine_avgFetched", id)
-    , nDelayInst1("P(%d)_FetchEngine:nDelayInst1", id)
-    , nDelayInst2("P(%d)_FetchEngine:nDelayInst2", id)  // Not enough BB/LVIDs per cycle
-    , nDelayInst3("P(%d)_FetchEngine:nDelayInst3", id)
-    , nBTAC("P(%d)_FetchEngine:nBTAC", id)  // BTAC corrections to BTB
-    , zeroDinst("P(%d)_zeroDinst:nBTAC", id)
+    , avgFetchLost(fmt::format("({})_FetchEngine_avgFetchLost", id))
+    , avgBranchTime(fmt::format("({})_FetchEngine_avgBranchTime", id))
+    , avgBranchTime2(fmt::format("({})_FetchEngine_avgBranchTime2", id))
+    , avgFetchTime(fmt::format("({})_FetchEngine_avgFetchTime", id))
+    , avgFetched(fmt::format("({})_FetchEngine_avgFetched", id))
+    , nDelayInst1(fmt::format("({})_FetchEngine:nDelayInst1", id))
+    , nDelayInst2(fmt::format("({})_FetchEngine:nDelayInst2", id))  // Not enough BB/LVIDs per cycle)
+    , nDelayInst3(fmt::format("({})_FetchEngine:nDelayInst3", id))
+    , nBTAC(fmt::format("({})_FetchEngine:nBTAC", id))  // BTAC corrections to BTB
+    , zeroDinst(fmt::format("({})_zeroDinst:nBTAC", id))
 #ifdef ESESC_TRACE_DATA
-    , dataHist("P(%d)_dataHist", id)
-    , dataSignHist("P(%d)_dataSignHist", id)
-    , lastData("P(%d)_lastData", 2048, 4)
-    , nbranchMissHist("P(%d)_nbranchMissHist", id)
-    , nLoadAddr_per_branch("P(%d)_nLoadAddr_per_branch", id)
-    , nLoadData_per_branch("P(%d)_nLoadData_per_branch", id)
+    , dataHist(fmt::format("({})_dataHist", id))
+    , dataSignHist(fmt::format("({})_dataSignHist", id))
+    , lastData(fmt::format("({})_lastData", 2048, 4))
+    , nbranchMissHist(fmt::format("({})_nbranchMissHist", id))
+    , nLoadAddr_per_branch(fmt::format("({})_nLoadAddr_per_branch", id))
+    , nLoadData_per_branch(fmt::format("({})_nLoadData_per_branch", id))
 
 #endif
 //  ,szBB("FetchEngine(%d):szBB", id)
@@ -55,13 +59,13 @@ FetchEngine::FetchEngine(Hartid_t id, GMemorySystem *gms_, FetchEngine *fe)
   fetch_align = Config::get_bool("soc", "core", id, "fetch_align");
   trace_align = Config::get_bool("soc", "core", id, "trace_align");
 
-  if (Config::has_field("soc", "core", id, "target_inline_opt")) {
+  if (Config::has_entry("soc", "core", id, "target_inline_opt")) {
     target_inline_opt = Config::get_bool("soc", "core", id, "target_inline_opt");
   } else {
     target_inline_opt = false;
   }
 
-  if (Config::has_field("soc", "core", id, "fetch_one_line")) {
+  if (Config::has_entry("soc", "core", id, "fetch_one_line")) {
     fetch_one_line = Config::get_bool("soc", "core", id, "fetch_one_line");
   } else {
     fetch_one_line = !trace_align;

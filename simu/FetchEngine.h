@@ -4,9 +4,11 @@
 
 #include "AddressPredictor.h"
 #include "BPred.h"
-#include "GStats.h"
+
+#include "stats.hpp"
 #include "emul_base.hpp"
 #include "iassert.hpp"
+
 //#define ENABLE_LDBP
 
 class GMemorySystem;
@@ -117,23 +119,22 @@ protected:
   bool processBranch(Dinst *dinst, uint16_t n2Fetchedi);
 
   // ******************* Statistics section
-  GStatsAvg  avgFetchLost;
-  GStatsAvg  avgBranchTime;
-  GStatsAvg  avgBranchTime2;
-  GStatsAvg  avgFetchTime;
-  GStatsAvg  avgFetched;
-  GStatsCntr nDelayInst1;
-  GStatsCntr nDelayInst2;
-  GStatsCntr nDelayInst3;
-  GStatsCntr nBTAC;
-  GStatsCntr zeroDinst;
+  Stats_avg  avgFetchLost;
+  Stats_avg  avgBranchTime;
+  Stats_avg  avgBranchTime2;
+  Stats_avg  avgFetchTime;
+  Stats_avg  avgFetched;
+  Stats_cntr nDelayInst1;
+  Stats_cntr nDelayInst2;
+  Stats_cntr nDelayInst3;
+  Stats_cntr nBTAC;
+  Stats_cntr zeroDinst;
 #ifdef ESESC_TRACE_DATA
-  GStatsHist dataHist;
-  GStatsHist dataSignHist;
-  GStatsHist nbranchMissHist;
-  GStatsHist nLoadData_per_branch;
-  GStatsHist nLoadAddr_per_branch;
-
+  Stats_hist dataHist;
+  Stats_hist dataSignHist;
+  Stats_hist nbranchMissHist;
+  Stats_hist nLoadData_per_branch;
+  Stats_hist nLoadAddr_per_branch;
 #endif
   // *******************
 
@@ -184,7 +185,7 @@ public:
   StaticCallbackMember0<FetchEngine,&FetchEngine::unBlockFetchBPredDelay> unBlockFetchBPredDelayCB;
 #endif
 
-  void dump(const char *str) const;
+  void dump(const std::string &str) const;
 
   bool isBlocked() const { return missInst; }
 #ifndef NDEBUG

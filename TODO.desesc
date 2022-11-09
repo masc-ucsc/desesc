@@ -63,3 +63,11 @@ Config always returns a lower_case, no need to do strcasecmp
 
  Most are useless with new C++17, but if needed (really? auto should avoid it), use an "using" instead
 
+=FIX/Cleanup LDBP
+
+ The code is messy and it is not updated to the latest desesc
+
+=Create like PortGeneric/MemObj
+
+ should return a std::uniqe_ptr not a raw pointer.
+

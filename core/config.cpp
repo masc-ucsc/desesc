@@ -219,7 +219,6 @@ void Config::add_error(const std::string &err) { errors.emplace_back(err); }
 
 bool Config::has_entry(const std::string &block, const std::string &name) {
   if (block.empty()) {
-    errors.emplace_back(fmt::format("section is empty for configuration:{}\n", filename));
     return false;
   }
 
@@ -229,6 +228,30 @@ bool Config::has_entry(const std::string &block, const std::string &name) {
 
   auto sec = toml::find(data, block);
   return sec.contains(name);
+}
+
+bool Config::has_entry(const std::string &block, const std::string &name, size_t pos, const std::string &name2) {
+  if (!has_entry(block, name))
+    return false;
+
+  auto ent = toml::find(data, block, name);
+  if (!ent.is_array()) {
+    return false;
+  }
+
+  auto ent_array = ent.as_array();
+  if (ent_array.size() <= pos) {
+    return false;
+  }
+
+  const auto t_block2 = ent_array[pos];
+  if (!t_block2.is_string()) {
+    return false;
+  }
+
+  auto ent2 = toml::find(data, t_block2.as_string());
+
+  return ent2.contains(name2);
 }
 
 bool Config::get_bool(const std::string &block, const std::string &name) {

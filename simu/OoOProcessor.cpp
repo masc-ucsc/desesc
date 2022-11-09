@@ -23,12 +23,11 @@
 
 // FIXME: to avoid deadlock, prealloc n to the n oldest instructions
 //#define LATE_ALLOC_REGISTER
-extern "C" uint64_t esesc_mem_read(uint64_t addr);
 
 OoOProcessor::OoOProcessor(GMemorySystem *gm, CPU_t i)
     /* constructor {{{1 */
     : GOoOProcessor(gm, i)
-    , MemoryReplay(SescConf->getBool("cpusimu", "MemoryReplay", i))
+    , MemoryReplay(Config::get_bool("soc", "core", i, "memory_replay"))
 #ifdef ENABLE_LDBP
     , BTT_SIZE(SescConf->getInt("cpusimu", "btt_size", i))
     , MAX_TRIG_DIST(SescConf->getInt("cpusimu", "max_trig_dist", i))
@@ -101,14 +100,13 @@ OoOProcessor::OoOProcessor(GMemorySystem *gm, CPU_t i)
     , num_ldbr_8L4("P(%d)_num_ldbr_8L4", i)
     , num_ldbr_others("P(%d)_num_ldbr_others", i)
 #endif
-    , RetireDelay(SescConf->getInt("cpusimu", "RetireDelay", i))
+    , RetireDelay(Config::get_integer("soc", "core", i, "commit_delay"))
     , IFID(i, gm)
     , pipeQ(i)
-    , lsq(i,
-          SescConf->checkInt("cpusimu", "maxLSQ", i) ? SescConf->getInt("cpusimu", "maxLSQ", i) : 32768)  // 32K (unlimited or fix)
+    , lsq(i, Config::get_integer("soc", "core", i, "ldq_size", 1))
     , retire_lock_checkCB(this)
     , clusterManager(gm, i, this)
-    , avgFetchWidth("P(%d)_avgFetchWidth", i)
+    , avgFetchWidth(fmt::format("P({})_avgFetchWidth", i))
 #ifdef TRACK_TIMELEAK
     , avgPNRHitLoadSpec("P(%d)_avgPNRHitLoadSpec", i)
     , avgPNRMissLoadSpec("P(%d)_avgPNRMissLoadSpec", i)
@@ -134,9 +132,7 @@ OoOProcessor::OoOProcessor(GMemorySystem *gm, CPU_t i)
 
   codeProfile_trigger = 0;
 
-  nTotalRegs = SescConf->getInt("cpusimu", "nTotalRegs", gm->getCoreId());
-  if (nTotalRegs == 0)
-    nTotalRegs = 1024 * 1024 * 1024;  // Unlimited :)
+  nTotalRegs = Config::get_integer("soc", "core", gm->getCoreId(), "num_regs", 32);
 
   busy             = false;
   flushing         = false;
@@ -146,10 +142,7 @@ OoOProcessor::OoOProcessor(GMemorySystem *gm, CPU_t i)
 
   last_state.dinst_ID = 0xdeadbeef;
 
-  if (SescConf->checkInt("cpusimu", "serialize", i))
-    serialize = SescConf->getInt("cpusimu", "serialize", i);
-  else
-    serialize = 0;
+  serialize = Config::get_integer("soc", "core", i, "replay_serialize_for");
 
   serialize_level       = 2;  // 0 full, 1 all ld, 2 same reg
   serialize_for         = 0;
@@ -168,10 +161,8 @@ OoOProcessor::OoOProcessor(GMemorySystem *gm, CPU_t i)
   ldbp_brpc           = 0;
   ldbp_ldpc           = 0;
 #endif
-  if (SescConf->checkBool("cpusimu", "scooreMemory", gm->getCoreId()))
-    scooreMemory = SescConf->getBool("cpusimu", "scooreMemory", gm->getCoreId());
-  else
-    scooreMemory = false;
+
+  scooreMemory = Config::get_bool("soc","core", gm->getCoreId(), "scoore_serialize");
 }
 /* }}} */
 
@@ -400,7 +391,6 @@ StallCause OoOProcessor::addInst(Dinst *dinst)
   }
 #endif
 
-  //#if 1
   if (!scooreMemory) {  // no dynamic serialization for tradcore
     if (serialize_for > 0 && !replayRecovering) {
       serialize_for--;
@@ -412,7 +402,6 @@ StallCause OoOProcessor::addInst(Dinst *dinst)
         last_serialized = dinst;
       }
     }
-    //#else
   } else {
     if (serialize_for > 0 && !replayRecovering) {
       serialize_for--;
@@ -469,7 +458,6 @@ StallCause OoOProcessor::addInst(Dinst *dinst)
       }
     }
   }
-  //#endif
 
   nInst[inst->getOpcode()]->inc(dinst->getStatsFlag());  // FIXME: move to cluster
 
@@ -575,62 +563,6 @@ void OoOProcessor::retire_lock_check()
 /* }}} */
 
 #ifdef ENABLE_LDBP
-#if 0
-void OoOProcessor::hit_on_load_table(Dinst *dinst, bool is_li) {
-  //if hit on load_table, update and move entry to LRU position
-  for(int i = LOAD_TABLE_SIZE - 1; i >= 0; i--) {
-    if(dinst->getPC() == load_table_vec[i].ldpc) {
-      if(is_li) {
-        load_table_vec[i].lt_load_imm(dinst);
-      }else {
-        load_table_vec[i].lt_load_hit(dinst);
-      }
-      load_table l = load_table_vec[i];
-      load_table_vec.erase(load_table_vec.begin() + i);
-      load_table_vec.push_back(load_table());
-      load_table_vec[LOAD_TABLE_SIZE - 1] = l;
-      if(load_table_vec[LOAD_TABLE_SIZE - 1].tracking > 0) {
-        //append ld_ptr to PLQ
-        int plq_idx = return_plq_index(load_table_vec[LOAD_TABLE_SIZE - 1].ldpc);
-        if(plq_idx != - 1) {
-          pending_load_queue p = plq_vec[plq_idx];
-          plq_vec.erase(plq_vec.begin() + plq_idx);
-        }else {
-          plq_vec.erase(plq_vec.begin());
-        }
-        plq_idx = PLQ_SIZE - 1;
-        plq_vec.push_back(pending_load_queue());
-        plq_vec[plq_idx].load_pointer = load_table_vec[LOAD_TABLE_SIZE - 1].ldpc;
-        if(load_table_vec[LOAD_TABLE_SIZE - 1].delta == load_table_vec[LOAD_TABLE_SIZE - 1].prev_delta) {
-          plq_vec[plq_idx].plq_update_tracking(true);
-        }else {
-          plq_vec[plq_idx].plq_update_tracking(false);
-        }
-      }
-      return;
-    }
-  }
-  //if load_table miss
-  load_table_vec.erase(load_table_vec.begin());
-  load_table_vec.push_back(load_table());
-  if(is_li) {
-    load_table_vec[LOAD_TABLE_SIZE - 1].lt_load_imm(dinst);
-  }else {
-    load_table_vec[LOAD_TABLE_SIZE - 1].lt_load_miss(dinst);
-  }
-}
-
-int OoOProcessor::return_load_table_index(Addr_t pc) {
-  //if hit on load_table, update and move entry to LRU position
-  for(int i = LOAD_TABLE_SIZE - 1; i >= 0; i--) {
-    if(pc == load_table_vec[i].ldpc) {
-      return i;
-    }
-  }
-  return -1;
-}
-#endif
-
 void OoOProcessor::power_save_mode_table_reset() {
   // reset back end tables -> BTT, PLQ, CSB
   // reset front end tables -> BOT, LOR, LOT, CST
@@ -815,24 +747,6 @@ void OoOProcessor::rtt_alu_hit(Dinst *dinst) {
   tmp2.push_back(dinst->getPC());  // push current ALU PC
   std::sort(tmp2.begin(), tmp2.end());
   tmp2.erase(std::unique(tmp2.begin(), tmp2.end()), tmp2.end());
-#if 0
-  //don't increment NOPS if ALU part of LD-BR slice with use_slice == 0
-  for(int i = 0; i < rtt_vec[src1].load_table_pointer.size(); i++) {
-    int lt_id = DL1->return_load_table_index(rtt_vec[src1].load_table_pointer[i]);
-    if(lt_id != - 1 && (DL1->load_table_vec[lt_id].use_slice < 1)) {
-      nops1 = 0;
-      break;
-    }
-  }
-
-  for(int i = 0; i < rtt_vec[src2].load_table_pointer.size(); i++) {
-    int lt_id = DL1->return_load_table_index(rtt_vec[src2].load_table_pointer[i]);
-    if(lt_id != - 1 && (DL1->load_table_vec[lt_id].use_slice < 1)) {
-      nops2 = 0;
-      break;
-    }
-  }
-#endif
 
   int nops                        = nops1 + nops2 + 1;
   rtt_vec[dst].num_ops            = nops;
@@ -1057,11 +971,6 @@ void OoOProcessor::rtt_br_hit(Dinst *dinst) {
   }
 #endif
 
-#if 0
-  if(dinst->isBranchMiss_level2() && (nops < NUM_LOADS && nlds < NUM_LOADS))
-    MSG("RTT brpc=%llx nops=%d nloads=%d all_conf=%d", dinst->getPC(), nops, nlds, all_conf);
-#endif
-
   /*
    *************************
    *COLLECT LDBR CHAIN STATS
@@ -1279,22 +1188,9 @@ void OoOProcessor::rtt_br_hit(Dinst *dinst) {
           DL1->lor_vec[lor_id].reset_entry();
           DL1->lot_vec[lor_id].reset_valid();
         }
-#if 0
-          //clear LOR entry
-          DL1->lor_vec.erase(DL1->lor_vec.begin() + lor_id);
-          DL1->lor_vec.push_back(MemObj::load_outcome_reg());
-          //clear corresponding LOT entry
-          //DL1->lot_vec[lor_id].reset_valid();
-          DL1->lot_vec.erase(DL1->lot_vec.begin() + lor_id);
-          DL1->lot_vec.push_back(MemObj::load_outcome_table());
-#endif
       }
       // clear BOT entry
       if (bot_id != -1) {
-#if 0
-        DL1->bot_vec.erase(DL1->bot_vec.begin() + bot_id);
-        DL1->bot_vec.push_back(MemObj::branch_outcome_table());
-#endif
 
 #if 1
         std::vector<MemObj::branch_outcome_table> bot;
@@ -1309,10 +1205,6 @@ void OoOProcessor::rtt_br_hit(Dinst *dinst) {
 #endif
       }
       // clear BTT entry
-#if 0
-      btt_vec.erase(btt_vec.begin() + btt_id);
-      btt_vec.push_back(branch_trigger_table());
-#endif
       std::vector<branch_trigger_table> btt;
       for (int x = 0; x < btt_vec.size(); x++) {
         if (x != btt_id) {
@@ -1339,10 +1231,6 @@ int OoOProcessor::return_btt_index(Addr_t pc) {
 void OoOProcessor::btt_br_miss(Dinst *dinst) {
   RegType src1 = dinst->getInst()->getSrc1();
   RegType src2 = dinst->getInst()->getSrc2();
-#if 0
-  btt_vec.erase(btt_vec.begin());
-  btt_vec.push_back(branch_trigger_table());
-#endif
   // remove BTT element at id=0 and push new element to LRU position
   std::vector<branch_trigger_table> btt;
   for (int x = 1; x < btt_vec.size(); x++) {
@@ -1393,10 +1281,6 @@ void OoOProcessor::btt_br_miss(Dinst *dinst) {
                         look_ahead,
                         is_li);
       DL1->bot_allocate(dinst->getPC(), DL1->load_table_vec[id].ldpc, DL1->load_table_vec[id].ld_addr);
-#if 0
-      if(dinst->getPC() == 0x1044e)
-        MSG("BOT_ALLOC clk=%d brid=%d brpc=%llx ldpc=%llx ld_addr=%d lor_start=%d", globalClock, dinst->getID(), dinst->getPC(), tmp[i], DL1->load_table_vec[id].ld_addr, lor_start_addr);
-#endif
     }
   }
   int bot_id = DL1->return_bot_index(dinst->getPC());
@@ -1465,10 +1349,6 @@ void OoOProcessor::btt_trigger_load(Dinst *dinst, Addr_t ld_ptr) {
       for (int i = 0; i < num_trig_ld; i++) {
         // Addr_t trigger_addr = lor_start_addr + (lor_delta * (31 + i)); //trigger few delta ahead of current ld_addr
         Addr_t trigger_addr = lor_start_addr + (lor_delta * (trig_ld_dist + i));  // trigger few delta ahead of current ld_addr
-#if 0
-        if(dinst->getPC() == 0x119da || dinst->getPC() == 0x119c6)
-        MSG("TL clk=%d br_id=%d brpc=%llx ldpc=%llx ld_addr=%d curr_lor_start=%d trig_addr=%d del=%d lor_id=%d", globalClock, dinst->getID(), dinst->getPC(), ld_ptr, lt_load_addr, lor_start_addr, trigger_addr, lor_delta, lor_id);
-#endif
         MemRequest::triggerReqRead(DL1,
                                    dinst->getStatsFlag(),
                                    trigger_addr,
@@ -1563,10 +1443,6 @@ int OoOProcessor::btt_pointer_check(Dinst *dinst, int btt_id) {
         if (lt_idx != -1) {
           DL1->load_table_vec[lt_idx].tracking = 0;
         }
-#if 0
-        DL1->plq_vec.erase(DL1->plq_vec.begin() + i);
-        DL1->plq_vec.push_back(MemObj::pending_load_queue());
-#endif
         std::vector<MemObj::pending_load_queue> plq;
         for (int j = 0; j < DL1->plq_vec.size(); j++) {
           if (j != i) {
@@ -1584,29 +1460,6 @@ int OoOProcessor::btt_pointer_check(Dinst *dinst, int btt_id) {
 
   return 0;
 }
-
-#if 0
-int OoOProcessor::return_plq_index(Addr_t pc) {
-  //if hit on load_table, update and move entry to LRU position
-  for(int i = PLQ_SIZE - 1; i >= 0; i--) {
-    if(pc == plq_vec[i].load_pointer) {
-      return i;
-    }
-  }
-  return -1;
-}
-#endif
-
-Data_t OoOProcessor::extract_load_immediate(Addr_t pc) {
-  Addr_t   raw_op = esesc_mem_read(pc);
-  uint32_t d0     = (raw_op >> 2) & (~0U >> 27);
-  uint64_t d1     = (int64_t)(raw_op << 51) >> 63;
-  Data_t   d      = d1 | d0;
-  // MSG("op=%llx data=%d", raw_op, d);
-  return d;
-}
-
-#endif
 
 void OoOProcessor::retire()
 /* Try to retire instructions {{{1 */
@@ -1643,16 +1496,6 @@ void OoOProcessor::retire()
     }
 
 #ifdef ENABLE_LDBP
-#if 0
-    //extracting Li's immediate value
-    if(dinst->getPC() == 0x10400 || dinst->getPC() == 0x10402) {
-      Addr_t value = esesc_mem_read(dinst->getPC());
-      uint32_t d0 = (value >> 2) & (~0U >> 27);
-      uint64_t d1 = (int64_t)(value << 51) >> 63;
-      Data_t d  = d1 | d0;
-      MSG("op=%llx data=%d", value, d);
-    }
-#endif
     if (dinst->getInst()->isLoad()) {
       num_loads.inc(true);  // inc load counter
       DL1->hit_on_load_table(dinst, false);
@@ -1692,22 +1535,10 @@ void OoOProcessor::retire()
         && (dinst->getInst()->getSrc1() != LREG_R0 && dinst->getInst()->getSrc2() == LREG_R0)) {
       RegType alu_dst = dinst->getInst()->getDst1();
       rtt_alu_hit(dinst);
-#if 0
-      if(ct_table[alu_dst].valid) {
-        ct_table[alu_dst].mv_active = true;
-        ct_table[alu_dst].mv_src    = dinst->getInst()->getSrc1();
-      }
-#endif
     } else if (dinst->getInst()->getOpcode() == iRALU
                && (dinst->getInst()->getSrc1() == LREG_R0 && dinst->getInst()->getSrc2() != LREG_R0)) {
       RegType alu_dst = dinst->getInst()->getDst1();
       rtt_alu_hit(dinst);
-#if 0
-      if(ct_table[alu_dst].valid) {
-        ct_table[alu_dst].mv_active = true;
-        ct_table[alu_dst].mv_src    = dinst->getInst()->getSrc2();
-      }
-#endif
     }
 #endif
 
@@ -1803,7 +1634,7 @@ void OoOProcessor::retire()
     Dinst *dinst = rROB.top();
 
     if ((dinst->getExecutedTime() + RetireDelay) >= globalClock) {
-#if 0
+#ifdef SUPERDUMP
       if (rROB.size()>8) {
         dinst->getInst()->dump("not ret");
         printf("----------------------\n");
@@ -1818,17 +1649,6 @@ void OoOProcessor::retire()
     bool done = dinst->getCluster()->retire(dinst, flushing);
     if (!done)
       break;
-
-#if 0
-    static int conta=0;
-    if ((globalClock-dinst->getExecutedTime())>500)
-      conta++;
-    if (conta > 1000) {
-      dinst->getInst()->dump("not ret");
-      conta = 0;
-      dumpROB();
-    }
-#endif
 
     Hartid_t fid = dinst->getFlowId();
     if (dinst->isReplay()) {
@@ -1869,7 +1689,7 @@ void OoOProcessor::retire()
       // MSG("BR_PROFILE clk=%u brpc=%llx br_miss=%d\n", globalClock, dinst->getPC(), dinst->isBranchMiss());
     }
 #endif
-#if 0
+#ifdef ESESC_TRACE1
     if (dinst->getPC() == 0x1100c || dinst->getPC() == 0x11008)
       MSG("TR %8llx %lld\n",dinst->getPC(), dinst->getAddr());
 #endif
@@ -1903,17 +1723,12 @@ void OoOProcessor::retire()
         dinst->getExecutedTime() - globalClock,
         globalClock - globalClock);
 #endif
-    // sjeng 2nd: if (dinst->getPC() == 0x1d46c || dinst->getPC() == 0x1d462)
-#if 0
+    
+#ifdef ESESC_TRACE3
     if (dinst->getPC() == 0x10c96 || dinst->getPC() == 0x10c9a || dinst->getPC() == 0x10c9e)
       MSG("TR %8lld %8llx R%-2d,R%-2d=R%-2d op=%-2d R%-2d  %lld %lld %lld", dinst->getID(), dinst->getPC(),
           dinst->getInst()->getDst1(), dinst->getInst()->getDst2(), dinst->getInst()->getSrc1(), dinst->getInst()->getOpcode(),
           dinst->getInst()->getSrc2(), dinst->getData(), dinst->getData2(), dinst->getAddr());
-#endif
-
-#if 0
-    dinst->dump("RT ");
-    fprintf(stderr,"\n");
 #endif
 
 #ifdef WAVESNAP_EN
@@ -1992,9 +1807,8 @@ void OoOProcessor::replay(Dinst *target)
 void OoOProcessor::dumpROB()
 // {{{1 Dump rob statistics
 {
-#if 0
   uint32_t size = ROB.size();
-  fprintf(stderr,"ROB: (%d)\n",size);
+  fmt::print("ROB: ({})\n",size);
 
   for(uint32_t i=0;i<size;i++) {
     uint32_t pos = ROB.getIDFromTop(i);
@@ -2004,16 +1818,15 @@ void OoOProcessor::dumpROB()
   }
 
   size = rROB.size();
-  fprintf(stderr,"rROB: (%d)\n",size);
+  fmt::print("rROB: ({})\n",size);
   for(uint32_t i=0;i<size;i++) {
     uint32_t pos = rROB.getIDFromTop(i);
 
     Dinst *dinst = rROB.getData(pos);
     if (dinst->isReplay())
-      printf("-----REPLAY--------\n");
+      fmt::print("-----REPLAY--------\n");
     dinst->dump("");
   }
-#endif
 }
 
 bool OoOProcessor::loadIsSpec() {

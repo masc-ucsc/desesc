@@ -11,9 +11,10 @@
 #include "LSQ.h"
 #include "MemRequest.h"
 #include "OoOProcessor.h"
-#include "Port.h"
 #include "Resource.h"
 #include "TaskHandler.h"
+
+#include "port.hpp"
 #include "dinst.hpp"
 
 // late allocation flag

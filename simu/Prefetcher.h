@@ -4,10 +4,10 @@
 
 #include "AddressPredictor.h"
 #include "CacheCore.h"
-#include "GStats.h"
-#include "Port.h"
+
+#include "port.hpp"
+#include "stats.hpp"
 #include "callback.hpp"
-#include "estl.h"
 
 class MemObj;
 
@@ -15,9 +15,9 @@ class Prefetcher {
 private:
   MemObj *DL1;  // L1 cache
 
-  GStatsAvg  avgPrefetchNum;
-  GStatsAvg  avgPrefetchConf;
-  GStatsHist histPrefetchDelta;
+  Stats_avg  avgPrefetchNum;
+  Stats_avg  avgPrefetchConf;
+  Stats_hist histPrefetchDelta;
 
   AddressPredictor *apred;
 
@@ -39,7 +39,6 @@ private:
   Addr_t   pending_preq_addr;
 
   void nextPrefetch();
-
 
   StaticCallbackMember0<Prefetcher, &Prefetcher::nextPrefetch> nextPrefetchCB;
 

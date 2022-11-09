@@ -4,10 +4,10 @@
 
 #include <vector>
 
-#include "GStats.h"
+#include "estl.h"
+
 #include "callback.hpp"
 #include "dinst.hpp"
-#include "estl.h"
 
 #define STORESET_MERGING  1
 #define STORESET_CLEARING 1

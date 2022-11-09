@@ -1,9 +1,10 @@
-
-#include "wavesnap.h"
+// See LICENSE for details.
 
 #include <cmath>
 
-wavesnap::wavesnap() {
+#include "wavesnap.hpp"
+
+Wavesnap::Wavesnap() {
   this->window_pointer         = 0;
   this->update_count           = 0;
   this->first_window_completed = false;
@@ -16,11 +17,7 @@ wavesnap::wavesnap() {
 #endif
 }
 
-wavesnap::~wavesnap() {
-  // nothing to do here
-}
-
-uint64_t wavesnap::hash(std::string signature, uint64_t more) {
+uint64_t Wavesnap::hash(std::string signature, uint64_t more) {
   uint64_t hash = HASH_SEED + more;
   for (uint32_t i = 0; i < signature.length(); i++) {
     hash = (hash * 101 + (uint32_t)signature[i]) % HASH_SIZE;
@@ -29,7 +26,7 @@ uint64_t wavesnap::hash(std::string signature, uint64_t more) {
   return hash;
 }
 
-void wavesnap::record_pipe(pipeline_info *next) {
+void Wavesnap::record_pipe(pipeline_info *next) {
 #ifdef HASHED_RECORD
   uint64_t index = this->current_hash;
 #else
@@ -68,7 +65,7 @@ void wavesnap::record_pipe(pipeline_info *next) {
   }
 }
 
-void wavesnap::add_pipeline_info(pipeline_info *pipe_info, instruction_info *d) {
+void Wavesnap::add_pipeline_info(pipeline_info *pipe_info, instruction_info *d) {
   uint64_t min_time = this->dinst_info[wait_buffer[0]].fetched_time;
 
   pipe_info->wait_cycles.push_back(d->fetched_time - min_time);
@@ -78,12 +75,12 @@ void wavesnap::add_pipeline_info(pipeline_info *pipe_info, instruction_info *d) 
   pipe_info->commit_cycles.push_back(d->committed_time - d->executed_time);
 }
 
-void wavesnap::add_instruction(Dinst *dinst) {
+void Wavesnap::add_instruction(Dinst *dinst) {
   wait_buffer.push_back(dinst->getID());
   completed.push_back(false);
 }
 
-instruction_info wavesnap::extract_inst_info(Dinst *dinst, uint64_t committed) {
+instruction_info Wavesnap::extract_inst_info(Dinst *dinst, uint64_t committed) {
   instruction_info result;
 
   result.fetched_time   = dinst->getFetchedTime();
@@ -96,7 +93,7 @@ instruction_info wavesnap::extract_inst_info(Dinst *dinst, uint64_t committed) {
   return result;
 }
 
-void wavesnap::update_window(Dinst *dinst, uint64_t committed) {
+void Wavesnap::update_window(Dinst *dinst, uint64_t committed) {
   // update instruction as completed
   bool     found = false;
   uint64_t i     = dinst->getID();
@@ -109,9 +106,7 @@ void wavesnap::update_window(Dinst *dinst, uint64_t committed) {
       this->completed[i] = true;
       found              = true;
 
-      instruction_info inst_info = extract_inst_info(dinst, committed);
-      dinst_info[id];
-      dinst_info[id] = inst_info;
+      dinst_info[id] = extract_inst_info(dinst, committed);
     }
     i--;
   }
@@ -176,7 +171,7 @@ void wavesnap::update_window(Dinst *dinst, uint64_t committed) {
   }
 }
 
-void wavesnap::calculate_ipc() {
+void Wavesnap::calculate_ipc() {
   uint64_t total_fetch_ipc    = 0;
   uint64_t total_rename_ipc   = 0;
   uint64_t total_issue_ipc    = 0;
@@ -361,7 +356,7 @@ void wavesnap::calculate_ipc() {
 
 /////////////////////////////////
 // FULL IPC UPDATE and CALCULATION
-void wavesnap::update_single_window(Dinst *dinst, uint64_t committed) {
+void Wavesnap::update_single_window(Dinst *dinst, uint64_t committed) {
   uint64_t fetched  = dinst->getFetchedTime();
   uint64_t renamed  = dinst->getRenamedTime();
   uint64_t issued   = dinst->getIssuedTime();
@@ -383,7 +378,7 @@ void wavesnap::update_single_window(Dinst *dinst, uint64_t committed) {
   this->full_commit_ipc[committed]++;
 }
 
-void wavesnap::calculate_single_window_ipc() {
+void Wavesnap::calculate_single_window_ipc() {
   bool     first_iter;
   uint64_t f, s;
 
@@ -471,7 +466,7 @@ void wavesnap::calculate_single_window_ipc() {
 // FULL IPC END
 /////////////////////////////////
 
-void wavesnap::test_uncompleted() {
+void Wavesnap::test_uncompleted() {
   std::cout << "testing uncompleted instructions... wait buffer size = " << this->wait_buffer.size() << std::endl;
   uint32_t count = 0;
   for (uint64_t i = 0; i < completed.size(); i++) {
@@ -483,7 +478,7 @@ void wavesnap::test_uncompleted() {
   std::cout << "uncomleted instruction = " << count << std::endl;
 }
 
-void wavesnap::add_to_RAT(Dinst *dinst) {
+void Wavesnap::add_to_RAT(Dinst *dinst) {
   uint64_t dst, src1, src2;
   if (dinst->getInst()->isStore()) {
     // dst =  ((uint64_t)dinst->getAddr()%HASH_SIZE)+REGISTER_NUM;
@@ -523,11 +518,11 @@ void wavesnap::add_to_RAT(Dinst *dinst) {
   }
 }
 
-void wavesnap::merge() {
+void Wavesnap::merge() {
   // TODO
 }
 
-void wavesnap::window_frequency() {
+void Wavesnap::window_frequency() {
   uint8_t threshold = 80;
 
   std::vector<uint64_t> counts;
@@ -563,7 +558,7 @@ void wavesnap::window_frequency() {
   std::cout << "********************" << std::endl;
 }
 
-std::string wavesnap::break_into_bytes(uint64_t n, uint8_t byte_num) {
+std::string Wavesnap::break_into_bytes(uint64_t n, uint8_t byte_num) {
   std::string result = "";
   while (byte_num > 0) {
     result = (char)(n & 0x00FF) + result;
@@ -574,7 +569,7 @@ std::string wavesnap::break_into_bytes(uint64_t n, uint8_t byte_num) {
   return result;
 }
 
-void wavesnap::save() {
+void Wavesnap::save() {
   std::ofstream outfile;
   outfile.open(DUMP_PATH);
   for (auto &sign_kv : window_sign_info) {
@@ -591,4 +586,4 @@ void wavesnap::save() {
   outfile.close();
 }
 
-void wavesnap::load() {}
+void Wavesnap::load() {}

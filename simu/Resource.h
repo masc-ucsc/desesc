@@ -4,10 +4,11 @@
 
 #include "BloomFilter.h"
 #include "FastQueue.h"
-#include "GStats.h"
 #include "Prefetcher.h"
 #include "SCB.h"
 #include "StoreSet.h"
+
+#include "stats.hpp"
 #include "callback.hpp"
 #include "iassert.hpp"
 
@@ -39,13 +40,13 @@ protected:
   Cluster *const     cluster;
   PortGeneric *const gen;
 
-  GStatsAvg  avgRenameTime;
-  GStatsAvg  avgIssueTime;
-  GStatsAvg  avgExecuteTime;
-  GStatsAvg  avgRetireTime;
-  GStatsHist safeHitTimeHist;
-  GStatsHist specHitTimeHist;
-  GStatsHist latencyHitTimeHist;
+  Stats_avg  avgRenameTime;
+  Stats_avg  avgIssueTime;
+  Stats_avg  avgExecuteTime;
+  Stats_avg  avgRetireTime;
+  Stats_hist safeHitTimeHist;
+  Stats_hist specHitTimeHist;
+  Stats_hist latencyHitTimeHist;
 
   const TimeDelta_t lat;
   const int32_t     coreid;
@@ -123,7 +124,7 @@ protected:
   LSQ           *lsq;
   Prefetcher    *pref;
   SCB           *scb;
-  GStatsCntr     stldViolations;
+  Stats_cntr     stldViolations;
 
   bool LSQlateAlloc;
 
@@ -140,7 +141,7 @@ private:
   int32_t freeEntries;
   bool    enableDcache;
 #ifdef MEM_TSO2
-  GStatsCntr tso2Replay;
+  Stats_cntr tso2Replay;
 #endif
 
 protected:
@@ -218,8 +219,8 @@ public:
 
 class FURALU : public Resource {
 private:
-  GStatsCntr dmemoryBarrier;
-  GStatsCntr imemoryBarrier;
+  Stats_cntr dmemoryBarrier;
+  Stats_cntr imemoryBarrier;
   Time_t     blockUntil;
 
 protected:

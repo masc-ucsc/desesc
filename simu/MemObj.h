@@ -7,8 +7,9 @@
 #include <string>
 
 #include "MRouter.h"
-#include "Port.h"
 #include "Resource.h"
+
+#include "port.hpp"
 #include "callback.hpp"
 #include "dinst.hpp"
 #include "iassert.hpp"
@@ -72,47 +73,6 @@ public:
   const int LOAD_TABLE_SIZE;
   const int PLQ_SIZE;
   const int CODE_SLICE_DELAY;
-#if 0
-  const int BOT_SIZE;
-  //Load data buffer interface functions
-  int hit_on_ldbuff(Addr_t pc);
-  void fill_ldbuff_mem(Addr_t pc, Addr_t sa, Addr_t ea, int64_t del, Addr_t raddr, int q_idx, int tl_type);
-  void shift_load_data_buffer(Addr_t pc, int tl_type);
-  void flush_ldbuff_mem(Addr_t pc);
-
-  //BOT interface functions
-  void find_cir_queue_index(MemRequest *mreq);
-  int hit_on_bot(Addr_t pc);
-  void flush_bot_mem(int idx);
-  void shift_cir_queue(Addr_t pc, int tl_type);
-  void fill_fetch_count_bot(Addr_t pc);
-  void fill_retire_count_bot(Addr_t pc);
-  void fill_bpred_use_count_bot(Addr_t pc, int _hit2_miss3, int _hit3_miss2);
-  void fill_bot_retire(Addr_t pc, Addr_t ldpc, Addr_t saddr, Addr_t eaddr, int64_t del, int lbtype, int tl_type);
-  void fill_mv_stats(Addr_t pc, int ldbr, Data_t d1, Data_t d2, bool swap, int mv_out);
-  void fill_li_at_retire(Addr_t brpc, int ldbr, bool d1_valid, bool d2_valid, int depth1, int depth2, Data_t li1, Data_t li2 = 0);
-
-  int getQSize() {
-    return CIR_QUEUE_WINDOW;
-  }
-
-
-  int getBotSize() {
-    return BOT_SIZE;
-  }
-
-  int getLdBuffSize() {
-    return LDBUFF_SIZE;
-  }
-
-  void setRetBrCount(int cnt) {
-    ret_br_count = cnt;
-  }
-
-  int getRetBrCount() const {
-    return ret_br_count;
-  }
-#endif
 
   // NEW INTERFACE !!!!!! Nov 20, 2019
   ////Load Table
@@ -237,10 +197,6 @@ public:
           data_conf = data_conf / 2;
 #endif
       }
-#if 0
-      if((dinst->getPC() == 0x119c0 || dinst->getPC() == 0x119be))
-        MSG("LT clk=%d ldpc=%llx addr=%d del=%d conf=%d data=%d", globalClock, ldpc, ld_addr, delta, conf, dinst->getData());
-#endif
     }
 
     void lt_load_imm(Dinst *dinst) {
@@ -323,12 +279,6 @@ public:
   struct load_outcome_table {  // same number of entries as LOR
     // stores trigger load data
     load_outcome_table() {
-#if 0
-      for(int i = 0; i < LOT_QUEUE_SIZE; i++) {
-        tl_addr[i] = 0;
-        valid[i] = 0;
-      }
-#endif
       std::fill(tl_addr.begin(), tl_addr.end(), 0);
       std::fill(valid.begin(), valid.end(), 0);
     }
@@ -339,12 +289,6 @@ public:
     void reset_valid() {
       std::fill(tl_addr.begin(), tl_addr.end(), 0);
       std::fill(valid.begin(), valid.end(), 0);
-#if 0
-      for(int i = 0; i < LOT_QUEUE_SIZE; i++) {
-        tl_addr[i] = 0;
-        valid[i] = 0;
-      }
-#endif
     }
   };
 
@@ -358,11 +302,6 @@ public:
       load_ptr.clear();
       curr_br_addr.clear();
       std::fill(valid.begin(), valid.end(), 0);
-#if 0
-      for(int i = 0; i < LOT_QUEUE_SIZE; i++) {
-        valid[i] = 0;
-      }
-#endif
     }
 
     Addr_t brpc;
@@ -377,159 +316,11 @@ public:
     void reset_valid() {
       outcome_ptr = 0;
       std::fill(valid.begin(), valid.end(), 0);
-#if 0
-      for(int i = 0; i < LOT_QUEUE_SIZE; i++) {
-        valid[i] = 0;
-      }
-#endif
     }
   };
 
   std::vector<branch_outcome_table> bot_vec = std::vector<branch_outcome_table>(BOT_SIZE);
 
-#if 0
-  struct bot_entry {
-    bot_entry() {
-      seq_start_addr = 0;
-      seq_start_addr2 = 0;
-      brpc         = 0;
-      ldpc         = 0;
-      req_addr     = 0;
-      start_addr   = 0;
-      end_addr     = 0;
-      delta        = 0;
-      ldpc2         = 0;
-      req_addr2     = 0;
-      start_addr2   = 0;
-      end_addr2     = 0;
-      delta2        = 0;
-      fetch_count   = 0;
-      retire_count  = 0;
-      hit2_miss3    = 0;
-      hit3_miss2    = 0;
-      mv_type = 0;
-      br_mv_outcome = 0;
-      br_mv_init    = true;
-      ldbr  = 0;
-      ldbr2 = 0;
-      li_data_valid = false;
-      li_data2_valid = false;
-      for(int i = 0; i < CIR_QUEUE_WINDOW; i++) {
-        set_flag[i]  = 0;
-        ld_used[i]   = false;
-        ldbr_type[i] = 0;
-        dep_depth[i] = 0;
-        trig_addr[i] = 0;
-        set_flag2[i]  = 0;
-        ld_used2[i]   = false;
-        ldbr_type2[i] = 0;
-        dep_depth2[i] = 0;
-        trig_addr2[i] = 0;
-
-      }
-    }
-    //LD fields'
-    Addr_t seq_start_addr; //start addr of a sequence of LDs (is reset only when we flush on delta change)
-    Addr_t ldpc;
-    Addr_t req_addr;
-    Addr_t start_addr; //start addr when TL is triggered (changes with each TL)
-    Addr_t end_addr; //end addr when TL is triggered (changes with each TL)
-    int64_t delta;
-    //
-    int ldbr;  //ldbr type
-    int fetch_count;
-    int retire_count;
-    int hit2_miss3;
-    int hit3_miss2;
-    //br fields
-    Addr_t brpc;
-    Data_t br_data1;
-    Data_t br_data2;
-    int br_mv_outcome;
-    bool br_mv_init; //when this flag is false, LDBP doesn't swap data mandatorily
-    //mv stats
-    Data_t mv_data;
-    int mv_type;
-    //circular queues
-    std::vector<int> set_flag  = std::vector<int>(CIR_QUEUE_WINDOW);
-    std::vector<bool> ld_used  = std::vector<bool>(CIR_QUEUE_WINDOW);
-    std::vector<int> ldbr_type = std::vector<int>(CIR_QUEUE_WINDOW);
-    std::vector<int> dep_depth = std::vector<int>(CIR_QUEUE_WINDOW);
-    std::vector<Addr_t> trig_addr = std::vector<Addr_t>(CIR_QUEUE_WINDOW);
-
-    //for LD2
-    Addr_t ldpc2;
-    Addr_t seq_start_addr2; //start addr of a sequence of LDs (is reset only when we flush on delta change)
-    Addr_t req_addr2;
-    Addr_t start_addr2;
-    Addr_t end_addr2;
-    int64_t delta2;
-    int ldbr2;
-    std::vector<int> set_flag2  = std::vector<int>(CIR_QUEUE_WINDOW);
-    std::vector<bool> ld_used2  = std::vector<bool>(CIR_QUEUE_WINDOW);
-    std::vector<int> ldbr_type2 = std::vector<int>(CIR_QUEUE_WINDOW);
-    std::vector<int> dep_depth2 = std::vector<int>(CIR_QUEUE_WINDOW);
-    std::vector<Addr_t> trig_addr2 = std::vector<Addr_t>(CIR_QUEUE_WINDOW);
-
-    //Li Fields
-    Data_t li_data;
-    bool li_data_valid;
-    Data_t li_data2;
-    bool li_data2_valid;
-
-  };
-
-  struct load_data_buffer_entry{
-    load_data_buffer_entry() {
-      brpc         = 0;
-      ldpc         = 0;
-      start_addr   = 0;
-      end_addr     = 0;
-      delta        = 0;
-      ldpc2         = 0;
-      start_addr2   = 0;
-      end_addr2     = 0;
-      delta2        = 0;
-      for(int i = 0; i < CIR_QUEUE_WINDOW; i++) {
-        req_addr[i]  = 0;
-        //req_data[i]  = 0;
-        marked[i]    = false;
-        valid[i]     = false;
-        req_addr2[i]  = 0;
-        //req_data2[i]  = 0;
-        marked2[i]    = false;
-        valid2[i]     = false;
-      }
-    }
-    Addr_t brpc;
-    Addr_t ldpc;
-    Addr_t start_addr;
-    Addr_t end_addr;
-    int64_t delta;
-    std::vector<Addr_t> req_addr = std::vector<Addr_t>(CIR_QUEUE_WINDOW);
-    std::vector<Data_t> req_data = std::vector<Data_t>(CIR_QUEUE_WINDOW);
-    std::vector<bool> marked = std::vector<bool>(CIR_QUEUE_WINDOW);
-    std::vector<bool> valid  = std::vector<bool>(CIR_QUEUE_WINDOW);
-    //for LD2
-    Addr_t ldpc2;
-    Addr_t start_addr2;
-    Addr_t end_addr2;
-    int64_t delta2;
-    std::vector<Addr_t> req_addr2 = std::vector<Addr_t>(CIR_QUEUE_WINDOW);
-    std::vector<Data_t> req_data2 = std::vector<Data_t>(CIR_QUEUE_WINDOW);
-    std::vector<bool> marked2 = std::vector<bool>(CIR_QUEUE_WINDOW);
-    std::vector<bool> valid2  = std::vector<bool>(CIR_QUEUE_WINDOW);
-
-  };
-
-  bool zero_delta; //flag for mreq with delta == 0
-  int ret_br_count;
-
-  //std::vector<int> cir_queue = std::vector<int>(CIR_QUEUE_WINDOW);
-  std::vector<bot_entry> cir_queue = std::vector<bot_entry>(BOT_SIZE);
-  std::vector<load_data_buffer_entry> load_data_buffer = std::vector<load_data_buffer_entry>(LDBUFF_SIZE);
-  //std::vector<load_data_buffer_entry> load_data_buffer = std::vector<load_data_buffer_entry>(CIR_QUEUE_WINDOW);
-#endif
 
 #endif
 
@@ -592,9 +383,6 @@ public:
   virtual void clearNeedsCoherence();
 
   virtual bool Invalid(Addr_t addr) const;
-#if 0
-  virtual bool get_cir_queue(int index ,Addr_t pc);
-#endif
 };
 
 class DummyMemObj : public MemObj {

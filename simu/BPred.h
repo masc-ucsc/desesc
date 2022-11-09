@@ -21,10 +21,11 @@
 
 #include "CacheCore.h"
 #include "DOLC.h"
-#include "GStats.h"
 #include "SCTable.h"
-#include "dinst.hpp"
 #include "estl.h"
+
+#include "stats.hpp"
+#include "dinst.hpp"
 #include "iassert.hpp"
 
 #define RAP_T_NT_ONLY 1
@@ -57,8 +58,8 @@ public:
 protected:
   const int32_t id;
 
-  GStatsCntr nHit;   // N.B. predictors should not update these counters directly
-  GStatsCntr nMiss;  // in their predict() function.
+  Stats_cntr nHit;   // N.B. predictors should not update these counters directly
+  Stats_cntr nMiss;  // in their predict() function.
 
   int32_t addrShift;
   int32_t maxCores;
@@ -107,7 +108,7 @@ public:
 
 class BPBTB : public BPred {
 private:
-  GStatsCntr nHitLabel;  // hits to the icache label (ibtb)
+  Stats_cntr nHitLabel;  // hits to the icache label (ibtb)
   DOLC      *dolc;
   bool       btbicache;
   uint64_t   btbHistorySize;
@@ -559,29 +560,29 @@ private:
   int32_t bpredDelay3;
 
   bool       Miss_Pred_Bool;
-  GStatsCntr nBTAC;
+  Stats_cntr nBTAC;
 
-  GStatsCntr nBranches;
-  GStatsCntr nNoPredict;
-  GStatsCntr nTaken;
-  GStatsCntr nMiss;  // hits == nBranches - nMiss
+  Stats_cntr nBranches;
+  Stats_cntr nNoPredict;
+  Stats_cntr nTaken;
+  Stats_cntr nMiss;  // hits == nBranches - nMiss
 
-  GStatsCntr nBranches2;
-  GStatsCntr nTaken2;
-  GStatsCntr nMiss2;  // hits == nBranches - nMiss
+  Stats_cntr nBranches2;
+  Stats_cntr nTaken2;
+  Stats_cntr nMiss2;  // hits == nBranches - nMiss
 
-  GStatsCntr nBranches3;
-  GStatsCntr nNoPredict3;
-  GStatsCntr nNoPredict_miss3;  // NoPred by bpred 3 and no correct pred by other bpreds
-  GStatsCntr nHit3_miss2;       // Mispred of Level 2 which are fixed by level 3 BPred
-  GStatsCntr nTaken3;
-  GStatsCntr nMiss3;  // hits == nBranches - nMiss
+  Stats_cntr nBranches3;
+  Stats_cntr nNoPredict3;
+  Stats_cntr nNoPredict_miss3;  // NoPred by bpred 3 and no correct pred by other bpreds
+  Stats_cntr nHit3_miss2;       // Mispred of Level 2 which are fixed by level 3 BPred
+  Stats_cntr nTaken3;
+  Stats_cntr nMiss3;  // hits == nBranches - nMiss
 
-  GStatsCntr nFixes1;
-  GStatsCntr nFixes2;
-  GStatsCntr nFixes3;
-  GStatsCntr nUnFixes;
-  GStatsCntr nAgree3;
+  Stats_cntr nFixes1;
+  Stats_cntr nFixes2;
+  Stats_cntr nFixes3;
+  Stats_cntr nUnFixes;
+  Stats_cntr nAgree3;
 
 protected:
   PredType predict1(Dinst *dinst);

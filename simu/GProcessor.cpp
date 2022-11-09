@@ -1,50 +1,14 @@
-// Contributed by Jose Renau
-//                Luis Ceze
-//                Karin Strauss
-//                Milos Prvulovic
-//
-// The ESESC/BSD License
-//
-// Copyright (c) 2005-2013, Regents of the University of California and
-// the ESESC Project.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-//   - Redistributions of source code must retain the above copyright notice,
-//   this list of conditions and the following disclaimer.
-//
-//   - Redistributions in binary form must reproduce the above copyright
-//   notice, this list of conditions and the following disclaimer in the
-//   documentation and/or other materials provided with the distribution.
-//
-//   - Neither the name of the University of California, Santa Cruz nor the
-//   names of its contributors may be used to endorse or promote products
-//   derived from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-
-#include "GProcessor.h"
+// See LICENSE for details.
 
 #include <sys/time.h>
 #include <unistd.h>
 
+#include "GProcessor.h"
 #include "FetchEngine.h"
 #include "GMemorySystem.h"
-#include "Report.h"
 
-GStatsCntr *GProcessor::wallClock     = 0;
+#include "report.hpp"
+
 Time_t      GProcessor::lastWallClock = 0;
 
 GProcessor::GProcessor(GMemorySystem *gm, CPU_t i)
@@ -87,8 +51,7 @@ GProcessor::GProcessor(GMemorySystem *gm, CPU_t i)
   }
 
   lastReplay = 0;
-  if (wallClock == 0)
-    wallClock = new GStatsCntr("OS:wallClock");
+
   activeclock_start = lastWallClock;
   activeclock_end   = lastWallClock;
 
@@ -120,40 +83,37 @@ GProcessor::GProcessor(GMemorySystem *gm, CPU_t i)
   SescConf->isInt("cpusimu", "robSize", i);
   SescConf->isBetween("cpusimu", "robSize", 2, 262144, i);
 
-  nStall[0]                 = 0;  // crash if used
-  nStall[SmallWinStall]     = new GStatsCntr("P(%d)_ExeEngine:nSmallWinStall", i);
-  nStall[SmallROBStall]     = new GStatsCntr("P(%d)_ExeEngine:nSmallROBStall", i);
-  nStall[SmallREGStall]     = new GStatsCntr("P(%d)_ExeEngine:nSmallREGStall", i);
-  nStall[DivergeStall]      = new GStatsCntr("P(%d)_ExeEngine:nDivergeStall", i);
-  nStall[OutsLoadsStall]    = new GStatsCntr("P(%d)_ExeEngine:nOutsLoadsStall", i);
-  nStall[OutsStoresStall]   = new GStatsCntr("P(%d)_ExeEngine:nOutsStoresStall", i);
-  nStall[OutsBranchesStall] = new GStatsCntr("P(%d)_ExeEngine:nOutsBranchesStall", i);
-  nStall[ReplaysStall]      = new GStatsCntr("P(%d)_ExeEngine:nReplaysStall", i);
-  nStall[SyscallStall]      = new GStatsCntr("P(%d)_ExeEngine:nSyscallStall", i);
+  nStall[SmallWinStall]     = std::make_unique<Stats_cntr>(fmt::format("P({})_ExeEngine:nSmallWinStall", i));
+  nStall[SmallROBStall]     = std::make_unique<Stats_cntr>(fmt::format("P({})_ExeEngine:nSmallROBStall", i));
+  nStall[SmallREGStall]     = std::make_unique<Stats_cntr>(fmt::format("P({})_ExeEngine:nSmallREGStall", i));
+  nStall[DivergeStall]      = std::make_unique<Stats_cntr>(fmt::format("P({})_ExeEngine:nDivergeStall", i));
+  nStall[OutsLoadsStall]    = std::make_unique<Stats_cntr>(fmt::format("P({})_ExeEngine:nOutsLoadsStall", i));
+  nStall[OutsStoresStall]   = std::make_unique<Stats_cntr>(fmt::format("P({})_ExeEngine:nOutsStoresStall", i));
+  nStall[OutsBranchesStall] = std::make_unique<Stats_cntr>(fmt::format("P({})_ExeEngine:nOutsBranchesStall", i));
+  nStall[ReplaysStall]      = std::make_unique<Stats_cntr>(fmt::format("P({})_ExeEngine:nReplaysStall", i));
+  nStall[SyscallStall]      = std::make_unique<Stats_cntr>(fmt::format("P({})_ExeEngine:nSyscallStall", i));
 
   I(ROB.size() == 0);
 
   eint = 0;
 
-  buildInstStats(nInst, "ExeEngine");
+  buildInstStats("ExeEngine");
+
 #ifdef WAVESNAP_EN
-  this->snap = new wavesnap();
+  snap = std::make_unique<Wavesnap>();
 #endif
 
-  int scbSize = SescConf->getInt("cpusimu", "scbSize", i);
-  scb         = new SCB(scbSize);
+  auto scb_size = Config::get_integer("soc", "core", i , "scb_size",1,2048);
+  scb         = std::make_unique<SCB>(scb_size);
 }
 
 GProcessor::~GProcessor() {}
 
-void GProcessor::buildInstStats(GStatsCntr *i[iMAX], const char *txt) {
-  bzero(i, sizeof(GStatsCntr *) * iMAX);
+void GProcessor::buildInstStats(const std::string &txt) {
 
   for (int32_t t = 0; t < iMAX; t++) {
-    i[t] = new GStatsCntr("P(%d)_%s_%s:n", cpu_id, txt, Instruction::opcode2Name(static_cast<Opcode>(t)));
+    nInst[t] = std::make_unique<Stats_cntr>(fmt::format("P({})_{}_{}:n", cpu_id, txt, Instruction::opcode2Name(static_cast<Opcode>(t))));
   }
-
-  IN(forall((int32_t a = 1; a < (int)iMAX; a++), i[a] != 0));
 }
 
 int32_t GProcessor::issue(PipeQueue &pipeQ) {
@@ -183,7 +143,6 @@ int32_t GProcessor::issue(PipeQueue &pipeQ) {
         // MSG("@%lld CPU[%d]: stalling dinstID=%lld for %d cycles, reason= %d
         // PE[%d]",globalClock,cpu_id,dinst->getID(),(RealisticWidth-i),c,dinst->getPE());
         if (i < RealisticWidth)
-          // nStall[c]->add(1, dinst->getStatsFlag());
           nStall[c]->add(RealisticWidth - i, dinst->getStatsFlag());
         return i;
       }

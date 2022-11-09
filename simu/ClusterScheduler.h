@@ -6,8 +6,8 @@
 
 #include <vector>
 
-#include "GStats.h"
 #include "Resource.h"
+
 #include "dinst.hpp"
 
 typedef std::vector<std::vector<Resource *>> ResourcesPoolType;

@@ -1,5 +1,7 @@
 // See LICENSE for details.
 
+#include "fmt/format.h"
+
 #include "DepWindow.h"
 
 #include "GProcessor.h"
@@ -8,22 +10,15 @@
 #include "dinst.hpp"
 
 DepWindow::DepWindow(uint32_t cpuid, Cluster *aCluster, const char *clusterName, uint32_t pos)
-    : srcCluster(aCluster), Id(cpuid), wrForwardBus("P(%d)_%s%d_wrForwardBus", cpuid, clusterName, pos) {
-  char cadena[1024];
+    : srcCluster(aCluster), Id(cpuid), inter_cluster_fwd(fmt::format("P({})_{}{}_inter_cluster_fwd", cpuid, clusterName, pos)) {
 
-  sprintf(cadena, "P(%d)_%s%d_sched", cpuid, clusterName, pos);
-  schedPort
-      = PortGeneric::create(cadena, SescConf->getInt(clusterName, "SchedNumPorts"), SescConf->getInt(clusterName, "SchedPortOccp"));
+  auto cadena    = fmt::format("P(P{}_{}{}_sched", cpuid, clusterName, pos);
+  auto sched_num = Config::get_integer(clusterName, "sched_num");
+  auto sched_occ = Config::get_integer(clusterName, "sched_occ");
+  schedPort      = PortGeneric::create(cadena, sched_num, sched_occ);
 
-  InterClusterLat = SescConf->getInt("cpusimu", "interClusterLat", cpuid);
-  SchedDelay      = SescConf->getInt(clusterName, "schedDelay");
-
-  // Constraints
-  SescConf->isInt(clusterName, "schedDelay");
-  SescConf->isBetween(clusterName, "schedDelay", 0, 1024);
-
-  SescConf->isInt("cpusimu", "interClusterLat", cpuid);
-  SescConf->isBetween("cpusimu", "interClusterLat", SchedDelay, 1024, cpuid);
+  sched_lat         = Config::get_integer(clusterName, "sched_lat",0, 32);
+  inter_cluster_lat = Config::get_integer("soc", "core", cpuid, "inter_cluster_lat");
 }
 
 DepWindow::~DepWindow() {}
@@ -51,9 +46,9 @@ void DepWindow::preSelect(Dinst *dinst) {
 void DepWindow::select(Dinst *dinst) {
   Time_t schedTime = schedPort->nextSlot(dinst->getStatsFlag());
   if (dinst->hasInterCluster())
-    schedTime += InterClusterLat;
+    schedTime += inter_cluster_lat;
   else
-    schedTime += SchedDelay;
+    schedTime += sched_lat;
 
   I(srcCluster == dinst->getCluster());
 
@@ -91,7 +86,7 @@ void DepWindow::executed(Dinst *dinst) {
       I(dstCluster);
 
       if (dstCluster != srcCluster) {
-        wrForwardBus.inc(dstReady->getStatsFlag());
+        inter_cluster_fwd.inc(dstReady->getStatsFlag());
         dstReady->markInterCluster();
       }
 

@@ -5,8 +5,9 @@
 #include "FastQueue.h"
 #include "FetchEngine.h"
 #include "GOoOProcessor.h"
-#include "GStats.h"
 #include "Pipeline.h"
+
+#include "stats.hpp"
 #include "callback.hpp"
 #include "iassert.hpp"
 
@@ -39,11 +40,11 @@ protected:
   int    total_accesses;
   int    outstanding_accesses;
 
-  GStatsCntr accReads;
-  GStatsCntr accWrites;
+  Stats_cntr accReads;
+  Stats_cntr accWrites;
 
-  GStatsAvg accReadLatency;
-  GStatsAvg accWriteLatency;
+  Stats_avg accReadLatency;
+  Stats_avg accWriteLatency;
 
   void read_performed(uint32_t id, Time_t startTime);
   void write_performed(uint32_t id, Time_t startTime);

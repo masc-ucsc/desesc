@@ -6,9 +6,10 @@
 #include <set>
 #include <vector>
 
-#include "GStats.h"
-#include "dinst.hpp"
 #include "estl.h"
+
+#include "stats.hpp"
+#include "dinst.hpp"
 
 class LSQ {
 private:
@@ -41,7 +42,7 @@ class LSQFull : public LSQ {
 private:
   typedef HASH_MULTIMAP<Addr_t, Dinst *> AddrDinstQMap;
 
-  GStatsCntr    stldForwarding;
+  Stats_cntr    stldForwarding;
   AddrDinstQMap instMap;
 
   static Addr_t calcWord(const Dinst *dinst) { return (dinst->getAddr()) >> 3; }
@@ -74,7 +75,7 @@ class LSQVPC : public LSQ {
 private:
   std::multimap<Addr_t, Dinst *> instMap;
 
-  GStatsCntr LSQVPC_replays;
+  Stats_cntr LSQVPC_replays;
 
   static Addr_t calcWord(const Dinst *dinst) { return (dinst->getAddr()) >> 2; }
 

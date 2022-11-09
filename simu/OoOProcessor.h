@@ -9,8 +9,9 @@
 #include "FastQueue.h"
 #include "FetchEngine.h"
 #include "GOoOProcessor.h"
-#include "GStats.h"
 #include "Pipeline.h"
+
+#include "stats.hpp"
 #include "callback.hpp"
 #include "iassert.hpp"
 
@@ -85,99 +86,100 @@ private:
 protected:
   ClusterManager clusterManager;
 
-  GStatsAvg avgFetchWidth;
+  Stats_avg avgFetchWidth;
 #ifdef TRACK_TIMELEAK
-  GStatsAvg  avgPNRHitLoadSpec;
-  GStatsHist avgPNRMissLoadSpec;
+  Stats_avg  avgPNRHitLoadSpec;
+  Stats_hist avgPNRMissLoadSpec;
 #endif
 #ifdef TRACK_FORWARDING
-  GStatsAvg  avgNumSrc;
-  GStatsAvg  avgNumDep;
+  Stats_avg  avgNumSrc;
+  Stats_avg  avgNumDep;
   Time_t     fwdDone[LREG_MAX];
-  GStatsCntr fwd0done0;
-  GStatsCntr fwd1done0;
-  GStatsCntr fwd1done1;
-  GStatsCntr fwd2done0;
-  GStatsCntr fwd2done1;
-  GStatsCntr fwd2done2;
+  Stats_cntr fwd0done0;
+  Stats_cntr fwd1done0;
+  Stats_cntr fwd1done1;
+  Stats_cntr fwd2done0;
+  Stats_cntr fwd2done1;
+  Stats_cntr fwd2done2;
 #endif
   CodeProfile codeProfile;
   double      codeProfile_trigger;
+
 #ifdef ENABLE_LDBP
-  GStatsCntr ldbp_power_mode_cycles;
-  GStatsCntr ldbp_power_save_cycles;
-  GStatsCntr num_ldbr;  // num ldbr chains
-  GStatsCntr num_non_ldbr;
-  // GStatsCntr num_non_ldbr; //num of non ldbr chains
-  GStatsCntr num_bad_tage_br;
-  GStatsCntr num_br;
-  GStatsCntr num_loads;  // num of loads in benchmark
-  GStatsCntr num_ld_conf;
-  GStatsCntr num_ld_data_conf;
-  GStatsCntr num_chain_child;
-  GStatsCntr num_br_1_src;
-  GStatsCntr num_br_2_src;
+  Stats_cntr ldbp_power_mode_cycles;
+  Stats_cntr ldbp_power_save_cycles;
+  Stats_cntr num_ldbr;  // num ldbr chains
+  Stats_cntr num_non_ldbr;
+  // Stats_cntr num_non_ldbr; //num of non ldbr chains
+  Stats_cntr num_bad_tage_br;
+  Stats_cntr num_br;
+  Stats_cntr num_loads;  // num of loads in benchmark
+  Stats_cntr num_ld_conf;
+  Stats_cntr num_ld_data_conf;
+  Stats_cntr num_chain_child;
+  Stats_cntr num_br_1_src;
+  Stats_cntr num_br_2_src;
 
-  GStatsCntr num_br_chain;  // LD-ld chain count in benchmark
-  GStatsCntr num_br_chain_ldbp;
-  GStatsCntr num_br_chain_non_ldbp;
-  GStatsCntr num_br_chain_x_ld;
-  GStatsCntr num_br_chain_x_op;
+  Stats_cntr num_br_chain;  // LD-ld chain count in benchmark
+  Stats_cntr num_br_chain_ldbp;
+  Stats_cntr num_br_chain_non_ldbp;
+  Stats_cntr num_br_chain_x_ld;
+  Stats_cntr num_br_chain_x_op;
 
-  GStatsCntr num_br_trivial;           // LD->BR count in benchmark
-  GStatsCntr num_br_trivial_ldbp;      // LD->BR and LDBP predictable
-  GStatsCntr num_br_trivial_non_ldbp;  // LD->BR and not LDBP predictable
-  GStatsCntr num_br_trivial_x_ld;      // trivial + loads conf + nlds > NLOADS
+  Stats_cntr num_br_trivial;           // LD->BR count in benchmark
+  Stats_cntr num_br_trivial_ldbp;      // LD->BR and LDBP predictable
+  Stats_cntr num_br_trivial_non_ldbp;  // LD->BR and not LDBP predictable
+  Stats_cntr num_br_trivial_x_ld;      // trivial + loads conf + nlds > NLOADS
 
-  GStatsCntr num_br_simple;           // LD -> (ALU)*n -> BR // n <= 3
-  GStatsCntr num_br_simple_ldbp;      // LD -> (ALU)*n -> BR // n < NUM_OPS
-  GStatsCntr num_br_simple_non_ldbp;  // LD -> (ALU)*n -> BR // n < NUM_OPS and not LDBP preditable
-  GStatsCntr num_br_simple_x_ld;      // simple + loads conf + nlds > NLOADS
+  Stats_cntr num_br_simple;           // LD -> (ALU)*n -> BR // n <= 3
+  Stats_cntr num_br_simple_ldbp;      // LD -> (ALU)*n -> BR // n < NUM_OPS
+  Stats_cntr num_br_simple_non_ldbp;  // LD -> (ALU)*n -> BR // n < NUM_OPS and not LDBP preditable
+  Stats_cntr num_br_simple_x_ld;      // simple + loads conf + nlds > NLOADS
 
-  GStatsCntr num_br_complex;  // src1 and/or src2 has complex/floating-point ALU
+  Stats_cntr num_br_complex;  // src1 and/or src2 has complex/floating-point ALU
 
-  GStatsCntr num_br_excess;           // nops > NOPS but not complex
-  GStatsCntr num_br_excess_ldbp;      // excess + all_conf + nlds < NLOADS
-  GStatsCntr num_br_excess_non_ldbp;  // excess | !all_conf + nlds<NLOADS
-  GStatsCntr num_br_excess_x_ld;      // excess + loads conf + nlds > NLOADS
+  Stats_cntr num_br_excess;           // nops > NOPS but not complex
+  Stats_cntr num_br_excess_ldbp;      // excess + all_conf + nlds < NLOADS
+  Stats_cntr num_br_excess_non_ldbp;  // excess | !all_conf + nlds<NLOADS
+  Stats_cntr num_br_excess_x_ld;      // excess + loads conf + nlds > NLOADS
 
-  GStatsCntr num_loads_ldbp;  // num loads associated with bad tage but LDBP branches
-  GStatsCntr num_ld_conf_ldbp;
-  GStatsCntr num_ld_data_conf_ldbp;
-  GStatsCntr num_loads_non_ldbp;  // num loads associated with bad tage but non-LDBP branches
-  GStatsCntr num_ld_conf_non_ldbp;
-  GStatsCntr num_ld_data_conf_non_ldbp;
-  GStatsCntr num_ldbr_2;
-  GStatsCntr num_ldbr_3;
-  GStatsCntr num_ldbr_4;
-  GStatsCntr num_ldbr_12;
-  GStatsCntr num_ldbr_22;
-  GStatsCntr num_ldbr_23;
-  GStatsCntr num_ldbr_24;
-  GStatsCntr num_ldbr_32;
-  GStatsCntr num_ldbr_33;
-  GStatsCntr num_ldbr_34;
-  GStatsCntr num_ldbr_44;
-  GStatsCntr num_ldbr_222;
-  GStatsCntr num_ldbr_223;
-  GStatsCntr num_ldbr_233;
-  GStatsCntr num_ldbr_423;
-  GStatsCntr num_ldbr_444;
-  GStatsCntr num_ldbr_2222;
-  GStatsCntr num_ldbr_2223;
-  GStatsCntr num_ldbr_2232;
-  GStatsCntr num_ldbr_2322;
-  GStatsCntr num_ldbr_2233;
-  GStatsCntr num_ldbr_0;
-  GStatsCntr num_ldbr_6L2_3;
-  GStatsCntr num_ldbr_6L1;
-  // GStatsCntr num_ldbr_6L4;
-  GStatsCntr num_ldbr_7L1;
-  GStatsCntr num_ldbr_7L2_3;
-  GStatsCntr num_ldbr_7L4;
-  GStatsCntr num_ldbr_8L2_3;
-  GStatsCntr num_ldbr_8L4;
-  GStatsCntr num_ldbr_others;
+  Stats_cntr num_loads_ldbp;  // num loads associated with bad tage but LDBP branches
+  Stats_cntr num_ld_conf_ldbp;
+  Stats_cntr num_ld_data_conf_ldbp;
+  Stats_cntr num_loads_non_ldbp;  // num loads associated with bad tage but non-LDBP branches
+  Stats_cntr num_ld_conf_non_ldbp;
+  Stats_cntr num_ld_data_conf_non_ldbp;
+  Stats_cntr num_ldbr_2;
+  Stats_cntr num_ldbr_3;
+  Stats_cntr num_ldbr_4;
+  Stats_cntr num_ldbr_12;
+  Stats_cntr num_ldbr_22;
+  Stats_cntr num_ldbr_23;
+  Stats_cntr num_ldbr_24;
+  Stats_cntr num_ldbr_32;
+  Stats_cntr num_ldbr_33;
+  Stats_cntr num_ldbr_34;
+  Stats_cntr num_ldbr_44;
+  Stats_cntr num_ldbr_222;
+  Stats_cntr num_ldbr_223;
+  Stats_cntr num_ldbr_233;
+  Stats_cntr num_ldbr_423;
+  Stats_cntr num_ldbr_444;
+  Stats_cntr num_ldbr_2222;
+  Stats_cntr num_ldbr_2223;
+  Stats_cntr num_ldbr_2232;
+  Stats_cntr num_ldbr_2322;
+  Stats_cntr num_ldbr_2233;
+  Stats_cntr num_ldbr_0;
+  Stats_cntr num_ldbr_6L2_3;
+  Stats_cntr num_ldbr_6L1;
+  // Stats_cntr num_ldbr_6L4;
+  Stats_cntr num_ldbr_7L1;
+  Stats_cntr num_ldbr_7L2_3;
+  Stats_cntr num_ldbr_7L4;
+  Stats_cntr num_ldbr_8L2_3;
+  Stats_cntr num_ldbr_8L4;
+  Stats_cntr num_ldbr_others;
 #endif
 
   // BEGIN VIRTUAL FUNCTIONS of GProcessor

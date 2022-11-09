@@ -53,10 +53,12 @@ prefetcher        = "pref_opt"
 smt = 1 # Number of STM context
 
 # Memory Parameters
-st_fwd_delay = 2
-ldq_size     = 96
-stq_size     = 64
-IL1          = "il1_cache"
+scb_size      = 16
+memory_replay = true
+st_fwd_delay  = 2
+ldq_size      = 96
+stq_size      = 64
+IL1           = "il1_cache"
 
 decode_delay = 4
 rename_delay = 2
@@ -66,8 +68,12 @@ instq_size   = 16
 
 # Exe Parameters
 cluster = ["aunit", "bunit", "cunit"]
-max_branches      = 30
-drain_on_miss     = false
+max_branches         = 30
+drain_on_miss        = false
+commit_delay         = 2
+replay_serialize_for = 32
+scoore_serialze      = true
+inter_cluster_lat    = 1
 
 [alu0]
 num = 4
@@ -75,6 +81,9 @@ lat = 1
 
 [aunit]
 win_size   = 16
+sched_num  = 4
+sched_occ  = 1
+sched_lat  = 1
 recyle_at  = "executed"
 num_regs   = 64
 late_alloc = false

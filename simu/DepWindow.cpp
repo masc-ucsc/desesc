@@ -1,29 +1,30 @@
 // See LICENSE for details.
 
-#include "fmt/format.h"
-
 #include "DepWindow.h"
 
 #include "GProcessor.h"
 #include "Resource.h"
 #include "config.hpp"
 #include "dinst.hpp"
+#include "fmt/format.h"
 
 DepWindow::DepWindow(uint32_t cpuid, Cluster *aCluster, const std::string &clusterName, uint32_t pos)
     : srcCluster(aCluster), inter_cluster_fwd(fmt::format("P({})_{}{}_inter_cluster_fwd", cpuid, clusterName, pos)) {
-
   auto cadena    = fmt::format("P(P{}_{}{}_sched", cpuid, clusterName, pos);
   auto sched_num = Config::get_integer(clusterName, "sched_num");
   auto sched_occ = Config::get_integer(clusterName, "sched_occ");
   schedPort      = PortGeneric::create(cadena, sched_num, sched_occ);
 
-  sched_lat         = Config::get_integer(clusterName, "sched_lat",0, 32);
+  sched_lat         = Config::get_integer(clusterName, "sched_lat", 0, 32);
   inter_cluster_lat = Config::get_integer("soc", "core", cpuid, "inter_cluster_lat");
 }
 
 DepWindow::~DepWindow() {}
 
-StallCause DepWindow::canIssue(Dinst *dinst) const { (void)dinst; return NoStall; }
+StallCause DepWindow::canIssue(Dinst *dinst) const {
+  (void)dinst;
+  return NoStall;
+}
 
 void DepWindow::add_inst(Dinst *dinst) {
   I(dinst->getCluster() != 0);  // Resource::schedule must set the resource field

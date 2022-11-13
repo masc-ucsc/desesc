@@ -12,8 +12,8 @@
 #include "config.hpp"
 #include "dinst.hpp"
 
-BimodalStride::BimodalStride(int _size, size_t _width) : size(_size), max_conf(1<<_width) {
-  I((size & (size-1)) != 0);
+BimodalStride::BimodalStride(int _size, size_t _width) : size(_size), max_conf(1 << _width) {
+  I((size & (size - 1)) != 0);
 
   table.resize(size);
 }
@@ -24,7 +24,7 @@ void BimodalLastEntry::update(int ndelta, uint16_t max_conf) {
     if (conf < max_conf) {
       conf++;
     } else {
-      if (conf2 > (max_conf>>2))
+      if (conf2 > (max_conf >> 2))
         conf2 /= 2;
       else if (conf2)
         conf2--;
@@ -39,7 +39,7 @@ void BimodalLastEntry::update(int ndelta, uint16_t max_conf) {
       if (conf2 < max_conf)
         conf2++;
     } else {
-      if (conf2 > (max_conf>>2))
+      if (conf2 > (max_conf >> 2))
         conf2 /= 2;
       else if (conf2)
         conf2--;
@@ -89,7 +89,7 @@ STRIDE Address Predictor
 **************************************/
 
 Stride_address_predictor::Stride_address_predictor(Hartid_t hartid, const std::string &section)
-  : bimodal(Config::get_power2(section,"bimodal_size", 4), Config::get_integer(section,"bimodal_width",1,8)) {
+    : bimodal(Config::get_power2(section, "bimodal_size", 4), Config::get_integer(section, "bimodal_width", 1, 8)) {
   (void)hartid;
 }
 
@@ -126,7 +126,11 @@ Addr_t Stride_address_predictor::predict(Addr_t ppc, int distance, bool inLines)
   return bimodal.get_addr(ppc) + offset;
 }
 
-bool Stride_address_predictor::try_chain_predict(MemObj *dl1, Addr_t pc, int distance) { (void)dl1, (void)pc; (void)distance; return false; }
+bool Stride_address_predictor::try_chain_predict(MemObj *dl1, Addr_t pc, int distance) {
+  (void)dl1, (void)pc;
+  (void)distance;
+  return false;
+}
 
 /**************************************
 
@@ -140,7 +144,6 @@ Tage_address_predictor::Tage_address_predictor(Hartid_t hartid, const std::strin
     , tagePrefetchHistNum(fmt::format("P({})_vtage_hist", hartid))
     , log2fetchwidth(log2(Config::get_power2("soc", "core", hartid, "fetch_width")))
     , nhist(Config::get_integer(section, "ntables", 2)) {
-
   // auto bwidth         = Config::get_integer(section, "bimodal_width", 1);
   m      = new int[nhist + 1];
   TB     = new int[nhist + 1];
@@ -343,7 +346,12 @@ Addr_t Tage_address_predictor::predict(Addr_t pc, int distance, bool inLines) {
   return addr;
 }
 
-bool Tage_address_predictor::try_chain_predict(MemObj *dl1, Addr_t pc, int distance) { (void)dl1; (void)pc; (void)distance; return false; }
+bool Tage_address_predictor::try_chain_predict(MemObj *dl1, Addr_t pc, int distance) {
+  (void)dl1;
+  (void)pc;
+  (void)distance;
+  return false;
+}
 
 Conf_level Tage_address_predictor::exe_update(Addr_t pc, Addr_t addr, Data_t data) {
   (void)data;
@@ -404,7 +412,7 @@ void Tage_address_predictor::updateVtage(Addr_t pc, int ndelta, uint16_t loff) {
   auto pc_conf = bimodal.has_conf(pc);
   if (pc_conf == Conf_level::High) {
     alloc = false;  // Do not alloc if bimodal is highly confident
-  }else if (pc_conf != Conf_level::None)
+  } else if (pc_conf != Conf_level::None)
     if (bimodal.get_delta(pc) == ndelta)
       alloc = false;  // Do not learn deltas that match bimodal
 
@@ -606,10 +614,10 @@ public:
 std::map<Addr_t, PredictableEntry> adhist;  // Address/Data History
 
 Indirect_address_predictor::Indirect_address_predictor(Hartid_t hartid, const std::string &pref_sec)
-  : bimodal(Config::get_power2(pref_sec, "bimodal_size",4), Config::get_integer(pref_sec, "bimidal_width",1,8)) {
+    : bimodal(Config::get_power2(pref_sec, "bimodal_size", 4), Config::get_integer(pref_sec, "bimidal_width", 1, 8)) {
   (void)hartid;
 
-  maxPrefetch   = Config::get_integer(pref_sec, "degree", 1);
+  maxPrefetch = Config::get_integer(pref_sec, "degree", 1);
 
   chainPredict = true;
   last_pcs.resize(16);
@@ -617,10 +625,10 @@ Indirect_address_predictor::Indirect_address_predictor(Hartid_t hartid, const st
 }
 
 #define PTRACE(a...)
-//#define PTRACE(a...)   do{ if () {fprintf(stderr,##a); fprintf(stderr,"\n"); } }while(0)
-//#define PTRACE(a...)   do{ if (true) {fprintf(stderr,##a); fprintf(stderr,"\n"); } }while(0)
-//#define PTRACE(a...)   do{ if ( (pc == 0x120081c24 || pc == 0x120081c1c)) {fprintf(stderr,##a); fprintf(stderr,"\n"); } }while(0)
-//#define PTRACE(a...)   do{ if ( (pc >= 0x120081c18 && pc <= 0x120081c30)) {fprintf(stderr,##a); fprintf(stderr,"\n"); } }while(0)
+// #define PTRACE(a...)   do{ if () {fprintf(stderr,##a); fprintf(stderr,"\n"); } }while(0)
+// #define PTRACE(a...)   do{ if (true) {fprintf(stderr,##a); fprintf(stderr,"\n"); } }while(0)
+// #define PTRACE(a...)   do{ if ( (pc == 0x120081c24 || pc == 0x120081c1c)) {fprintf(stderr,##a); fprintf(stderr,"\n"); } }while(0)
+// #define PTRACE(a...)   do{ if ( (pc >= 0x120081c18 && pc <= 0x120081c30)) {fprintf(stderr,##a); fprintf(stderr,"\n"); } }while(0)
 
 Conf_level Indirect_address_predictor::exe_update(Addr_t pc, Addr_t addr, Data_t data) {
   (void)data;

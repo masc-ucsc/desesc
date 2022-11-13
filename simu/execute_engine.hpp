@@ -5,14 +5,13 @@
 #include <string>
 
 #include "GMemorySystem.h"
-
 #include "emul_base.hpp"
 #include "snippets.hpp"
 #include "stats.hpp"
 
 class Execute_engine {
 private:
-  static inline Time_t      lastWallClock{0};
+  static inline Time_t lastWallClock{0};
 
   uint64_t frequency_mhz;
   Time_t   lastUpdatedWallClock;
@@ -26,17 +25,19 @@ private:
   Stats_cntr nFreeze;
   Stats_cntr clockTicks;
 
-  float    clock_ratio;
-  float    clock_counter;
+  float clock_ratio;
+  float clock_counter;
+
 protected:
   const Hartid_t hid;
 
   std::shared_ptr<Emul_base> eint;
-  GMemorySystem *memorySystem;
+  GMemorySystem             *memorySystem;
 
   bool adjust_clock();
 
   Execute_engine(GMemorySystem *gm, Hartid_t i);
+
 public:
   void set_emul(std::shared_ptr<Emul_base> e) { eint = e; }
 
@@ -48,9 +49,7 @@ public:
   Hartid_t get_hid() const { return hid; }
 
   void set_power_up() { power_down = false; }
-  void set_power_down() {
-    power_down = true;
-  }
+  void set_power_down() { power_down = true; }
   bool is_power_up() const { return !power_down; }
   bool is_power_down() const { return power_down; }
 
@@ -77,7 +76,7 @@ public:
   GMemorySystem *ref_memory_system() const { return memorySystem; }
 
   // API for Execute_engine
-  virtual bool advance_clock_drain() = 0;
-  virtual bool advance_clock() = 0;
-  virtual std::string get_type() const = 0;
+  virtual bool        advance_clock_drain() = 0;
+  virtual bool        advance_clock()       = 0;
+  virtual std::string get_type() const      = 0;
 };

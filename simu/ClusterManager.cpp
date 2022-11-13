@@ -9,7 +9,6 @@
 #include "config.hpp"
 
 ClusterManager::ClusterManager(GMemorySystem *ms, uint32_t cpuid, GProcessor *gproc) {
-
   auto coreSection = Config::get_string("soc", "core", cpuid);
   auto nClusters   = Config::get_array_size(coreSection, "cluster");
 
@@ -27,7 +26,7 @@ ClusterManager::ClusterManager(GMemorySystem *ms, uint32_t cpuid, GProcessor *gp
   }
 
   auto sched = Config::get_string(coreSection, "cluster_scheduler", {"RoundRobin", "LRU", "Use"});
-  std::transform(sched.begin(), sched.end(), sched.begin(), [](unsigned char c){ return std::tolower(c); });
+  std::transform(sched.begin(), sched.end(), sched.begin(), [](unsigned char c) { return std::tolower(c); });
 
   if (sched == "roundrobin") {
     scheduler = new RoundRobinClusterScheduler(res);

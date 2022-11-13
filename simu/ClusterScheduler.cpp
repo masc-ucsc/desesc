@@ -6,7 +6,7 @@
 #include "Resource.h"
 #include "config.hpp"
 
-//#define DUMP_TRACE 1
+// #define DUMP_TRACE 1
 
 ClusterScheduler::ClusterScheduler(const ResourcesPoolType &ores) : res(ores) {}
 
@@ -25,7 +25,7 @@ RoundRobinClusterScheduler::~RoundRobinClusterScheduler() {}
 
 Resource *RoundRobinClusterScheduler::getResource(Dinst *dinst) {
   const Instruction *inst = dinst->getInst();
-  Opcode         type = inst->getOpcode();
+  Opcode             type = inst->getOpcode();
 
   unsigned int i = pos[type];
   if (i >= nres[type]) {
@@ -46,7 +46,7 @@ LRUClusterScheduler::~LRUClusterScheduler() {}
 
 Resource *LRUClusterScheduler::getResource(Dinst *dinst) {
   const Instruction *inst  = dinst->getInst();
-  Opcode         type  = inst->getOpcode();
+  Opcode             type  = inst->getOpcode();
   Resource          *touse = res[type][0];
 
   for (size_t i = 1; i < res[type].size(); i++) {
@@ -74,7 +74,7 @@ UseClusterScheduler::~UseClusterScheduler() {}
 
 Resource *UseClusterScheduler::getResource(Dinst *dinst) {
   const Instruction *inst = dinst->getInst();
-  Opcode         type = inst->getOpcode();
+  Opcode             type = inst->getOpcode();
 
   unsigned int p = pos[type];
   if (p >= nres[type]) {

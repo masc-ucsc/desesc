@@ -1,5 +1,6 @@
 // See LICENSE for details.
 
+#include "BPred.h"
 
 #include <alloca.h>
 #include <assert.h>
@@ -12,29 +13,25 @@
 #include <ios>
 #include <iostream>
 
-#include "fmt/format.h"
-
-#include "BPred.h"
 #include "IMLIBest.h"
 #include "MemObj.h"
-
-#include "report.hpp"
 #include "config.hpp"
+#include "fmt/format.h"
+#include "report.hpp"
 
 extern "C" uint64_t esesc_mem_read(uint64_t addr);
 
-//#define CLOSE_TARGET_OPTIMIZATION 1
+// #define CLOSE_TARGET_OPTIMIZATION 1
 
 /*****************************************
  * BPred
  */
 
 BPred::BPred(int32_t i, const std::string &sec, const std::string &sname, const std::string &name)
-  : id(i)
-  , nHit(fmt::format("P({})_BPred{}_{}:nHit", i, sname, name))
-  , nMiss(fmt::format("P({})_BPred{}_{}:nMiss", i, sname, name)) {
-
-  addrShift = Config::get_integer(sec,"bp_addr_shift");
+    : id(i)
+    , nHit(fmt::format("P({})_BPred{}_{}:nHit", i, sname, name))
+    , nMiss(fmt::format("P({})_BPred{}_{}:nMiss", i, sname, name)) {
+  addrShift = Config::get_integer(sec, "bp_addr_shift");
 
   maxCores = Config::get_array_size("soc", "core");
 }
@@ -55,7 +52,6 @@ BPRas::BPRas(int32_t i, const std::string &section, const std::string &sname)
     : BPred(i, section, sname, "RAS")
     , RasSize(Config::get_integer(section, "ras_size", 0, 128))
     , rasPrefetch(Config::get_bool(section, "ras_prefetch")) {
-
   if (RasSize == 0) {
     return;
   }
@@ -64,7 +60,7 @@ BPRas::BPRas(int32_t i, const std::string &section, const std::string &sname)
   index = 0;
 }
 
-BPRas::~BPRas() { }
+BPRas::~BPRas() {}
 
 void BPRas::tryPrefetch(MemObj *il1, bool doStats, int degree) {
   if (rasPrefetch == 0)
@@ -113,7 +109,6 @@ PredType BPRas::predict(Dinst *dinst, bool doUpdate, bool doStats) {
 
     return MissPrediction;
   } else if (dinst->getInst()->isFuncCall() && RasSize) {
-
     if (doUpdate) {
       stack[index] = dinst->getPC();
       index++;
@@ -130,17 +125,15 @@ PredType BPRas::predict(Dinst *dinst, bool doUpdate, bool doStats) {
  * BTB
  */
 BPBTB::BPBTB(int32_t i, const std::string &section, const std::string &sname, const std::string &name)
-  : BPred(i, section, sname, name)
-  , nHitLabel(fmt::format("P({})_BPred{}_{}:nHitLabel", i, sname, name)) {
-
-  btbHistorySize = Config::get_integer(section,"btb_history_size");
+    : BPred(i, section, sname, name), nHitLabel(fmt::format("P({})_BPred{}_{}:nHitLabel", i, sname, name)) {
+  btbHistorySize = Config::get_integer(section, "btb_history_size");
 
   if (btbHistorySize)
     dolc = new DOLC(btbHistorySize + 1, 5, 2, 2);
   else
     dolc = 0;
 
-  btbicache = Config::get_bool(section,"btb_split_il1");
+  btbicache = Config::get_bool(section, "btb_split_il1");
 
   if (Config::get_integer(section, "btb_size") == 0) {
     // Oracle
@@ -285,7 +278,12 @@ PredType BPNotTaken::predict(Dinst *dinst, bool doUpdate, bool doStats) {
  * BPMiss
  */
 
-PredType BPMiss::predict(Dinst *dinst, bool doUpdate, bool doStats) { (void)dinst; (void)doUpdate; (void)doStats; return MissPrediction; }
+PredType BPMiss::predict(Dinst *dinst, bool doUpdate, bool doStats) {
+  (void)dinst;
+  (void)doUpdate;
+  (void)doStats;
+  return MissPrediction;
+}
 
 /*****************************************
  * BPNotTakenEnhaced
@@ -313,14 +311,13 @@ PredType BPNotTakenEnhanced::predict(Dinst *dinst, bool doUpdate, bool doStats) 
 BP2bit::BP2bit(int32_t i, const std::string &section, const std::string &sname)
     : BPred(i, section, sname, "2bit")
     , btb(i, section, sname)
-    , table(section, Config::get_power2(section, "size", 1), Config::get_integer(section, "bits", 1, 7)) {
-}
+    , table(section, Config::get_power2(section, "size", 1), Config::get_integer(section, "bits", 1, 7)) {}
 
 PredType BP2bit::predict(Dinst *dinst, bool doUpdate, bool doStats) {
   if (dinst->getInst()->isJump())
     return btb.predict(dinst, doUpdate, doStats);
 
-  bool     taken = dinst->isTaken();
+  bool taken = dinst->isTaken();
   bool ptaken;
   if (doUpdate)
     ptaken = table.predict(calcHist(dinst->getPC()), taken);
@@ -351,7 +348,6 @@ BPLdbp::BPLdbp(int32_t i, const std::string &section, const std::string &sname, 
 }
 
 PredType BPLdbp::predict(Dinst *dinst, bool doUpdate, bool doStats) {
-
 #if 1
   if (dinst->getInst()->getOpcode() != iBALU_LBRANCH)  // don't bother about jumps and calls
     return NoPrediction;
@@ -390,7 +386,7 @@ BrOpType BPLdbp::branch_type(Addr_t br_pc) {
       case BGE: return BGE;
       case BLTU: return BLTU;
       case BGEU: return BGEU;
-      default: I(false); // "ILLEGAL_BR=%llx OP_TYPE:%u", br_pc, get_br_bits
+      default: I(false);  // "ILLEGAL_BR=%llx OP_TYPE:%u", br_pc, get_br_bits
     }
   } else if (br_opcode == 1) {
     if (get_br_bits == 4 || get_br_bits == 5) {
@@ -439,8 +435,7 @@ bool BPLdbp::outcome_calculator(BrOpType br_op, Data_t br_data1, Data_t br_data2
 BPTData::BPTData(int32_t i, const std::string &section, const std::string &sname)
     : BPred(i, section, sname, "tdata")
     , btb(i, section, sname)
-    , tDataTable(section, Config::get_power2(section, "size",1), Config::get_integer(section, "bits", 1, 7)) {
-}
+    , tDataTable(section, Config::get_power2(section, "size", 1), Config::get_integer(section, "bits", 1, 7)) {}
 
 PredType BPTData::predict(Dinst *dinst, bool doUpdate, bool doStats) {
   if (dinst->getInst()->isJump())
@@ -476,7 +471,6 @@ PredType BPTData::predict(Dinst *dinst, bool doUpdate, bool doStats) {
 
 BPIMLI::BPIMLI(int32_t i, const std::string &section, const std::string &sname)
     : BPred(i, section, sname, "imli"), btb(i, section, sname), FetchPredict(Config::get_bool(section, "fetch_predict")) {
-
   int FetchWidth = Config::get_power2("soc", "core", i, "fetch_width", 1);
 
   int bimodalSize = Config::get_power2(section, "bimodal_size", 4);
@@ -552,11 +546,10 @@ BP2level::BP2level(int32_t i, const std::string &section, const std::string &sna
     , btb(i, section, sname)
     , l1Size(Config::get_power2(section, "l1_size"))
     , l1SizeMask(l1Size - 1)
-    , historySize(Config::get_integer(section, "history_size",1, 63))
+    , historySize(Config::get_integer(section, "history_size", 1, 63))
     , historyMask((1 << historySize) - 1)
     , globalTable(section, Config::get_power2(section, "l2_size"), Config::get_integer(section, "l2_width"))
     , dolc(Config::get_integer(section, "history_size"), 5, 2, 2) {
-
   useDolc = Config::get_bool(section, "path_based");
 
   I((l1Size & (l1Size - 1)) == 0);
@@ -630,8 +623,7 @@ BPHybrid::BPHybrid(int32_t i, const std::string &section, const std::string &sna
     , localTable(section, Config::get_power2(section, "local_size", 4), Config::get_integer(section, "local_width", 1, 7))
     , metaTable(section, Config::get_power2(section, "meta_size", 4), Config::get_integer(section, "meta_width", 1, 7))
 
-{
-}
+{}
 
 BPHybrid::~BPHybrid() {}
 
@@ -706,7 +698,7 @@ BP2BcgSkew::BP2BcgSkew(int32_t i, const std::string &section, const std::string 
     , G1(section, Config::get_power2(section, "g1_size", 4))
     , G1HistorySize(Config::get_integer(section, "g1_history_size", 1))
     , G1HistoryMask((1 << G1HistorySize) - 1)
-    , metaTable(section, Config::get_power2(section, "meta_size",4))
+    , metaTable(section, Config::get_power2(section, "meta_size", 4))
     , MetaHistorySize(Config::get_integer(section, "meta_history_size", 1))
     , MetaHistoryMask((1 << MetaHistorySize) - 1) {
   history = 0x55555555;
@@ -820,10 +812,9 @@ BPyags::BPyags(int32_t i, const std::string &section, const std::string &sname)
     , btb(i, section, sname)
     , historySize(24)
     , historyMask((1 << 24) - 1)
-    , table(section, Config::get_power2(section, "meta_size",4), Config::get_power2(section, "meta_width",1,7))
-    , ctableTaken(section, Config::get_power2(section, "l1_size",4), Config::get_power2(section, "l1_width",1,7))
-    , ctableNotTaken(section, Config::get_power2(section, "l2_size",4), Config::get_power2(section, "l2_width",1,7)) {
-
+    , table(section, Config::get_power2(section, "meta_size", 4), Config::get_power2(section, "meta_width", 1, 7))
+    , ctableTaken(section, Config::get_power2(section, "l1_size", 4), Config::get_power2(section, "l1_width", 1, 7))
+    , ctableNotTaken(section, Config::get_power2(section, "l2_size", 4), Config::get_power2(section, "l2_width", 1, 7)) {
   CacheTaken        = new uint8_t[Config::get_power2(section, "l1_size")];
   CacheTakenMask    = Config::get_power2(section, "l1_size") - 1;
   CacheTakenTagMask = (1 << Config::get_integer(section, "l_tag_width")) - 1;
@@ -926,7 +917,6 @@ BPOgehl::BPOgehl(int32_t i, const std::string &section, const std::string &sname
     , THETAUP(1 << (Config::get_integer(section, "table_cbits", 1, 15) - 1))
     , PREDUP(1 << (Config::get_integer(section, "table_width", 1, 15) - 1))
     , TC(0) {
-
   pred = new char *[mtables];
   for (int32_t t = 0; t < mtables; t++) {
     pred[t] = new char[1 << logpred];
@@ -1225,8 +1215,7 @@ BPred *BPredictor::getBPred(int32_t id, const std::string &sec, const std::strin
   BPred *pred = 0;
 
   auto type = Config::get_string(sec, "type");
-  std::transform(type.begin(), type.end(), type.begin(), [](unsigned char c){ return std::tolower(c); });
-
+  std::transform(type.begin(), type.end(), type.begin(), [](unsigned char c) { return std::tolower(c); });
 
   // Normal Predictor
   if (type == "oracle") {
@@ -1288,17 +1277,16 @@ BPredictor::BPredictor(int32_t i, MemObj *iobj, MemObj *dobj, BPredictor *bpred)
     , nFixes3(fmt::format("P({})_BPred:nFixes3", id))
     , nUnFixes(fmt::format("P({})_BPred:nUnFixes", id))
     , nAgree3(fmt::format("P({})_BPred:nAgree3", id)) {
-
   auto cpu_section = Config::get_string("soc", "core", id);
   auto ras_section = Config::get_array_string(cpu_section, "bpred", 0);
-  ras = new BPRas(id, ras_section, "");
+  ras              = new BPRas(id, ras_section, "");
 
-  if (bpred) { // SMT
+  if (bpred) {  // SMT
     FetchWidth = bpred->FetchWidth;
-    pred1 = bpred->pred1;
-    pred2 = bpred->pred2;
-    pred3 = bpred->pred3;
-    meta  = bpred->meta;
+    pred1      = bpred->pred1;
+    pred2      = bpred->pred2;
+    pred3      = bpred->pred3;
+    meta       = bpred->meta;
     return;
   }
 
@@ -1309,24 +1297,24 @@ BPredictor::BPredictor(int32_t i, MemObj *iobj, MemObj *dobj, BPredictor *bpred)
   pred3 = nullptr;
   meta  = nullptr;
 
-  int last_bpred_delay = 0;
+  int         last_bpred_delay = 0;
   std::string last_bpred_section;
 
-  auto n_bpred     = Config::get_array_size(cpu_section, "bpred", 3); // 3 is the max_size
+  auto n_bpred = Config::get_array_size(cpu_section, "bpred", 3);  // 3 is the max_size
 
-  for(auto n=0u;n<n_bpred;++n) {
+  for (auto n = 0u; n < n_bpred; ++n) {
     auto bpred_section = Config::get_array_string(cpu_section, "bpred", n);
     auto bpred_delay   = Config::get_integer(bpred_section, "delay", last_bpred_delay);
 
-    if (n==0) {
+    if (n == 0) {
       pred1 = getBPred(id, bpred_section, "0");
-    }else if (n==1) {
+    } else if (n == 1) {
       pred2 = getBPred(id, bpred_section, "1");
-    }else if (n==2) {
+    } else if (n == 2) {
       pred3 = getBPred(id, bpred_section, "2");
-    }else if (n==3) {
-      meta  = getBPred(id, bpred_section, "3");
-    }else{
+    } else if (n == 3) {
+      meta = getBPred(id, bpred_section, "3");
+    } else {
       I(0);
     }
 

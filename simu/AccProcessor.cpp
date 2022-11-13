@@ -1,14 +1,14 @@
 // See LICENSE for details.
 
+#include "AccProcessor.h"
+
 #include <math.h>
 
-#include "fmt/format.h"
-
-#include "AccProcessor.h"
 #include "GMemorySystem.h"
 #include "MemRequest.h"
 #include "TaskHandler.h"
 #include "config.hpp"
+#include "fmt/format.h"
 
 AccProcessor::AccProcessor(GMemorySystem *gm, Hartid_t i)
     /* constructor {{{1 */
@@ -19,8 +19,7 @@ AccProcessor::AccProcessor(GMemorySystem *gm, Hartid_t i)
     , accReads(fmt::format("P({})_acc_reads", i))
     , accWrites(fmt::format("P({})_acc_writes", i))
     , accReadLatency(fmt::format("P({})_acc_ave_read_latency", i))
-    , accWriteLatency(fmt::format("P({})_acc_ave_write_latency", i)) {
-}
+    , accWriteLatency(fmt::format("P({})_acc_ave_write_latency", i)) {}
 /* }}} */
 
 AccProcessor::~AccProcessor()
@@ -58,8 +57,7 @@ bool AccProcessor::advance_clock_drain() {
   return true;
 }
 
-bool AccProcessor::advance_clock()
-{
+bool AccProcessor::advance_clock() {
   if (globalClock > 500 && ((globalClock % 10) == (hid))) {
     if (reqid & 1) {
       MemRequest::sendReqWrite(memorySystem->getDL1(),
@@ -74,4 +72,3 @@ bool AccProcessor::advance_clock()
 
   return advance_clock_drain();
 }
-

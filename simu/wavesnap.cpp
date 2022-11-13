@@ -1,8 +1,8 @@
 // See LICENSE for details.
 
-#include <cmath>
-
 #include "wavesnap.hpp"
+
+#include <cmath>
 
 Wavesnap::Wavesnap() {
   this->window_pointer         = 0;

@@ -1,13 +1,13 @@
 // See LICENSE for details.
 
+#include "GMemorySystem.h"
+
 #include <cstdlib>
 #include <string>
 
-#include "absl/strings/str_split.h"
-
-#include "GMemorySystem.h"
 #include "DrawArch.h"
 #include "MemObj.h"
+#include "absl/strings/str_split.h"
 #include "config.hpp"
 
 MemoryObjContainer            GMemorySystem::sharedMemoryObjContainer;
@@ -34,7 +34,8 @@ MemObj *MemoryObjContainer::searchMemoryObj(const std::string &descr_section, co
 
   const auto sec = it->second->getSection();
   if (sec == descr_section) {
-    Config::add_error(fmt::format("Two versions of MemoryObject [{}] with different definitions [{}] and [{}]", device_name, sec, descr_section));
+    Config::add_error(
+        fmt::format("Two versions of MemoryObject [{}] with different definitions [{}] and [{}]", device_name, sec, descr_section));
     return nullptr;
   }
 
@@ -84,20 +85,13 @@ GMemorySystem::~GMemorySystem() {
 }
 
 MemObj *GMemorySystem::buildMemoryObj(const std::string &type, const std::string &section, const std::string &name) {
-  if (!(type == "dummy"
-        || type == "cache"
-        || type == "icache"
-        || type == "scache"
+  if (!(type == "dummy" || type == "cache" || type == "icache" || type == "scache"
 
-        || type == "markovPrefetcher"
-        || type == "stridePrefetcher"
-        || type == "Prefetcher"
+        || type == "markovPrefetcher" || type == "stridePrefetcher" || type == "Prefetcher"
 
-        || type == "splitter"
-        || type == "siftsplitter"
+        || type == "splitter" || type == "siftsplitter"
 
-        || type == "smpcache"
-        || type == "memxbar")) {
+        || type == "smpcache" || type == "memxbar")) {
     Config::add_error(fmt::format("Invalid memory type [{}]", type));
   }
 
@@ -105,7 +99,6 @@ MemObj *GMemorySystem::buildMemoryObj(const std::string &type, const std::string
 }
 
 void GMemorySystem::buildMemorySystem() {
-
   std::string def_block = Config::get_string("soc", "core", coreId);
 
   IL1 = declareMemoryObj(def_block, "il1");
@@ -122,7 +115,7 @@ void GMemorySystem::buildMemorySystem() {
   if (DL1->get_type() == "tlb")
     DL1->getRouter()->getDownNode()->setCoreDL1(coreId);
   else if (DL1->get_type() == "prefetcher")
-      DL1->getRouter()->getDownNode()->setCoreDL1(coreId);
+    DL1->getRouter()->getDownNode()->setCoreDL1(coreId);
 }
 
 std::string GMemorySystem::buildUniqueName(const std::string &device_type) {
@@ -163,8 +156,7 @@ MemObj *GMemorySystem::declareMemoryObj_uniqueName(const std::string &name, cons
 }
 
 MemObj *GMemorySystem::declareMemoryObj(const std::string &block, const std::string &field) {
-
-  auto str = Config::get_string(block, field);
+  auto                     str   = Config::get_string(block, field);
   std::vector<std::string> vPars = absl::StrSplit(str, ' ');
 
   if (vPars.empty()) {
@@ -182,11 +174,11 @@ MemObj *GMemorySystem::finishDeclareMemoryObj(const std::vector<std::string> &vP
   bool shared     = false;  // Private by default
   bool privatized = false;
 
-  std::string device_name          = (vPars.size() > 1) ? vPars[1] : "";
-  std::string shared_arg           = (vPars.size() > 2) ? vPars[2] : "";
+  std::string device_name = (vPars.size() > 1) ? vPars[1] : "";
+  std::string shared_arg  = (vPars.size() > 2) ? vPars[2] : "";
 
   if (!shared_arg.empty()) {
-    std::transform(shared_arg.begin(), shared_arg.end(), shared_arg.begin(), [](unsigned char c){ return std::tolower(c); });
+    std::transform(shared_arg.begin(), shared_arg.end(), shared_arg.begin(), [](unsigned char c) { return std::tolower(c); });
 
     if (shared_arg == "shared") {
       I(vPars.size() == 3);
@@ -195,7 +187,7 @@ MemObj *GMemorySystem::finishDeclareMemoryObj(const std::vector<std::string> &vP
       I(vPars.size() == 4);
       int32_t sharedBy = std::stoi(vPars[3]);
       // delete[] vPars[3];
-      if (sharedBy<0) {
+      if (sharedBy < 0) {
         Config::add_error(fmt::format("sharedby should be bigger than zero (field {})", device_name));
         return nullptr;
       }
@@ -212,7 +204,7 @@ MemObj *GMemorySystem::finishDeclareMemoryObj(const std::vector<std::string> &vP
   }
 
   std::string device_descr_section = vPars[0];
-  std::string device_type = Config::get_string(device_descr_section, "type");
+  std::string device_type          = Config::get_string(device_descr_section, "type");
 
   /* If the device has been given a name, we may be refering to an
    * already existing device in the system, so let's search
@@ -228,7 +220,7 @@ MemObj *GMemorySystem::finishDeclareMemoryObj(const std::vector<std::string> &vP
         device_name = privatizeDeviceName(device_name, coreId);
       }
     }
-    device_name = fmt::format("{}{}",device_name, name_suffix);
+    device_name = fmt::format("{}{}", device_name, name_suffix);
 
     MemObj *memdev = searchMemoryObj(shared, device_descr_section, device_name);
     if (memdev)

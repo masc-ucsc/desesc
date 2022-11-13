@@ -1,26 +1,25 @@
 // See LICENSE for details.
 
+#include "GProcessor.h"
+
 #include <sys/time.h>
 #include <unistd.h>
 
-#include "fmt/format.h"
-
-#include "GProcessor.h"
 #include "FetchEngine.h"
 #include "GMemorySystem.h"
-
+#include "fmt/format.h"
 #include "report.hpp"
 
 GProcessor::GProcessor(GMemorySystem *gm, Hartid_t i)
     : Execute_engine(gm, i)
-    , FetchWidth(Config::get_integer("soc","core", i, "fetch_width"))
-    , IssueWidth(Config::get_integer("soc","core", i, "issue_width"))
-    , RetireWidth(Config::get_integer("soc","core", i, "retire_width"))
+    , FetchWidth(Config::get_integer("soc", "core", i, "fetch_width"))
+    , IssueWidth(Config::get_integer("soc", "core", i, "issue_width"))
+    , RetireWidth(Config::get_integer("soc", "core", i, "retire_width"))
     , RealisticWidth(RetireWidth < IssueWidth ? RetireWidth : IssueWidth)
-    , InstQueueSize(Config::get_integer("soc","core", i, "instq_size"))
-    , MaxROBSize(Config::get_integer("soc","core", i, "rob_size",4))
+    , InstQueueSize(Config::get_integer("soc", "core", i, "instq_size"))
+    , MaxROBSize(Config::get_integer("soc", "core", i, "rob_size", 4))
     , memorySystem(gm)
-    , rROB(Config::get_integer("soc","core", i, "rob_size"))
+    , rROB(Config::get_integer("soc", "core", i, "rob_size"))
     , ROB(MaxROBSize)
     , rrobUsed(fmt::format("({})_rrobUsed", i))  // avg
     , robUsed(fmt::format("({})_robUsed", i))    // avg
@@ -28,8 +27,7 @@ GProcessor::GProcessor(GMemorySystem *gm, Hartid_t i)
     , nCommitted(fmt::format("({}):nCommitted", i))  // Should be the same as robUsed - replayed
     , noFetch(fmt::format("({}):noFetch", i))
     , noFetch2(fmt::format("({}):noFetch2", i)) {
-
-  smt = Config::get_integer("soc", "core", i, "smt",1, 32);
+  smt     = Config::get_integer("soc", "core", i, "smt", 1, 32);
   smt_ctx = i - (i % smt);
 
   maxFlows = smt;
@@ -63,7 +61,8 @@ GProcessor::~GProcessor() {}
 
 void GProcessor::buildInstStats(const std::string &txt) {
   for (int32_t t = 0; t < iMAX; t++) {
-    nInst[t] = std::make_unique<Stats_cntr>(fmt::format("P({})_{}_{}:n", hid, txt, Instruction::opcode2Name(static_cast<Opcode>(t))));
+    nInst[t]
+        = std::make_unique<Stats_cntr>(fmt::format("P({})_{}_{}:n", hid, txt, Instruction::opcode2Name(static_cast<Opcode>(t))));
   }
 }
 
@@ -103,4 +102,3 @@ int32_t GProcessor::issue(PipeQueue &pipeQ) {
 
   return i;
 }
-

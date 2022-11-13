@@ -6,7 +6,7 @@
 
 StoreSet::StoreSet(const int32_t id)
     /* constructor {{{1 */
-    : StoreSetSize(Config::get_power2("soc", "core", id, "storeset_size",128))
+    : StoreSetSize(Config::get_power2("soc", "core", id, "storeset_size", 128))
 #ifdef STORESET_CLEARING
     , clearStoreSetsTimerCB(this)
 #endif
@@ -60,7 +60,9 @@ SSID_t StoreSet::create_set(uint64_t PC)
 
 #ifndef NDEBUG
   I(SSID < StoreSetSize);
-  if (isValidSSID(oldSSID)) { LFST[oldSSID] = nullptr; };  // debug only
+  if (isValidSSID(oldSSID)) {
+    LFST[oldSSID] = nullptr;
+  };  // debug only
 #endif
 
   return SSID;

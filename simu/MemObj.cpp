@@ -1,16 +1,16 @@
 // See LICENSE for details.
 
+#include "MemObj.h"
+
 #include <string.h>
 
 #include <set>
 
-#include "fmt/format.h"
-#include "absl/strings/str_split.h"
-
-#include "MemObj.h"
 #include "GMemorySystem.h"
 #include "MemRequest.h"
+#include "absl/strings/str_split.h"
 #include "config.hpp"
+#include "fmt/format.h"
 
 extern "C" uint64_t esesc_mem_read(uint64_t addr);
 
@@ -53,7 +53,7 @@ MemObj::MemObj(const std::string &sSection, const std::string &sName)
 
   if (!name.empty()) {
     std::string name_lc(name);
-    std::transform(name_lc.begin(), name_lc.end(), name_lc.begin(), [](unsigned char c){ return std::tolower(c); });
+    std::transform(name_lc.begin(), name_lc.end(), name_lc.begin(), [](unsigned char c) { return std::tolower(c); });
     static std::set<std::string> usedNames;
     // Verify that one else uses the same name
     if (usedNames.find(name_lc) != usedNames.end()) {
@@ -67,8 +67,7 @@ MemObj::MemObj(const std::string &sSection, const std::string &sName)
 
 MemObj::~MemObj()
 /* destructor {{{1 */
-{
-}
+{}
 /* }}} */
 
 void MemObj::addLowerLevel(MemObj *obj) {
@@ -919,10 +918,19 @@ bool MemObj::checkL2TLBHit(MemRequest *req) {
   I(0);
   return false;
 }
-void MemObj::replayCheckLSQ_removeStore(Dinst *dinst) { (void)dinst; I(0); }
-void MemObj::updateXCoreStores(Addr_t addr) { (void)addr; I(0); }
+void MemObj::replayCheckLSQ_removeStore(Dinst *dinst) {
+  (void)dinst;
+  I(0);
+}
+void MemObj::updateXCoreStores(Addr_t addr) {
+  (void)addr;
+  I(0);
+}
 void MemObj::replayflush() { I(0); }
-void MemObj::setTurboRatio(float r) { (void)r; I(0); }
+void MemObj::setTurboRatio(float r) {
+  (void)r;
+  I(0);
+}
 void MemObj::plug() { I(0); }
 void MemObj::setNeedsCoherence() {
   // Only cache uses this

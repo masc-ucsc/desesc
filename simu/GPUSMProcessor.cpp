@@ -39,11 +39,11 @@
 #ifdef ENABLE_CUDA
 
 #include "GPUSMProcessor.h"
+
 #include "ClusterManager.h"
 #include "FetchEngine.h"
 #include "GMemorySystem.h"
 #include "TaskHandler.h"
-
 #include "config.hpp"
 
 GPUSMProcessor::GPUSMProcessor(GMemorySystem *gm, CPU_t i)
@@ -139,7 +139,6 @@ bool GPUSMProcessor::advance_clock_drain() {
 }
 
 bool GPUSMProcessor::advance_clock() {
-
   if (is_power_down()) {
     return false;
   }
@@ -150,7 +149,6 @@ bool GPUSMProcessor::advance_clock() {
 }
 
 StallCause GPUSMProcessor::add_inst(Dinst *dinst) {
-
   const Instruction *inst = dinst->getInst();
 
   if (((RAT[inst->getSrc1()] != 0) && (inst->getSrc1() != LREG_NoDependence) && (inst->getSrc1() != LREG_InvalidOutput))
@@ -298,7 +296,7 @@ void GPUSMProcessor::retire() { /*{{{*/
     }
 
     // nCommitted.inc();
-    I(dinst->getFlowId()==hid);
+    I(dinst->getFlowId() == hid);
 
     dinst->destroy(eint);
     rROB.pop();

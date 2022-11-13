@@ -309,7 +309,7 @@ int32_t MRouter::sendSetStateOthers(MemRequest *mreq, MsgAction ma, TimeDelta_t 
   bool   doStats = mreq->getStatsFlag();
   Addr_t addr    = mreq->getAddr();
 
-  const auto it                       = up_map.find(mreq->getHomeNode());
+  const auto it = up_map.find(mreq->getHomeNode());
   I(it != up_map.end());
   MemObj *skip_mobj = it->second;
 

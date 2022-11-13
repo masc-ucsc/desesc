@@ -1,14 +1,14 @@
 // See LICENSE for details.
 
 #include "Cluster.h"
+
 #include "GMemorySystem.h"
 #include "GProcessor.h"
 #include "Resource.h"
 #include "TaskHandler.h"
-#include "estl.h"
-
-#include "port.hpp"
 #include "config.hpp"
+#include "estl.h"
+#include "port.hpp"
 #include "store_buffer.hpp"
 
 // Begin: Fields used during constructions
@@ -39,7 +39,6 @@ Cluster::Cluster(const std::string &clusterName, uint32_t pos, uint32_t _cpuid)
     , rdRegPool(fmt::format("P({})_{}{}_rdRegPool", _cpuid, clusterName, pos))
     , wrRegPool(fmt::format("P({})_{}{}_wrRegPool", _cpuid, clusterName, pos))
     , cpuid(_cpuid) {
-
   name = fmt::format("{}{}", clusterName, pos);
 
   bzero(res, sizeof(Resource *) * iMAX);
@@ -55,21 +54,20 @@ void Cluster::buildUnit(const std::string &clusterName, uint32_t pos, GMemorySys
     return;
   auto sUnitName = Config::get_string(clusterName, unitType);
 
-  int id  = cpuid;
-  int smt = Config::get_integer("soc", "core", id, "smt", 1, 1024);
+  int id      = cpuid;
+  int smt     = Config::get_integer("soc", "core", id, "smt", 1, 1024);
   int smt_ctx = id - (id % smt);
-
 
   TimeDelta_t  lat = Config::get_integer(sUnitName, "lat", 0, 1024);
   PortGeneric *gen;
 
   auto unitName = fmt::format("P({})_{}{}_{}", smt_ctx, clusterName, pos, sUnitName);
-  auto it = unitMap.find(unitName);
+  auto it       = unitMap.find(unitName);
   if (it != unitMap.end()) {
     gen = it->second.gen;
   } else {
     UnitEntry e;
-    e.num = Config::get_integer(sUnitName, "num",0, 1024);
+    e.num = Config::get_integer(sUnitName, "num", 0, 1024);
     e.occ = Config::get_integer(sUnitName, "occ", 0, 1024);
 
     e.gen = PortGeneric::create(unitName, e.num, e.occ);
@@ -78,7 +76,7 @@ void Cluster::buildUnit(const std::string &clusterName, uint32_t pos, GMemorySys
     unitMap[unitName] = e;
   }
 
-  int  unitID = 0;
+  int unitID = 0;
   switch (type) {
     case iBALU_LBRANCH:
     case iBALU_LJUMP:
@@ -95,8 +93,8 @@ void Cluster::buildUnit(const std::string &clusterName, uint32_t pos, GMemorySys
     default: unitID = 0; break;
   }
 
-  auto resourceName = fmt::format("P({})_{}{}_{}_{}", smt_ctx, clusterName, pos, unitID, sUnitName);
-  ResourceMapType::const_iterator it2 = resourceMap.find(resourceName);
+  auto                            resourceName = fmt::format("P({})_{}{}_{}_{}", smt_ctx, clusterName, pos, unitID, sUnitName);
+  ResourceMapType::const_iterator it2          = resourceMap.find(resourceName);
 
   Resource *r = 0;
 
@@ -119,7 +117,7 @@ void Cluster::buildUnit(const std::string &clusterName, uint32_t pos, GMemorySys
       case iBALU_RJUMP:
       case iBALU_RCALL:
       case iBALU_RET: {
-        auto max_branches = Config::get_integer("soc","core", cpuid, "max_branches");
+        auto max_branches = Config::get_integer("soc", "core", cpuid, "max_branches");
         if (max_branches == 0)
           max_branches = INT_MAX;
         bool drain_on_miss = Config::get_bool("soc", "core", cpuid, "drain_on_miss");
@@ -128,7 +126,7 @@ void Cluster::buildUnit(const std::string &clusterName, uint32_t pos, GMemorySys
       } break;
       case iLALU_LD: {
         TimeDelta_t st_fwd_delay = Config::get_integer("soc", "core", cpuid, "st_fwd_delay");
-        int32_t ldq_size        = Config::get_integer("soc", "core", cpuid, "ldq_size", 0, 256*1024);
+        int32_t     ldq_size     = Config::get_integer("soc", "core", cpuid, "ldq_size", 0, 256 * 1024);
         if (ldq_size == 0)
           ldq_size = 256 * 1024;
 
@@ -150,7 +148,7 @@ void Cluster::buildUnit(const std::string &clusterName, uint32_t pos, GMemorySys
       case iSALU_SC:
       case iSALU_ST:
       case iSALU_ADDR: {
-        int32_t stq_size = Config::get_integer("soc", "core", cpuid, "stq_size", 0, 256*1024);
+        int32_t stq_size = Config::get_integer("soc", "core", cpuid, "stq_size", 0, 256 * 1024);
         if (stq_size == 0)
           stq_size = 256 * 1024;
 
@@ -167,9 +165,7 @@ void Cluster::buildUnit(const std::string &clusterName, uint32_t pos, GMemorySys
                         cpuid,
                         Instruction::opcode2Name(type));
       } break;
-      default:
-        Config::add_error(fmt::format("unknown unit type [{}] [{}]", type, Instruction::opcode2Name(type)));
-        I(0);
+      default: Config::add_error(fmt::format("unknown unit type [{}] [{}]", type, Instruction::opcode2Name(type))); I(0);
     }
     I(r);
     resourceMap[resourceName] = r;
@@ -182,15 +178,15 @@ void Cluster::buildUnit(const std::string &clusterName, uint32_t pos, GMemorySys
 Cluster *Cluster::create(const std::string &clusterName, uint32_t pos, GMemorySystem *ms, uint32_t cpuid, GProcessor *gproc) {
   // Constraints
 
-  auto recycleAt = Config::get_string("soc","core", cpuid, "recycle_at", {"executing", "executed", "retired"});
+  auto recycleAt = Config::get_string("soc", "core", cpuid, "recycle_at", {"executing", "executed", "retired"});
 
-  int smt = Config::get_integer("soc","core", cpuid, "smt");
+  int smt     = Config::get_integer("soc", "core", cpuid, "smt");
   int smt_ctx = cpuid - (cpuid % smt);
 
   auto cName = fmt::format("cluster({})_{}{}", smt_ctx, clusterName, pos);
 
-  Cluster *cluster = nullptr;
-  const auto it = clusterMap.find(cName);
+  Cluster   *cluster = nullptr;
+  const auto it      = clusterMap.find(cName);
   if (it != clusterMap.end()) {
     cluster = it->second;
   } else {
@@ -203,8 +199,8 @@ Cluster *Cluster::create(const std::string &clusterName, uint32_t pos, GMemorySy
       cluster = new ExecutedCluster(clusterName, pos, cpuid);
     }
 
-    cluster->nRegs   = Config::get_integer(clusterName, "num_regs",2, 262144);
-    cluster->regPool = cluster->nRegs;
+    cluster->nRegs     = Config::get_integer(clusterName, "num_regs", 2, 262144);
+    cluster->regPool   = cluster->nRegs;
     cluster->lateAlloc = Config::get_bool(clusterName, "late_alloc");
 
     for (int32_t t = 0; t < iMAX; t++) {

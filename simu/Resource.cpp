@@ -4,8 +4,8 @@
 
 #include "fmt/format.h"
 
-//#define MEM_TSO 1
-//#define MEM_TSO2 1
+// #define MEM_TSO 1
+// #define MEM_TSO2 1
 #include "Cluster.h"
 #include "FetchEngine.h"
 #include "GMemorySystem.h"
@@ -15,9 +15,8 @@
 #include "OoOProcessor.h"
 #include "Resource.h"
 #include "TaskHandler.h"
-
-#include "port.hpp"
 #include "dinst.hpp"
+#include "port.hpp"
 
 // late allocation flag
 #define USE_PNR
@@ -44,7 +43,7 @@ Resource::Resource(uint8_t type, Cluster *cls, PortGeneric *aGen, TimeDelta_t l,
     gen->subscribe();
 
   auto core_type = Config::get_string("soc", "core", cpuid, "type", {"inorder", "ooo", "accel"});
-  std::transform(core_type.begin(), core_type.end(), core_type.begin(), [](unsigned char c){ return std::toupper(c); });
+  std::transform(core_type.begin(), core_type.end(), core_type.begin(), [](unsigned char c) { return std::toupper(c); });
 
   inorder = (core_type != "ooo");
 }
@@ -72,7 +71,7 @@ void Resource::setStats(const Dinst *dinst) {
 Resource::~Resource()
 /* destructor {{{1 */
 {
-  if(!EventScheduler::empty()) {
+  if (!EventScheduler::empty()) {
     fmt::print("Resources destroyed with {} pending instructions (small is OK)\n", EventScheduler::size());
   }
 
@@ -83,8 +82,9 @@ Resource::~Resource()
 
 /***********************************************/
 
-MemResource::MemResource(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *_lsq, std::shared_ptr<StoreSet> ss, std::shared_ptr<Prefetcher> _pref, std::shared_ptr<Store_buffer> _scb,
-                         TimeDelta_t l, GMemorySystem *ms, int32_t id, const char *cad)
+MemResource::MemResource(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *_lsq, std::shared_ptr<StoreSet> ss,
+                         std::shared_ptr<Prefetcher> _pref, std::shared_ptr<Store_buffer> _scb, TimeDelta_t l, GMemorySystem *ms,
+                         int32_t id, const char *cad)
     /* constructor {{{1 */
     : MemReplay(type, cls, aGen, ss, l, id)
     , firstLevelMemObj(ms->getDL1())
@@ -93,7 +93,6 @@ MemResource::MemResource(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *_ls
     , pref(_pref)
     , scb(_scb)
     , stldViolations(fmt::format("P({})_{}_{}:stldViolations", id, cls->getName(), cad)) {
-
   if (firstLevelMemObj->get_type() == "cache") {
     DL1 = firstLevelMemObj;
   } else {
@@ -211,15 +210,15 @@ void MemReplay::replayManage(Dinst *dinst) {
     if (dinst->getID() > lf[i].id && dinst->getSSID() != lf[i].ssid) {
 #ifndef NDEBUG
       fmt::print("3.merging {} and {} : pc {} and {} : addr {} and {} : id {u and {} ({})\n",
-             lf[i].ssid,
-             dinst->getSSID(),
-             lf[i].pc,
-             dinst->getPC(),
-             lf[i].addr,
-             dinst->getAddr(),
-             lf[i].id,
-             dinst->getID(),
-             dinst->getID() - lf[i].id);
+                 lf[i].ssid,
+                 dinst->getSSID(),
+                 lf[i].pc,
+                 dinst->getPC(),
+                 lf[i].addr,
+                 dinst->getAddr(),
+                 lf[i].id,
+                 dinst->getID(),
+                 dinst->getID() - lf[i].id);
 #endif
       storeset->mergeset(lf[i].ssid, dinst->getSSID());
       if (lf[i].ssid > dinst->getSSID())
@@ -235,8 +234,9 @@ void MemReplay::replayManage(Dinst *dinst) {
 
 /***********************************************/
 
-FULoad::FULoad(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *_lsq, std::shared_ptr<StoreSet> ss, std::shared_ptr<Prefetcher> _pref, std::shared_ptr<Store_buffer> _scb,
-               TimeDelta_t lsdelay, TimeDelta_t l, GMemorySystem *ms, int32_t size, int32_t id, const char *cad)
+FULoad::FULoad(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *_lsq, std::shared_ptr<StoreSet> ss,
+               std::shared_ptr<Prefetcher> _pref, std::shared_ptr<Store_buffer> _scb, TimeDelta_t lsdelay, TimeDelta_t l,
+               GMemorySystem *ms, int32_t size, int32_t id, const char *cad)
     /* Constructor {{{1 */
     : MemResource(type, cls, aGen, _lsq, ss, _pref, _scb, l, ms, id, cad)
 #ifdef MEM_TSO2
@@ -246,9 +246,9 @@ FULoad::FULoad(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *_lsq, std::sh
     , freeEntries(size) {
   I(ms);
 
-  auto dl1_sec = Config::get_string("soc", "core", id, "dl1");
+  auto dl1_sec      = Config::get_string("soc", "core", id, "dl1");
   auto dl1_sec_type = Config::get_string(dl1_sec, "type", {"cache", "nice", "bus"});
-  enableDcache = dl1_sec_type != "nice";
+  enableDcache      = dl1_sec_type != "nice";
 }
 /* }}} */
 
@@ -309,7 +309,7 @@ void FULoad::executing(Dinst *dinst) {
     dinst->markDispatched();
 
     pref->exe(dinst);
-  }else{
+  } else {
     cacheDispatchedCB::scheduleAbs(when, this, dinst);
   }
 }
@@ -324,7 +324,7 @@ void FULoad::cacheDispatched(Dinst *dinst) {
 
   dinst->markDispatched();
 
-  if (false && dinst->is_spec()) { // Future Spectre Related
+  if (false && dinst->is_spec()) {  // Future Spectre Related
     MemRequest::sendSpecReqDL1Read(firstLevelMemObj,
                                    dinst->getStatsFlag(),
                                    dinst->getAddr(),
@@ -434,16 +434,16 @@ void FULoad::performed(Dinst *dinst) {
 
 /***********************************************/
 
-FUStore::FUStore(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *_lsq, std::shared_ptr<StoreSet> ss, std::shared_ptr<Prefetcher> _pref, std::shared_ptr<Store_buffer> _scb,
-                 TimeDelta_t l, GMemorySystem *ms, int32_t size, int32_t id, const char *cad)
+FUStore::FUStore(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *_lsq, std::shared_ptr<StoreSet> ss,
+                 std::shared_ptr<Prefetcher> _pref, std::shared_ptr<Store_buffer> _scb, TimeDelta_t l, GMemorySystem *ms,
+                 int32_t size, int32_t id, const char *cad)
     /* constructor {{{1 */
     : MemResource(type, cls, aGen, _lsq, ss, _pref, _scb, l, ms, id, cad), freeEntries(size) {
-
-  auto dl1_sec = Config::get_string("soc", "core", id, "dl1");
+  auto dl1_sec      = Config::get_string("soc", "core", id, "dl1");
   auto dl1_sec_type = Config::get_string(dl1_sec, "type", {"cache", "nice", "bus"});
-  enableDcache = dl1_sec_type != "nice";
+  enableDcache      = dl1_sec_type != "nice";
 
-  LSQlateAlloc =  Config::get_bool("soc", "core", id, "ldq_late_alloc");
+  LSQlateAlloc = Config::get_bool("soc", "core", id, "ldq_late_alloc");
 }
 /* }}} */
 
@@ -550,7 +550,6 @@ void FUStore::executed(Dinst *dinst) {
     storeset->remove(dinst);
 
   cluster->executed(dinst);
-
 }
 
 bool FUStore::preretire(Dinst *dinst, bool flushing) {
@@ -569,15 +568,19 @@ bool FUStore::preretire(Dinst *dinst, bool flushing) {
   if (!scb->can_accept_st(dinst->getAddr()))
     return false;
 
-  if(firstLevelMemObj->isBusy(dinst->getAddr())) {
+  if (firstLevelMemObj->isBusy(dinst->getAddr())) {
     return false;
   }
 
   scb->add_st(dinst);
 
   if (enableDcache) {
-    MemRequest::sendReqWrite(firstLevelMemObj, dinst->getStatsFlag(), dinst->getAddr(), dinst->getPC(), performedCB::create(this, dinst));
-  }else{
+    MemRequest::sendReqWrite(firstLevelMemObj,
+                             dinst->getStatsFlag(),
+                             dinst->getAddr(),
+                             dinst->getPC(),
+                             performedCB::create(this, dinst));
+  } else {
     performed(dinst);
   }
 

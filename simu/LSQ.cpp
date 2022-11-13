@@ -107,7 +107,7 @@ LSQNone::LSQNone(Hartid_t hid, int32_t size)
     : LSQ(size) {
   (void)hid;
 
-  for(auto &e:addrTable) {
+  for (auto &e : addrTable) {
     e = 0;
   }
 }
@@ -142,7 +142,6 @@ void LSQNone::remove(Dinst *dinst)
 /* Remove from the LSQ {{{1 (in-order) */
 {
   (void)dinst;
-
 }
 /* }}} */
 

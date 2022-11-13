@@ -269,8 +269,8 @@ void MemRequest::rawdump_calledge(TimeDelta_t lat, Time_t total) {
 
 void MemRequest::upce() {
   CallEdge ce;
-  ce.s = prevMemObj;
-  ce.e = currMemObj;
+  ce.s     = prevMemObj;
+  ce.e     = currMemObj;
   ce.tismo = globalClock;  // -lastCallTime;
   ce.mt    = mt;
   ce.ma    = ma;

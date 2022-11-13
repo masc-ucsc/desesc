@@ -1,5 +1,7 @@
 // See LICENSE for details.
 
+#include "OoOProcessor.h"
+
 #include <math.h>
 
 #include <algorithm>
@@ -7,23 +9,21 @@
 #include <iterator>
 #include <numeric>
 
-#include "fmt/format.h"
-
-#include "OoOProcessor.h"
 #include "FastQueue.h"
 #include "FetchEngine.h"
 #include "GMemorySystem.h"
 #include "MemRequest.h"
 #include "TaskHandler.h"
 #include "config.hpp"
+#include "fmt/format.h"
 
-//#define ESESC_TRACE
+// #define ESESC_TRACE
 
-//#define ESESC_CODEPROFILE
+// #define ESESC_CODEPROFILE
 #define ESESC_BRANCHPROFILE
 
 // FIXME: to avoid deadlock, prealloc n to the n oldest instructions
-//#define LATE_ALLOC_REGISTER
+// #define LATE_ALLOC_REGISTER
 
 OoOProcessor::OoOProcessor(GMemorySystem *gm, CPU_t i)
     /* constructor {{{1 */
@@ -163,7 +163,7 @@ OoOProcessor::OoOProcessor(GMemorySystem *gm, CPU_t i)
   ldbp_ldpc           = 0;
 #endif
 
-  scooreMemory = Config::get_bool("soc","core", gm->getCoreId(), "scoore_serialize");
+  scooreMemory = Config::get_bool("soc", "core", gm->getCoreId(), "scoore_serialize");
 }
 /* }}} */
 
@@ -180,7 +180,7 @@ void OoOProcessor::fetch()
   I(is_power_up());
   I(eint);
 
-  auto smt_hid = hid; // FIXME: for SMT
+  auto smt_hid = hid;  // FIXME: for SMT
 
   if (IFID.isBlocked()) {
     busy = true;
@@ -337,8 +337,7 @@ void OoOProcessor::executed(Dinst *dinst) {
 #endif
 }
 
-StallCause OoOProcessor::add_inst(Dinst *dinst)
-{
+StallCause OoOProcessor::add_inst(Dinst *dinst) {
   if (replayRecovering && dinst->getID() > replayID) {
     return ReplaysStall;
   }
@@ -1174,7 +1173,6 @@ void OoOProcessor::rtt_br_hit(Dinst *dinst) {
       }
       // clear BOT entry
       if (bot_id != -1) {
-
 #if 1
         std::vector<MemObj::branch_outcome_table> bot;
         for (int j = 0; j < DL1->getBotSize(); j++) {
@@ -1618,7 +1616,7 @@ void OoOProcessor::retire()
 
     if ((dinst->getExecutedTime() + RetireDelay) >= globalClock) {
 #ifdef SUPERDUMP
-      if (rROB.size()>8) {
+      if (rROB.size() > 8) {
         dinst->getInst()->dump("not ret");
         printf("----------------------\n");
         dumpROB();
@@ -1636,7 +1634,7 @@ void OoOProcessor::retire()
     Hartid_t smt_hid = dinst->getFlowId();
     if (dinst->isReplay()) {
       flushing     = true;
-      flushing_fid = smt_hid; // It can be different from hid due to SMT
+      flushing_fid = smt_hid;  // It can be different from hid due to SMT
     }
 
 #ifdef FETCH_TRACE
@@ -1674,7 +1672,7 @@ void OoOProcessor::retire()
 #endif
 #ifdef ESESC_TRACE1
     if (dinst->getPC() == 0x1100c || dinst->getPC() == 0x11008)
-      MSG("TR %8llx %lld\n",dinst->getPC(), dinst->getAddr());
+      MSG("TR %8llx %lld\n", dinst->getPC(), dinst->getAddr());
 #endif
 #ifdef ESESC_TRACE2
     MSG("TR %8lld %8llx R%-2d,R%-2d=R%-2d op=%-2d R%-2d   %lld %lld %lld %lld %lld",
@@ -1706,12 +1704,20 @@ void OoOProcessor::retire()
         dinst->getExecutedTime() - globalClock,
         globalClock - globalClock);
 #endif
-    
+
 #ifdef ESESC_TRACE3
     if (dinst->getPC() == 0x10c96 || dinst->getPC() == 0x10c9a || dinst->getPC() == 0x10c9e)
-      MSG("TR %8lld %8llx R%-2d,R%-2d=R%-2d op=%-2d R%-2d  %lld %lld %lld", dinst->getID(), dinst->getPC(),
-          dinst->getInst()->getDst1(), dinst->getInst()->getDst2(), dinst->getInst()->getSrc1(), dinst->getInst()->getOpcode(),
-          dinst->getInst()->getSrc2(), dinst->getData(), dinst->getData2(), dinst->getAddr());
+      MSG("TR %8lld %8llx R%-2d,R%-2d=R%-2d op=%-2d R%-2d  %lld %lld %lld",
+          dinst->getID(),
+          dinst->getPC(),
+          dinst->getInst()->getDst1(),
+          dinst->getInst()->getDst2(),
+          dinst->getInst()->getSrc1(),
+          dinst->getInst()->getOpcode(),
+          dinst->getInst()->getSrc2(),
+          dinst->getData(),
+          dinst->getData2(),
+          dinst->getAddr());
 #endif
 
 #ifdef WAVESNAP_EN
@@ -1742,15 +1748,15 @@ void OoOProcessor::retire()
 
     if (dinst->isPerformed())  // Stores can perform after retirement
       dinst->destroy(eint);
-    }
-
-    if (last_serialized == dinst)
-      last_serialized = 0;
-    if (last_serializedST == dinst)
-      last_serializedST = 0;
-
-    rROB.pop();
   }
+
+  if (last_serialized == dinst)
+    last_serialized = 0;
+  if (last_serializedST == dinst)
+    last_serializedST = 0;
+
+  rROB.pop();
+}
 }
 /* }}} */
 
@@ -1789,9 +1795,9 @@ void OoOProcessor::dumpROB()
 // {{{1 Dump rob statistics
 {
   uint32_t size = ROB.size();
-  fmt::print("ROB: ({})\n",size);
+  fmt::print("ROB: ({})\n", size);
 
-  for(uint32_t i=0;i<size;i++) {
+  for (uint32_t i = 0; i < size; i++) {
     uint32_t pos = ROB.getIDFromTop(i);
 
     Dinst *dinst = ROB.getData(pos);
@@ -1799,8 +1805,8 @@ void OoOProcessor::dumpROB()
   }
 
   size = rROB.size();
-  fmt::print("rROB: ({})\n",size);
-  for(uint32_t i=0;i<size;i++) {
+  fmt::print("rROB: ({})\n", size);
+  for (uint32_t i = 0; i < size; i++) {
     uint32_t pos = rROB.getIDFromTop(i);
 
     Dinst *dinst = rROB.getData(pos);

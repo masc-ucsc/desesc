@@ -1,28 +1,26 @@
 // See LICENSE for details.
 
+#include "FetchEngine.h"
 
 #include <climits>
 
-#include "absl/strings/str_split.h"
-#include "fmt/format.h"
-
-#include "FetchEngine.h"
 #include "GMemorySystem.h"
 #include "MemObj.h"
 #include "MemRequest.h"
 #include "Pipeline.h"
+#include "absl/strings/str_split.h"
 #include "alloca.h"
-
 #include "config.hpp"
+#include "fmt/format.h"
 
 extern bool MIMDmode;
 
-//#define ENABLE_FAST_WARMUP 1
-//#define FETCH_TRACE 1
+// #define ENABLE_FAST_WARMUP 1
+// #define FETCH_TRACE 1
 
 // SBPT: Do not track RAT, just use last predictable LD
-//#define SBPT_JUSTLAST 1
-//#define SBPT_JUSTDELTA0 1
+// #define SBPT_JUSTLAST 1
+// #define SBPT_JUSTDELTA0 1
 
 extern "C" uint64_t esesc_mem_read(uint64_t addr);
 
@@ -53,9 +51,9 @@ FetchEngine::FetchEngine(Hartid_t id, GMemorySystem *gms_, FetchEngine *fe)
 //,unBlockFetchCB(this)
 //,unBlockFetchBPredDelayCB(this)
 {
-  fetch_width     = Config::get_power2("soc", "core", id, "fetch_width", 1, 1024);
+  fetch_width = Config::get_power2("soc", "core", id, "fetch_width", 1, 1024);
 
-  half_fetch_width     = fetch_width / 2;
+  half_fetch_width = fetch_width / 2;
 
   fetch_align = Config::get_bool("soc", "core", id, "fetch_align");
   trace_align = Config::get_bool("soc", "core", id, "trace_align");
@@ -83,18 +81,18 @@ FetchEngine::FetchEngine(Hartid_t id, GMemorySystem *gms_, FetchEngine *fe)
   // ideal_apred = new vtage(9, 4, 1, 3);
 #endif
 
-  std::vector<std::string> v = absl::StrSplit(Config::get_string("soc", "core", id, "iL1"), ' ');
-  auto isection = v[0];
+  std::vector<std::string> v        = absl::StrSplit(Config::get_string("soc", "core", id, "iL1"), ' ');
+  auto                     isection = v[0];
 
   auto itype = Config::get_string(isection, "type", {"cache", "nice", "bus"});
   if (itype != "nice")
     il1_enable = true;
 
-  il1_line_size = Config::get_power2(isection, "line_size", fetch_width*2, 8192);
+  il1_line_size = Config::get_power2(isection, "line_size", fetch_width * 2, 8192);
   il1_line_bits = log2i(il1_line_size);
 
   // Get some icache L1 parameters
-  il1_hit_delay  = Config::get_integer(isection, "delay");
+  il1_hit_delay = Config::get_integer(isection, "delay");
 
   lastMissTime = 0;
 
@@ -313,9 +311,9 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
 #if 0
         predictable = true; // FIXME2: ENABLE MAGIC/ORACLE PREDICTION FOR ALL
 #else
-        auto val           = ideal_apred->exe_update(dinst->getPC(), dinst->getAddr(), dinst->getData());
-        int  prefetch_conf = ideal_apred->ret_update(dinst->getPC(), dinst->getAddr(), dinst->getData());
-        Addr_t naddr = ideal_apred->predict(dinst->getPC(), 0, false);  // ideal, predict after update
+        auto   val           = ideal_apred->exe_update(dinst->getPC(), dinst->getAddr(), dinst->getData());
+        int    prefetch_conf = ideal_apred->ret_update(dinst->getPC(), dinst->getAddr(), dinst->getData());
+        Addr_t naddr         = ideal_apred->predict(dinst->getPC(), 0, false);  // ideal, predict after update
 
         if (naddr == dinst->getAddr()) {
           predictable = true;
@@ -577,7 +575,7 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
 #endif
 
 #ifdef ENABLE_FAST_WARMUP
-    if (dinst->getPC() == 0) { // FIXME: W mode, counter, not this
+    if (dinst->getPC() == 0) {  // FIXME: W mode, counter, not this
       do {
         EventScheduler::advanceClock();
       } while (gms->getDL1()->isBusy(dinst->getAddr()));
@@ -881,9 +879,7 @@ void FetchEngine::fetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Hartid
   realfetch(bucket, eint, fid, fetch_width);
 }
 
-void FetchEngine::dump(const std::string &str) const {
-  bpred->dump(str + "_FE");
-}
+void FetchEngine::dump(const std::string &str) const { bpred->dump(str + "_FE"); }
 
 void FetchEngine::unBlockFetchBPredDelay(Dinst *dinst, Time_t missFetchTime) {
   clearMissInst(dinst, missFetchTime);

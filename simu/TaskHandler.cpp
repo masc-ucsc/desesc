@@ -1,14 +1,15 @@
 // See LICENSE for details.
 
+#include "TaskHandler.h"
+
 #include <string.h>
+
 #include <iostream>
 
 #include "GProcessor.h"
-#include "TaskHandler.h"
-
-#include "report.hpp"
 #include "config.hpp"
 #include "emul_base.hpp"
+#include "report.hpp"
 
 void TaskHandler::report() {
   /* dump statistics to report file {{{1 */
@@ -25,17 +26,17 @@ void TaskHandler::report() {
 /* }}} */
 
 void TaskHandler::add_emul(std::shared_ptr<Emul_base> eint, Hartid_t hid) {
-  I(hid<65535); // Too many cores
+  I(hid < 65535);  // Too many cores
 
-  if (hid>emuls.size()) {
-    emuls.resize(hid+1,nullptr);
+  if (hid > emuls.size()) {
+    emuls.resize(hid + 1, nullptr);
   }
 
   emuls[hid] = eint;
 }
 
 void TaskHandler::core_create(std::shared_ptr<GProcessor> gproc) {
-  I(plugging); // It can be called only during booting
+  I(plugging);  // It can be called only during booting
 
   I(simus.size() == static_cast<size_t>(gproc->get_hid()));
   simus.push_back(gproc);
@@ -55,7 +56,6 @@ void TaskHandler::core_create(std::shared_ptr<GProcessor> gproc) {
 /* }}} */
 
 void TaskHandler::core_resume(Hartid_t fid) {
-
   I(fid < 65535);  // No more than 65K flows for the moment
 
   if (running.contains(fid)) {
@@ -118,7 +118,7 @@ void TaskHandler::core_freeze(Hartid_t fid, Time_t nCycles) {
 void TaskHandler::boot() {
   while (!running.empty()) {
     // advance cores & check for deactivate
-    for (auto hid:running) {
+    for (auto hid : running) {
       if (likely(!allmaps[hid].deactivating)) {
         allmaps[hid].simu->advance_clock();
       } else {
@@ -129,7 +129,7 @@ void TaskHandler::boot() {
           allmaps[hid].simu->set_power_down();
 
           running.erase(hid);
-          break; // core_pause can break the iterator
+          break;  // core_pause can break the iterator
         }
       }
     }
@@ -172,12 +172,15 @@ void TaskHandler::plugEnd()
     nCPUThreads += 1;  // simus[i]->getMaxFlows();
   }
   if (emuls.size() > nCPUThreads) {
-    Config::add_error(fmt::format("There are more emul ({}) than cpu flows ({}) available. Increase the number of cores or emuls can starve",
-        emuls.size(),
-        nCPUThreads));
+    Config::add_error(
+        fmt::format("There are more emul ({}) than cpu flows ({}) available. Increase the number of cores or emuls can starve",
+                    emuls.size(),
+                    nCPUThreads));
   } else if (emuls.size() < nCPUThreads) {
     if (emuls.size() != 0)
-      fmt::print("Warning: There are more cores than threads ({} vs {}). Powering down unusable cores\n", emuls.size(), nCPUThreads);
+      fmt::print("Warning: There are more cores than threads ({} vs {}). Powering down unusable cores\n",
+                 emuls.size(),
+                 nCPUThreads);
   }
 
   // Tie the emuls to the all maps
@@ -202,7 +205,7 @@ void TaskHandler::plugEnd()
     // }
   }
 
-  plugging      = false;
+  plugging = false;
 }
 /* }}} */
 

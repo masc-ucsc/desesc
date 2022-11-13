@@ -11,7 +11,7 @@
 
 InOrderProcessor::InOrderProcessor(GMemorySystem *gm, CPU_t i)
     : GProcessor(gm, i)
-    , RetireDelay(Config::get_integer("soc", "core", i , "retire_delay"))
+    , RetireDelay(Config::get_integer("soc", "core", i, "retire_delay"))
     , pipeQ(i)
     , lsq(i, 32768)
     , clusterManager(gm, i, this) {  // {{{1
@@ -23,9 +23,9 @@ InOrderProcessor::InOrderProcessor(GMemorySystem *gm, CPU_t i)
     ifid = new FetchEngine(i, gm, it->second->fe);
     sf   = it->second;
   } else {
-    ifid            = new FetchEngine(i, gm);
-    sf              = std::make_shared<SMTFetch>();
-    sf->fe          = ifid;
+    ifid             = new FetchEngine(i, gm);
+    sf               = std::make_shared<SMTFetch>();
+    sf->fe           = ifid;
     fetch_map[fName] = sf;
   }
 
@@ -82,8 +82,8 @@ void InOrderProcessor::fetch() { /*{{{*/
   if (ifid->isBlocked())
     return;
 
-  auto smt_hid = hid; // FIXME: do SMT fetch
-  IBucket *bucket = pipeQ.pipeLine.newItem();
+  auto     smt_hid = hid;  // FIXME: do SMT fetch
+  IBucket *bucket  = pipeQ.pipeLine.newItem();
   if (bucket) {
     ifid->fetch(bucket, eint, smt_hid);
   }
@@ -143,7 +143,8 @@ void InOrderProcessor::executed(Dinst *dinst) { (void)dinst; }
 StallCause InOrderProcessor::add_inst(Dinst *dinst) { /*{{{*/
 
   const Instruction *inst = dinst->getInst();
-  Hartid_t rat_off = 0;  // no need, add_inst is private per thread. Cluster is shared (dinst->getFlowId() % getMaxFlows())*LREG_MAX;
+  Hartid_t           rat_off
+      = 0;  // no need, add_inst is private per thread. Cluster is shared (dinst->getFlowId() % getMaxFlows())*LREG_MAX;
 
 #if 1
 #if 0
@@ -158,7 +159,7 @@ StallCause InOrderProcessor::add_inst(Dinst *dinst) { /*{{{*/
   if (((RAT[inst->getSrc1() + rat_off] != 0) && (inst->getSrc1() != LREG_NoDependence))
       || ((RAT[inst->getSrc2() + rat_off] != 0) && (inst->getSrc2() != LREG_NoDependence))) {
 #else
-                       // scoreboard, no output dependence
+            // scoreboard, no output dependence
   if (((RAT[inst->getDst1()] != 0) && (inst->getDst1() != LREG_InvalidOutput))
       || ((RAT[inst->getDst2()] != 0) && (inst->getDst2() != LREG_InvalidOutput))) {
 #endif
@@ -296,7 +297,7 @@ void InOrderProcessor::retire() { /*{{{*/
       I(dinst->isPerformed());
 #endif
 
-    if (dinst->isPerformed()) { // Stores can perform after retirement
+    if (dinst->isPerformed()) {  // Stores can perform after retirement
       dinst->destroy();
     }
     rROB.pop();

@@ -11,7 +11,7 @@
 #include "MemObj.h"
 #include "config.hpp"
 
-//#define PREFETCH_HIST 1
+// #define PREFETCH_HIST 1
 
 Prefetcher::Prefetcher(MemObj *_l1, int hartid)
     /* constructor {{{1 */
@@ -20,11 +20,10 @@ Prefetcher::Prefetcher(MemObj *_l1, int hartid)
     , avgPrefetchConf(fmt::format("P({})_pref__avgPrefetchConf", hartid))
     , histPrefetchDelta(fmt::format("P({})_pref__histPrefetchDelta", hartid))
     , nextPrefetchCB(this) {
-
   auto section = Config::get_string("soc", "core", hartid, "prefetcher");
 
-  degree = Config::get_integer(section, "degree", 1, 1024);
-  distance = Config::get_integer(section, "distance",0, degree);
+  degree   = Config::get_integer(section, "degree", 1, 1024);
+  distance = Config::get_integer(section, "distance", 0, degree);
 
   pending_prefetch    = false;
   pending_chain_fetch = 0;
@@ -65,7 +64,7 @@ void Prefetcher::exe(Dinst *dinst)
 
   auto conf_level = apred->exe_update(dinst->getPC(), dinst->getAddr(), dinst->getData());
 
-  if (pending_preq_pc == dinst->getPC() && pending_preq_conf > 4*static_cast<int>(conf_level))
+  if (pending_preq_pc == dinst->getPC() && pending_preq_conf > 4 * static_cast<int>(conf_level))
     return;  // Do not kill itself
 
   if (conf_level == Conf_level::None || conf_level == Conf_level::Low)
@@ -76,7 +75,7 @@ void Prefetcher::exe(Dinst *dinst)
     avgPrefetchNum.sample(curPrefetch - distance, pending_statsFlag);
 
   pending_preq_pc   = dinst->getPC();
-  pending_preq_conf = 4*static_cast<int>(conf_level);
+  pending_preq_conf = 4 * static_cast<int>(conf_level);
   pending_statsFlag = dinst->getStatsFlag();
   if (dinst->getChained()) {
     I(dinst->getFetchEngine());

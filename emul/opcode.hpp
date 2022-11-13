@@ -2,8 +2,11 @@
 
 #pragma once
 
-#include <stdint.h>
-#include <sys/types.h>
+#include <cstdint>
+
+using Hartid_t = uint32_t;
+using Addr_t   = uint64_t;
+using Data_t   = uint64_t;
 
 enum Opcode {
   iOpInvalid = 0,

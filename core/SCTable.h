@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <string>
 #include <cstddef>
 #include <cstdint>
 
@@ -18,7 +19,7 @@ private:
 
 protected:
 public:
-  SCTable(const char *str, size_t size, uint8_t bits = 2);
+  SCTable(const std::string &str, size_t size, uint8_t bits = 2);
   ~SCTable(void);
   void clear(uint32_t cid);  // Bias to not-taken
   void reset(uint32_t cid, bool taken);

@@ -9,33 +9,24 @@
 #include "config.hpp"
 #include "estl.h"
 
-class feqstr {
-public:
-  inline bool operator()(const char *s1, const char *s2) const { return strcasecmp(s1, s2) == 0; }
-};
-
-typedef HASH_MAP<const char *, SMTFetch *, HASH<const char *>, feqstr> FetchMapType;
-static FetchMapType                                                    fetchMap;
-
 InOrderProcessor::InOrderProcessor(GMemorySystem *gm, CPU_t i)
     : GProcessor(gm, i)
-    , RetireDelay(SescConf->getInt("cpusimu", "RetireDelay", i))
+    , RetireDelay(Config::get_integer("soc", "core", i , "retire_delay"))
     , pipeQ(i)
     , lsq(i, 32768)
     , clusterManager(gm, i, this) {  // {{{1
-  char fName[1024];
 
-  sprintf(fName, "Fetch(%d)", smt_ctx);
-  FetchMapType::const_iterator it = fetchMap.find(fName);
+  auto fName = fmt::format("fetch({})", smt_ctx);
 
-  if (it != fetchMap.end() && smt > 1) {
+  auto it = fetch_map.find(fName);
+  if (it != fetch_map.end() && smt > 1) {
     ifid = new FetchEngine(i, gm, it->second->fe);
     sf   = it->second;
   } else {
     ifid            = new FetchEngine(i, gm);
-    sf              = new SMTFetch;
+    sf              = std::make_shared<SMTFetch>();
     sf->fe          = ifid;
-    fetchMap[fName] = sf;
+    fetch_map[fName] = sf;
   }
 
   spaceInInstQueue = InstQueueSize;
@@ -77,10 +68,10 @@ bool SMTFetch::update(bool space) {
   return false;
 }  // 1}}}
 
-void InOrderProcessor::fetch(Hartid_t fid) { /*{{{*/
+void InOrderProcessor::fetch() { /*{{{*/
   // TODO: Move this to GProcessor (same as in OoOProcessor)
   I(eint);
-  I(active);
+  I(is_power_up());
 
   if (smt > 1) {
     bool run = sf->update(spaceInInstQueue >= FetchWidth);
@@ -91,84 +82,68 @@ void InOrderProcessor::fetch(Hartid_t fid) { /*{{{*/
   if (ifid->isBlocked())
     return;
 
+  auto smt_hid = hid; // FIXME: do SMT fetch
   IBucket *bucket = pipeQ.pipeLine.newItem();
   if (bucket) {
-    ifid->fetch(bucket, eint, fid);
+    ifid->fetch(bucket, eint, smt_hid);
   }
 
 } /*}}}*/
 
-bool InOrderProcessor::advance_clock(Hartid_t fid) { /*{{{*/
-
-  if (!active) {
-    I(isROBEmpty());
-    return false;
-  }
-
-  I(cpu_id == fid);
-
-  fetch(fid);
-
+bool InOrderProcessor::advance_clock_drain() {
   bool getStatsFlag = lastrob_getStatsFlag;
   if (!ROB.empty()) {
     getStatsFlag         = ROB.top()->getStatsFlag();
     lastrob_getStatsFlag = getStatsFlag;
   }
 
-  // IS(if (cpu_id == 1) MSG("@%lld: Fetching CPU (%d)",(long long int)globalClock,cpu_id));
-  clockTicks.inc(getStatsFlag);
-  setWallClock(getStatsFlag);
+  adjust_clock(getStatsFlag);
 
   // ID Stage (insert to instQueue)
   if (spaceInInstQueue >= FetchWidth) {
     IBucket *bucket = pipeQ.pipeLine.nextItem();
     if (bucket) {
       I(!bucket->empty());
-      // IS(if (cpu_id == 1) MSG("@%lld: CPU (%d) fetched bucket size is %d ",(long long int)globalClock,cpu_id,bucket->size()));
       spaceInInstQueue -= bucket->size();
       pipeQ.instQueue.push(bucket);
     } else {
-      // IS(if (cpu_id == 1) MSG("@%lld: CPU (%d) Empty Bucket ",(long long int)globalClock,cpu_id));
       noFetch2.inc(getStatsFlag);
     }
   } else {
-    // IS(if (cpu_id == 1) MSG("@%lld: CPU (%d) NO space in InstQueue",(long long int)globalClock,cpu_id));
     noFetch.inc(getStatsFlag);
   }
 
-  // IS(if (cpu_id == 1) MSG("@%lld: Renaming CPU (%d)",(long long int)globalClock,cpu_id));
+  busy = true;
   // RENAME Stage
   if (!pipeQ.instQueue.empty()) {
-    busy            = true;
     uint32_t n_insn = issue(pipeQ);
     spaceInInstQueue += n_insn;
-    // IS(if (cpu_id == 1) MSG("@%lld: Issuing %d items in pipeline for CPU (%d)",(long long int)globalClock,n_insn, cpu_id));
   } else if (ROB.empty() && rROB.empty()) {
     // Still busy if we have some in-flight requests
     busy = pipeQ.pipeLine.hasOutstandingItems();
-    // IS(if (cpu_id == 1) MSG("@%lld: ROB and rROB are both empty for CPU (%d)",(long long int)globalClock,cpu_id));
-    // IS(if ((cpu_id == 1)&&(busy)) MSG("@%lld: pipeline also has outstanding items CPU (%d)",(long long int)globalClock,cpu_id));
-    return true;
-  } else {
-    busy = true;
-    // IS(if (cpu_id == 1) MSG("@%lld: CPU (%d) PipeQ.instQueue is empty, and either ROB and rROB are empty",(long long
-    // int)globalClock,cpu_id));
   }
 
-  // IS(if (cpu_id == 1) MSG("@%lld: Retiring CPU (%d)",(long long int)globalClock,cpu_id));
   retire();
 
-  return true;
-} /*}}}*/
+  return busy;
+}
 
-void InOrderProcessor::executing(Dinst *dinst) {}
+bool InOrderProcessor::advance_clock() {
+  I(is_power_up());
 
-void InOrderProcessor::executed(Dinst *dinst) {}
+  fetch();
 
-StallCause InOrderProcessor::addInst(Dinst *dinst) { /*{{{*/
+  return advance_clock_drain();
+}
+
+void InOrderProcessor::executing(Dinst *dinst) { (void)dinst; }
+
+void InOrderProcessor::executed(Dinst *dinst) { (void)dinst; }
+
+StallCause InOrderProcessor::add_inst(Dinst *dinst) { /*{{{*/
 
   const Instruction *inst = dinst->getInst();
-  Hartid_t rat_off = 0;  // no need, addInst is private per thread. Cluster is shared (dinst->getFlowId() % getMaxFlows())*LREG_MAX;
+  Hartid_t rat_off = 0;  // no need, add_inst is private per thread. Cluster is shared (dinst->getFlowId() % getMaxFlows())*LREG_MAX;
 
 #if 1
 #if 0
@@ -191,13 +166,13 @@ StallCause InOrderProcessor::addInst(Dinst *dinst) { /*{{{*/
 
 #if 0
     //Useful for debug
-    if (cpu_id == 1 ){
-      MSG("\n-------------------------");
+    if (hid == 1 ){
+      fmt::print("\n-------------------------\n");
       string str ="";
       str.append("\nCONFLICT->");
       if (RAT[inst->getSrc1()] != 0){
         str.append("src1, ");
-        MSG(" SRC1 = %d, RAT[entry] = %d",inst->getSrc1(), RAT[inst->getSrc1()] );
+        fmt::print(" SRC1 = {}, RAT[entry] = {}\n",inst->getSrc1(), RAT[inst->getSrc1()] );
         RAT[inst->getSrc1()]->dump("\nSRC1 in use by:");
       }
 
@@ -234,7 +209,7 @@ if (!cluster) {
   dinst->setCluster(cluster, res);
 }
 
-I(dinst->getFlowId() == cpu_id);
+I(dinst->getFlowId() == hid);
 
 StallCause sc = cluster->canIssue(dinst);
 if (sc != NoStall)
@@ -267,7 +242,7 @@ I(!dinst->isExecuted());
 dinst->setRAT1Entry(&RAT[inst->getDst1() + rat_off]);
 dinst->setRAT2Entry(&RAT[inst->getDst2() + rat_off]);
 
-dinst->getCluster()->addInst(dinst);
+dinst->getCluster()->add_inst(dinst);
 
 RAT[inst->getDst1() + rat_off] = dinst;
 RAT[inst->getDst2() + rat_off] = dinst;
@@ -286,7 +261,7 @@ void InOrderProcessor::retire() { /*{{{*/
     Dinst *dinst = ROB.top();
     stats        = dinst->getStatsFlag();
 
-    I(cpu_id == dinst->getFlowId());
+    I(hid == dinst->getFlowId());
 
     bool done = dinst->getClusterResource()->preretire(dinst, false);
     if (!done)
@@ -294,18 +269,6 @@ void InOrderProcessor::retire() { /*{{{*/
 
     rROB.push(dinst);
     ROB.pop();
-#if 0
-    Hartid_t fid = dinst->getFlowId();
-    if (fid == 1){
-    fprintf(stderr,"\nCommitting from ROB , Hartid_t(%d), dinst->pc = %llx, dinst->addr = %llx, dinst->pe_id = %d, dinst->warp_id = %d",
-          fid,
-          dinst->getPC(),
-          dinst->getAddr(),
-          dinst->getPE(),
-          dinst->getWarpID()
-         );
-    }
-#endif
 
     nCommitted.inc(dinst->getStatsFlag());
   }
@@ -333,10 +296,8 @@ void InOrderProcessor::retire() { /*{{{*/
       I(dinst->isPerformed());
 #endif
 
-    if (dinst->isPerformed())  // Stores can perform after retirement
-      dinst->destroy(eint);
-    else {
-      eint->reexecuteTail(dinst->getFlowId());
+    if (dinst->isPerformed()) { // Stores can perform after retirement
+      dinst->destroy();
     }
     rROB.pop();
   }
@@ -344,8 +305,6 @@ void InOrderProcessor::retire() { /*{{{*/
 } /*}}}*/
 
 void InOrderProcessor::replay(Dinst *dinst) { /*{{{*/
-
-  MSG("Inorder cores do not support replays. Set MemoryReplay = false in the confguration");
 
   // FIXME: foo should be equal to the number of in-flight instructions (check OoOProcessor)
   size_t foo = 1;

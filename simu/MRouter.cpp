@@ -82,7 +82,6 @@ void MRouter::fillRouteTables()
 {
   I(up_node.size() == 0);  // First level cache only
   I(up_map.size() == 0);
-  MSG("Fill router is %s", self_mobj->getName());
 
   // it can be a nicecache I(down_node.size()>=1);
   for (size_t i = 0; i < down_node.size(); i++) {
@@ -99,19 +98,16 @@ void MRouter::fillRouteTables()
     else
       rb = rb->down_node[0]->getRouter();
   }
-  MSG("Bottom:clear router is %s", bottom->getName());
   rb = bottom->getRouter();
   rb->self_mobj->clearNeedsCoherence();
   while (rb->up_node.size() == 1) {
     MemObj *uobj = rb->up_node[0];
-    MSG("single:clear router is %s", uobj->getName());
     uobj->clearNeedsCoherence();
     rb = uobj->router;
   }
   if (!rb->up_node.empty()) {
     for (size_t i = 0; i < rb->up_node.size(); i++) {
       MemObj *uobj = rb->up_node[0];
-      //      MSG("Use:set router is %s",uobj->getName());
       uobj->setNeedsCoherence();
     }
   }
@@ -121,12 +117,9 @@ void MRouter::fillRouteTables()
 void MRouter::updateRouteTables(MemObj *upmobj, MemObj *const top_node)
 /* regenerate the routing tables {{{1 */
 {
-  //  MSG("Use:set router is %s",upmobj->getName());
   upmobj->setNeedsCoherence();
 
   up_map[top_node] = upmobj;
-  // MSG("Router %s: Setting upmap[%s (Addr = %p)] = %s (Addr =
-  // %p)",self_mobj->getName(),top_node->getName(),top_node,upmobj->getName(),upmobj);
   for (size_t i = 0; i < down_node.size(); i++) {
     down_node[i]->getRouter()->updateRouteTables(self_mobj, top_node);
     down_node[i]->getRouter()->updateRouteTables(self_mobj, self_mobj);
@@ -170,7 +163,6 @@ void MRouter::addDownNode(MemObj *dpm)
   mystr += "', '";
   mystr += self_mobj->getSection();
   mystr += "']";
-  // MSG("xxx>%s",mystr.c_str());
   arch.addObj(mystr);
 #else
   std::string mystr("");
@@ -294,6 +286,7 @@ void MRouter::scheduleDisp(MemRequest *mreq, TimeDelta_t lat)
 void MRouter::sendDirtyDisp(Addr_t addr, bool doStats, TimeDelta_t lat)
 /* schedule Displace (down) {{{1 */
 {
+  (void)lat;
   I(down_node.size() == 1);
   MemRequest::sendDirtyDisp(down_node[0], self_mobj, addr, doStats);
 }
@@ -301,6 +294,7 @@ void MRouter::sendDirtyDisp(Addr_t addr, bool doStats, TimeDelta_t lat)
 void MRouter::sendCleanDisp(Addr_t addr, bool prefetch, bool doStats, TimeDelta_t lat)
 /* schedule Displace (down) {{{1 */
 {
+  (void)lat;
   I(down_node.size() == 1);
   MemRequest::sendCleanDisp(down_node[0], self_mobj, addr, prefetch, doStats);
 }
@@ -315,10 +309,9 @@ int32_t MRouter::sendSetStateOthers(MemRequest *mreq, MsgAction ma, TimeDelta_t 
   bool   doStats = mreq->getStatsFlag();
   Addr_t addr    = mreq->getAddr();
 
-  MemObj                   *skip_mobj = 0;
-  UPMapType::const_iterator it        = up_map.find(mreq->getHomeNode());
+  const auto it                       = up_map.find(mreq->getHomeNode());
   I(it != up_map.end());
-  skip_mobj = it->second;
+  MemObj *skip_mobj = it->second;
 
   int32_t conta = 0;
   I(mreq->isReq() || mreq->isReqAck());

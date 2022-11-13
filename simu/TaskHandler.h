@@ -2,10 +2,9 @@
 
 #pragma once
 
-//#define ENABLE_MP 0
-#include <pthread.h>
-
 #include <vector>
+
+#include "absl/container/flat_hash_set.h"
 
 #include "emul_base.hpp"
 #include "iassert.hpp"
@@ -19,63 +18,54 @@ private:
     Hartid_t       fid;
     bool           active;
     bool           deactivating;
-    Emul_base     *emul;
-    GProcessor    *simu;
+    std::shared_ptr<Emul_base >  emul;
+    std::shared_ptr<GProcessor>  simu;
   };
 
-  typedef std::vector<EmulSimuMapping> AllMapsType;
-  typedef Hartid_t                      *runningType;
+  static inline bool   terminate_all{false};
 
-  static AllMapsType   allmaps;
-  static volatile bool terminate_all;
+  static inline std::vector<EmulSimuMapping> allmaps;
 
-  static runningType     running;
-  static Hartid_t          running_size;
-  static pthread_mutex_t mutex;
-  static pthread_mutex_t mutex_terminate;
+  static inline absl::flat_hash_set<Hartid_t> running;
 
-  static std::vector<Emul_base  *> emulas;  // associated emula
-  static std::vector<GProcessor *> cpus;    // All the CPUs in the system
+  static inline std::vector<std::shared_ptr<Emul_base>  > emuls;  // associated emula
+  static inline std::vector<std::shared_ptr<GProcessor> > simus;  // All the simus in the system
 
-  static void removeFromRunning(Hartid_t fid);
+  static inline bool plugging{false};
 
 public:
-  static void freeze(Hartid_t fid, Time_t nCycles);
 
-  static Hartid_t resumeThread(Hartid_t uid, Hartid_t last_fid);
-  static Hartid_t resumeThread(Hartid_t uid);
-  static void   pauseThread(Hartid_t fid);
-  static void   terminate();
+  static void core_create(std::shared_ptr<GProcessor> gproc);
+  static void core_resume(Hartid_t uid);
+  static void core_pause(Hartid_t fid);
+  static void core_freeze(Hartid_t fid, Time_t nCycles);
+  static void core_terminate_all();
 
-  static void report(const char *str);
-
-  static void addEmul(Emul_base *eint, Hartid_t fid = 0);
-  static void addEmulShared(Emul_base *eint);
-  static void addSimu(GProcessor *gproc);
-
-  static bool isTerminated() { return terminate_all; }
-
-  static bool isActive(Hartid_t fid) {
+  static bool is_core_power_up(Hartid_t fid) {
     I(fid < allmaps.size());
     return allmaps[fid].active;
   }
+
+  static void report();
+
+  static void add_emul(std::shared_ptr<Emul_base> eint, Hartid_t hid);
 
   static Hartid_t getNumActiveCores();
   static Hartid_t getNumCores() { return allmaps.size(); }
 
   static Hartid_t getNumCPUS() {
-    I(cpus.size() > 0);
-    return cpus.size();
+    I(simus.size() > 0);
+    return simus.size();
   }
 
-  static Emul_base *get_emul(Hartid_t fid) {
-    I(fid < emulas.size());
-    return emulas[fid];
+  static std::shared_ptr<Emul_base> ref_emul(Hartid_t fid) {
+    I(fid < emuls.size());
+    return emuls[fid];
   };
 
-  static GProcessor *getSimu(Hartid_t fid) {
-    I(fid < cpus.size());
-    return cpus[fid];
+  static std::shared_ptr<GProcessor> ref_core(Hartid_t fid) {
+    I(fid < simus.size());
+    return simus[fid];
   };
 
   static void plugBegin();

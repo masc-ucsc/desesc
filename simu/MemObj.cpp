@@ -1,26 +1,18 @@
 // See LICENSE for details.
 
-#include "MemObj.h"
-
 #include <string.h>
 
 #include <set>
 
+#include "fmt/format.h"
+#include "absl/strings/str_split.h"
+
+#include "MemObj.h"
 #include "GMemorySystem.h"
 #include "MemRequest.h"
 #include "config.hpp"
-#include "string.h"
 
 extern "C" uint64_t esesc_mem_read(uint64_t addr);
-
-#ifndef NDEBUG
-/* Debug class to search for duplicate names {{{1 */
-class Setltstr {
-public:
-  bool operator()(const std::string &s1, const std::string &s2) const { return strcasecmp(s1.c_str(), s2.c_str()) < 0; }
-};
-/* }}} */
-#endif
 
 uint16_t MemObj::id_counter = 0;
 
@@ -38,23 +30,36 @@ MemObj::MemObj(const std::string &sSection, const std::string &sName)
 #endif
     , id(id_counter++) {
 
-  deviceType = Config::get_string(section, "deviceType");
+  mem_type = Config::get_string(section, "type");
 
   coreid        = -1;  // No first Level cache by default
   firstLevelIL1 = false;
   firstLevelDL1 = false;
+  isLLC         = false;
+
+  std::vector<std::string> lower_level = absl::StrSplit(Config::get_string(section, "lower_level"), ' ');
+  if (lower_level.empty()) {
+    Config::add_error(fmt::format("malformed {} lower_level entry", section));
+    return;
+  }
+  auto lower_level_type = Config::get_string(lower_level[0], "type");
+  if (lower_level_type != "cache" && mem_type == "cache")
+    isLLC = true;
+
   // Create router (different objects may override the default router)
   router = new MRouter(this);
   /*if(strcmp(section, "DL1_core") == 0){
   }*/
 
-  static std::set<std::string, Setltstr> usedNames;
-  if (!sName.empty()) {
+  if (!name.empty()) {
+    std::string name_lc(name);
+    std::transform(name_lc.begin(), name_lc.end(), name_lc.begin(), [](unsigned char c){ return std::tolower(c); });
+    static std::set<std::string> usedNames;
     // Verify that one else uses the same name
-    if (usedNames.find(sName) != usedNames.end()) {
-      Config::add_error(fmt::format("multiple memory objects have same name '{}' (rename one of them)", sName));
+    if (usedNames.find(name_lc) != usedNames.end()) {
+      Config::add_error(fmt::format("multiple memory objects have same name '{}' (rename one of them)", name_lc));
     } else {
-      usedNames.insert(sName);
+      usedNames.insert(name_lc);
     }
   }
 }
@@ -70,14 +75,6 @@ void MemObj::addLowerLevel(MemObj *obj) {
   router->addDownNode(obj);
   I(obj);
   obj->addUpperLevel(this);
-  // printf("****%s with lower level %s\n",getName(),obj->getName());
-  auto name = obj->getName();
-  if (name[0] == 'L' && name[1] == '3') {
-    isLLC = true;
-    fmt::print("***Last Level Cache is {}\n",obj->getName());
-  } else {
-    isLLC = false;
-  }
 }
 
 void MemObj::addUpperLevel(MemObj *obj) {
@@ -86,6 +83,7 @@ void MemObj::addUpperLevel(MemObj *obj) {
 }
 
 void MemObj::blockFill(MemRequest *mreq) {
+  (void)mreq;
   // Most objects do nothing
 }
 
@@ -103,7 +101,7 @@ void MemObj::tryPrefetch(Addr_t addr, bool doStats, int degree, Addr_t pref_sign
 void MemObj::dump() const
 /* dump statistics {{{1 */
 {
-  LOG("MemObj name [%s]", name);
+  fmt::print("memObj name [{}]\n", name);
 }
 /* }}} */
 
@@ -847,6 +845,7 @@ void DummyMemObj::doReq(MemRequest *req)
 void DummyMemObj::doReqAck(MemRequest *req)
 /* reqAck {{{1 */
 {
+  (void)req;
   I(0);
 }
 /* }}} */
@@ -854,6 +853,7 @@ void DummyMemObj::doReqAck(MemRequest *req)
 void DummyMemObj::doSetState(MemRequest *req)
 /* setState {{{1 */
 {
+  (void)req;
   I(0);
   req->ack();
 }
@@ -862,6 +862,7 @@ void DummyMemObj::doSetState(MemRequest *req)
 void DummyMemObj::doSetStateAck(MemRequest *req)
 /* setStateAck {{{1 */
 {
+  (void)req;
   I(0);
 }
 /* }}} */
@@ -869,6 +870,7 @@ void DummyMemObj::doSetStateAck(MemRequest *req)
 void DummyMemObj::doDisp(MemRequest *req)
 /* disp {{{1 */
 {
+  (void)req;
   I(0);
 }
 /* }}} */
@@ -876,6 +878,7 @@ void DummyMemObj::doDisp(MemRequest *req)
 bool DummyMemObj::isBusy(Addr_t addr) const
 // Can it accept more requests {{{1
 {
+  (void)addr;
   return false;
 }
 // }}}
@@ -883,6 +886,7 @@ bool DummyMemObj::isBusy(Addr_t addr) const
 TimeDelta_t DummyMemObj::ffread(Addr_t addr)
 /* fast forward read {{{1 */
 {
+  (void)addr;
   return 1;  // 1 cycle does everything :)
 }
 /* }}} */
@@ -890,6 +894,7 @@ TimeDelta_t DummyMemObj::ffread(Addr_t addr)
 TimeDelta_t DummyMemObj::ffwrite(Addr_t addr)
 /* fast forward write {{{1 */
 {
+  (void)addr;
   return 1;  // 1 cycle does everything :)
 }
 /* }}} */
@@ -897,6 +902,11 @@ TimeDelta_t DummyMemObj::ffwrite(Addr_t addr)
 void DummyMemObj::tryPrefetch(Addr_t addr, bool doStats, int degree, Addr_t pref_sign, Addr_t pc, CallbackBase *cb)
 /* forward tryPrefetch {{{1 */
 {
+  (void)addr;
+  (void)doStats;
+  (void)degree;
+  (void)pref_sign;
+  (void)pc;
   if (cb)
     cb->destroy();
 }
@@ -905,13 +915,14 @@ void DummyMemObj::tryPrefetch(Addr_t addr, bool doStats, int degree, Addr_t pref
 /* Optional virtual methods {{{1 */
 bool MemObj::checkL2TLBHit(MemRequest *req) {
   // If called, it should be redefined by the object
+  (void)req;
   I(0);
   return false;
 }
-void MemObj::replayCheckLSQ_removeStore(Dinst *) { I(0); }
-void MemObj::updateXCoreStores(Addr_t addr) { I(0); }
+void MemObj::replayCheckLSQ_removeStore(Dinst *dinst) { (void)dinst; I(0); }
+void MemObj::updateXCoreStores(Addr_t addr) { (void)addr; I(0); }
 void MemObj::replayflush() { I(0); }
-void MemObj::setTurboRatio(float r) { I(0); }
+void MemObj::setTurboRatio(float r) { (void)r; I(0); }
 void MemObj::plug() { I(0); }
 void MemObj::setNeedsCoherence() {
   // Only cache uses this
@@ -925,6 +936,7 @@ bool MemObj::get_cir_queue(int index, Addr_t pc) {
 #endif
 
 bool MemObj::Invalid(Addr_t addr) const {
+  (void)addr;
   I(0);
   return false;
 }

@@ -22,6 +22,13 @@
 class Dinst;
 class MemObj;
 
+enum class Conf_level {
+  None
+  ,Low
+  ,Mid
+  ,High
+};
+
 class AddressPredictor {
 private:
 protected:
@@ -41,8 +48,8 @@ public:
 
   virtual Addr_t   predict(Addr_t pc, int distance, bool inLine = false)   = 0;
   virtual bool     try_chain_predict(MemObj *dl1, Addr_t pc, int distance) = 0;
-  virtual uint16_t exe_update(Addr_t pc, Addr_t addr, Data_t data = 0)     = 0;
-  virtual uint16_t ret_update(Addr_t pc, Addr_t addr, Data_t data = 0)     = 0;
+  virtual Conf_level exe_update(Addr_t pc, Addr_t addr, Data_t data = 0)     = 0;
+  virtual Conf_level ret_update(Addr_t pc, Addr_t addr, Data_t data = 0)     = 0;
 };
 
 /**********************
@@ -68,12 +75,13 @@ public:
   uint16_t conf;
   uint16_t conf2;
 
-  void update(int ndelta);
+  void update(int ndelta, uint16_t max_conf);
 };
 
 class BimodalStride {
 protected:
   const int size;
+  const uint16_t max_conf;
 
 #ifdef UNLIMITED_BIMODAL
   int get_index(Addr_t pc) const { return pc; };
@@ -90,30 +98,39 @@ protected:
 #endif
 
 public:
-  BimodalStride(int _size);
+  BimodalStride(int _size, size_t _width);
 
   void update(Addr_t pc, Addr_t naddr);
   void update_delta(Addr_t pc, int delta);
   void update_addr(Addr_t pc, Addr_t addr);
 
-  uint16_t get_conf(Addr_t pc) const { return table[get_index(pc)].conf; };
+  Conf_level has_conf(Addr_t pc) const {
+    auto v = table[get_index(pc)].conf;
+    if (v>=(max_conf-4))
+      return Conf_level::High;
+    if (v>=(max_conf>>2))
+      return Conf_level::Mid;
+    if (v<=4)
+      return Conf_level::None;
+    return Conf_level::Low;
+  }
 
   int get_delta(Addr_t pc) const { return table[get_index(pc)].delta; };
 
   Addr_t get_addr(Addr_t pc) const { return table[get_index(pc)].addr; };
 };
 
-class StrideAddressPredictor : public AddressPredictor {
+class Stride_address_predictor : public AddressPredictor {
 private:
   BimodalStride bimodal;
 
 public:
-  StrideAddressPredictor();
+  Stride_address_predictor(Hartid_t hartid, const std::string &section);
 
   Addr_t   predict(Addr_t pc, int distance, bool inLine);
   bool     try_chain_predict(MemObj *dl1, Addr_t pc, int distance);
-  uint16_t exe_update(Addr_t pc, Addr_t addr, Data_t data);
-  uint16_t ret_update(Addr_t pc, Addr_t addr, Data_t data);
+  Conf_level exe_update(Addr_t pc, Addr_t addr, Data_t data);
+  Conf_level ret_update(Addr_t pc, Addr_t addr, Data_t data);
 };
 
 /*****************************
@@ -147,13 +164,18 @@ public:
   void reset(Addr_t tag, uint16_t loff, int ndelta);
   bool isHit() const { return hit; }
   bool isTagHit() const { return thit; }
-  bool isConfident_prefetch() const { return get_conf() >= 2; }
 
-  int get_conf() const {
+  Conf_level has_conf() const {
     if (!hit)
-      return 0;  // bias to taken if nothing is known
+      return Conf_level::None;
 
-    return conf;
+    if (conf == 0 || conf == -1)
+      return Conf_level::Low;
+
+    if (abs(2 * conf + 1) >= (1 << VTAGE_CWIDTH) - 1)
+      return Conf_level::High;
+
+    return Conf_level::Mid;
   }
 
   bool conf_weak() const {
@@ -187,7 +209,7 @@ public:
   void u_clear() { u = 0; }
 };
 
-class vtage : public AddressPredictor {
+class Tage_address_predictor : public AddressPredictor {
 private:
 protected:
   struct LastAccess {
@@ -226,16 +248,16 @@ protected:
   LastAccess last[1024];  // FIXME: Use a fix size table (configuration time)
 
   BimodalStride bimodal;
-  Stats_cntr    tagePrefetchHistNum;
   Stats_cntr    tagePrefetchBaseNum;
+  Stats_cntr    tagePrefetchHistNum;
 
   int pred_delta;  // overall predicted delta
-  int pred_conf;
+  Conf_level pred_conf;
   int hitpred_delta;
   int altpred_delta;
 
-  int hit_bank;
-  int alt_bank;
+  uint16_t hit_bank;
+  uint16_t alt_bank;
 
   int    *m;     // [NHIST + 1]; // history lengths
   int    *TB;    //[NHIST + 1];   // tag width for the different tagged tables
@@ -267,24 +289,22 @@ protected:
   void updateVtage(Addr_t pc, int delta, uint16_t loff);
 
   int            tmp = 0;
-  const uint64_t log2fetchwidth;
-  const uint64_t nhist;  // num of tagged tables
+  const uint16_t log2fetchwidth;
+  const uint16_t nhist;  // num of tagged tables
   vtage_gentry **gtable;
 
 public:
-  vtage(uint64_t _bsize, uint64_t _log2fetchwidth, uint64_t _bwidth, uint64_t _nhist);
-
-  ~vtage() {}
+  Tage_address_predictor(Hartid_t hartid, const std::string &section);
 
   Addr_t   predict(Addr_t pc, int dist, bool inLine);
   bool     try_chain_predict(MemObj *dl1, Addr_t pc, int distance);
-  uint16_t exe_update(Addr_t pc, Addr_t addr, Data_t data);
-  uint16_t ret_update(Addr_t pc, Addr_t addr, Data_t data);
+  Conf_level exe_update(Addr_t pc, Addr_t addr, Data_t data);
+  Conf_level ret_update(Addr_t pc, Addr_t addr, Data_t data);
 };
 
 // INDIRECT Address Predictor
 
-class IndirectAddressPredictor : public AddressPredictor {
+class Indirect_address_predictor : public AddressPredictor {
 private:
   bool     chainPredict;
   uint16_t maxPrefetch;
@@ -293,12 +313,15 @@ private:
 
   void performed(MemObj *DL1, Addr_t pc, Addr_t ld1_addr);
 
+  std::vector<Addr_t> last_pcs;  // Last n PCs
+  Addr_t              last_pcs_pos;
+
 public:
-  typedef CallbackMember3<IndirectAddressPredictor, MemObj *, Addr_t, Addr_t, &IndirectAddressPredictor::performed> performedCB;
-  IndirectAddressPredictor();
+  typedef CallbackMember3<Indirect_address_predictor, MemObj *, Addr_t, Addr_t, &Indirect_address_predictor::performed> performedCB;
+  Indirect_address_predictor(Hartid_t hartid, const std::string &section);
 
   Addr_t   predict(Addr_t pc, int distance, bool inLine);
   bool     try_chain_predict(MemObj *dl1, Addr_t pc, int distance);
-  uint16_t exe_update(Addr_t pc, Addr_t addr, Data_t data);
-  uint16_t ret_update(Addr_t pc, Addr_t addr, Data_t data);
+  Conf_level exe_update(Addr_t pc, Addr_t addr, Data_t data);
+  Conf_level ret_update(Addr_t pc, Addr_t addr, Data_t data);
 };

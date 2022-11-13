@@ -3,7 +3,7 @@
 #include "stats_code.hpp"
 #include "report.hpp"
 
-Stats_code::Stats_code(const char *str) : Stats(str) {
+Stats_code::Stats_code(const std::string &str) : Stats(str) {
 
   reset();
   subscribe();

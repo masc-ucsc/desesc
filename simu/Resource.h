@@ -5,18 +5,17 @@
 #include "BloomFilter.h"
 #include "FastQueue.h"
 #include "Prefetcher.h"
-#include "SCB.h"
 #include "StoreSet.h"
 
 #include "stats.hpp"
 #include "callback.hpp"
 #include "iassert.hpp"
+#include "store_buffer.hpp"
 
 class PortGeneric;
 class Dinst;
 class MemObj;
 class Cluster;
-class GProcessor;
 
 enum StallCause {
   NoStall = 0,
@@ -99,7 +98,7 @@ class MemReplay : public Resource {
 protected:
   const uint32_t lfSize;
 
-  StoreSet *storeset;
+  std::shared_ptr<StoreSet> storeset;
   void      replayManage(Dinst *dinst);
   struct FailType {
     SSID_t     ssid;
@@ -112,7 +111,7 @@ protected:
   FailType *lf;
 
 public:
-  MemReplay(uint8_t type, Cluster *cls, PortGeneric *gen, StoreSet *ss, TimeDelta_t l, uint32_t cpuid);
+  MemReplay(uint8_t type, Cluster *cls, PortGeneric *gen, std::shared_ptr<StoreSet> ss, TimeDelta_t l, uint32_t cpuid);
 };
 
 class MemResource : public MemReplay {
@@ -122,13 +121,13 @@ protected:
   MemObj        *DL1;
   GMemorySystem *memorySystem;
   LSQ           *lsq;
-  Prefetcher    *pref;
-  SCB           *scb;
+  std::shared_ptr<Prefetcher>   pref;
+  std::shared_ptr<Store_buffer> scb;
   Stats_cntr     stldViolations;
 
   bool LSQlateAlloc;
 
-  MemResource(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *lsq, StoreSet *ss, Prefetcher *pref, SCB *scb, TimeDelta_t l,
+  MemResource(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *lsq, std::shared_ptr<StoreSet> ss, std::shared_ptr<Prefetcher> pref, std::shared_ptr<Store_buffer> scb, TimeDelta_t l,
               GMemorySystem *ms, int32_t id, const char *cad);
 
 public:
@@ -149,7 +148,7 @@ protected:
   typedef CallbackMember1<FULoad, Dinst *, &FULoad::cacheDispatched> cacheDispatchedCB;
 
 public:
-  FULoad(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *lsq, StoreSet *ss, Prefetcher *pref, SCB *scb, TimeDelta_t lsdelay,
+  FULoad(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *lsq, std::shared_ptr<StoreSet> ss, std::shared_ptr<Prefetcher> pref, std::shared_ptr<Store_buffer> scb, TimeDelta_t lsdelay,
          TimeDelta_t l, GMemorySystem *ms, int32_t size, int32_t id, const char *cad);
 
   StallCause canIssue(Dinst *dinst);
@@ -158,8 +157,6 @@ public:
   bool       preretire(Dinst *dinst, bool flushing);
   bool       retire(Dinst *dinst, bool flushing);
   void       performed(Dinst *dinst);
-
-  bool isLoadSpec(Dinst *dinst);
 };
 
 class FUStore : public MemResource {
@@ -175,7 +172,7 @@ private:
   // SCBQueueType               scbQueue;
 
 public:
-  FUStore(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *lsq, StoreSet *ss, Prefetcher *pref, SCB *scb, TimeDelta_t l,
+  FUStore(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *lsq, std::shared_ptr<StoreSet> ss, std::shared_ptr<Prefetcher> pref, std::shared_ptr<Store_buffer> scb, TimeDelta_t l,
           GMemorySystem *ms, int32_t size, int32_t id, const char *cad);
 
   StallCause canIssue(Dinst *dinst);

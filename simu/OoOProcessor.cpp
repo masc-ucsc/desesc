@@ -1,7 +1,5 @@
 // See LICENSE for details.
 
-#include "OoOProcessor.h"
-
 #include <math.h>
 
 #include <algorithm>
@@ -9,6 +7,9 @@
 #include <iterator>
 #include <numeric>
 
+#include "fmt/format.h"
+
+#include "OoOProcessor.h"
 #include "FastQueue.h"
 #include "FetchEngine.h"
 #include "GMemorySystem.h"
@@ -26,79 +27,79 @@
 
 OoOProcessor::OoOProcessor(GMemorySystem *gm, CPU_t i)
     /* constructor {{{1 */
-    : GOoOProcessor(gm, i)
+    : GProcessor(gm, i)
     , MemoryReplay(Config::get_bool("soc", "core", i, "memory_replay"))
 #ifdef ENABLE_LDBP
-    , BTT_SIZE(SescConf->getInt("cpusimu", "btt_size", i))
-    , MAX_TRIG_DIST(SescConf->getInt("cpusimu", "max_trig_dist", i))
-    , ldbp_power_mode_cycles("P(%d)_ldbp_power_mode_cycles", i)
-    , ldbp_power_save_cycles("P(%d)_ldbp_power_save_cycles", i)
-    , num_loads("P(%d)_num_loads", i)
-    , num_loads_ldbp("P(%d)_num_loads_ldbp", i)
-    , num_loads_non_ldbp("P(%d)_num_loads_non_ldbp", i)
-    , num_ld_conf("P(%d)_num_ld_conf", i)
-    , num_ld_conf_ldbp("P(%d)_num_ld_conf_ldbp", i)
-    , num_ld_conf_non_ldbp("P(%d)_num_ld_conf_non_ldbp", i)
-    , num_ld_data_conf("P(%d)_num_ld_data_conf", i)
-    , num_ld_data_conf_ldbp("P(%d)_num_ld_data_conf_ldbp", i)
-    , num_ld_data_conf_non_ldbp("P(%d)_num_ld_data_conf_non_ldbp", i)
-    , num_ldbr("P(%d)_num_ldbr", i)
-    , num_non_ldbr("P(%d)_num_non_ldbr", i)
-    //, num_non_ldbr("P(%d)_num_non_ldbr", i)
-    , num_bad_tage_br("P(%d)_num_bad_tage_br", i)
-    , num_br("P(%d)_num_br", i)
-    , num_chain_child("P(%d)_num_chain_child", i)
-    , num_br_1_src("P(%d)_num_br_1_src", i)
-    , num_br_2_src("P(%d)_num_br_2_src", i)
-    , num_br_trivial("P(%d)_num_br_trivial", i)
-    , num_br_trivial_ldbp("P(%d)_num_br_trivial_ldbp", i)
-    , num_br_trivial_non_ldbp("P(%d)_num_br_trivial_non_ldbp", i)
-    , num_br_trivial_x_ld("P(%d)_num_br_trivial_x_ld", i)
-    , num_br_simple("P(%d)_num_br_simple", i)
-    , num_br_simple_ldbp("P(%d)_num_br_simple_ldbp", i)
-    , num_br_simple_non_ldbp("P(%d)_num_br_simple_non_ldbp", i)
-    , num_br_simple_x_ld("P(%d)_num_br_simple_x_ld", i)
-    , num_br_excess("P(%d)_num_br_excess", i)
-    , num_br_excess_ldbp("P(%d)_num_br_excess_ldbp", i)
-    , num_br_excess_non_ldbp("P(%d)_num_br_excess_non_ldbp", i)
-    , num_br_excess_x_ld("P(%d)_num_br_excess_x_ld", i)
-    , num_br_chain("P(%d)_num_br_chain", i)
-    , num_br_chain_ldbp("P(%d)_num_br_chain_ldbp", i)
-    , num_br_chain_non_ldbp("P(%d)_num_br_chain_non_ldbp", i)
-    , num_br_chain_x_ld("P(%d)_num_br_chain_x_ld", i)
-    , num_br_chain_x_op("P(%d)_num_br_chain_x_op", i)
-    , num_br_complex("P(%d)_num_br_complex", i)
-    , num_ldbr_2("P(%d)_num_ldbr_2", i)
-    , num_ldbr_3("P(%d)_num_ldbr_3", i)
-    , num_ldbr_4("P(%d)_num_ldbr_4", i)
-    , num_ldbr_12("P(%d)_num_ldbr_12", i)
-    , num_ldbr_22("P(%d)_num_ldbr_22", i)
-    , num_ldbr_23("P(%d)_num_ldbr_23", i)
-    , num_ldbr_24("P(%d)_num_ldbr_24", i)
-    , num_ldbr_32("P(%d)_num_ldbr_32", i)
-    , num_ldbr_33("P(%d)_num_ldbr_33", i)
-    , num_ldbr_34("P(%d)_num_ldbr_34", i)
-    , num_ldbr_44("P(%d)_num_ldbr_44", i)
-    , num_ldbr_222("P(%d)_num_ldbr_222", i)
-    , num_ldbr_223("P(%d)_num_ldbr_223", i)
-    , num_ldbr_233("P(%d)_num_ldbr_233", i)
-    , num_ldbr_423("P(%d)_num_ldbr_423", i)
-    , num_ldbr_444("P(%d)_num_ldbr_444", i)
-    , num_ldbr_2222("P(%d)_num_ldbr_2222", i)
-    , num_ldbr_2223("P(%d)_num_ldbr_2223", i)
-    , num_ldbr_2232("P(%d)_num_ldbr_2232", i)
-    , num_ldbr_2322("P(%d)_num_ldbr_2322", i)
-    , num_ldbr_2233("P(%d)_num_ldbr_2233", i)
-    , num_ldbr_0("P(%d)_num_ldbr_0", i)
-    , num_ldbr_6L1("P(%d)_num_ldbr_6L1", i)
-    , num_ldbr_6L2_3("P(%d)_num_ldbr_6L2_3", i)
-    //, num_ldbr_6L4("P(%d)_num_ldbr_6L4", i)
-    , num_ldbr_7L1("P(%d)_num_ldbr_7L1", i)
-    , num_ldbr_7L2_3("P(%d)_num_ldbr_7L2_3", i)
-    , num_ldbr_7L4("P(%d)_num_ldbr_7L4", i)
-    , num_ldbr_8L2_3("P(%d)_num_ldbr_8L2_3", i)
-    , num_ldbr_8L4("P(%d)_num_ldbr_8L4", i)
-    , num_ldbr_others("P(%d)_num_ldbr_others", i)
+    , BTT_SIZE(SescConf->getInt("cpusimu", "btt_size", i)))
+    , MAX_TRIG_DIST(SescConf->getInt("cpusimu", "max_trig_dist", i)))
+    , ldbp_power_mode_cycles(fmt::format("P({})_ldbp_power_mode_cycles", i))
+    , ldbp_power_save_cycles(fmt::format("P({})_ldbp_power_save_cycles", i))
+    , num_loads(fmt::format("P({})_num_loads", i))
+    , num_loads_ldbp(fmt::format("P({})_num_loads_ldbp", i))
+    , num_loads_non_ldbp(fmt::format("P({})_num_loads_non_ldbp", i))
+    , num_ld_conf(fmt::format("P({})_num_ld_conf", i))
+    , num_ld_conf_ldbp(fmt::format("P({})_num_ld_conf_ldbp", i))
+    , num_ld_conf_non_ldbp(fmt::format("P({})_num_ld_conf_non_ldbp", i))
+    , num_ld_data_conf(fmt::format("P({})_num_ld_data_conf", i))
+    , num_ld_data_conf_ldbp(fmt::format("P({})_num_ld_data_conf_ldbp", i))
+    , num_ld_data_conf_non_ldbp(fmt::format("P({})_num_ld_data_conf_non_ldbp", i))
+    , num_ldbr(fmt::format("P({})_num_ldbr", i))
+    , num_non_ldbr(fmt::format("P({})_num_non_ldbr", i))
+    //, num_non_ldbr(fmt::format("P({})_num_non_ldbr", i))
+    , num_bad_tage_br(fmt::format("P({})_num_bad_tage_br", i))
+    , num_br(fmt::format("P({})_num_br", i))
+    , num_chain_child(fmt::format("P({})_num_chain_child", i))
+    , num_br_1_src(fmt::format("P({})_num_br_1_src", i))
+    , num_br_2_src(fmt::format("P({})_num_br_2_src", i))
+    , num_br_trivial(fmt::format("P({})_num_br_trivial", i))
+    , num_br_trivial_ldbp(fmt::format("P({})_num_br_trivial_ldbp", i))
+    , num_br_trivial_non_ldbp(fmt::format("P({})_num_br_trivial_non_ldbp", i))
+    , num_br_trivial_x_ld(fmt::format("P({})_num_br_trivial_x_ld", i))
+    , num_br_simple(fmt::format("P({})_num_br_simple", i))
+    , num_br_simple_ldbp(fmt::format("P({})_num_br_simple_ldbp", i))
+    , num_br_simple_non_ldbp(fmt::format("P({})_num_br_simple_non_ldbp", i))
+    , num_br_simple_x_ld(fmt::format("P({})_num_br_simple_x_ld", i))
+    , num_br_excess(fmt::format("P({})_num_br_excess", i))
+    , num_br_excess_ldbp(fmt::format("P({})_num_br_excess_ldbp", i))
+    , num_br_excess_non_ldbp(fmt::format("P({})_num_br_excess_non_ldbp", i))
+    , num_br_excess_x_ld(fmt::format("P({})_num_br_excess_x_ld", i))
+    , num_br_chain(fmt::format("P({})_num_br_chain", i))
+    , num_br_chain_ldbp(fmt::format("P({})_num_br_chain_ldbp", i))
+    , num_br_chain_non_ldbp(fmt::format("P({})_num_br_chain_non_ldbp", i))
+    , num_br_chain_x_ld(fmt::format("P({})_num_br_chain_x_ld", i))
+    , num_br_chain_x_op(fmt::format("P({})_num_br_chain_x_op", i))
+    , num_br_complex(fmt::format("P({})_num_br_complex", i))
+    , num_ldbr_2(fmt::format("P({})_num_ldbr_2", i))
+    , num_ldbr_3(fmt::format("P({})_num_ldbr_3", i))
+    , num_ldbr_4(fmt::format("P({})_num_ldbr_4", i))
+    , num_ldbr_12(fmt::format("P({})_num_ldbr_12", i))
+    , num_ldbr_22(fmt::format("P({})_num_ldbr_22", i))
+    , num_ldbr_23(fmt::format("P({})_num_ldbr_23", i))
+    , num_ldbr_24(fmt::format("P({})_num_ldbr_24", i))
+    , num_ldbr_32(fmt::format("P({})_num_ldbr_32", i))
+    , num_ldbr_33(fmt::format("P({})_num_ldbr_33", i))
+    , num_ldbr_34(fmt::format("P({})_num_ldbr_34", i))
+    , num_ldbr_44(fmt::format("P({})_num_ldbr_44", i))
+    , num_ldbr_222(fmt::format("P({})_num_ldbr_222", i))
+    , num_ldbr_223(fmt::format("P({})_num_ldbr_223", i))
+    , num_ldbr_233(fmt::format("P({})_num_ldbr_233", i))
+    , num_ldbr_423(fmt::format("P({})_num_ldbr_423", i))
+    , num_ldbr_444(fmt::format("P({})_num_ldbr_444", i))
+    , num_ldbr_2222(fmt::format("P({})_num_ldbr_2222", i))
+    , num_ldbr_2223(fmt::format("P({})_num_ldbr_2223", i))
+    , num_ldbr_2232(fmt::format("P({})_num_ldbr_2232", i))
+    , num_ldbr_2322(fmt::format("P({})_num_ldbr_2322", i))
+    , num_ldbr_2233(fmt::format("P({})_num_ldbr_2233", i))
+    , num_ldbr_0(fmt::format("P({})_num_ldbr_0", i))
+    , num_ldbr_6L1(fmt::format("P({})_num_ldbr_6L1", i))
+    , num_ldbr_6L2_3(fmt::format("P({})_num_ldbr_6L2_3", i))
+    //, num_ldbr_6L4(fmt::format("P({})_num_ldbr_6L4", i))
+    , num_ldbr_7L1(fmt::format("P({})_num_ldbr_7L1", i))
+    , num_ldbr_7L2_3(fmt::format("P({})_num_ldbr_7L2_3", i))
+    , num_ldbr_7L4(fmt::format("P({})_num_ldbr_7L4", i))
+    , num_ldbr_8L2_3(fmt::format("P({})_num_ldbr_8L2_3", i))
+    , num_ldbr_8L4(fmt::format("P({})_num_ldbr_8L4", i))
+    , num_ldbr_others(fmt::format("P({})_num_ldbr_others", i))
 #endif
     , RetireDelay(Config::get_integer("soc", "core", i, "commit_delay"))
     , IFID(i, gm)
@@ -108,20 +109,20 @@ OoOProcessor::OoOProcessor(GMemorySystem *gm, CPU_t i)
     , clusterManager(gm, i, this)
     , avgFetchWidth(fmt::format("P({})_avgFetchWidth", i))
 #ifdef TRACK_TIMELEAK
-    , avgPNRHitLoadSpec("P(%d)_avgPNRHitLoadSpec", i)
-    , avgPNRMissLoadSpec("P(%d)_avgPNRMissLoadSpec", i)
+    , avgPNRHitLoadSpec(fmt::format("P({})_avgPNRHitLoadSpec", i))
+    , avgPNRMissLoadSpec(fmt::format("P({})_avgPNRMissLoadSpec", i))
 #endif
 #ifdef TRACK_FORWARDING
-    , avgNumSrc("P(%d)_avgNumSrc", i)
-    , avgNumDep("P(%d)_avgNumDep", i)
-    , fwd0done0("P(%d)_fwd0done0", i)
-    , fwd1done0("P(%d)_fwd1done0", i)
-    , fwd1done1("P(%d)_fwd1done1", i)
-    , fwd2done0("P(%d)_fwd2done0", i)
-    , fwd2done1("P(%d)_fwd2done1", i)
-    , fwd2done2("P(%d)_fwd2done2", i)
+    , avgNumSrc(fmt::format("P({})_avgNumSrc", i))
+    , avgNumDep(fmt::format("P({})_avgNumDep", i))
+    , fwd0done0(fmt::format("P({})_fwd0done0", i))
+    , fwd1done0(fmt::format("P({})_fwd1done0", i))
+    , fwd1done1(fmt::format("P({})_fwd1done1", i))
+    , fwd2done0(fmt::format("P({})_fwd2done0", i))
+    , fwd2done1(fmt::format("P({})_fwd2done1", i))
+    , fwd2done2(fmt::format("P({})_fwd2done2", i))
 #endif
-    , codeProfile("P(%d)_prof", i) {
+    , codeProfile(fmt::format("P({})_prof", i)) {
   bzero(RAT, sizeof(Dinst *) * LREG_MAX);
   bzero(serializeRAT, sizeof(Dinst *) * LREG_MAX);
 #ifdef TRACK_FORWARDING
@@ -173,20 +174,20 @@ OoOProcessor::~OoOProcessor()
 }
 /* }}} */
 
-void OoOProcessor::fetch(Hartid_t fid)
+void OoOProcessor::fetch()
 /* fetch {{{1 */
 {
-  I(fid == cpu_id);
-  I(active);
+  I(is_power_up());
   I(eint);
 
+  auto smt_hid = hid; // FIXME: for SMT
+
   if (IFID.isBlocked()) {
-    //    I(0);
     busy = true;
   } else {
     IBucket *bucket = pipeQ.pipeLine.newItem();
     if (bucket) {
-      IFID.fetch(bucket, eint, fid);
+      IFID.fetch(bucket, eint, smt_hid);
       if (!bucket->empty()) {
         avgFetchWidth.sample(bucket->size(), bucket->top()->getStatsFlag());
         busy = true;
@@ -196,38 +197,20 @@ void OoOProcessor::fetch(Hartid_t fid)
 }
 /* }}} */
 
-bool OoOProcessor::advance_clock(Hartid_t fid)
-/* Full execution: fetch|rename|retire {{{1 */
-{
-  if (!active) {
-    // time to remove from the running queue
-    // TaskHandler::removeFromRunning(cpu_id);
-    return false;
-  }
-
-  fetch(fid);
-
+bool OoOProcessor::advance_clock_drain() {
   if (!ROB.empty()) {
-    // Else use last time
+    // else use last time
     getStatsFlag = ROB.top()->getStatsFlag();
   }
 
-  clockTicks.inc(getStatsFlag);
-  setWallClock(getStatsFlag);
+  adjust_clock(getStatsFlag);
 
   if (!busy)
     return false;
 
-  if (unlikely(throttlingRatio > 1)) {
-    throttling_cntr++;
-
-    uint32_t skip = (uint32_t)ceil(throttlingRatio / getTurboRatio());
-
-    if (throttling_cntr < skip) {
-      return true;
-    }
-    throttling_cntr = 1;
-  }
+  bool new_clock = adjust_clock();
+  if (!new_clock)
+    return true;
 
   // ID Stage (insert to instQueue)
   if (spaceInInstQueue >= FetchWidth) {
@@ -260,15 +243,10 @@ bool OoOProcessor::advance_clock(Hartid_t fid)
 
       if ((lastReplay + 2 * forwardProg_threshold) < replayID) {
         serialize_level = 3;  // One over max to start with 2
-        // MSG("%d Reset Serialize level @%lld : %lld %lld",cpu_id, globalClock,lastReplay, replayID);
       }
       if ((lastReplay + forwardProg_threshold) > replayID) {
         if (serialize_level) {
-          // MSG("%d One level less %d for %d @%lld : %lld %lld", cpu_id, serialize_level, serialize_for, globalClock, lastReplay,
-          // replayID);
           serialize_level--;
-        } else {
-          // MSG("%d already at level 0 @%lld", cpu_id, globalClock);
         }
         serialize_for = serialize;
         // forwardProg_threshold = replayID - lastReplay;
@@ -285,17 +263,23 @@ bool OoOProcessor::advance_clock(Hartid_t fid)
 
   if (!pipeQ.instQueue.empty()) {
     spaceInInstQueue += issue(pipeQ);
-  } else if (ROB.empty() && rROB.empty()) {
-    // Still busy if we have some in-flight requests
-    busy = pipeQ.pipeLine.hasOutstandingItems();
-    return true;
+  } else if (ROB.empty() && rROB.empty() && !pipeQ.pipeLine.hasOutstandingItems()) {
+    return false;
   }
 
   retire();
 
   return true;
 }
-/* }}} */
+
+bool OoOProcessor::advance_clock() {
+  if (!active)
+    return false;
+
+  fetch();
+
+  return advance_clock_drain());
+}
 
 void OoOProcessor::executing(Dinst *dinst)
 // {{{1 Called when the instruction starts to execute
@@ -353,8 +337,7 @@ void OoOProcessor::executed(Dinst *dinst) {
 #endif
 }
 
-StallCause OoOProcessor::addInst(Dinst *dinst)
-/* rename (or addInst) a new instruction {{{1 */
+StallCause OoOProcessor::add_inst(Dinst *dinst)
 {
   if (replayRecovering && dinst->getID() > replayID) {
     return ReplaysStall;
@@ -504,7 +487,7 @@ StallCause OoOProcessor::addInst(Dinst *dinst)
 
   I(!dinst->isExecuted());
 
-  dinst->getCluster()->addInst(dinst);
+  dinst->getCluster()->add_inst(dinst);
 
   if (!dinst->isExecuted()) {
     RAT[inst->getDst1()] = dinst;
@@ -1650,10 +1633,10 @@ void OoOProcessor::retire()
     if (!done)
       break;
 
-    Hartid_t fid = dinst->getFlowId();
+    Hartid_t smt_hid = dinst->getFlowId();
     if (dinst->isReplay()) {
       flushing     = true;
-      flushing_fid = fid;
+      flushing_fid = smt_hid; // It can be different from hid due to SMT
     }
 
 #ifdef FETCH_TRACE
@@ -1759,8 +1742,6 @@ void OoOProcessor::retire()
 
     if (dinst->isPerformed())  // Stores can perform after retirement
       dinst->destroy(eint);
-    else {
-      eint->reexecuteTail(fid);
     }
 
     if (last_serialized == dinst)

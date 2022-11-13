@@ -1,4 +1,6 @@
 
+# TOML is case sensitive, but to avoid issues use lower-case in all the section
+# and field names
 
 [soc]
 core = ["c0", "c0"]
@@ -17,6 +19,8 @@ type = "random"  # Generate random instructions (coverage testing?)
 
 [bp0]
 delay             = 1
+fetch_predict     = true   # Not a prediction per instruction
+
 btb_history_size  = 0
 btb_split_il1     = false  # do not cache entries that can be computed by IL1
 btb_size          = 32
@@ -24,8 +28,59 @@ btb_line_size     = 1
 btb_assoc         = 4
 btb_repl_policy   = "LRU"
 
+# IMLI
+bimodal_size      = 8192
+bimodal_width     = 2
+nhist             = 8
+statcorrector     = false
+
+# 2level
+l1_size           = 4
+history_size      = 12
+l2_size           = 2048
+l2_width          = 2
+path_based        = false
+
+# Hybrid
+history_size = 12
+global_size  = 2048
+global_width = 2
+local_size   = 2048
+local_width  = 2
+meta_size    = 2048
+meta_width   = 2
+path_based   = false
+
+# 2BcgSkew
+bimodal_size      = 1024
+g0_size           = 2048
+g0_history_size   = 4
+g1_size           = 2048
+g1_history_size   = 8
+meta_size         = 2048
+meta_history_size = 12
+
+# yags
+meta_size  = 1024
+meta_width = 2
+l1_size    = 4096
+l1_width   = 3
+l2_size    = 4096
+l2_width   = 3
+l_tag_width = 8
+
+# ogehl
+num_tables = 8
+max_history_size = 128
+table_size = 1024
+table_cbits = 4
+table_width = 3
+
+
+
 [bp1]
 delay             = 2
+fetch_predict     = true   # Not a prediction per instruction
 btb_history_size  = 0
 btb_split_il1     = false  # do not cache entries that can be computed by IL1
 btb_size          = 8192
@@ -35,17 +90,20 @@ btb_repl_policy   = "LRU"
 
 [c0]
 type  = "ooo"  # ooo or inorder or accel
+frequency_mhz = 1000
 # Branch Predictor[s] parameters
 bp_addr_shift = 0      # bits shifted by branch predictor PC
 ras_size      = 32
 ras_prefetch  = false
 bpred         = ["bp0", "bp1"]
 
+[accel_entry]
+type = "accel"
+frequency_mhz = 200
 
 # Fetch parameters
 fetch_align       = true
 trace_align       = false
-target_inline_opt = true   # jumps within cacheline do not flush
 fetch_one_line    = true   # jumps within cacheline do not flush
 max_bb_cycle      = 1
 prefetcher        = "pref_opt"
@@ -58,22 +116,30 @@ memory_replay = true
 st_fwd_delay  = 2
 ldq_size      = 96
 stq_size      = 64
-IL1           = "il1_cache"
+stq_late_alloc = false
+storeset_size = 8192
+iL1           = "il1_cache"
+dL1           = "dl1_cache"
 
 decode_delay = 4
 rename_delay = 2
-fetch_width  = 8
 ftq_size     = 12
 instq_size   = 16
 
+fetch_width  = 8
+issue_width  = 8
+retire_width = 8
+rob_size     = 320
+
 # Exe Parameters
 cluster = ["aunit", "bunit", "cunit"]
+inter_cluster_lat    = 1
+cluster_scheduler    = "RoundRobin"
 max_branches         = 30
 drain_on_miss        = false
 commit_delay         = 2
 replay_serialize_for = 32
 scoore_serialze      = true
-inter_cluster_lat    = 1
 
 [alu0]
 num = 4
@@ -98,6 +164,7 @@ line_size  = 64
 delay      = 2         # hit delay
 miss_delay = 8
 assoc      = 4
+lower_level = "PrivL2 L2 sharedby 2"
 
 [pref_opt]
 type       = "stride"

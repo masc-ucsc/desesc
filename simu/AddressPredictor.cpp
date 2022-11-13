@@ -12,37 +12,34 @@
 #include "config.hpp"
 #include "dinst.hpp"
 
-BimodalStride::BimodalStride(int _size) : size(_size) {
-  if ((size & (size-1)) != 0) {
-    Config::add_error(fmt::format("BimodalStride needs a power of 2 size {}", size));
-    return;
-  }
+BimodalStride::BimodalStride(int _size, size_t _width) : size(_size), max_conf(1<<_width) {
+  I((size & (size-1)) != 0);
 
   table.resize(size);
 }
 
-void BimodalLastEntry::update(int ndelta) {
+void BimodalLastEntry::update(int ndelta, uint16_t max_conf) {
   // No need to waste space for delta 0
   if (delta == ndelta) {
-    if (conf < 63) {
+    if (conf < max_conf) {
       conf++;
     } else {
-      if (conf2 > 16)
+      if (conf2 > (max_conf>>2))
         conf2 /= 2;
       else if (conf2)
         conf2--;
     }
   } else {
-    if (conf > 16)
+    if (conf > max_conf)
       conf /= 2;
     else if (conf)
       conf--;
 
     if (delta2 == ndelta) {
-      if (conf2 < 63)
+      if (conf2 < max_conf)
         conf2++;
     } else {
-      if (conf2 > 16)
+      if (conf2 > (max_conf>>2))
         conf2 /= 2;
       else if (conf2)
         conf2--;
@@ -84,36 +81,35 @@ void BimodalStride::update_delta(Addr_t pc, int ndelta) {
     return;
 #endif
 
-  table[get_index(pc)].update(ndelta);
+  table[get_index(pc)].update(ndelta, max_conf);
 }
 
 /*************************************
 STRIDE Address Predictor
 **************************************/
 
-StrideAddressPredictor::StrideAddressPredictor() : bimodal(1024) {
-  // FIXME: use a size for # entries, and conf level
+Stride_address_predictor::Stride_address_predictor(Hartid_t hartid, const std::string &section)
+  : bimodal(Config::get_power2(section,"bimodal_size", 4), Config::get_integer(section,"bimodal_width",1,8)) {
+  (void)hartid;
 }
 
-uint16_t StrideAddressPredictor::exe_update(Addr_t pc, Addr_t addr, Data_t data) {
+Conf_level Stride_address_predictor::exe_update(Addr_t pc, Addr_t addr, Data_t data) {
   (void)data;
 
   bimodal.update(pc, addr);
 
-  return bimodal.get_conf(pc);
+  return bimodal.has_conf(pc);
 }
 
-uint16_t StrideAddressPredictor::ret_update(Addr_t pc, Addr_t addr, Data_t data) {
+Conf_level Stride_address_predictor::ret_update(Addr_t pc, Addr_t addr, Data_t data) {
   (void)addr;
   (void)data;
-  if (bimodal.get_conf(pc) > 16)  // if conf > 16, the mark as prefetch
-    return 1;
 
-  return 0;
+  return bimodal.has_conf(pc);
 }
 
-Addr_t StrideAddressPredictor::predict(Addr_t ppc, int distance, bool inLines) {
-  if (bimodal.get_conf(ppc) < 2)
+Addr_t Stride_address_predictor::predict(Addr_t ppc, int distance, bool inLines) {
+  if (bimodal.has_conf(ppc) == Conf_level::None)
     return 0;  // not predictable;
 
   int delta = bimodal.get_delta(ppc);
@@ -127,18 +123,10 @@ Addr_t StrideAddressPredictor::predict(Addr_t ppc, int distance, bool inLines) {
   if (delta < 64 && inLines)
     offset = 64 * distance;  // At least 1 cache line delta
 
-  bool ld_tracking = ppc == 0x10006540 || ppc == 0x10006544;
-  if (ld_tracking)
-    printf("STRIDE ldpc:%x dist:%d addr:%llx delta:%d conf:%d\n",
-           ppc,
-           distance,
-           bimodal.get_addr(ppc),
-           delta,
-           bimodal.get_conf(ppc));
   return bimodal.get_addr(ppc) + offset;
 }
 
-bool StrideAddressPredictor::try_chain_predict(MemObj *dl1, Addr_t pc, int distance) { return false; }
+bool Stride_address_predictor::try_chain_predict(MemObj *dl1, Addr_t pc, int distance) { (void)dl1, (void)pc; (void)distance; return false; }
 
 /**************************************
 
@@ -146,12 +134,14 @@ VTAGE
 
 **************************************/
 
-vtage::vtage(uint64_t _bsize, uint64_t _log2fetchwidth, uint64_t _bwidth, uint64_t _nhist)
-    : bimodal(_bsize)
-    , tagePrefetchBaseNum("tagePrefetchBaseNum(%d)", 0)
-    , tagePrefetchHistNum("tagePrefetchHistNum(%d)", 0)
-    , log2fetchwidth(_log2fetchwidth)
-    , nhist(_nhist) {
+Tage_address_predictor::Tage_address_predictor(Hartid_t hartid, const std::string &section)
+    : bimodal(Config::get_power2(section, "bimodal_size", 1), Config::get_integer(section, "bimodal_width", 1, 8))
+    , tagePrefetchBaseNum(fmt::format("P({})_vtage_base", hartid))
+    , tagePrefetchHistNum(fmt::format("P({})_vtage_hist", hartid))
+    , log2fetchwidth(log2(Config::get_power2("soc", "core", hartid, "fetch_width")))
+    , nhist(Config::get_integer(section, "ntables", 2)) {
+
+  // auto bwidth         = Config::get_integer(section, "bimodal_width", 1);
   m      = new int[nhist + 1];
   TB     = new int[nhist + 1];
   logg   = new int[nhist + 1];
@@ -186,12 +176,12 @@ vtage::vtage(uint64_t _bsize, uint64_t _log2fetchwidth, uint64_t _bwidth, uint64
   use_alt_on_na = 0;
 }
 
-void vtage::setVtagePrediction(Addr_t pc) {
+void Tage_address_predictor::setVtagePrediction(Addr_t pc) {
   hit_bank = 0;
   alt_bank = 0;
 
-  int hitpred_conf = 0;
-  int altpred_conf = 0;
+  auto hitpred_conf = Conf_level::None;
+  auto altpred_conf = Conf_level::None;
 
   for (uint64_t i = 1; i <= nhist; i++) {
     if (gtable[i][GI[i]].isHit()) {
@@ -200,7 +190,7 @@ void vtage::setVtagePrediction(Addr_t pc) {
       alt_bank      = hit_bank;
 
       hitpred_delta = gtable[i][GI[i]].get_delta();
-      hitpred_conf  = gtable[i][GI[i]].get_conf();
+      hitpred_conf  = gtable[i][GI[i]].has_conf();
       hit_bank      = i;
     }
   }
@@ -211,13 +201,13 @@ void vtage::setVtagePrediction(Addr_t pc) {
   if (hit_bank == 0) {
     I(alt_bank == 0);
     pred_delta    = bimodal.get_delta(pc);
-    pred_conf     = bimodal.get_conf(pc);
+    pred_conf     = bimodal.has_conf(pc);
     hitpred_delta = pred_delta;
     altpred_delta = pred_delta;
   } else {
     if (alt_bank == 0) {
       altpred_delta = bimodal.get_delta(pc);
-      pred_conf     = bimodal.get_conf(pc);
+      pred_conf     = bimodal.has_conf(pc);
     }
 
     if ((use_alt_on_na < 0) || !gtable[hit_bank][GI[hit_bank]].conf_weak()) {
@@ -231,7 +221,7 @@ void vtage::setVtagePrediction(Addr_t pc) {
   }
 }
 
-Addr_t vtage::gindex(uint16_t offset, int bank) {
+Addr_t Tage_address_predictor::gindex(uint16_t offset, int bank) {
   Addr_t pc = get_pc(lastBoundaryPC, offset);
 
   uint8_t delta_pos = last[get_last_index(pc)].last_delta_spec_pos;
@@ -277,7 +267,7 @@ Addr_t vtage::gindex(uint16_t offset, int bank) {
   return (index & ((1 << (logg[bank])) - 1));
 }
 
-void vtage::setVtageIndex(uint16_t offset) {
+void Tage_address_predictor::setVtageIndex(uint16_t offset) {
   hit_bank = 0;
   alt_bank = 0;
 
@@ -288,7 +278,7 @@ void vtage::setVtageIndex(uint16_t offset) {
   }
 }
 
-void vtage::fetchBoundaryLdOffset(Addr_t pc) {
+void Tage_address_predictor::fetchBoundaryLdOffset(Addr_t pc) {
   uint16_t loff = get_offset(pc);
 
   for (uint64_t i = 1; i <= nhist; i++) {
@@ -296,8 +286,8 @@ void vtage::fetchBoundaryLdOffset(Addr_t pc) {
   }
 }
 
-Addr_t vtage::predict(Addr_t pc, int distance, bool inLines) {
-  if (bimodal.get_conf(pc) > 60) {
+Addr_t Tage_address_predictor::predict(Addr_t pc, int distance, bool inLines) {
+  if (bimodal.has_conf(pc) == Conf_level::High) {
     int delta = bimodal.get_delta(pc);
 #ifndef STRIDE_DELTA0
     if (delta == 0 && !inLines)
@@ -325,7 +315,7 @@ Addr_t vtage::predict(Addr_t pc, int distance, bool inLines) {
     fetchBoundaryLdOffset(pc);
     setVtagePrediction(pc);
 
-    if (pred_conf < 8) {
+    if (pred_conf == Conf_level::None || pred_conf == Conf_level::Low) {
       last[get_last_index(pc)].clear_spec();
       return 0;  // Too far
     }
@@ -353,9 +343,11 @@ Addr_t vtage::predict(Addr_t pc, int distance, bool inLines) {
   return addr;
 }
 
-bool vtage::try_chain_predict(MemObj *dl1, Addr_t pc, int distance) { return false; }
+bool Tage_address_predictor::try_chain_predict(MemObj *dl1, Addr_t pc, int distance) { (void)dl1; (void)pc; (void)distance; return false; }
 
-uint16_t vtage::exe_update(Addr_t pc, Addr_t addr, Data_t data) {
+Conf_level Tage_address_predictor::exe_update(Addr_t pc, Addr_t addr, Data_t data) {
+  (void)data;
+
   uint16_t offset = get_offset(pc);
   lastBoundaryPC  = get_boundary(pc);
 
@@ -398,16 +390,21 @@ uint16_t vtage::exe_update(Addr_t pc, Addr_t addr, Data_t data) {
   return pred_conf;
 }
 
-uint16_t vtage::ret_update(Addr_t pc, Addr_t addr, Data_t data) { return 0; }
+Conf_level Tage_address_predictor::ret_update(Addr_t pc, Addr_t addr, Data_t data) {
+  (void)pc;
+  (void)addr;
+  (void)data;
+  return Conf_level::None;
+}
 
-void vtage::updateVtage(Addr_t pc, int ndelta, uint16_t loff) {
+void Tage_address_predictor::updateVtage(Addr_t pc, int ndelta, uint16_t loff) {
   bool correct = (pred_delta == ndelta);
   bool alloc   = !correct && (hit_bank < nhist);
 
-  if (bimodal.get_conf(pc) > 60)
+  auto pc_conf = bimodal.has_conf(pc);
+  if (pc_conf == Conf_level::High) {
     alloc = false;  // Do not alloc if bimodal is highly confident
-
-  if (bimodal.get_conf(pc) > 16)
+  }else if (pc_conf != Conf_level::None)
     if (bimodal.get_delta(pc) == ndelta)
       alloc = false;  // Do not learn deltas that match bimodal
 
@@ -512,7 +509,7 @@ void vtage::updateVtage(Addr_t pc, int ndelta, uint16_t loff) {
 #endif
 }
 
-void vtage::rename(Dinst *dinst) {}
+void Tage_address_predictor::rename(Dinst *dinst) { (void)dinst; }
 
 void vtage_gentry::allocate() {
   conf  = 0;
@@ -608,14 +605,11 @@ public:
 };
 std::map<Addr_t, PredictableEntry> adhist;  // Address/Data History
 
-std::vector<Addr_t> last_pcs;  // Last n PCs
-int                 last_pcs_pos;
+Indirect_address_predictor::Indirect_address_predictor(Hartid_t hartid, const std::string &pref_sec)
+  : bimodal(Config::get_power2(pref_sec, "bimodal_size",4), Config::get_integer(pref_sec, "bimidal_width",1,8)) {
+  (void)hartid;
 
-IndirectAddressPredictor::IndirectAddressPredictor() : bimodal(1024) {
-  // FIXME: use a size for # entries, and conf level
-
-  const char *section = SescConf->getCharPtr("cpusimu", "prefetcher", 0);  // FIXME: use conf
-  maxPrefetch         = SescConf->getInt(section, "maxPrefetch", 0);
+  maxPrefetch   = Config::get_integer(pref_sec, "degree", 1);
 
   chainPredict = true;
   last_pcs.resize(16);
@@ -628,30 +622,21 @@ IndirectAddressPredictor::IndirectAddressPredictor() : bimodal(1024) {
 //#define PTRACE(a...)   do{ if ( (pc == 0x120081c24 || pc == 0x120081c1c)) {fprintf(stderr,##a); fprintf(stderr,"\n"); } }while(0)
 //#define PTRACE(a...)   do{ if ( (pc >= 0x120081c18 && pc <= 0x120081c30)) {fprintf(stderr,##a); fprintf(stderr,"\n"); } }while(0)
 
-uint16_t IndirectAddressPredictor::exe_update(Addr_t pc, Addr_t addr, Data_t data) {
-  // Same as base bimodal
+Conf_level Indirect_address_predictor::exe_update(Addr_t pc, Addr_t addr, Data_t data) {
+  (void)data;
 
-  // FIXME: update at ret, but use the addr in predict
   bimodal.update(pc, addr);
 
-  uint16_t conf = bimodal.get_conf(pc);
-
-  // PTRACE("exe_update pc:%llx c:%d addr:%llx",pc,conf,addr);
-
-  return conf;
+  return bimodal.has_conf(pc);
 }
 
 extern "C" uint64_t esesc_mem_read(uint64_t addr);
 
-uint16_t IndirectAddressPredictor::ret_update(Addr_t pc, Addr_t addr, Data_t data) {
+Conf_level Indirect_address_predictor::ret_update(Addr_t pc, Addr_t addr, Data_t data) {
   if (!chainPredict)
-    return 0;
+    return Conf_level::None;
 
-  // Do nt update bimodal & exe & ret. 2 diff last_addr
-
-  uint16_t conf = bimodal.get_conf(pc);
-
-  // PTRACE("ret_update pc:%llx c:%d addr:%llx",pc,conf,addr);
+  auto bim_conf = bimodal.has_conf(pc);
 
   Addr_t           last_addr = 0;
   PredictableEntry pa;
@@ -661,7 +646,7 @@ uint16_t IndirectAddressPredictor::ret_update(Addr_t pc, Addr_t addr, Data_t dat
     pa.data_delta  = data - pa.data;
     pa.addr        = addr;
     pa.data        = data;
-    pa.predictable = conf > 60;
+    pa.predictable = Conf_level::High == bim_conf;
     if (pa.predictable)
       pa.source_pc = 0;
   } else {
@@ -741,14 +726,14 @@ uint16_t IndirectAddressPredictor::ret_update(Addr_t pc, Addr_t addr, Data_t dat
     last_pcs_pos = 0;
   last_pcs[last_pcs_pos] = pc;
 
-  return indirect ? 64 : 0;
+  return indirect ? Conf_level::High : Conf_level::None;
 }
 
-Addr_t IndirectAddressPredictor::predict(Addr_t ppc, int distance, bool inLines) {
+Addr_t Indirect_address_predictor::predict(Addr_t ppc, int distance, bool inLines) {
   if (chainPredict)
     return 0;
 
-  if (bimodal.get_conf(ppc) < 2)
+  if (bimodal.has_conf(ppc) == Conf_level::None)
     return 0;  // not predictable;
 
   int delta = bimodal.get_delta(ppc);
@@ -764,7 +749,7 @@ Addr_t IndirectAddressPredictor::predict(Addr_t ppc, int distance, bool inLines)
   return bimodal.get_addr(ppc) + offset;
 }
 
-void IndirectAddressPredictor::performed(MemObj *DL1, Addr_t pc, Addr_t ld1_addr) {
+void Indirect_address_predictor::performed(MemObj *DL1, Addr_t pc, Addr_t ld1_addr) {
   I(chainPredict);
 
   if (adhist.find(pc) == adhist.end())
@@ -786,12 +771,12 @@ void IndirectAddressPredictor::performed(MemObj *DL1, Addr_t pc, Addr_t ld1_addr
 #endif
 }
 
-bool IndirectAddressPredictor::try_chain_predict(MemObj *DL1, Addr_t pc, int distance) {
+bool Indirect_address_predictor::try_chain_predict(MemObj *DL1, Addr_t pc, int distance) {
   if (!chainPredict)
     return false;
 
-  uint16_t conf = bimodal.get_conf(pc);
-  if (conf < 2)
+  auto bim_conf = bimodal.has_conf(pc);
+  if (bim_conf == Conf_level::None)
     return false;  // not predictable;
 
   int offset = bimodal.get_delta(pc) * distance;
@@ -800,7 +785,7 @@ bool IndirectAddressPredictor::try_chain_predict(MemObj *DL1, Addr_t pc, int dis
 
   Addr_t ld1_addr = bimodal.get_addr(pc) + offset;
 
-  // PTRACE("try_chain pc:%llx conf:%d factor:%d dist:%d",pc, bimodal.get_conf(pc), adhist[pc].factor, distance);
+  // PTRACE("try_chain pc:%llx conf:%d factor:%d dist:%d",pc, bimodal.has_conf(pc), adhist[pc].factor, distance);
 
   bool chain = true;
   if (adhist.find(pc) == adhist.end())

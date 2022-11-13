@@ -250,7 +250,7 @@ public:
 
   static MemRequest *createSafeReqRead(MemObj *m, bool doStats, Addr_t addr, Addr_t pc, CallbackBase *cb = 0) {
     MemRequest *mreq        = create(m, addr, doStats, cb);
-    mreq->spec              = false;
+    I(!mreq->spec);
     mreq->notifyScbDirectly = false;
     mreq->mt                = mt_req;
     mreq->ma                = ma_setValid;  // For reads, MOES are valid states
@@ -282,9 +282,6 @@ public:
     mreq->dep_depth    = _depth;
     mreq->tl_type      = tl_type;
     mreq->ld_used      = _ld_used;
-#if 0
-    MSG("TRIG_LD CREATED clk=%u ldpc=%llx brpc=%llx, trig_addr=%u ld_addr=%u del=%u ldbr=%d", globalClock, pc, _dep_pc, addr, _base_addr, _delta, _ld_br_type);
-#endif
     m->req(mreq);
   }
 
@@ -353,7 +350,9 @@ public:
   }
 
   bool isTriggerLoad() const { return trigger_load; }
-  bool isSpec() const { return spec; }
+
+  bool is_spec() const { return spec; }
+  bool is_safe() const { return !spec; }
 
   bool isLoadUsed() const { return ld_used; }
 

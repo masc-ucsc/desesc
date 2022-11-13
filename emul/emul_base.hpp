@@ -31,4 +31,5 @@ public:
   virtual void skip_rabbit(Hartid_t fid, size_t ninst) = 0;
 
   const std::string &get_type() const { return type; }
+  const std::string &get_section() const { return section; }
 };

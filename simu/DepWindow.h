@@ -15,8 +15,6 @@ class DepWindow {
 private:
   Cluster *srcCluster;
 
-  const int32_t Id;
-
   TimeDelta_t inter_cluster_lat;
   TimeDelta_t sched_lat;
 
@@ -29,11 +27,11 @@ protected:
 
 public:
   ~DepWindow();
-  DepWindow(uint32_t cpuid, Cluster *aCluster, const char *clusterName, uint32_t pos);
+  DepWindow(uint32_t cpuid, Cluster *aCluster, const std::string &clusterName, uint32_t pos);
 
   void select(Dinst *dinst);
 
   StallCause canIssue(Dinst *dinst) const;
-  void       addInst(Dinst *dinst);
+  void       add_inst(Dinst *dinst);
   void       executed(Dinst *dinst);
 };

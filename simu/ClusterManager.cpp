@@ -9,41 +9,34 @@
 #include "config.hpp"
 
 ClusterManager::ClusterManager(GMemorySystem *ms, uint32_t cpuid, GProcessor *gproc) {
+
+  auto coreSection = Config::get_string("soc", "core", cpuid);
+  auto nClusters   = Config::get_array_size(coreSection, "cluster");
+
   ResourcesPoolType res(iMAX);
-
-  IN(forall((size_t i = 1; i < static_cast<size_t>(iMAX); i++), res[i].empty()));
-
-  const char *coreSection = SescConf->getCharPtr("", "cpusimu", cpuid);
-  if (coreSection == 0)
-    return;  // No core section, bad conf
-
-  int32_t nClusters = SescConf->getRecordSize(coreSection, "cluster");
-
-  for (int32_t i = 0; i < nClusters; i++) {
-    const char *clusterName = SescConf->getCharPtr(coreSection, "cluster", i);
-    SescConf->isCharPtr(coreSection, "cluster", i);
+  for (auto i = 0u; i < nClusters; i++) {
+    auto clusterName = Config::get_array_string(coreSection, "cluster", i);
 
     Cluster *cluster = Cluster::create(clusterName, i, ms, cpuid, gproc);
 
     for (int32_t t = 0; t < iMAX; t++) {
       Resource *r = cluster->getResource(static_cast<Opcode>(t));
-
       if (r)
         res[t].push_back(r);
     }
   }
 
-  const char *clusterScheduler = SescConf->getCharPtr(coreSection, "clusterScheduler");
+  auto sched = Config::get_string(coreSection, "cluster_scheduler", {"RoundRobin", "LRU", "Use"});
+  std::transform(sched.begin(), sched.end(), sched.begin(), [](unsigned char c){ return std::tolower(c); });
 
-  if (strcasecmp(clusterScheduler, "RoundRobin") == 0) {
+  if (sched == "roundrobin") {
     scheduler = new RoundRobinClusterScheduler(res);
-  } else if (strcasecmp(clusterScheduler, "LRU") == 0) {
+  } else if (sched == "lru") {
     scheduler = new LRUClusterScheduler(res);
-  } else if (strcasecmp(clusterScheduler, "Use") == 0) {
+  } else if (sched == "use") {
     scheduler = new UseClusterScheduler(res);
   } else {
-    MSG("ERROR: Invalid clusterScheduler [%s]", clusterScheduler);
-    SescConf->notCorrect();
+    Config::add_error(fmt::format("Invalid cluster_scheduler [{}]", sched));
     return;
   }
 
@@ -52,8 +45,6 @@ ClusterManager::ClusterManager(GMemorySystem *ms, uint32_t cpuid, GProcessor *gp
     if (!res[i].empty())
       continue;
 
-    MSG("ERROR: missing %s instruction type support", Instruction::opcode2Name(i));
-
-    SescConf->notCorrect();
+    Config::add_error(fmt::format("core:{} does not support instruction type {}", coreSection, Instruction::opcode2Name(i)));
   }
 }

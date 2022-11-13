@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "absl/container/flat_hash_map.h"
+
 #include "FetchEngine.h"
 #include "GProcessor.h"
 #include "LSQ.h"
@@ -37,41 +39,49 @@ private:
   bool    busy;
   bool    lastrob_getStatsFlag;
 
-  SMTFetch *sf;
+  std::shared_ptr<SMTFetch> sf;
 
   // Dinst *RAT[LREG_MAX];
   Dinst **RAT;
 
-  void fetch(Hartid_t fid);
+  void fetch();
+
+  static inline absl::flat_hash_map<std::string, std::shared_ptr<SMTFetch>> fetch_map;
 
 protected:
   ClusterManager clusterManager;
-  // BEGIN VIRTUAL FUNCTIONS of GProcessor
 
-  bool advance_clock(Hartid_t fid);
+  // BEGIN VIRTUAL FUNCTIONS of GProcessor
+  bool advance_clock_drain() override final;
+  bool advance_clock() override final;
+
   void retire();
 
-  StallCause addInst(Dinst *dinst);
+  StallCause add_inst(Dinst *dinst) override final;
   // END VIRTUAL FUNCTIONS of GProcessor
 
 public:
   InOrderProcessor(GMemorySystem *gm, CPU_t i);
   virtual ~InOrderProcessor();
 
-  void executing(Dinst *dinst);
-  void executed(Dinst *dinst);
-  LSQ *getLSQ() { return &lsq; }
-  void replay(Dinst *dinst);
-  bool isFlushing() {
+  void executing(Dinst *dinst) override final;
+  void executed(Dinst *dinst) override final;
+
+  // No LSQ speculation, so not memory replay (just populate accordingly)
+  LSQ *getLSQ() override final { return &lsq; }
+  void replay(Dinst *dinst) override final;
+  bool is_nuking() override final {
     I(0);
     return false;
   }
-  bool isReplayRecovering() {
+  bool isReplayRecovering() override final {
     I(0);
     return false;
   }
-  Time_t getReplayID() {
+  Time_t getReplayID() override final {
     I(0);
     return false;
   }
+
+  std::string get_type() const final { return "inorder"; }
 };

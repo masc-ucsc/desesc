@@ -16,9 +16,9 @@
 Prefetcher::Prefetcher(MemObj *_l1, int hartid)
     /* constructor {{{1 */
     : DL1(_l1)
-    , avgPrefetchNum("P(%d)_pref_avgPrefetchNum", hartid)
-    , avgPrefetchConf("P(%d)_pref__avgPrefetchConf", hartid)
-    , histPrefetchDelta("P(%d)_pref__histPrefetchDelta", hartid)
+    , avgPrefetchNum(fmt::format("P({})_pref_avgPrefetchNum", hartid))
+    , avgPrefetchConf(fmt::format("P({})_pref__avgPrefetchConf", hartid))
+    , histPrefetchDelta(fmt::format("P({})_pref__histPrefetchDelta", hartid))
     , nextPrefetchCB(this) {
 
   auto section = Config::get_string("soc", "core", hartid, "prefetcher");
@@ -40,22 +40,19 @@ Prefetcher::Prefetcher(MemObj *_l1, int hartid)
   if (type == "stride") {
     pref_sign = PSIGN_STRIDE;
 
-    apred = new StrideAddressPredictor();
+    apred = new Stride_address_predictor(hartid, section);
   } else if (type == "indirect") {
     pref_sign = PSIGN_STRIDE;  // STRIDE, Indirect are generated inside the try_chain
 
-    apred = new IndirectAddressPredictor();
+    apred = new Indirect_address_predictor(hartid, section);
   } else if (type == "tage") {
     pref_sign = PSIGN_TAGE;
 
-    auto bimodalSize    = Config::get_power2(section, "bimodal_size", 1);
-    auto Log2FetchWidth = log2(Config::get_power2("soc", "core", hartid, "fetch_width"));
-    auto bwidth         = Config::get_integer(section, "bimodal_width", 1);
-    auto ntables        = Config::get_integer(section, "ntables", 1);
-
-    apred = new vtage(bimodalSize, Log2FetchWidth, bwidth, ntables);
+    apred = new Tage_address_predictor(hartid, section);
   } else if (type == "void") {
-    apred = 0;
+    pref_sign = PSIGN_NONE;
+
+    apred = nullptr;
   }
 }
 /* }}} */
@@ -66,16 +63,12 @@ void Prefetcher::exe(Dinst *dinst)
   if (apred == 0)
     return;
 
-  uint16_t conf = apred->exe_update(dinst->getPC(), dinst->getAddr(), dinst->getData());
+  auto conf_level = apred->exe_update(dinst->getPC(), dinst->getAddr(), dinst->getData());
 
-  GI(!pending_prefetch, pending_preq_conf == 0);
-
-  if (pending_preq_pc == dinst->getPC() && pending_preq_conf > (conf / 2))
+  if (pending_preq_pc == dinst->getPC() && pending_preq_conf > 4*static_cast<int>(conf_level))
     return;  // Do not kill itself
 
-  static uint8_t rnd_xtra_conf = 0;
-  rnd_xtra_conf                = 0;  // (rnd_xtra_conf>>1) ^ (dinst->getPC()>>5) ^ (dinst->getAddr()>>2) ^ (dinst->getPC()>>7);
-  if (conf <= (pending_preq_conf + (rnd_xtra_conf & 0x7)) || conf <= 4)
+  if (conf_level == Conf_level::None || conf_level == Conf_level::Low)
     return;  // too low of a chance
 
   avgPrefetchConf.sample(conf, dinst->getStatsFlag());
@@ -83,7 +76,7 @@ void Prefetcher::exe(Dinst *dinst)
     avgPrefetchNum.sample(curPrefetch - distance, pending_statsFlag);
 
   pending_preq_pc   = dinst->getPC();
-  pending_preq_conf = conf;
+  pending_preq_conf = 4*static_cast<int>(conf_level);
   pending_statsFlag = dinst->getStatsFlag();
   if (dinst->getChained()) {
     I(dinst->getFetchEngine());
@@ -98,6 +91,7 @@ void Prefetcher::exe(Dinst *dinst)
 
   if (!pending_prefetch) {
     pending_prefetch = true;
+    dinst->markPrefetch();
     nextPrefetchCB.schedule(1);
   }
 }
@@ -106,13 +100,10 @@ void Prefetcher::exe(Dinst *dinst)
 void Prefetcher::ret(Dinst *dinst)
 // {{{1 update prefetcher state at retirement
 {
-  if (apred == 0)
+  if (apred == nullptr)
     return;
 
-  int ret = apred->ret_update(dinst->getPC(), dinst->getAddr(), dinst->getData());
-  if (ret) {
-    dinst->markPrefetch();
-  }
+  apred->ret_update(dinst->getPC(), dinst->getAddr(), dinst->getData());
 }
 // 1}}}
 

@@ -6,13 +6,11 @@
 
 StoreSet::StoreSet(const int32_t id)
     /* constructor {{{1 */
-    : StoreSetSize(SescConf->getInt("cpusimu", "StoreSetSize", id))
+    : StoreSetSize(Config::get_power2("soc", "core", id, "storeset_size",128))
 #ifdef STORESET_CLEARING
     , clearStoreSetsTimerCB(this)
 #endif
 {
-
-  SescConf->isPower2("cpusimu", "StoreSetSize", id);
 
   SSIT.resize(StoreSetSize);
   LFST.resize(StoreSetSize);
@@ -52,14 +50,18 @@ SSID_t StoreSet::create_set(uint64_t PC)
 {
   SSID_t SSID = create_id();
 
-  ID(SSID_t oldSSID = get_SSID(PC));
+#ifndef NDEBUG
+  SSID_t oldSSID = get_SSID(PC);
+#endif
   // I(LFST[SSID]==0);
 
   set_SSID(PC, SSID);
   LFST[SSID] = nullptr;
 
+#ifndef NDEBUG
   I(SSID < StoreSetSize);
-  IS(if (isValidSSID(oldSSID)) { LFST[oldSSID] = nullptr; });  // debug only
+  if (isValidSSID(oldSSID)) { LFST[oldSSID] = nullptr; };  // debug only
+#endif
 
   return SSID;
 }
@@ -98,7 +100,6 @@ void StoreSet::clear_LFST(void)
 void StoreSet::clearStoreSetsTimer()
 /* periodic cleanup of the LSFT and SSIT {{{1 */
 {
-  // MSG("------------- CLEAR -----------------");
   clear_SSIT();
   clear_LFST();
   Time_t when = clear_interval + globalClock;
@@ -139,7 +140,6 @@ bool StoreSet::insert(Dinst *dinst)
   I(!lfs_dinst->isExecuted());
   I(!dinst->isExecuted());
   lfs_dinst->addSrc3(dinst);
-  MSG("addSST %8ld->%8lld %lld", (long long)lfs_dinst->getID(), (long long)dinst->getID(), (long long)globalClock);
 
   return true;
 }

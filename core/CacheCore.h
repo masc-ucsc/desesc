@@ -6,6 +6,9 @@
 #include <string.h>
 #include <strings.h>
 
+#include <string>
+#include <string_view>
+
 #include "stats.hpp"
 #include "config.hpp"
 #include "iassert.hpp"
@@ -106,14 +109,14 @@ protected:
 
   virtual ~CacheGeneric() {}
 
-  void createStats(const char *section, const char *name);
+  void createStats(const std::string &section, const std::string &name);
 
 public:
   // Do not use this interface, use other create
-  static CacheGeneric<State, Addr_t> *create(int32_t size, int32_t assoc, int32_t blksize, int32_t addrUnit, const char *pStr,
+  static CacheGeneric<State, Addr_t> *create(int32_t size, int32_t assoc, int32_t blksize, int32_t addrUnit, const std::string &pStr,
                                              bool skew, bool xr,
                                              uint32_t shct_size = 13);  // 13 is the optimal size specified in the paper
-  static CacheGeneric<State, Addr_t> *create(const char *section, const char *append, const char *format, ...);
+  static CacheGeneric<State, Addr_t> *create(const std::string &section, const std::string &append, const std::string &format);
   void                                destroy() { delete this; }
 
   virtual CacheLine *findLine2Replace(Addr_t addr, Addr_t pc, bool prefetch) = 0;
@@ -134,33 +137,49 @@ public:
   // Use this is for debug checks. Otherwise, a bad interface can be detected
 
   CacheLine *findLineDebug(Addr_t addr, Addr_t pc = 0) {
-    IS(goodInterface = true);
+#ifndef NDEBUG
+    goodInterface = true;
+#endif
     CacheLine *line = findLine(addr);
-    IS(goodInterface = false);
+#ifndef NDEBUG
+    goodInterface = false;
+#endif
     return line;
   }
 
   CacheLine *findLineNoEffect(Addr_t addr, Addr_t pc = 0) {
-    IS(goodInterface = true);
+#ifndef NDEBUG
+    goodInterface = true;
+#endif
     CacheLine *line = findLineNoEffectPrivate(addr);
-    IS(goodInterface = false);
+#ifndef NDEBUG
+    goodInterface = false;
+#endif
     return line;
   }
 
   CacheLine *findLine(Addr_t addr, Addr_t pc = 0) { return findLinePrivate(addr, pc); }
 
   CacheLine *readLine(Addr_t addr, Addr_t pc = 0) {
-    IS(goodInterface = true);
+#ifndef NDEBUG
+    goodInterface = true;
+#endif
     CacheLine *line = findLine(addr, pc);
-    IS(goodInterface = false);
+#ifndef NDEBUG
+    goodInterface = false;
+#endif
 
     return line;
   }
 
   CacheLine *writeLine(Addr_t addr, Addr_t pc = 0) {
-    IS(goodInterface = true);
+#ifndef NDEBUG
+    goodInterface = true;
+#endif
     CacheLine *line = findLine(addr, pc);
-    IS(goodInterface = false);
+#ifndef NDEBUG
+    goodInterface = false;
+#endif
 
     return line;
   }
@@ -288,7 +307,7 @@ protected:
   };
 
   friend class CacheGeneric<State, Addr_t>;
-  HawkCache(int32_t size, int32_t assoc, int32_t blksize, int32_t addrUnit, const char *pStr, bool xr);
+  HawkCache(int32_t size, int32_t assoc, int32_t blksize, int32_t addrUnit, const std::string &pStr, bool xr);
 
   Line *findLineNoEffectPrivate(Addr_t addr);
   Line *findLinePrivate(Addr_t addr, Addr_t pc = 0);
@@ -368,7 +387,7 @@ protected:
   std::map<Addr_t, Tracker> pc2tracker;
 
   friend class CacheGeneric<State, Addr_t>;
-  CacheAssoc(int32_t size, int32_t assoc, int32_t blksize, int32_t addrUnit, const char *pStr, bool xr);
+  CacheAssoc(int32_t size, int32_t assoc, int32_t blksize, int32_t addrUnit, const std::string &pStr, bool xr);
 
   void adjustRRIP(Line **theSet, Line **setEnd, Line *change_line, uint16_t next_rrip) {
     if ((change_line)->rrip == next_rrip)
@@ -426,7 +445,7 @@ protected:
   Line **content;
 
   friend class CacheGeneric<State, Addr_t>;
-  CacheDM(int32_t size, int32_t blksize, int32_t addrUnit, const char *pStr, bool xr);
+  CacheDM(int32_t size, int32_t blksize, int32_t addrUnit, const std::string &pStr, bool xr);
 
   Line *findLineNoEffectPrivate(Addr_t addr);
   Line *findLinePrivate(Addr_t addr, Addr_t pc = 0);
@@ -461,7 +480,7 @@ protected:
   Line **content;
 
   friend class CacheGeneric<State, Addr_t>;
-  CacheDMSkew(int32_t size, int32_t blksize, int32_t addrUnit, const char *pStr);
+  CacheDMSkew(int32_t size, int32_t blksize, int32_t addrUnit, const std::string &pStr);
 
   Line *findLineNoEffectPrivate(Addr_t addr);
   Line *findLinePrivate(Addr_t addr, Addr_t pc = 0);
@@ -505,7 +524,7 @@ protected:
   /*****************/
 
   friend class CacheGeneric<State, Addr_t>;
-  CacheSHIP(int32_t size, int32_t assoc, int32_t blksize, int32_t addrUnit, const char *pStr,
+  CacheSHIP(int32_t size, int32_t assoc, int32_t blksize, int32_t addrUnit, const std::string &pStr,
             uint32_t shct_size = 13);  // 13 was the optimal size in the paper
 
   Line *findLineNoEffectPrivate(Addr_t addr);
@@ -581,7 +600,7 @@ public:
 
   virtual void invalidate() { clearTag(); }
 
-  virtual void dump(const char *str) {}
+  virtual void dump(const std::string &str) {}
 };
 
 template <class Addr_t>
@@ -641,7 +660,7 @@ public:
     prefetch = false;
   }
 
-  virtual void dump(const char *str) {}
+  virtual void dump(const std::string &str) {}
 
   int  getnDemand() const { return nDemand; }
   void incnDemand() { nDemand++; }
@@ -657,57 +676,60 @@ public:
   void incRRPV() { I(0); }
 };
 
-#define k_RANDOM  "RANDOM"
-#define k_LRU     "LRU"
-#define k_LRUp    "LRUp"
-#define k_SHIP    "SHIP"
-#define k_HAWKEYE "HAWKEYE"
-#define k_PAR     "PAR"
-#define k_UAR     "UAR"
+inline constexpr std::string_view k_RANDOM  = "random";
+inline constexpr std::string_view k_LRU     = "lru";
+inline constexpr std::string_view k_LRUp    = "lrup";
+inline constexpr std::string_view k_SHIP    = "ship";
+inline constexpr std::string_view k_HAWKEYE = "hawkeye";
+inline constexpr std::string_view k_PAR     = "par";
+inline constexpr std::string_view k_UAR     = "uar";
 
 // UAR: Usage Aware Replacement
 
 // Class CacheGeneric, the combinational logic of Cache
 template <class State, class Addr_t>
 CacheGeneric<State, Addr_t> *CacheGeneric<State, Addr_t>::create(int32_t size, int32_t assoc, int32_t bsize, int32_t addrUnit,
-                                                                 const char *pStr, bool skew, bool xr, uint32_t shct_size) {
-  CacheGeneric *cache;
+                                                                 const std::string &pStr, bool skew, bool xr, uint32_t shct_size) {
 
   if (size / bsize < assoc) {
     Config::add_error(fmt::format("Invalid cache configuration size {}, line {}, assoc {} (increase size, or decrease line)",
                                   size,
                                   bsize,
                                   assoc));
-    return 0;
+    return nullptr;
   }
 
   if (skew && shct_size) {
     Config::add_error(fmt::format("Invalid cache configuration size {}, line {}, assoc {} has SHIP enabled ", size, bsize, assoc));
-    return 0;
+    return nullptr;
   }
 
+  std::string pStr_lc{pStr};
+  std::transform(pStr_lc.begin(), pStr_lc.end(), pStr_lc.begin(), [](unsigned char c){ return std::tolower(c); });
+
+  CacheGeneric *cache;
   if (skew) {
     I(assoc == 1);  // Skew cache should be direct map
-    cache = new CacheDMSkew<State, Addr_t>(size, bsize, addrUnit, pStr);
+    cache = new CacheDMSkew<State, Addr_t>(size, bsize, addrUnit, pStr_lc);
   } else if (assoc == 1) {
     // Direct Map cache
-    cache = new CacheDM<State, Addr_t>(size, bsize, addrUnit, pStr, xr);
+    cache = new CacheDM<State, Addr_t>(size, bsize, addrUnit, pStr_lc, xr);
   } else if (size == (assoc * bsize)) {
     // FA
-    if (strcasecmp(pStr, k_SHIP) == 0) {
-      cache = new CacheSHIP<State, Addr_t>(size, assoc, bsize, addrUnit, pStr, shct_size);
-    } else if (strcasecmp(pStr, k_HAWKEYE) == 0) {
-      cache = new HawkCache<State, Addr_t>(size, assoc, bsize, addrUnit, pStr, xr);
+    if (pStr_lc == k_SHIP) {
+      cache = new CacheSHIP<State, Addr_t>(size, assoc, bsize, addrUnit, pStr_lc, shct_size);
+    } else if (pStr_lc == k_HAWKEYE) {
+      cache = new HawkCache<State, Addr_t>(size, assoc, bsize, addrUnit, pStr_lc, xr);
     } else {
-      cache = new CacheAssoc<State, Addr_t>(size, assoc, bsize, addrUnit, pStr, xr);
+      cache = new CacheAssoc<State, Addr_t>(size, assoc, bsize, addrUnit, pStr_lc, xr);
     }
   } else {
-    if (strcasecmp(pStr, k_SHIP) == 0) {
-      cache = new CacheSHIP<State, Addr_t>(size, assoc, bsize, addrUnit, pStr, shct_size);
-    } else if (strcasecmp(pStr, k_HAWKEYE) == 0) {
-      cache = new HawkCache<State, Addr_t>(size, assoc, bsize, addrUnit, pStr, xr);
+    if (pStr_lc == k_SHIP) {
+      cache = new CacheSHIP<State, Addr_t>(size, assoc, bsize, addrUnit, pStr_lc, shct_size);
+    } else if (pStr_lc == k_HAWKEYE) {
+      cache = new HawkCache<State, Addr_t>(size, assoc, bsize, addrUnit, pStr_lc, xr);
     } else {
-      cache = new CacheAssoc<State, Addr_t>(size, assoc, bsize, addrUnit, pStr, xr);
+      cache = new CacheAssoc<State, Addr_t>(size, assoc, bsize, addrUnit, pStr_lc, xr);
     }
   }
 
@@ -716,7 +738,7 @@ CacheGeneric<State, Addr_t> *CacheGeneric<State, Addr_t>::create(int32_t size, i
 }
 
 template <class State, class Addr_t>
-void CacheGeneric<State, Addr_t>::createStats(const char *section, const char *name) {
+void CacheGeneric<State, Addr_t>::createStats(const std::string &section, const std::string &name) {
   for (int i = 0; i < 16; i++) {
     trackstats[i] = new Stats_cntr(fmt::format("{}_tracker{}", name, i));
   }
@@ -739,14 +761,14 @@ void CacheGeneric<State, Addr_t>::createStats(const char *section, const char *n
   int32_t procId = 0;
   if ( name[0] == 'P' && name[1] == '(' ) {
     // This structure is assigned to an specific processor
-    const char *number = &name[2];
+    const std::string &number = &name[2];
     procId = atoi(number);
   }
 #endif
 }
 
 template <class State, class Addr_t>
-CacheGeneric<State, Addr_t> *CacheGeneric<State, Addr_t>::create(const char *section, const char *append, const char *format, ...) {
+CacheGeneric<State, Addr_t> *CacheGeneric<State, Addr_t>::create(const std::string &section, const std::string &append, const std::string &cache_name) {
   CacheGeneric *cache = 0;
 
   auto size_sec        = fmt::format("{}_size", append);
@@ -774,31 +796,25 @@ CacheGeneric<State, Addr_t> *CacheGeneric<State, Addr_t>::create(const char *sec
     u = Config::get_power2(section, addrUnit_sec, 0, b);
   }
 
-  auto pStr = Config::get_string(section, repl_policy_sec, {k_RANDOM, k_LRU, k_SHIP, k_LRUp, k_HAWKEYE, k_PAR, k_UAR});
+  // C++20 will cleanup this avoiding explicit std::string conversion
+  std::vector<std::string> allowed = {std::string(k_RANDOM), std::string(k_LRU), std::string(k_SHIP), std::string(k_LRUp), std::string(k_HAWKEYE), std::string(k_PAR), std::string(k_UAR)};
+  auto pStr_lc = Config::get_string(section, repl_policy_sec, allowed);
 
   // SHIP
   uint32_t shct_size = 0;
-  if (strcasecmp(pStr.c_str(), k_SHIP) == 0) {
+  if (pStr_lc == k_SHIP) {
     shct_size = Config::get_integer(section, ship_sec);
   }
 
   if (Config::has_errors()) {
-    cache = new CacheAssoc<State, Addr_t>(2, 1, 1, 1, pStr.c_str(), xr);
+    cache = new CacheAssoc<State, Addr_t>(2, 1, 1, 1, pStr_lc, xr);
   } else {
-    cache = create(s, a, b, u, pStr.c_str(), sk, xr, shct_size);
+    cache = create(s, a, b, u, pStr_lc, sk, xr, shct_size);
   }
 
   I(cache);
 
-  char cacheName[STR_BUF_SIZE];
-  {
-    va_list ap;
-
-    va_start(ap, format);
-    vsprintf(cacheName, format, ap);
-    va_end(ap);
-  }
-  cache->createStats(section, cacheName);
+  cache->createStats(section, cache_name);
 
   return cache;
 }
@@ -808,26 +824,27 @@ CacheGeneric<State, Addr_t> *CacheGeneric<State, Addr_t>::create(const char *sec
  *********************************************************/
 
 template <class State, class Addr_t>
-CacheAssoc<State, Addr_t>::CacheAssoc(int32_t size, int32_t assoc, int32_t blksize, int32_t addrUnit, const char *pStr, bool xr)
+CacheAssoc<State, Addr_t>::CacheAssoc(int32_t size, int32_t assoc, int32_t blksize, int32_t addrUnit, const std::string &pStr, bool xr)
     : CacheGeneric<State, Addr_t>(size, assoc, blksize, addrUnit, xr) {
   I(numLines > 0);
 
-  if (strcasecmp(pStr, k_RANDOM) == 0)
+  std::string pStr_lc{pStr};
+  std::transform(pStr_lc.begin(), pStr_lc.end(), pStr_lc.begin(), [](unsigned char c){ return std::tolower(c); });
+
+  if (pStr_lc == k_RANDOM)
     policy = RANDOM;
-  else if (strcasecmp(pStr, k_LRU) == 0)
+  else if (pStr_lc == k_LRU)
     policy = LRU;
-  else if (strcasecmp(pStr, k_LRUp) == 0)
+  else if (pStr_lc == k_LRUp)
     policy = LRUp;
-  else if (strcasecmp(pStr, k_PAR) == 0)
+  else if (pStr_lc == k_PAR)
     policy = PAR;
-  else if (strcasecmp(pStr, k_UAR) == 0)
+  else if (pStr_lc == k_UAR)
     policy = UAR;
-  else if (strcasecmp(pStr, k_HAWKEYE) == 0) {
-    Config::add_error(fmt::format("Invalid cache policy. HawkCache should be used [{}]", pStr));
-    exit(0);
+  else if (pStr_lc == k_HAWKEYE) {
+    Config::add_error(fmt::format("Invalid cache policy. HawkCache should be used [{}]", pStr_lc));
   } else {
-    Config::add_error(fmt::format("Invalid cache policy [{}]", pStr));
-    exit(0);
+    Config::add_error(fmt::format("Invalid cache policy [{}]", pStr_lc));
   }
 
   mem = (Line *)malloc(sizeof(Line) * (numLines + 1));
@@ -1158,13 +1175,15 @@ typename CacheAssoc<State, Addr_t>::Line *CacheAssoc<State, Addr_t>::findLine2Re
  *********************************************************/
 
 template <class State, class Addr_t>
-HawkCache<State, Addr_t>::HawkCache(int32_t size, int32_t assoc, int32_t blksize, int32_t addrUnit, const char *pStr, bool xr)
+HawkCache<State, Addr_t>::HawkCache(int32_t size, int32_t assoc, int32_t blksize, int32_t addrUnit, const std::string &pStr, bool xr)
     : CacheGeneric<State, Addr_t>(size, assoc, blksize, addrUnit, xr) {
   I(numLines > 0);
 
-  if (strcasecmp(pStr, k_HAWKEYE) != 0) {
-    Config::add_error(fmt::format("Invalid cache policy. Cache should be used [{}]", pStr));
-    exit(0);
+  std::string pStr_lc{pStr};
+  std::transform(pStr_lc.begin(), pStr_lc.end(), pStr_lc.begin(), [](unsigned char c){ return std::tolower(c); });
+
+  if (pStr_lc != k_HAWKEYE) {
+    Config::add_error(fmt::format("Invalid cache policy. Cache should be used [{}]", pStr_lc));
   }
 
   mem = (Line *)malloc(sizeof(Line) * (numLines + 1));
@@ -1442,7 +1461,7 @@ typename HawkCache<State, Addr_t>::Line *HawkCache<State, Addr_t>::findLine2Repl
  *********************************************************/
 
 template <class State, class Addr_t>
-CacheDM<State, Addr_t>::CacheDM(int32_t size, int32_t blksize, int32_t addrUnit, const char *pStr, bool xr)
+CacheDM<State, Addr_t>::CacheDM(int32_t size, int32_t blksize, int32_t addrUnit, const std::string &pStr, bool xr)
     : CacheGeneric<State, Addr_t>(size, 1, blksize, addrUnit, xr) {
   I(numLines > 0);
 
@@ -1492,7 +1511,7 @@ typename CacheDM<State, Addr_t>::Line *CacheDM<State, Addr_t>::findLine2Replace(
  *********************************************************/
 
 template <class State, class Addr_t>
-CacheDMSkew<State, Addr_t>::CacheDMSkew(int32_t size, int32_t blksize, int32_t addrUnit, const char *pStr)
+CacheDMSkew<State, Addr_t>::CacheDMSkew(int32_t size, int32_t blksize, int32_t addrUnit, const std::string &pStr)
     : CacheGeneric<State, Addr_t>(size, 1, blksize, addrUnit, false) {
   I(numLines > 0);
 
@@ -1646,7 +1665,7 @@ typename CacheDMSkew<State, Addr_t>::Line *CacheDMSkew<State, Addr_t>::findLine2
  *********************************************************/
 
 template <class State, class Addr_t>
-CacheSHIP<State, Addr_t>::CacheSHIP(int32_t size, int32_t assoc, int32_t blksize, int32_t addrUnit, const char *pStr,
+CacheSHIP<State, Addr_t>::CacheSHIP(int32_t size, int32_t assoc, int32_t blksize, int32_t addrUnit, const std::string &pStr,
                                     uint32_t shct_size)
     : CacheGeneric<State, Addr_t>(size, assoc, blksize, addrUnit, false) {
   I(numLines > 0);
@@ -1654,11 +1673,13 @@ CacheSHIP<State, Addr_t>::CacheSHIP(int32_t size, int32_t assoc, int32_t blksize
   I(shct_size < 31);
   SHCT = new uint8_t[(2 << log2shct)];
 
-  if (strcasecmp(pStr, k_SHIP) == 0) {
+  std::string pStr_lc{pStr};
+  std::transform(pStr_lc.begin(), pStr_lc.end(), pStr_lc.begin(), [](unsigned char c){ return std::tolower(c); });
+
+  if (pStr_lc == k_SHIP) {
     policy = SHIP;
   } else {
     Config::add_error(fmt::format("Invalid cache policy [{}]", pStr));
-    exit(0);
   }
 
   mem = (Line *)malloc(sizeof(Line) * (numLines + 1));

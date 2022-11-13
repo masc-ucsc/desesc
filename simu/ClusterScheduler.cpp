@@ -8,11 +8,11 @@
 
 //#define DUMP_TRACE 1
 
-ClusterScheduler::ClusterScheduler(const ResourcesPoolType ores) : res(ores) {}
+ClusterScheduler::ClusterScheduler(const ResourcesPoolType &ores) : res(ores) {}
 
 ClusterScheduler::~ClusterScheduler() {}
 
-RoundRobinClusterScheduler::RoundRobinClusterScheduler(const ResourcesPoolType ores) : ClusterScheduler(ores) {
+RoundRobinClusterScheduler::RoundRobinClusterScheduler(const ResourcesPoolType &ores) : ClusterScheduler(ores) {
   nres.resize(res.size());
   pos.resize(res.size(), 0);
 
@@ -40,7 +40,7 @@ Resource *RoundRobinClusterScheduler::getResource(Dinst *dinst) {
   return res[type][i];
 }
 
-LRUClusterScheduler::LRUClusterScheduler(const ResourcesPoolType ores) : ClusterScheduler(ores) {}
+LRUClusterScheduler::LRUClusterScheduler(const ResourcesPoolType &ores) : ClusterScheduler(ores) {}
 
 LRUClusterScheduler::~LRUClusterScheduler() {}
 
@@ -58,7 +58,7 @@ Resource *LRUClusterScheduler::getResource(Dinst *dinst) {
   return touse;
 }
 
-UseClusterScheduler::UseClusterScheduler(const ResourcesPoolType ores) : ClusterScheduler(ores) {
+UseClusterScheduler::UseClusterScheduler(const ResourcesPoolType &ores) : ClusterScheduler(ores) {
   nres.resize(res.size());
   pos.resize(res.size(), 0);
 

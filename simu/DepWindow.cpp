@@ -9,8 +9,8 @@
 #include "config.hpp"
 #include "dinst.hpp"
 
-DepWindow::DepWindow(uint32_t cpuid, Cluster *aCluster, const char *clusterName, uint32_t pos)
-    : srcCluster(aCluster), Id(cpuid), inter_cluster_fwd(fmt::format("P({})_{}{}_inter_cluster_fwd", cpuid, clusterName, pos)) {
+DepWindow::DepWindow(uint32_t cpuid, Cluster *aCluster, const std::string &clusterName, uint32_t pos)
+    : srcCluster(aCluster), inter_cluster_fwd(fmt::format("P({})_{}{}_inter_cluster_fwd", cpuid, clusterName, pos)) {
 
   auto cadena    = fmt::format("P(P{}_{}{}_sched", cpuid, clusterName, pos);
   auto sched_num = Config::get_integer(clusterName, "sched_num");
@@ -23,9 +23,9 @@ DepWindow::DepWindow(uint32_t cpuid, Cluster *aCluster, const char *clusterName,
 
 DepWindow::~DepWindow() {}
 
-StallCause DepWindow::canIssue(Dinst *dinst) const { return NoStall; }
+StallCause DepWindow::canIssue(Dinst *dinst) const { (void)dinst; return NoStall; }
 
-void DepWindow::addInst(Dinst *dinst) {
+void DepWindow::add_inst(Dinst *dinst) {
   I(dinst->getCluster() != 0);  // Resource::schedule must set the resource field
 
   if (!dinst->hasDeps()) {

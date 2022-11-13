@@ -39,18 +39,19 @@
 #ifdef ENABLE_CUDA
 
 #include "GPUSMProcessor.h"
-
 #include "ClusterManager.h"
 #include "FetchEngine.h"
 #include "GMemorySystem.h"
-#include "SescConf.h"
 #include "TaskHandler.h"
+
+#include "config.hpp"
 
 GPUSMProcessor::GPUSMProcessor(GMemorySystem *gm, CPU_t i)
     : GProcessor(gm, i, 1), IFID(i, this, gm), pipeQ(i), lsq(i), clusterManager(gm, this) { /*{{{*/
-  numSP             = SescConf->getInt("cpusimu", "sp_per_sm", i);
-  uint32_t maxwarps = SescConf->getInt("cpuemul", "max_warps_sm", i);
-  IS(MSG("Number of SPs = %d, maxwarps = %d", numSP, maxwarps));
+
+  numSP             = Config::get_power2("soc", "core", i, "sp_per_sm");
+  uint32_t maxwarps = Config::get_integer("soc", "core", i, "max_warps_sm");
+
   inst_perpe_percyc = new bool[numSP];
   for (uint32_t spcount = 0; spcount < numSP; spcount++) {
     inst_perpe_percyc[spcount] = false;
@@ -74,10 +75,9 @@ GPUSMProcessor::~GPUSMProcessor() { /*{{{*/
   // Nothing to do
 } /*}}}*/
 
-void GPUSMProcessor::fetch(Hartid_t fid) { /*{{{*/
+void GPUSMProcessor::fetch(Hartid_t hid) { /*{{{*/
   I(eint);
-
-  I(active);
+  I(is_power_up());
 
   // Do not block fetch for a branch miss
   if (IFID.isBlocked(0)) {
@@ -85,7 +85,7 @@ void GPUSMProcessor::fetch(Hartid_t fid) { /*{{{*/
   } else {
     IBucket *bucket = pipeQ.pipeLine.newItem();
     if (bucket) {
-      IFID.fetch(bucket, eint, fid);
+      IFID.fetch(bucket, eint, hid);
       if (!bucket->empty()) {
         busy = true;
       }
@@ -93,17 +93,7 @@ void GPUSMProcessor::fetch(Hartid_t fid) { /*{{{*/
   }
 } /*}}}*/
 
-bool GPUSMProcessor::advance_clock(Hartid_t fid) { /*{{{*/
-
-  if (!active) {
-    // time to remove from the running queue
-    // TaskHandler::removeFromRunning(cpu_id);
-    return false;
-  }
-
-  // IS(if (cpu_id == 1 )MSG("\n**\n@%lld: Processing CPU (%d)",(long long int)globalClock,cpu_id));
-  fetch(fid);
-
+bool GPUSMProcessor::advance_clock_drain() {
   if (!busy)
     return false;
 
@@ -112,18 +102,11 @@ bool GPUSMProcessor::advance_clock(Hartid_t fid) { /*{{{*/
     getStatsFlag = ROB.top()->getStatsFlag();
   }
 
-  // IS(if (cpu_id == 1 ) MSG("@%lld: Fetching CPU (%d)",(long long int)globalClock,cpu_id));
-  clockTicks.inc(getStatsFlag);
-  setWallClock(getStatsFlag);
+  adjust_clock(getStatsFlag);
 
-  if (unlikely(throttlingRatio > 1)) {
-    throttling_cntr++;
-    uint32_t skip = ceil(throttlingRatio / getTurboRatioGPU());
-    if (throttling_cntr < skip) {
-      return true;
-    }
-    throttling_cntr = 1;
-  }
+  bool new_clk = adjust_clock();
+  if (!new_clk)
+    return true;
 
   // ID Stage (insert to instQueue)
   if (spaceInInstQueue >= FetchWidth) {
@@ -131,44 +114,42 @@ bool GPUSMProcessor::advance_clock(Hartid_t fid) { /*{{{*/
     IBucket *bucket = pipeQ.pipeLine.nextItem();
     if (bucket) {
       I(!bucket->empty());
-      // IS(if (cpu_id == 1 ) MSG("@%lld: CPU (%d) fetched bucket size is %d ",(long long int)globalClock,cpu_id,bucket->size()));
       spaceInInstQueue -= bucket->size();
       pipeQ.instQueue.push(bucket);
     } else {
-      // IS(if (cpu_id == 1 ) MSG("@%lld: CPU (%d) Empty Bucket ",(long long int)globalClock,cpu_id));
       noFetch2.inc(getStatsFlag);
     }
   } else {
-    // IS(if (cpu_id == 1 ) MSG("@%lld: CPU (%d) NO space in InstQueue",(long long int)globalClock,cpu_id));
     noFetch.inc(getStatsFlag);
   }
 
-  // IS(if (cpu_id == 1 ) MSG("@%lld: Renaming CPU (%d)",(long long int)globalClock,cpu_id));
-  // RENAME Stage
   if (!pipeQ.instQueue.empty()) {
-    // FIXME: Clear the per PE counter
-    for (uint32_t i = 0; i < numSP; i++) inst_perpe_percyc[i] = false;
-    // MSG("@%lld Clearing PEs",globalClock);
-
+    for (uint32_t i = 0; i < numSP; i++) {
+      inst_perpe_percyc[i] = false;
+    }
     uint32_t n_insn = issue(pipeQ);
     spaceInInstQueue += n_insn;
-    // IS(if (cpu_id == 1) MSG("@%lld: Issuing %d items in pipeline for CPU (%d)",(long long int)globalClock,n_insn, cpu_id));
   } else if (ROB.empty() && rROB.empty()) {
-    // I(0);
-    // Still busy if we have some in-flight requests
     busy = pipeQ.pipeLine.hasOutstandingItems();
-    // IS(if (cpu_id == 1) MSG("@%lld: ROB and rROB are both empty for CPU (%d)",(long long int)globalClock,cpu_id));
-    // IS(if ((cpu_id == 1)&&(busy)) MSG("@%lld: pipeline also has outstanding items CPU (%d)",(long long int)globalClock,cpu_id));
-    return true;
   }
 
-  // IS(if (cpu_id == 1) MSG("@%lld: Retiring CPU (%d)",(long long int)globalClock,cpu_id));
   retire();
 
-  return true;
-} /*}}}*/
+  return busy;
+}
 
-StallCause GPUSMProcessor::addInst(Dinst *dinst) { /*{{{*/
+bool GPUSMProcessor::advance_clock() {
+
+  if (is_power_down()) {
+    return false;
+  }
+
+  fetch(hid);
+
+  return advance_clock_drain();
+}
+
+StallCause GPUSMProcessor::add_inst(Dinst *dinst) {
 
   const Instruction *inst = dinst->getInst();
 
@@ -178,7 +159,7 @@ StallCause GPUSMProcessor::addInst(Dinst *dinst) { /*{{{*/
       || ((RAT[inst->getDst2()] != 0) && (inst->getDst2() != LREG_InvalidOutput))) {
 #if 0
     //Useful for debug
-    if (cpu_id == 1 ){
+    if (hid == 1 ){
       MSG("\n---------- (@%lld) ---------------",(long long int)globalClock);
       string str ="";
       str.append("\nCONFLICT->");
@@ -249,7 +230,7 @@ StallCause GPUSMProcessor::addInst(Dinst *dinst) { /*{{{*/
   RAT[inst->getDst2()] = dinst;
 
   I(dinst->getCluster());
-  dinst->getCluster()->addInst(dinst);
+  dinst->getCluster()->add_inst(dinst);
 #else
   if (!dinst->isSrc2Ready()) {
     // It already has a src2 dep. It means that it is solved at
@@ -267,7 +248,7 @@ StallCause GPUSMProcessor::addInst(Dinst *dinst) { /*{{{*/
   dinst->setRAT1Entry(&RAT[inst->getDst1()]);
   dinst->setRAT2Entry(&RAT[inst->getDst2()]);
 
-  dinst->getCluster()->addInst(dinst);
+  dinst->getCluster()->add_inst(dinst);
 
   RAT[inst->getDst1()] = dinst;
   RAT[inst->getDst2()] = dinst;
@@ -317,14 +298,7 @@ void GPUSMProcessor::retire() { /*{{{*/
     }
 
     // nCommitted.inc();
-
-#if 0
-    Hartid_t fid = dinst->getFlowId();
-    if( active) {
-      EmulInterface *eint = TaskHandler::getEmul(fid);
-      eint->reexecuteTail( fid );
-    }
-#endif
+    I(dinst->getFlowId()==hid);
 
     dinst->destroy(eint);
     rROB.pop();

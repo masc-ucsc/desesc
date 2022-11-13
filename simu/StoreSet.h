@@ -59,7 +59,7 @@ private:
   void assign_SSID(Dinst *dinst, SSID_t SSID);
 #endif
 public:
-  StoreSet(const int32_t cpu_id);
+  StoreSet(const int32_t hid);
   ~StoreSet() {}
 
   bool insert(Dinst *dinst);

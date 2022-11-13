@@ -1563,25 +1563,6 @@ public:
 
   void updatePredictor(Addr_t PC, bool resolveDir, bool predDir, Addr_t branchTarget, bool no_alloc) {
     (void)predDir;
-    // MSG("pc:%x t:%d p:%d ghr:%lx",PC, resolveDir, predDir, GI[nhist]);
-
-#if 0
-    if (HitBank) {
-      if (resolveDir != predDir)
-        printf("mpred h=%d i=%d baad %x r=%d p=%d:",HitBank,GI[HitBank], PC,resolveDir,predDir);
-      else
-        printf("mpred h=%d i=%d good %x r=%d p=%d:",HitBank,GI[HitBank], PC,resolveDir,predDir);
-      gtable[HitBank][GI[HitBank]].dump();
-      printf("\n");
-    }else{
-      if (resolveDir != predDir)
-        printf("mpred baad %x r=%d p=%d bim:", PC,resolveDir,predDir);
-      else
-        printf("mpred good %x r=%d p=%d bim:", PC,resolveDir,predDir);
-      bimodal.dump();
-      printf("\n");
-    }
-#endif
 
 #ifdef LOOPPREDICTOR
     if (LVALID) {

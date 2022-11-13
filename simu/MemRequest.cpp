@@ -145,6 +145,7 @@ MemRequest *MemRequest::create(MemObj *mobj, Addr_t addr, bool doStats, Callback
   r->cb                 = cb;
   r->startClock         = globalClock;
   r->prefetch           = false;
+  r->spec               = false;
   r->dropped            = false;
   r->retrying           = false;
   r->needsDisp          = false;
@@ -270,14 +271,6 @@ void MemRequest::upce() {
   CallEdge ce;
   ce.s = prevMemObj;
   ce.e = currMemObj;
-  /*
-    if (ce.s == 0x0)
-      MSG("mreq %d: starts:nullptr  ends:%s",id, ce.e->getName());
-    else if (ce.s == 0x0)
-      MSG("mreq %d: starts:%s ends:nullptr",id, ce.s->getName());
-    else
-      MSG("mreq %d: starts:%s ends:%s",id, ce.s->getName(), ce.e->getName());
-  */
   ce.tismo = globalClock;  // -lastCallTime;
   ce.mt    = mt;
   ce.ma    = ma;

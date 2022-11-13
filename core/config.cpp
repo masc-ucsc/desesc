@@ -47,7 +47,6 @@ std::string Config::get_string(const std::string &block, const std::string &name
       std::string v{e};
 
       std::transform(v.begin(), v.end(), v.begin(), [](unsigned char c){ return std::tolower(c); });
-
       return v;
     }
   }
@@ -65,6 +64,7 @@ std::string Config::get_string(const std::string &block, const std::string &name
         return std::toupper(c1) == std::toupper(c2);
       });
       if (same) {
+        std::transform(e.begin(), e.end(), e.begin(), [](unsigned char c){ return std::tolower(c); });
         return e;
       }
     }
@@ -174,7 +174,7 @@ int Config::get_integer(const std::string &block, const std::string &name, size_
   return val;
 }
 
-size_t Config::get_array_size(const std::string &block, const std::string &name) {
+size_t Config::get_array_size(const std::string &block, const std::string &name, size_t max_size) {
   if (!check(block, name)) {
     return 0;
   }
@@ -185,7 +185,13 @@ size_t Config::get_array_size(const std::string &block, const std::string &name)
     return 0;
   }
 
-  return ent.as_array().size();
+  auto i= ent.as_array().size();
+  if (i>max_size) {
+    errors.emplace_back(fmt::format("conf:{} section:{} field:{} has too many entries\n", filename, block, name));
+    return max_size;
+  }
+
+  return i;
 }
 
 int Config::get_array_integer(const std::string &block, const std::string &name, size_t pos) {
@@ -213,6 +219,35 @@ int Config::get_array_integer(const std::string &block, const std::string &name,
   }
 
   return arr[pos].as_integer();
+}
+
+std::string Config::get_array_string(const std::string &block, const std::string &name, size_t pos) {
+  if (!check(block, name)) {
+    return "INVALID";
+  }
+
+  auto ent = toml::find(data, block, name);
+  if (!ent.is_array()) {
+    errors.emplace_back(fmt::format("conf:{} section:{} field:{} is not an array\n", filename, block, name));
+    return "INVALID";
+  }
+
+  if (ent.as_array().size() <= pos) {
+    errors.emplace_back(
+        fmt::format("conf:{} section:{} out of bounds {} array of size {}\n", filename, block, name, ent.as_array().size(), pos));
+    return "INVALID";
+  }
+
+  auto arr = ent.as_array();
+
+  if (!ent.is_string()) {
+    errors.emplace_back(fmt::format("conf:{} section:{} array entry is not string\n", filename, block, name));
+    return "INVALID";
+  }
+
+  std::string e = arr[pos].as_string();
+  std::transform(e.begin(), e.end(), e.begin(), [](unsigned char c){ return std::tolower(c); });
+  return e;
 }
 
 void Config::add_error(const std::string &err) { errors.emplace_back(err); }

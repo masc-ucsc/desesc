@@ -2,37 +2,14 @@
 
 #pragma once
 
-#include "FastQueue.h"
-#include "FetchEngine.h"
-#include "GOoOProcessor.h"
-#include "Pipeline.h"
-
-#include "stats.hpp"
 #include "callback.hpp"
+#include "execute_engine.hpp"
 #include "iassert.hpp"
+#include "stats.hpp"
 
-class AccProcessor : public GProcessor {
+class AccProcessor : public Execute_engine {
 private:
-  bool busy;
-
 protected:
-  // BEGIN VIRTUAL FUNCTIONS of GProcessor
-  bool advance_clock(Hartid_t fid);
-
-  // Not needed for Acc
-  StallCause addInst(Dinst *dinst);
-  void       retire();
-  void       fetch(Hartid_t fid);
-  LSQ       *getLSQ();
-  bool       isFlushing();
-  bool       isReplayRecovering();
-  Time_t     getReplayID();
-  void       executing(Dinst *dinst);
-  void       executed(Dinst *dinst);
-
-  virtual void replay(Dinst *target){};  // = 0;
-
-  // END VIRTUAL FUNCTIONS of GProcessor
 
   Addr_t myAddr;
   Addr_t addrIncr;
@@ -52,6 +29,11 @@ protected:
   typedef CallbackMember2<AccProcessor, uint32_t, Time_t, &AccProcessor::write_performed> write_performedCB;
 
 public:
-  AccProcessor(GMemorySystem *gm, CPU_t i);
+  AccProcessor(GMemorySystem *gm, Hartid_t i);
   virtual ~AccProcessor();
+
+  // API for Execute_egine
+  bool advance_clock_drain() override final;
+  bool advance_clock() override final;
+  std::string get_type() const override final { return "accel"; }
 };

@@ -18,8 +18,7 @@ class GMemorySystem;
 
 class Cluster {
 private:
-  void buildUnit(const char *clusterName, uint32_t pos, GMemorySystem *ms, Cluster *cluster, uint32_t cpuid, Opcode type,
-                 GProcessor *gproc);
+  void buildUnit(const std::string &clusterName, uint32_t pos, GMemorySystem *ms, Cluster *cluster, Opcode type, GProcessor *gproc);
 
 protected:
   DepWindow window;
@@ -41,7 +40,7 @@ protected:
 
   uint32_t cpuid;
 
-  char *name;
+  std::string name;
 
 protected:
   void delEntry() {
@@ -54,7 +53,7 @@ protected:
   }
 
   virtual ~Cluster();
-  Cluster(const char *clusterName, uint32_t pos, uint32_t cpuid);
+  Cluster(const std::string &clusterName, uint32_t pos, uint32_t cpuid);
 
 public:
   void select(Dinst *dinst);
@@ -63,17 +62,17 @@ public:
   virtual void executed(Dinst *dinst)            = 0;
   virtual bool retire(Dinst *dinst, bool replay) = 0;
 
-  static Cluster *create(const char *clusterName, uint32_t pos, GMemorySystem *ms, uint32_t cpuid, GProcessor *gproc);
+  static Cluster *create(const std::string &clusterName, uint32_t pos, GMemorySystem *ms, uint32_t cpuid, GProcessor *gproc);
 
   Resource *getResource(Opcode type) const {
     I(type < iMAX);
     return res[type];
   }
 
-  const char *getName() const { return name; }
+  const std::string &getName() const { return name; }
 
   StallCause canIssue(Dinst *dinst) const;
-  void       addInst(Dinst *dinst);
+  void       add_inst(Dinst *dinst);
 
   int32_t getAvailSpace() const {
     if (regPool < windowSize)
@@ -88,7 +87,7 @@ class ExecutingCluster : public Cluster {
 public:
   virtual ~ExecutingCluster() {}
 
-  ExecutingCluster(const char *clusterName, uint32_t pos, uint32_t cpuid) : Cluster(clusterName, pos, cpuid) {}
+  ExecutingCluster(const std::string &clusterName, uint32_t pos, uint32_t cpuid) : Cluster(clusterName, pos, cpuid) {}
 
   void executing(Dinst *dinst);
   void executed(Dinst *dinst);
@@ -99,7 +98,7 @@ class ExecutedCluster : public Cluster {
 public:
   virtual ~ExecutedCluster() {}
 
-  ExecutedCluster(const char *clusterName, uint32_t pos, uint32_t cpuid) : Cluster(clusterName, pos, cpuid) {}
+  ExecutedCluster(const std::string &clusterName, uint32_t pos, uint32_t cpuid) : Cluster(clusterName, pos, cpuid) {}
 
   void executing(Dinst *dinst);
   void executed(Dinst *dinst);
@@ -109,7 +108,7 @@ public:
 class RetiredCluster : public Cluster {
 public:
   virtual ~RetiredCluster() {}
-  RetiredCluster(const char *clusterName, uint32_t pos, uint32_t cpuid) : Cluster(clusterName, pos, cpuid) {}
+  RetiredCluster(const std::string &clusterName, uint32_t pos, uint32_t cpuid) : Cluster(clusterName, pos, cpuid) {}
 
   void executing(Dinst *dinst);
   void executed(Dinst *dinst);

@@ -43,7 +43,7 @@ public:
 };
 //*********** END CREATE FAKE PROCESSOR CLASS
 #include "LSQ.h"
-#include "SescConf.h"
+#include "config.hpp"
 
 long long instTotal = 0;
 
@@ -59,13 +59,14 @@ void doTest() {
 #endif
 }
 
+// FIXME: this is a broken test/benchmark, but it would be good to have one for the LSQ
+
 int main(int argc, const char **argv) {
-  SescConf = new SConfig(argc, argv);
+  Config::init();
 
   GProcessor gproc;
   // lsq = new LSQFull(&gproc,0);
   lsq = new LSQFull(0);
-  I(0);
 
   timeval startTime;
   gettimeofday(&startTime, 0);

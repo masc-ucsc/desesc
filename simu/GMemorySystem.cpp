@@ -1,9 +1,11 @@
 // See LICENSE for details.
 
+#include <cstdlib>
+#include <string>
+
+#include "absl/strings/str_split.h"
+
 #include "GMemorySystem.h"
-
-#include <math.h>
-
 #include "DrawArch.h"
 #include "MemObj.h"
 #include "config.hpp"
@@ -110,16 +112,16 @@ void GMemorySystem::buildMemorySystem() {
   IL1->getRouter()->fillRouteTables();
   IL1->setCoreIL1(coreId);
 
-  if (IL1->getDeviceType() == "tlb"))
+  if (IL1->get_type() == "tlb")
     IL1->getRouter()->getDownNode()->setCoreIL1(coreId);
 
   DL1 = declareMemoryObj(def_block, "dl1");
   DL1->getRouter()->fillRouteTables();
   DL1->setCoreDL1(coreId);
 
-  if (DL1->getDeviceType() == "tlb")
+  if (DL1->get_type() == "tlb")
     DL1->getRouter()->getDownNode()->setCoreDL1(coreId);
-  else if (DL1->getDeviceType() == "prefetcher")
+  else if (DL1->get_type() == "prefetcher")
       DL1->getRouter()->getDownNode()->setCoreDL1(coreId);
 }
 
@@ -163,9 +165,9 @@ MemObj *GMemorySystem::declareMemoryObj_uniqueName(const std::string &name, cons
 MemObj *GMemorySystem::declareMemoryObj(const std::string &block, const std::string &field) {
 
   auto str = Config::get_string(block, field);
-  auto vPars = absl::StrSplit(str, ' ');
+  std::vector<std::string> vPars = absl::StrSplit(str, ' ');
 
-  if (!vPars.size()) {
+  if (vPars.empty()) {
     Config::add_error(fmt::format("section [{}] field [{}] does not describe a MemoryObj", block, field));
     Config::add_error("required format: memoryDevice = descriptionSection [name] [shared|private]");
     return nullptr;
@@ -176,21 +178,22 @@ MemObj *GMemorySystem::declareMemoryObj(const std::string &block, const std::str
   return ret;
 }
 
-MemObj *GMemorySystem::finishDeclareMemoryObj(const std::vector<std::string> &vPars, char *name_suffix) {
+MemObj *GMemorySystem::finishDeclareMemoryObj(const std::vector<std::string> &vPars, const std::string &name_suffix) {
   bool shared     = false;  // Private by default
   bool privatized = false;
 
-  const std::string &device_descr_section = vPars[0];
-  char       *device_name          = (vPars.size() > 1) ? vPars[1] : 0;
+  std::string device_name          = (vPars.size() > 1) ? vPars[1] : "";
+  std::string shared_arg           = (vPars.size() > 2) ? vPars[2] : "";
 
-  if (vPars.size() > 2) {
-    if (strcasecmp(vPars[2], "shared") == 0) {
+  if (!shared_arg.empty()) {
+    std::transform(shared_arg.begin(), shared_arg.end(), shared_arg.begin(), [](unsigned char c){ return std::tolower(c); });
+
+    if (shared_arg == "shared") {
       I(vPars.size() == 3);
       shared = true;
-
-    } else if (strcasecmp(vPars[2], "sharedBy") == 0) {
+    } else if (shared_arg == "sharedby") {
       I(vPars.size() == 4);
-      int32_t sharedBy = atoi(vPars[3]);
+      int32_t sharedBy = std::stoi(vPars[3]);
       // delete[] vPars[3];
       if (sharedBy<0) {
         Config::add_error(fmt::format("sharedby should be bigger than zero (field {})", device_name));
@@ -202,14 +205,14 @@ MemObj *GMemorySystem::finishDeclareMemoryObj(const std::vector<std::string> &vP
       shared      = true;
       privatized  = true;
     }
-
-  } else if (device_name) {
-    if (strcasecmp(device_name, "shared") == 0) {
+  } else if (!device_name.empty()) {
+    if (device_name == "shared") {
       shared = true;
     }
   }
 
-  std::string device_type = config::get_string(device_descr_section, "type");
+  std::string device_descr_section = vPars[0];
+  std::string device_type = Config::get_string(device_descr_section, "type");
 
   /* If the device has been given a name, we may be refering to an
    * already existing device in the system, so let's search
@@ -217,37 +220,25 @@ MemObj *GMemorySystem::finishDeclareMemoryObj(const std::vector<std::string> &vP
    * one reference to them may exist in the system.
    */
 
-  if (device_name) {
+  if (!device_name.empty()) {
     if (!privatized) {
       if (shared) {
         device_name = privatizeDeviceName(device_name, 0);
       } else {
-        // device_name = privatizeDeviceName(device_name, priv_counter++);
         device_name = privatizeDeviceName(device_name, coreId);
       }
     }
-    char *final_dev_name = device_name;
-
-    if (name_suffix != nullptr) {
-      final_dev_name = new char[strlen(device_name) + strlen(name_suffix) + 8];
-      sprintf(final_dev_name, "%s%s", device_name, name_suffix);
-    }
-
-    device_name = final_dev_name;
+    device_name = fmt::format("{}{}",device_name, name_suffix);
 
     MemObj *memdev = searchMemoryObj(shared, device_descr_section, device_name);
-
-    if (memdev) {
-      // delete[] device_name;
-      // delete[] device_descr_section;
+    if (memdev)
       return memdev;
-    }
 
-  } else
+  } else {
     device_name = buildUniqueName(device_type);
+  }
 
   MemObj *newMem = buildMemoryObj(device_type, device_descr_section, device_name);
-
   if (newMem)  // Would be 0 in known-error mode
     getMemoryObjContainer(shared)->addMemoryObj(device_name, newMem);
 

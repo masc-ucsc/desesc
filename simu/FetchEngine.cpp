@@ -3,6 +3,7 @@
 
 #include <climits>
 
+#include "absl/strings/str_split.h"
 #include "fmt/format.h"
 
 #include "FetchEngine.h"
@@ -59,19 +60,13 @@ FetchEngine::FetchEngine(Hartid_t id, GMemorySystem *gms_, FetchEngine *fe)
   fetch_align = Config::get_bool("soc", "core", id, "fetch_align");
   trace_align = Config::get_bool("soc", "core", id, "trace_align");
 
-  if (Config::has_entry("soc", "core", id, "target_inline_opt")) {
-    target_inline_opt = Config::get_bool("soc", "core", id, "target_inline_opt");
-  } else {
-    target_inline_opt = false;
-  }
-
   if (Config::has_entry("soc", "core", id, "fetch_one_line")) {
     fetch_one_line = Config::get_bool("soc", "core", id, "fetch_one_line");
   } else {
     fetch_one_line = !trace_align;
   }
 
-  max_bb_cycle = Config->get_integer("soc", "core", id, "max_bb_cycle", 1, 1024);
+  max_bb_cycle = Config::get_integer("soc", "core", id, "max_bb_cycle", 1, 1024);
 
   if (fe)
     bpred = new BPredictor(id, gms->getIL1(), gms->getDL1(), fe->bpred);
@@ -79,8 +74,6 @@ FetchEngine::FetchEngine(Hartid_t id, GMemorySystem *gms_, FetchEngine *fe)
     bpred = new BPredictor(id, gms->getIL1(), gms->getDL1());
 
   missInst = false;
-  const char *apsection;
-  const char *apstr;
 
   // Move to libmem/Prefetcher.cpp ; it can be stride or DVTAGE
   // FIXME: use AddressPredictor::create()
@@ -90,8 +83,7 @@ FetchEngine::FetchEngine(Hartid_t id, GMemorySystem *gms_, FetchEngine *fe)
   // ideal_apred = new vtage(9, 4, 1, 3);
 #endif
 
-  const std::string sec_name = Config::get_string("soc", "core", id, "IL1");
-  auto v = absl::StrSplit(sec_name, ' ');
+  std::vector<std::string> v = absl::StrSplit(Config::get_string("soc", "core", id, "iL1"), ' ');
   auto isection = v[0];
 
   auto itype = Config::get_string(isection, "type", {"cache", "nice", "bus"});
@@ -116,8 +108,7 @@ FetchEngine::FetchEngine(Hartid_t id, GMemorySystem *gms_, FetchEngine *fe)
 FetchEngine::~FetchEngine() { delete bpred; }
 
 bool FetchEngine::processBranch(Dinst *dinst, uint16_t n2Fetch) {
-  const Instruction *inst = dinst->getInst();
-
+  (void)n2Fetch;
   I(dinst->getInst()->isControl());  // getAddr is target only for br/jmp
 
   bool        fastfix;
@@ -175,6 +166,9 @@ bool FetchEngine::processBranch(Dinst *dinst, uint16_t n2Fetch) {
 }
 
 void FetchEngine::chainPrefDone(Addr_t pc, int distance, Addr_t addr) {
+  (void)pc;
+  (void)distance;
+  (void)addr;
 #if 0
   bool hit = !(DL1->invalid());
     if(hit)
@@ -182,21 +176,17 @@ void FetchEngine::chainPrefDone(Addr_t pc, int distance, Addr_t addr) {
     else
       trigger new prefetch if it can be timely
 #endif
-
-#ifdef ESESC_TRACE_DATA
-  // MSG("pfchain ldpc:%llx %d dist:%d addr:%llx",pc, oracleDataLast[pc].chained, distance, addr);
-#endif
 }
 
 void FetchEngine::chainLoadDone(Dinst *dinst) {
-#ifdef ESESC_TRACE_DATA
-  // MSG("ldchain ldpc:%llx %d dist:%d",dinst->getPC(), oracleDataLast[dinst->getPC()].chained, dinst->getChained());
+  (void)dinst;
 
+#ifdef ESESC_TRACE_DATA
   oracleDataLast[dinst->getPC()].dec_chain();
 #endif
 }
 
-void FetchEngine::realfetch(IBucket *bucket, EmulInterface *eint, Hartid_t fid, int32_t n2Fetch) {
+void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Hartid_t fid, int32_t n2Fetch) {
   Addr_t lastpc = 0;
 
 #ifdef USE_FUSE
@@ -206,38 +196,22 @@ void FetchEngine::realfetch(IBucket *bucket, EmulInterface *eint, Hartid_t fid, 
 #endif
 
   do {
-    Dinst *dinst = 0;
-    dinst        = eint->peekHead(fid);
-    if (dinst == 0) {
-#if 0
-      fprintf(stderr,"Z");
-#endif
-      zeroDinst.inc(true);
-      break;
-    }
+    Dinst *dinst = eint->peek(fid);
+    I(dinst != nullptr);
+    eint->execute(fid);
 
 #ifdef ESESC_TRACE_DATA
     bool predictable = false;
 
-    // I(dinst->getPC() != 0x1001ec98ULL);
-    /*if (dinst->getInst()->isLoad()) {
-
-      int64_t data_load=dinst->getData();
-      MSG("load_data for pc(%llx) = %lld", dinst->getPC(), data_load);
-      }*/
-
 #if 0
     if (dinst->getInst()->isControl()) {
       bool p=bpred->get_Miss_Pred_Bool_Val();
-      //MSG("Entering Fetch Engine Only in Miss_Prediction if (p!=0)Value of  p is %d",p);
 
       if(p) { //p=1 Miss Prediction
-        // MSG("Miss Prediction so Value of  p is %d" , p);
         uint64_t pc_br = dinst->getPC();
         pc_br = pc_br<<16;
 
         nbranchMissHist.sample(dinst->getStatsFlag(),pc_br);
-        // MSG("Branch Miss....sample");
 
         uint64_t ldpc_Src1 = oracleDataRAT[dinst->getInst()->getSrc1()].ldpc;
         uint64_t ldpc_Src2 = oracleDataRAT[dinst->getInst()->getSrc2()].ldpc;
@@ -254,10 +228,8 @@ void FetchEngine::realfetch(IBucket *bucket, EmulInterface *eint, Hartid_t fid, 
         load_addr_Src2=pc_br|(load_addr_Src2 & 0xFFFF);
         nLoadData_per_branch.sample(dinst->getStatsFlag(),load_data_Src1);//pc|16bit data cnt++
         nLoadData_per_branch.sample(dinst->getStatsFlag(),load_data_Src2);//cnt++ same data stucture
-        //MSG(" LoadDataSampling ...working Well");
         nLoadAddr_per_branch.sample(dinst->getStatsFlag(),load_addr_Src1);//pc|16bit data cnt++
         nLoadAddr_per_branch.sample(dinst->getStatsFlag(),load_addr_Src2);//cnt++ same data stucture
-        //MSG(" LoadAddrSampling ...working Well");
       }//p ends
     }//control
 #endif
@@ -343,7 +315,6 @@ void FetchEngine::realfetch(IBucket *bucket, EmulInterface *eint, Hartid_t fid, 
 #else
         auto val           = ideal_apred->exe_update(dinst->getPC(), dinst->getAddr(), dinst->getData());
         int  prefetch_conf = ideal_apred->ret_update(dinst->getPC(), dinst->getAddr(), dinst->getData());
-        // MSG("pc:%llx conf:%d c:%d",dinst->getPC(), val, prefetch_conf);
         Addr_t naddr = ideal_apred->predict(dinst->getPC(), 0, false);  // ideal, predict after update
 
         if (naddr == dinst->getAddr()) {
@@ -458,16 +429,6 @@ void FetchEngine::realfetch(IBucket *bucket, EmulInterface *eint, Hartid_t fid, 
         Addr_t data = oracleDataLast[ldpc].data;
         Addr_t addr = oracleDataLast[ldpc].addr;
 
-        if (oracleDataLast[ldpc].isChained()) {
-#if 0
-          if (oracleDataLast[ldpc].delta0) {
-            MSG("brchain needs ldpc:%llx addr:%llx data:%lld dist:%d",ldpc,addr,data,0);
-          }else{
-            MSG("brchain needs ldpc:%llx addr:%llx data:%lld dist:%d",ldpc,addr,data,oracleDataLast[ldpc].chained);
-          }
-#endif
-        }
-
         // bool tracking = dinst->getPC() == 0x12001b870 && dinst->getStatsFlag();
         // bool tracking = dinst->getPC() == 0x100072dc && dinst->getStatsFlag();
         bool tracking = dinst->getPC() == 0x10006548;
@@ -575,9 +536,6 @@ void FetchEngine::realfetch(IBucket *bucket, EmulInterface *eint, Hartid_t fid, 
               // Addr_t curr_addr = DL1->load_table_vec[lt_idx].ld_addr + DL1->load_table_vec[lt_idx].delta;
               int    valid  = DL1->lot_vec[lor_idx].valid[q_idx];
               Addr_t q_addr = DL1->lot_vec[lor_idx].tl_addr[q_idx];
-#if 0
-            MSG("LDBP@F clk=%d br_id=%d brpc=%llx ldpc=%llx curr_addr=%d q_addr=%d q_id=%d ld_start=%d valid=%d lor_id=%d", globalClock, dinst->getID(), dinst->getPC(), ldpc, curr_addr, q_addr, q_idx, DL1->lor_vec[lor_idx].ld_start, valid, lor_idx);
-#endif
               if (!DL1->lot_vec[lor_idx].valid[q_idx]) {
                 all_data_valid = false;
                 dinst->inc_trig_ld_status();
@@ -619,9 +577,7 @@ void FetchEngine::realfetch(IBucket *bucket, EmulInterface *eint, Hartid_t fid, 
 #endif
 
 #ifdef ENABLE_FAST_WARMUP
-    if (dinst->getPC() == 0) {
-      eint->executeHead(fid);  // Consume it for sure! (warmup mode)
-
+    if (dinst->getPC() == 0) { // FIXME: W mode, counter, not this
       do {
         EventScheduler::advanceClock();
       } while (gms->getDL1()->isBusy(dinst->getAddr()));
@@ -658,10 +614,7 @@ void FetchEngine::realfetch(IBucket *bucket, EmulInterface *eint, Hartid_t fid, 
         // No matter what, do not pass cache line boundary
         uint16_t fetchMaxPos = (entryPC & (il1_line_size / 4 - 1)) + fetch_width;
         if (fetchMaxPos > (il1_line_size / 4)) {
-          // MSG("entryPC=0x%llx lost1=%d lost2=%d",entryPC, fetchLost, (fetchMaxPos-il1_line_size/4));
           fetchLost += (fetchMaxPos - il1_line_size / 4);
-        } else {
-          // MSG("entryPC=0x%llx lost1=%d",entryPC, fetchLost);
         }
 
         avgFetchLost.sample(fetchLost, dinst->getStatsFlag());
@@ -673,24 +626,6 @@ void FetchEngine::realfetch(IBucket *bucket, EmulInterface *eint, Hartid_t fid, 
     } else {
       I(lastpc);
 
-#if 0
-      // MIPS version is more complex
-      if(lastpc == dinst->getPC()) { // Multiple uOPS no re-fetch issues
-        n2Fetch--;
-      } else if((lastpc + 4) == dinst->getPC()) {
-        n2Fetch--;
-      } else if((lastpc + 8) != dinst->getPC()) {
-        if(!target_inline_opt || (lastpc >> il1_line_bits) != (dinst->getPC() >> il1_line_bits))
-          maxBB--;
-        if(maxBB < 1) {
-          nDelayInst2.add(n2Fetch, dinst->getStatsFlag());
-          break;
-        }
-        n2Fetch--; // There may be a NOP in the delay slot, do not count it
-      } else {
-        n2Fetch -= 2; // NOP still consumes delay slot
-      }
-#else
       if ((lastpc + 4) == dinst->getPC() || (lastpc + 2) == dinst->getPC()) {
       } else {
         maxBB--;
@@ -700,7 +635,7 @@ void FetchEngine::realfetch(IBucket *bucket, EmulInterface *eint, Hartid_t fid, 
         }
       }
       n2Fetch--;
-#endif
+
       if (fetch_one_line) {
         if ((lastpc >> il1_line_bits) != (dinst->getPC() >> il1_line_bits)) {
           break;
@@ -708,8 +643,6 @@ void FetchEngine::realfetch(IBucket *bucket, EmulInterface *eint, Hartid_t fid, 
       }
     }
     lastpc = dinst->getPC();
-
-    eint->executeHead(fid);  // Consume for sure
 
     dinst->setFetchTime();
     bucket->push(dinst);
@@ -719,7 +652,6 @@ void FetchEngine::realfetch(IBucket *bucket, EmulInterface *eint, Hartid_t fid, 
       RegType src1 = dinst->getInst()->getSrc1();
       if (dinst->getInst()->doesJump2Label() && dinst->getInst()->getSrc2() == LREG_R0
           && (src1 == last_dest || src1 == last_src1 || src1 == last_src2 || src1 == LREG_R0)) {
-        // MSG("pc %x fusion with previous", dinst->getPC());
         dinst->scrap(eint);
         continue;
       }
@@ -753,9 +685,6 @@ void FetchEngine::realfetch(IBucket *bucket, EmulInterface *eint, Hartid_t fid, 
               int64_t curr_delta = DL1->load_table_vec[load_table_idx].delta;
               int64_t prev_delta = DL1->load_table_vec[load_table_idx].prev_delta;
               if(curr_delta != prev_delta) { //FIXME ?? verify
-#if 0
-                MSG("MISPRED@F clk=%d br_id=%d brpc=%llx ldpc=%llx", globalClock, dinst->getID(), dinst->getPC(), ldpc);
-#endif
                 DL1->bot_vec[bot_idx].reset_valid();
                 if(lor_idx != -1) {
                   //reset lor.data_pos
@@ -778,7 +707,6 @@ void FetchEngine::realfetch(IBucket *bucket, EmulInterface *eint, Hartid_t fid, 
             for(int i = 0; i < DL1->bot_vec[bot_idx].load_ptr.size(); i++) {
               Addr_t ldpc = DL1->bot_vec[bot_idx].load_ptr[i];
               int lor_idx   = DL1->return_lor_index(ldpc);
-              MSG("MISPRED@F clk=%d br_id=%d brpc=%llx ldpc=%llx", globalClock, dinst->getID(), dinst->getPC(), ldpc);
               if(lor_idx != -1) {
                 //reset lor.data_pos
                 //DL1->lor_vec[lor_idx].data_pos = 1;
@@ -790,7 +718,7 @@ void FetchEngine::realfetch(IBucket *bucket, EmulInterface *eint, Hartid_t fid, 
         }
 #endif
 #endif
-        Dinst *dinstn = eint->peekHead(fid);
+        Dinst *dinstn = eint->peek(fid);
         if (dinstn == 0) {
           zeroDinst.inc(true);
 #if 0
@@ -799,7 +727,7 @@ void FetchEngine::realfetch(IBucket *bucket, EmulInterface *eint, Hartid_t fid, 
         }
         if (dinstn && dinst->getAddr() && n2Fetch) {  // Taken branch and next inst is delay slot
           if (dinstn->getPC() == (lastpc + 4)) {
-            eint->executeHead(fid);
+            eint->execute(fid);
             bucket->push(dinstn);
             n2Fetch--;
           }
@@ -809,12 +737,10 @@ void FetchEngine::realfetch(IBucket *bucket, EmulInterface *eint, Hartid_t fid, 
 #ifdef FETCH_TRACE
         if (dinst->isBiasBranch() && dinst->getFetchEngine()) {
           // OOPS. Thought that it was bias and it is a long misspredict
-          MSG("ABORT first=%llx last=%llx ninst=%d", bias_firstPC, dinst->getPC(), bias_ninst);
           bias_firstPC = dinst->getAddr();
           bias_ninst   = 0;
         }
         if (bias_ninst > 256) {
-          MSG("1ENDS first=%llx last=%llx ninst=%d", bias_firstPC, dinst->getPC(), bias_ninst);
           bias_firstPC = dinst->getAddr();
           bias_ninst   = 0;
         }
@@ -823,19 +749,12 @@ void FetchEngine::realfetch(IBucket *bucket, EmulInterface *eint, Hartid_t fid, 
       }
 #ifdef FETCH_TRACE
       if (bias_ninst > 256) {
-        MSG("2ENDS first=%llx last=%llx ninst=%d", bias_firstPC, dinst->getPC(), bias_ninst);
         bias_firstPC = dinst->getAddr();
         bias_ninst   = 0;
       } else if (!dinst->isBiasBranch()) {
         if (dinst->isTaken() && (dinst->getAddr() > dinst->getPC() && (dinst->getAddr() + 8 << 2) <= dinst->getPC())) {
           // Move instructions to predicated (up to 8)
-          MSG("PRED  first=%llx last=%llx ninst=%d", bias_firstPC, dinst->getPC(), bias_ninst);
         } else {
-          if (bias_ninst < 16) {
-            MSG("NOTRA first=%llx last=%llx ninst=%d", bias_firstPC, dinst->getPC(), bias_ninst);
-          } else {
-            MSG("3ENDS first=%llx last=%llx ninst=%d", bias_firstPC, dinst->getPC(), bias_ninst);
-          }
           bias_firstPC = dinst->getAddr();
           bias_ninst   = 0;
         }
@@ -863,16 +782,6 @@ void FetchEngine::realfetch(IBucket *bucket, EmulInterface *eint, Hartid_t fid, 
                             &(bucket->markFetchedCB));  // 0xdeaddead as PC signature
   } else {
     bucket->markFetchedCB.schedule(il1_hit_delay);
-#if 0
-    if (bucket->top() != nullptr)
-    MSG("@%lld: Bucket [%p] (Top ID = %d) to be markFetched after %d cycles i.e. @%lld"
-        ,(long long int)globalClock
-        , bucket
-        , (int) bucket->top()->getID()
-        , il1_hit_delay
-        , (long long int)(globalClock)+il1_hit_delay
-        );
-#endif
   }
 }
 
@@ -963,7 +872,7 @@ Dinst* FetchEngine::init_ldbp(Dinst *dinst, Data_t dd, Addr_t ldpc) {
 #endif
 #endif
 
-void FetchEngine::fetch(IBucket *bucket, EmulInterface *eint, Hartid_t fid) {
+void FetchEngine::fetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Hartid_t fid) {
   // Reset the max number of BB to fetch in this cycle (decreased in processBranch)
   maxBB = max_bb_cycle;
 
@@ -972,10 +881,8 @@ void FetchEngine::fetch(IBucket *bucket, EmulInterface *eint, Hartid_t fid) {
   realfetch(bucket, eint, fid, fetch_width);
 }
 
-void FetchEngine::dump(const char *str) const {
-  char *nstr = (char *)alloca(strlen(str) + 20);
-  sprintf(nstr, "%s_FE", str);
-  bpred->dump(nstr);
+void FetchEngine::dump(const std::string &str) const {
+  bpred->dump(str + "_FE");
 }
 
 void FetchEngine::unBlockFetchBPredDelay(Dinst *dinst, Time_t missFetchTime) {
@@ -1005,8 +912,8 @@ void FetchEngine::unBlockFetch(Dinst *dinst, Time_t missFetchTime) {
 }
 
 void FetchEngine::clearMissInst(Dinst *dinst, Time_t missFetchTime) {
-  // MSG("\t\t\t\t\tCPU: %d\tU:ID: %d,Dinst PE:%d, Dinst PC %x",(int) this->gproc->getID(),(int)
-  // dinst->getID(),dinst->getPE(),dinst->getPC());
+  (void)missFetchTime;
+
   I(missInst);
   missInst = false;
 
@@ -1019,9 +926,6 @@ void FetchEngine::clearMissInst(Dinst *dinst, Time_t missFetchTime) {
 }
 
 void FetchEngine::setMissInst(Dinst *dinst) {
-  // MSG("CPU: %d\tL:ID: %d,Dinst PE:%d, Dinst PC %x",(int) this->gproc->getID(),(int)
-  // dinst->getID(),dinst->getPE(),dinst->getPC());
-
   I(!missInst);
 
   missInst = true;

@@ -4,12 +4,12 @@
 #include "GMemorySystem.h"
 #include "GProcessor.h"
 #include "Resource.h"
-#include "SCB.h"
 #include "TaskHandler.h"
 #include "estl.h"
 
 #include "port.hpp"
 #include "config.hpp"
+#include "store_buffer.hpp"
 
 // Begin: Fields used during constructions
 
@@ -17,12 +17,6 @@ struct UnitEntry {
   PortGeneric *gen;
   int32_t      num;
   int32_t      occ;
-};
-
-// Class for comparison to be used in hashes of char * where the content is to be compared
-class eqstr {
-public:
-  inline bool operator()(const std::string &s1, const std::string &s2) const { return strcasecmp(s1.c_str(), s2.c_str()) == 0; }
 };
 
 typedef std::map<std::string, UnitEntry>  UnitMapType;
@@ -41,9 +35,9 @@ Cluster::Cluster(const std::string &clusterName, uint32_t pos, uint32_t _cpuid)
     : window(_cpuid, this, clusterName, pos)
     , MaxWinSize(Config::get_integer(clusterName, "win_size", 1, 32768))
     , windowSize(Config::get_integer(clusterName, "win_size"))
-    , winNotUsed("P(%d)_%s%d_winNotUsed", _cpuid, clusterName, pos)
-    , rdRegPool("P(%d)_%s%d_rdRegPool", _cpuid, clusterName, pos)
-    , wrRegPool("P(%d)_%s%d_wrRegPool", _cpuid, clusterName, pos)
+    , winNotUsed(fmt::format("P({})_{}{}_winNotUsed", _cpuid, clusterName, pos))
+    , rdRegPool(fmt::format("P({})_{}{}_rdRegPool", _cpuid, clusterName, pos))
+    , wrRegPool(fmt::format("P({})_{}{}_wrRegPool", _cpuid, clusterName, pos))
     , cpuid(_cpuid) {
 
   name = fmt::format("{}{}", clusterName, pos);
@@ -53,7 +47,7 @@ Cluster::Cluster(const std::string &clusterName, uint32_t pos, uint32_t _cpuid)
   nready = 0;
 }
 
-void Cluster::buildUnit(const std::string &clusterName, uint32_t pos, GMemorySystem *ms, Cluster *cluster, uint32_t cpuid, Opcode type,
+void Cluster::buildUnit(const std::string &clusterName, uint32_t pos, GMemorySystem *ms, Cluster *cluster, Opcode type,
                         GProcessor *gproc) {
   auto unitType = Instruction::opcode2Name(type);
 
@@ -69,7 +63,7 @@ void Cluster::buildUnit(const std::string &clusterName, uint32_t pos, GMemorySys
   TimeDelta_t  lat = Config::get_integer(sUnitName, "lat", 0, 1024);
   PortGeneric *gen;
 
-  auto unitName = fmt::format("P({})_{}{}_{}", smt_ctx, clusterName, pos, sUnitName));
+  auto unitName = fmt::format("P({})_{}{}_{}", smt_ctx, clusterName, pos, sUnitName);
   auto it = unitMap.find(unitName);
   if (it != unitMap.end()) {
     gen = it->second.gen;
@@ -125,7 +119,7 @@ void Cluster::buildUnit(const std::string &clusterName, uint32_t pos, GMemorySys
       case iBALU_RJUMP:
       case iBALU_RCALL:
       case iBALU_RET: {
-        auto max_branches = Config::get_integer("soc","core", cpuid, "max_branches")
+        auto max_branches = Config::get_integer("soc","core", cpuid, "max_branches");
         if (max_branches == 0)
           max_branches = INT_MAX;
         bool drain_on_miss = Config::get_bool("soc", "core", cpuid, "drain_on_miss");
@@ -142,9 +136,9 @@ void Cluster::buildUnit(const std::string &clusterName, uint32_t pos, GMemorySys
                        cluster,
                        gen,
                        gproc->getLSQ(),
-                       gproc->getSS(),
-                       gproc->getPrefetcher(),
-                       gproc->getSCB(),
+                       gproc->ref_SS(),
+                       gproc->ref_prefetcher(),
+                       gproc->ref_SCB(),
                        st_fwd_delay,
                        lat,
                        ms,
@@ -164,9 +158,9 @@ void Cluster::buildUnit(const std::string &clusterName, uint32_t pos, GMemorySys
                         cluster,
                         gen,
                         gproc->getLSQ(),
-                        gproc->getSS(),
-                        gproc->getPrefetcher(),
-                        gproc->getSCB(),
+                        gproc->ref_SS(),
+                        gproc->ref_prefetcher(),
+                        gproc->ref_SCB(),
                         lat,
                         ms,
                         stq_size,
@@ -185,13 +179,13 @@ void Cluster::buildUnit(const std::string &clusterName, uint32_t pos, GMemorySys
   res[type] = r;
 }
 
-Cluster *Cluster::create(const char *clusterName, uint32_t pos, GMemorySystem *ms, uint32_t cpuid, GProcessor *gproc) {
+Cluster *Cluster::create(const std::string &clusterName, uint32_t pos, GMemorySystem *ms, uint32_t cpuid, GProcessor *gproc) {
   // Constraints
 
   auto recycleAt = Config::get_string("soc","core", cpuid, "recycle_at", {"executing", "executed", "retired"});
 
   int smt = Config::get_integer("soc","core", cpuid, "smt");
-  int smt_ctx = id - (id % smt);
+  int smt_ctx = cpuid - (cpuid % smt);
 
   auto cName = fmt::format("cluster({})_{}{}", smt_ctx, clusterName, pos);
 
@@ -214,7 +208,7 @@ Cluster *Cluster::create(const char *clusterName, uint32_t pos, GMemorySystem *m
     cluster->lateAlloc = Config::get_bool(clusterName, "late_alloc");
 
     for (int32_t t = 0; t < iMAX; t++) {
-      cluster->buildUnit(clusterName, pos, ms, cluster, cpuid, static_cast<Opcode>(t), gproc);
+      cluster->buildUnit(clusterName, pos, ms, cluster, static_cast<Opcode>(t), gproc);
     }
 
     clusterMap[cName] = cluster;
@@ -243,7 +237,7 @@ StallCause Cluster::canIssue(Dinst *dinst) const {
   return dinst->getClusterResource()->canIssue(dinst);
 }
 
-void Cluster::addInst(Dinst *dinst) {
+void Cluster::add_inst(Dinst *dinst) {
   rdRegPool.add(2, dinst->getStatsFlag());  // 2 reads
 
   if (!lateAlloc && dinst->getInst()->hasDstRegister()) {
@@ -255,7 +249,7 @@ void Cluster::addInst(Dinst *dinst) {
 
   newEntry();
 
-  window.addInst(dinst);
+  window.add_inst(dinst);
 }
 
 //************ Executing Cluster
@@ -356,7 +350,7 @@ bool RetiredCluster::retire(Dinst *dinst, bool reply) {
   if (!done)
     return false;
 
-  I(dinst->getGProc()->getID() == dinst->getFlowId());
+  I(dinst->getGProc()->get_hid() == dinst->getFlowId());
 
   bool hasDest = (dinst->getInst()->hasDstRegister());
 

@@ -25,7 +25,7 @@ Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
 #include "fmt/format.h"
 
-SCTable::SCTable(const char *str, size_t size, uint8_t bits)
+SCTable::SCTable(const std::string &str, size_t size, uint8_t bits)
     : sizeMask(size - 1), Saturate(bits > 1 ? (1 << (bits - 1)) : 1), MaxValue((1 << bits) - 1) {
   if ((size & (size - 1)) != 0) {
     fmt::print("SCTable ({}) size [{}] a power of two\n", str, (int)size);

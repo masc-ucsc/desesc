@@ -5,11 +5,11 @@
 #include <algorithm>
 #include <vector>
 
-#include "CodeProfile.h"
+#include "stats_code.hpp"
 #include "FastQueue.h"
 #include "FetchEngine.h"
-#include "GOoOProcessor.h"
 #include "Pipeline.h"
+#include "GProcessor.h"
 
 #include "stats.hpp"
 #include "callback.hpp"
@@ -27,7 +27,7 @@
 //#define ENABLE_LDBP
 //#define PRINT_LDBP 1
 
-class OoOProcessor : public GOoOProcessor {
+class OoOProcessor : public GProcessor {
 private:
   class RetireState {
   public:
@@ -81,7 +81,7 @@ private:
   bool                                                                  scooreMemory;
   StaticCallbackMember0<OoOProcessor, &OoOProcessor::retire_lock_check> retire_lock_checkCB;
 
-  void fetch(Hartid_t fid);
+  void fetch();
 
 protected:
   ClusterManager clusterManager;
@@ -102,8 +102,8 @@ protected:
   Stats_cntr fwd2done1;
   Stats_cntr fwd2done2;
 #endif
-  CodeProfile codeProfile;
-  double      codeProfile_trigger;
+  Stats_code codeProfile;
+  double     codeProfile_trigger;
 
 #ifdef ENABLE_LDBP
   Stats_cntr ldbp_power_mode_cycles;
@@ -183,8 +183,10 @@ protected:
 #endif
 
   // BEGIN VIRTUAL FUNCTIONS of GProcessor
-  bool       advance_clock(Hartid_t fid);
-  StallCause addInst(Dinst *dinst);
+  bool       advance_clock_drain() override final;
+  bool       advance_clock() override final;
+
+  StallCause add_inst(Dinst *dinst) override final;
   void       retire();
 
   // END VIRTUAL FUNCTIONS of GProcessor
@@ -772,16 +774,18 @@ public:
 
 #endif
 
-  void   executing(Dinst *dinst);
-  void   executed(Dinst *dinst);
-  LSQ   *getLSQ() { return &lsq; }
-  void   replay(Dinst *target);
-  bool   isFlushing() { return flushing; }
-  bool   isReplayRecovering() { return replayRecovering; }
-  Time_t getReplayID() { return replayID; }
+  void   executing(Dinst *dinst) override final;
+  void   executed(Dinst *dinst) override final;
+  LSQ   *getLSQ()  override final{ return &lsq; }
+  void   replay(Dinst *target) override final;
+  bool   is_nuking() override final { return flushing; }
+  bool   isReplayRecovering() override final { return replayRecovering; }
+  Time_t getReplayID() override final { return replayID; }
 
   void dumpROB();
   bool loadIsSpec();
 
   bool isSerializing() const { return serialize_for != 0; }
+
+  std::string get_type() const final { return "ooo"; }
 };

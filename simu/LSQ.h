@@ -5,6 +5,7 @@
 #include <map>
 #include <set>
 #include <vector>
+#include <array>
 
 #include "estl.h"
 
@@ -48,7 +49,7 @@ private:
   static Addr_t calcWord(const Dinst *dinst) { return (dinst->getAddr()) >> 3; }
 
 public:
-  LSQFull(const int32_t id, int32_t size);
+  LSQFull(Hartid_t hid, int32_t size);
   ~LSQFull() {}
 
   bool   insert(Dinst *dinst);
@@ -58,12 +59,12 @@ public:
 
 class LSQNone : public LSQ {
 private:
-  Dinst *addrTable[128];
+  std::array<Dinst *, 128> addrTable;
 
   int getEntry(Addr_t addr) const { return ((addr >> 1) ^ (addr >> 17)) & 127; }
 
 public:
-  LSQNone(const int32_t id, int32_t size);
+  LSQNone(Hartid_t hid, int32_t size);
   ~LSQNone() {}
 
   bool   insert(Dinst *dinst);

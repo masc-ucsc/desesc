@@ -91,7 +91,7 @@ private:
   HASH_MAP<Addr_t, Addr_t> ldpc2brpc;  // FIXME: Only a small table of address to track
 #endif
 
-  bool traget_inline_opt;
+  bool fetch_one_line;
   bool fetch_align;
   bool trace_align;
 
@@ -160,12 +160,11 @@ public:
   uint64_t constant;
 #endif
 
-  void fetch(IBucket *buffer, Emul_base *eint, Hartid_t fid);
+  void fetch(IBucket *buffer, std::shared_ptr<Emul_base> eint, Hartid_t fid);
 
-  typedef CallbackMember3<FetchEngine, IBucket *, Emul_base *, Hartid_t, &FetchEngine::fetch> fetchCB;
+  typedef CallbackMember3<FetchEngine, IBucket *, std::shared_ptr<Emul_base>, Hartid_t, &FetchEngine::fetch> fetchCB;
 
-  void realfetch(IBucket *buffer, Emul_base *eint, Hartid_t fid, int32_t n2Fetched);
-  // typedef CallbackMember4<FetchEngine, IBucket *, Emul_base* , Hartid_t, int32_t, &FetchEngine::realfetch>  realfetchCB;
+  void realfetch(IBucket *buffer, std::shared_ptr<Emul_base> eint, Hartid_t fid, int32_t n2Fetched);
 
   void chainPrefDone(Addr_t pc, int distance, Addr_t addr);
   void chainLoadDone(Dinst *dinst);

@@ -5,9 +5,9 @@
 #include "GProcessor.h"
 #include "config.hpp"
 
-LSQFull::LSQFull(const int32_t id, int32_t size)
+LSQFull::LSQFull(Hartid_t hid, int32_t size)
     /* constructor {{{1 */
-    : LSQ(size), stldForwarding("P(%d):stldForwarding", id) {}
+    : LSQ(size), stldForwarding(fmt::format("P({}):stldForwarding", hid)) {}
 /* }}} */
 
 bool LSQFull::insert(Dinst *dinst)
@@ -102,10 +102,14 @@ void LSQFull::remove(Dinst *dinst)
 }
 /* }}} */
 
-LSQNone::LSQNone(const int32_t id, int32_t size)
+LSQNone::LSQNone(Hartid_t hid, int32_t size)
     /* constructor {{{1 */
     : LSQ(size) {
-  for (int i = 0; i < 128; i++) addrTable[i] = 0;
+  (void)hid;
+
+  for(auto &e:addrTable) {
+    e = 0;
+  }
 }
 /* }}} */
 
@@ -136,7 +140,10 @@ Dinst *LSQNone::executing(Dinst *dinst)
 
 void LSQNone::remove(Dinst *dinst)
 /* Remove from the LSQ {{{1 (in-order) */
-{}
+{
+  (void)dinst;
+
+}
 /* }}} */
 
 LSQVPC::LSQVPC(int32_t size)
@@ -155,6 +162,7 @@ bool LSQVPC::insert(Dinst *dinst)
 /* }}} */
 
 Dinst *LSQVPC::executing(Dinst *dinst) {
+  (void)dinst;
   I(0);
   unresolved--;
   return 0;

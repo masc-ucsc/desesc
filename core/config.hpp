@@ -34,8 +34,9 @@ public:
   static int get_integer(const std::string &block, const std::string &name, size_t pos, const std::string &name2,
                          int from = std::numeric_limits<int>::min(), int to = std::numeric_limits<int>::max());
 
-  static size_t get_array_size(const std::string &block, const std::string &name);
-  static int    get_array_integer(const std::string &block, const std::string &name, size_t pos);
+  static size_t      get_array_size(const std::string &block, const std::string &name, size_t max_size=1024);
+  static int         get_array_integer(const std::string &block, const std::string &name, size_t pos);
+  static std::string get_array_string(const std::string &block, const std::string &name, size_t pos);
 
   static void add_error(const std::string &err);
 

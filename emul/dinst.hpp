@@ -7,12 +7,9 @@
 #include "instruction.hpp"
 #include "pool.hpp"
 #include "snippets.hpp"
+#include "opcode.hpp"
 
-using Hartid_t = uint32_t;
-using Addr_t   = uint64_t;
-using Data_t   = uint64_t;
-
-typedef int32_t SSID_t;
+using SSID_t = int32_t;
 
 class Dinst;
 class FetchEngine;
@@ -155,6 +152,7 @@ private:
   bool prefetch;
   bool dispatched;
   bool fullMiss;  // Only for DL1
+  bool speculative;
 
   // END Boolean flags
 
@@ -250,6 +248,7 @@ private:
     prefetch     = false;
     dispatched   = false;
     fullMiss     = false;
+    speculative  = true;
 
 #ifdef DINST_PARENT
     pend[0].setParentDinst(0);
@@ -265,13 +264,21 @@ private:
 protected:
 public:
   Dinst();
+  #if 0
   bool   isSpec       = false;
   bool   isSafe       = false;
   bool   isLdCache    = false;
   Time_t memReqTimeL1 = 0;
+  #endif
   Dinst *clone();
 
+  bool is_safe() const { return !speculative; }
+  bool is_spec() const { return speculative; }
+  void mark_safe() { speculative = false; }
+
   bool getStatsFlag() const { return keepStats; }
+
+  #if 0
   void setLdCache() { isLdCache = true; }
   bool getLdCache() { return isLdCache; }
   void resetLdCache() { isLdCache = false; }
@@ -281,10 +288,13 @@ public:
     memReqTimeL1 = time;
   }
   Time_t        getMemReqTimeL1() { return memReqTimeL1; }
+
   void          setSpec() { isSpec = true; }
   void          clearSpec() { isSpec = false; }
   void          setSafe() { isSafe = true; }
   void          clearSafe() { isSafe = false; }
+  #endif
+
   static Dinst *create(const Instruction *inst, Addr_t pc, Addr_t address, Hartid_t fid, bool keepStats) {
     Dinst *i = dInstPool.out();
 

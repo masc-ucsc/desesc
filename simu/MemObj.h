@@ -7,7 +7,6 @@
 #include <string>
 
 #include "MRouter.h"
-#include "Resource.h"
 
 #include "port.hpp"
 #include "callback.hpp"
@@ -45,7 +44,7 @@ protected:
   MRouter    *router;
   std::string section;
   std::string name;
-  std::string deviceType;
+  std::string mem_type;
 
   const uint16_t  id;
   static uint16_t id_counter;
@@ -326,7 +325,7 @@ public:
 
   const std::string &getSection() const { return section; }
   const std::string &getName() const { return name; }
-  const std::string &getDeviceType() const { return deviceType; }
+  const std::string &get_type() const { return mem_type; }
   uint16_t    getID() const { return id; }
   int16_t     getCoreID() const { return coreid; }
   void        setCoreDL1(int16_t cid) {

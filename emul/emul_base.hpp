@@ -5,17 +5,19 @@
 #include <string>
 #include <vector>
 
+#include "config.hpp"
 #include "dinst.hpp"
 #include "iassert.hpp"
 
 class Emul_base {
 protected:
+  Config      config;
   std::string section;
   std::string type;  // dromajo, trace,...
   int         num;
 
 public:
-  Emul_base(const std::string &section);
+  Emul_base(Config conf);
   virtual ~Emul_base();
 
   virtual Dinst *peek(Hartid_t fid)    = 0;

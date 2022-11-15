@@ -2,13 +2,12 @@
 
 #include "emul_base.hpp"
 
-#include "config.hpp"
+//#include "config.hpp"
 
-Emul_base::Emul_base(const std::string &sect)
-    : section(sect)
+Emul_base::Emul_base(Config conf)
+    : config(conf)
 /* Base class Emul_base constructor  */
 {
-  Config::init(sect);
   num  = Config::get_integer("emul", "num");
   type = Config::get_string("emul", "type", {"dromajo", "trace"});
 

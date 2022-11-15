@@ -37,5 +37,7 @@ cc_binary(
     ],
     deps = [
         ":emul",
+        "@com_google_googletest//:gtest",
+        "@com_google_googletest//:gtest_main" # Only if hello_test.cc has no main()
     ],
 )

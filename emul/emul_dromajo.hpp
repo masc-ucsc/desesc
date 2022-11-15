@@ -9,7 +9,7 @@ class Emul_dromajo : public Emul_base {
 protected:
   RISCVMachine *machine = NULL;
 public:
-  Emul_dromajo(const std::string &sect);
+  Emul_dromajo(Config conf);
   virtual ~Emul_dromajo();
 
   bool init_dromajo_machine(int argc, char **argv) {

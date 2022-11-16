@@ -73,7 +73,7 @@ protected:
   bool dropped;
   bool retrying;
   bool needsDisp;  // Once set, it keeps the value
-  bool doStats;
+  bool keep_stats;
   bool warmup;
   bool nonCacheable;
 
@@ -151,7 +151,7 @@ protected:
   void dump_calledge(TimeDelta_t lat) { (void)lat; }
   void upce(){};
 #endif
-  static MemRequest *create(MemObj *m, Addr_t addr, bool doStats, CallbackBase *cb);
+  static MemRequest *create(MemObj *m, Addr_t addr, bool keep_stats, CallbackBase *cb);
 
 public:
   void redoReq();
@@ -205,16 +205,16 @@ public:
     startDispCB.scheduleAbs(when);
   }
 
-  static void sendReqVPCWriteUpdate(MemObj *m, bool doStats, Addr_t addr) {
-    MemRequest *mreq = create(m, addr, doStats, 0);
+  static void sendReqVPCWriteUpdate(MemObj *m, bool keep_stats, Addr_t addr) {
+    MemRequest *mreq = create(m, addr, keep_stats, 0);
     mreq->mt         = mt_req;
     mreq->ma         = ma_VPCWU;
     mreq->ma_orig    = mreq->ma;
     m->req(mreq);
   }
-  static MemRequest *createReqReadPrefetch(MemObj *m, bool doStats, Addr_t addr, Addr_t pref_sign, int32_t degree, Addr_t pc,
+  static MemRequest *createReqReadPrefetch(MemObj *m, bool keep_stats, Addr_t addr, Addr_t pref_sign, int32_t degree, Addr_t pc,
                                            CallbackBase *cb = 0) {
-    MemRequest *mreq      = create(m, addr, doStats, cb);
+    MemRequest *mreq      = create(m, addr, keep_stats, cb);
     mreq->prefetch        = true;
     mreq->topCoherentNode = 0;
     mreq->mt              = mt_req;
@@ -228,8 +228,8 @@ public:
   int32_t getDegree() const { return degree; }
   Addr_t  getSign() const { return pref_sign; }
 
-  static void sendNCReqRead(MemObj *m, bool doStats, Addr_t addr, CallbackBase *cb = 0) {
-    MemRequest *mreq   = create(m, addr, doStats, cb);
+  static void sendNCReqRead(MemObj *m, bool keep_stats, Addr_t addr, CallbackBase *cb = 0) {
+    MemRequest *mreq   = create(m, addr, keep_stats, cb);
     mreq->mt           = mt_req;
     mreq->ma           = ma_setValid;  // For reads, MOES are valid states
     mreq->ma_orig      = mreq->ma;
@@ -237,8 +237,8 @@ public:
     m->req(mreq);
   }
 
-  static MemRequest *createSpecReqRead(MemObj *m, bool doStats, Addr_t addr, Addr_t pc, CallbackBase *cb = 0) {
-    MemRequest *mreq        = create(m, addr, doStats, cb);
+  static MemRequest *createSpecReqRead(MemObj *m, bool keep_stats, Addr_t addr, Addr_t pc, CallbackBase *cb = 0) {
+    MemRequest *mreq        = create(m, addr, keep_stats, cb);
     mreq->spec              = true;
     mreq->notifyScbDirectly = false;
     mreq->mt                = mt_req;
@@ -248,8 +248,8 @@ public:
     return mreq;
   }
 
-  static MemRequest *createSafeReqRead(MemObj *m, bool doStats, Addr_t addr, Addr_t pc, CallbackBase *cb = 0) {
-    MemRequest *mreq        = create(m, addr, doStats, cb);
+  static MemRequest *createSafeReqRead(MemObj *m, bool keep_stats, Addr_t addr, Addr_t pc, CallbackBase *cb = 0) {
+    MemRequest *mreq        = create(m, addr, keep_stats, cb);
     I(!mreq->spec);
     mreq->notifyScbDirectly = false;
     mreq->mt                = mt_req;
@@ -259,8 +259,8 @@ public:
     return mreq;
   }
 
-  static MemRequest *createReqRead(MemObj *m, bool doStats, Addr_t addr, Addr_t pc, CallbackBase *cb = 0) {
-    MemRequest *mreq = create(m, addr, doStats, cb);
+  static MemRequest *createReqRead(MemObj *m, bool keep_stats, Addr_t addr, Addr_t pc, CallbackBase *cb = 0) {
+    MemRequest *mreq = create(m, addr, keep_stats, cb);
     mreq->mt         = mt_req;
     mreq->ma         = ma_setValid;  // For reads, MOES are valid states
     mreq->ma_orig    = mreq->ma;
@@ -268,10 +268,10 @@ public:
     return mreq;
   }
 
-  static void triggerReqRead(MemObj *m, bool doStats, Addr_t trig_addr, Addr_t pc, Addr_t _dep_pc, Addr_t _start_addr,
+  static void triggerReqRead(MemObj *m, bool keep_stats, Addr_t trig_addr, Addr_t pc, Addr_t _dep_pc, Addr_t _start_addr,
                              Addr_t _end_addr, int64_t _delta, int64_t _inf, int _ld_br_type, int _depth, int tl_type,
                              bool _ld_used, CallbackBase *cb = 0) {
-    MemRequest *mreq   = createReqRead(m, doStats, trig_addr, pc, cb);
+    MemRequest *mreq   = createReqRead(m, keep_stats, trig_addr, pc, cb);
     mreq->trigger_load = true;
     mreq->dep_pc       = _dep_pc;
     mreq->base_addr    = _start_addr;
@@ -285,24 +285,24 @@ public:
     m->req(mreq);
   }
 
-  static void sendReqRead(MemObj *m, bool doStats, Addr_t addr, Addr_t pc, CallbackBase *cb = 0) {
-    MemRequest *mreq = createReqRead(m, doStats, addr, pc, cb);
+  static void sendReqRead(MemObj *m, bool keep_stats, Addr_t addr, Addr_t pc, CallbackBase *cb = 0) {
+    MemRequest *mreq = createReqRead(m, keep_stats, addr, pc, cb);
     m->req(mreq);
   }
-  static void sendSpecReqDL1Read(MemObj *m, bool doStats, Addr_t addr, Addr_t pc, Dinst *dinst, CallbackBase *cb) {
-    MemRequest *mreq = createSpecReqRead(m, doStats, addr, pc, cb);
+  static void sendSpecReqDL1Read(MemObj *m, bool keep_stats, Addr_t addr, Addr_t pc, Dinst *dinst, CallbackBase *cb) {
+    MemRequest *mreq = createSpecReqRead(m, keep_stats, addr, pc, cb);
     mreq->dinst      = dinst;
     m->req(mreq);
   }
 
-  static void sendSafeReqDL1Read(MemObj *m, bool doStats, Addr_t addr, Addr_t pc, Dinst *dinst, CallbackBase *cb) {
-    MemRequest *mreq = createSafeReqRead(m, doStats, addr, pc, cb);
+  static void sendSafeReqDL1Read(MemObj *m, bool keep_stats, Addr_t addr, Addr_t pc, Dinst *dinst, CallbackBase *cb) {
+    MemRequest *mreq = createSafeReqRead(m, keep_stats, addr, pc, cb);
     mreq->dinst      = dinst;
     m->req(mreq);
   }
 
-  static void sendReqDL1Read(MemObj *m, bool doStats, Addr_t addr, Addr_t pc, Dinst *dinst, CallbackBase *cb) {
-    MemRequest *mreq = createReqRead(m, doStats, addr, pc, cb);
+  static void sendReqDL1Read(MemObj *m, bool keep_stats, Addr_t addr, Addr_t pc, Dinst *dinst, CallbackBase *cb) {
+    MemRequest *mreq = createReqRead(m, keep_stats, addr, pc, cb);
     mreq->dinst      = dinst;
     m->req(mreq);
   }
@@ -324,8 +324,8 @@ public:
     mreq->warmup     = true;
     m->req(mreq);
   }
-  static void sendNCReqWrite(MemObj *m, bool doStats, Addr_t addr, CallbackBase *cb = 0) {
-    MemRequest *mreq   = create(m, addr, doStats, cb);
+  static void sendNCReqWrite(MemObj *m, bool keep_stats, Addr_t addr, CallbackBase *cb = 0) {
+    MemRequest *mreq   = create(m, addr, keep_stats, cb);
     mreq->mt           = mt_req;
     mreq->ma           = ma_setDirty;  // For writes, only MO are valid states
     mreq->ma_orig      = mreq->ma;
@@ -333,16 +333,16 @@ public:
     m->req(mreq);
   }
 
-  static void sendReqWrite(MemObj *m, bool doStats, Addr_t addr, Addr_t pc, CallbackBase *cb = 0) {
-    MemRequest *mreq = create(m, addr, doStats, cb);
+  static void sendReqWrite(MemObj *m, bool keep_stats, Addr_t addr, Addr_t pc, CallbackBase *cb = 0) {
+    MemRequest *mreq = create(m, addr, keep_stats, cb);
     mreq->mt         = mt_req;
     mreq->ma         = ma_setDirty;  // For writes, only MO are valid states
     mreq->ma_orig    = mreq->ma;
     mreq->pc         = pc;
     m->req(mreq);
   }
-  static void sendReqWritePrefetch(MemObj *m, bool doStats, Addr_t addr, CallbackBase *cb = 0) {
-    MemRequest *mreq = create(m, addr, doStats, cb);
+  static void sendReqWritePrefetch(MemObj *m, bool keep_stats, Addr_t addr, CallbackBase *cb = 0) {
+    MemRequest *mreq = create(m, addr, keep_stats, cb);
     mreq->mt         = mt_req;
     mreq->ma         = ma_setDirty;
     mreq->ma_orig    = mreq->ma;
@@ -411,8 +411,8 @@ public:
     needsDisp  = _needsDisp;
   }
 
-  static void sendDirtyDisp(MemObj *m, MemObj *creator, Addr_t addr, bool doStats, CallbackBase *cb = 0) {
-    MemRequest *mreq = create(m, addr, doStats, cb);
+  static void sendDirtyDisp(MemObj *m, MemObj *creator, Addr_t addr, bool keep_stats, CallbackBase *cb = 0) {
+    MemRequest *mreq = create(m, addr, keep_stats, cb);
     mreq->mt         = mt_disp;
     mreq->ma         = ma_setDirty;
     mreq->ma_orig    = mreq->ma;
@@ -421,8 +421,8 @@ public:
     mreq->topCoherentNode = creator;
     m->disp(mreq);
   }
-  static void sendCleanDisp(MemObj *m, MemObj *creator, Addr_t addr, bool prefetch, bool doStats) {
-    MemRequest *mreq = create(m, addr, doStats, 0);
+  static void sendCleanDisp(MemObj *m, MemObj *creator, Addr_t addr, bool prefetch, bool keep_stats) {
+    MemRequest *mreq = create(m, addr, keep_stats, 0);
     mreq->mt         = mt_disp;
     mreq->ma         = ma_setValid;
     mreq->ma_orig    = mreq->ma;
@@ -433,8 +433,8 @@ public:
     m->disp(mreq);
   }
 
-  static MemRequest *createSetState(MemObj *m, MemObj *creator, MsgAction ma, Addr_t naddr, bool doStats) {
-    MemRequest *mreq = create(m, naddr, doStats, 0);
+  static MemRequest *createSetState(MemObj *m, MemObj *creator, MsgAction ma, Addr_t naddr, bool keep_stats) {
+    MemRequest *mreq = create(m, naddr, keep_stats, 0);
     mreq->mt         = mt_setState;
     mreq->ma         = ma;
     mreq->ma_orig    = mreq->ma;
@@ -553,7 +553,7 @@ public:
 
   void setPC(Addr_t _pc) { pc = _pc; }
 
-  bool getStatsFlag() const { return doStats; }
+  bool has_stats() const { return keep_stats; }
   bool isWarmup() const { return warmup; }
   bool isRetrying() const { return retrying; }
   void setRetrying() { retrying = true; }

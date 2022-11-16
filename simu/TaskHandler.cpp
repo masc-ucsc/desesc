@@ -39,21 +39,21 @@ void TaskHandler::core_create(std::shared_ptr<GProcessor> gproc) {
   I(plugging);  // It can be called only during booting
 
   I(simus.size() == static_cast<size_t>(gproc->get_hid()));
-  simus.push_back(gproc);
 
-  EmulSimuMapping map;
+  for(auto i=0;i<gproc->get_smt_size();++i) {
+    simus.push_back(gproc);
 
-  map.fid          = gproc->get_hid();
-  map.emul         = nullptr;
-  map.active       = gproc->is_power_up();
-  map.simu         = gproc;
-  map.deactivating = false;
+    EmulSimuMapping map;
 
-  // Do not add to running. Added at the end of create
+    map.fid          = gproc->get_hid();
+    map.emul         = nullptr;
+    map.active       = gproc->is_power_up();
+    map.simu         = gproc;
+    map.deactivating = false;
 
-  allmaps.push_back(map);
+    allmaps.push_back(map);
+  }
 }
-/* }}} */
 
 void TaskHandler::core_resume(Hartid_t fid) {
   I(fid < 65535);  // No more than 65K flows for the moment
@@ -169,7 +169,7 @@ void TaskHandler::plugEnd()
 {
   size_t nCPUThreads = 0;
   for (size_t i = 0; i < simus.size(); i++) {
-    nCPUThreads += 1;  // simus[i]->getMaxFlows();
+    nCPUThreads += 1;
   }
   if (emuls.size() > nCPUThreads) {
     Config::add_error(
@@ -198,11 +198,9 @@ void TaskHandler::plugEnd()
     allmaps[i].simu->set_emul(emuls[i]);
 
     cpuid_sub++;
-    // if (cpuid_sub>=simus[cpuid]->getMaxFlows()) {
     cpuid_sub = 0;
     I(cpuid < simus.size());
     cpuid = cpuid + 1;
-    // }
   }
 
   plugging = false;

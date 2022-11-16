@@ -11,8 +11,7 @@
 class GPUSMProcessor : public GProcessor {
 private:
   FetchEngine IFID;
-  PipeQueue   pipeQ;
-  int32_t     spaceInInstQueue;
+
   uint32_t    numSP;
 
   LSQNone lsq;

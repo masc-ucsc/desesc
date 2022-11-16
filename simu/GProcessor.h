@@ -33,6 +33,22 @@
 class GMemorySystem;
 class BPredictor;
 
+struct SMT_fetch {
+  std::vector<std::shared_ptr<FetchEngine>> fe;
+  Time_t       smt_lastTime;
+  int          smt_cnt;
+  int          smt_active;
+  int          smt_turn;
+
+  SMT_fetch() {
+    smt_lastTime = 0;
+    smt_cnt      = 1;
+    smt_active   = 1;
+    smt_turn     = 0;
+  };
+
+  bool update();
+};
 
 class GProcessor : public Execute_engine {
 private:
@@ -45,7 +61,7 @@ protected:
   const int32_t InstQueueSize;
   const size_t  MaxROBSize;
 
-  Hartid_t       maxFlows;
+  size_t         smt_size;
   GMemorySystem *memorySystem;
 
   std::shared_ptr<StoreSet>     storeset;
@@ -56,7 +72,6 @@ protected:
   FastQueue<Dinst *> ROB;
 
   uint32_t smt;      // 1...
-  uint32_t smt_ctx;  // 0... smt_ctx = cpu_id % smt
 
   // BEGIN  Statistics
   std::array<std::unique_ptr<Stats_cntr>,MaxStall> nStall;
@@ -86,6 +101,16 @@ protected:
   //virtual void       fetch(Hartid_t fid)     = 0;
   virtual StallCause add_inst(Dinst *dinst) = 0;
 
+  bool use_stats; // Stats mode to use when dinst->has_stats() is not available
+
+  static inline absl::flat_hash_map<std::string, std::shared_ptr<SMTFetch>> fetch_map;
+
+  SMT_fetch smt_fetch;
+
+  PipeQueue    pipeQ;
+  int32_t      spaceInInstQueue;
+
+  bool decode_stage();
 public:
 #ifdef WAVESNAP_EN
   std::unique_ptr<Wavesnap> snap;
@@ -111,11 +136,13 @@ public:
   Dinst   *getData(uint32_t position) const { return ROB.getData(position); }
 
   // Returns the maximum number of flows this processor can support
-  Hartid_t getMaxFlows(void) const { return maxFlows; }
+  size_t get_smt_size() const { return smt_size; }
 
   void report(const std::string &str);
 
   std::shared_ptr<StoreSet>     ref_SS()         { return storeset;   }
   std::shared_ptr<Prefetcher>   ref_prefetcher() { return prefetcher; }
   std::shared_ptr<Store_buffer> ref_SCB()        { return scb;        }
+
 };
+

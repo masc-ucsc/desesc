@@ -80,8 +80,8 @@ public:
     if (dinst->getInst()->isJump())
       return pred;
 
-    nHit.inc(pred == CorrectPrediction && dinst->getStatsFlag() && doStats);
-    nMiss.inc(pred == MissPrediction && dinst->getStatsFlag() && doStats);
+    nHit.inc(pred == CorrectPrediction && dinst->has_stats() && doStats);
+    nMiss.inc(pred == MissPrediction && dinst->has_stats() && doStats);
 
     return pred;
   }

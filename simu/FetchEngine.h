@@ -18,7 +18,7 @@ class FetchEngine {
 private:
   GMemorySystem *const gms;
 
-  BPredictor *bpred;
+  std::shared_ptr<BPredictor> bpred;
 
   uint16_t fetch_width;
   uint16_t half_fetch_width;
@@ -139,7 +139,7 @@ protected:
   // *******************
 
 public:
-  FetchEngine(Hartid_t i, GMemorySystem *gms, FetchEngine *fe = 0);
+  FetchEngine(Hartid_t i, GMemorySystem *gms, std::shared_ptr<BPredictor> shared_bpred = nullptr);
 
   ~FetchEngine();
 

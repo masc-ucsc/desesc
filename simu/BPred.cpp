@@ -168,9 +168,9 @@ PredType BPBTB::predict(Dinst *dinst, bool doUpdate, bool doStats) {
   if (data == 0) {
     // required when BPOracle
     if (dinst->getInst()->doesCtrl2Label())
-      nHitLabel.inc(doUpdate && dinst->getStatsFlag() && doStats);
+      nHitLabel.inc(doUpdate && dinst->has_stats() && doStats);
     else
-      nHit.inc(doUpdate && dinst->getStatsFlag() && doStats);
+      nHit.inc(doUpdate && dinst->has_stats() && doStats);
 
     if (ntaken) {
       // Trash result because it shouldn't have reach BTB. Otherwise, the
@@ -192,23 +192,23 @@ PredType BPBTB::predict(Dinst *dinst, bool doUpdate, bool doStats) {
   if (ntaken || !doUpdate) {
     // The branch is not taken. Do not update the cache
     if (dinst->getInst()->doesCtrl2Label() && btbicache) {
-      nHitLabel.inc(doStats && doUpdate && dinst->getStatsFlag());
+      nHitLabel.inc(doStats && doUpdate && dinst->has_stats());
       return NoBTBPrediction;
     }
 
     BTBCache::CacheLine *cl = data->readLine(key);
 
     if (cl == 0) {
-      nHit.inc(doStats && doUpdate && dinst->getStatsFlag());
+      nHit.inc(doStats && doUpdate && dinst->has_stats());
       return NoBTBPrediction;  // NoBTBPrediction because BTAC would hide the prediction
     }
 
     if (cl->inst == dinst->getAddr()) {
-      nHit.inc(doStats && doUpdate && dinst->getStatsFlag());
+      nHit.inc(doStats && doUpdate && dinst->has_stats());
       return CorrectPrediction;
     }
 
-    nMiss.inc(doStats && doUpdate && dinst->getStatsFlag());
+    nMiss.inc(doStats && doUpdate && dinst->has_stats());
     return MissPrediction;
   }
 
@@ -217,7 +217,7 @@ PredType BPBTB::predict(Dinst *dinst, bool doUpdate, bool doStats) {
   // The branch is taken. Update the cache
 
   if (dinst->getInst()->doesCtrl2Label() && btbicache) {
-    nHitLabel.inc(doStats && doUpdate && dinst->getStatsFlag());
+    nHitLabel.inc(doStats && doUpdate && dinst->has_stats());
     return CorrectPrediction;
   }
 
@@ -228,11 +228,11 @@ PredType BPBTB::predict(Dinst *dinst, bool doUpdate, bool doStats) {
   cl->inst         = dinst->getAddr();
 
   if (predictID == dinst->getAddr()) {
-    nHit.inc(doStats && doUpdate && dinst->getStatsFlag());
+    nHit.inc(doStats && doUpdate && dinst->has_stats());
     return CorrectPrediction;
   }
 
-  nMiss.inc(doStats && doUpdate && dinst->getStatsFlag());
+  nMiss.inc(doStats && doUpdate && dinst->has_stats());
   return NoBTBPrediction;
 }
 
@@ -325,7 +325,7 @@ PredType BP2bit::predict(Dinst *dinst, bool doUpdate, bool doStats) {
     ptaken = table.predict(calcHist(dinst->getPC()));
 
 #if 0
-  if (dinst->getStatsFlag())
+  if (dinst->has_stats())
     printf("bp2bit %llx %llx %s\n",dinst->getPC(), calcHist(dinst->getPC()) & 32767,taken?"T":"NT");
 #endif
 
@@ -1366,13 +1366,13 @@ void BPredictor::fetchBoundaryEnd() {
 PredType BPredictor::predict1(Dinst *dinst) {
   I(dinst->getInst()->isControl());
 
-  nBranches.inc(dinst->getStatsFlag());
-  nTaken.inc(dinst->isTaken() && dinst->getStatsFlag());
+  nBranches.inc(dinst->has_stats());
+  nTaken.inc(dinst->isTaken() && dinst->has_stats());
 
   PredType p = pred1->doPredict(dinst);
 
-  nMiss.inc(p == MissPrediction && dinst->getStatsFlag());
-  nNoPredict.inc(p == NoPrediction && dinst->getStatsFlag());
+  nMiss.inc(p == MissPrediction && dinst->has_stats());
+  nNoPredict.inc(p == NoPrediction && dinst->has_stats());
 
   return p;
 }
@@ -1380,14 +1380,14 @@ PredType BPredictor::predict1(Dinst *dinst) {
 PredType BPredictor::predict2(Dinst *dinst) {
   I(dinst->getInst()->isControl());
 
-  nBranches2.inc(dinst->getStatsFlag());
-  nTaken2.inc(dinst->isTaken() && dinst->getStatsFlag());
+  nBranches2.inc(dinst->has_stats());
+  nTaken2.inc(dinst->isTaken() && dinst->has_stats());
   // No RAS in L2
 
   PredType p = pred2->doPredict(dinst);
 
-  // nMiss2.inc(p != CorrectPrediction && dinst->getStatsFlag());
-  nMiss2.inc(p == MissPrediction && dinst->getStatsFlag());
+  // nMiss2.inc(p != CorrectPrediction && dinst->has_stats());
+  nMiss2.inc(p == MissPrediction && dinst->has_stats());
 
   return p;
 }
@@ -1411,8 +1411,8 @@ PredType BPredictor::predict3(Dinst *dinst) {
   }
 #endif
 
-  nBranches3.inc(dinst->getStatsFlag());
-  nTaken3.inc(dinst->isTaken() && dinst->getStatsFlag());
+  nBranches3.inc(dinst->has_stats());
+  nTaken3.inc(dinst->isTaken() && dinst->has_stats());
   // No RAS in L2
 
   PredType p = pred3->doPredict(dinst);
@@ -1421,9 +1421,9 @@ PredType BPredictor::predict3(Dinst *dinst) {
     return p;
 #endif
 
-  // nMiss3.inc(p != CorrectPrediction && dinst->getStatsFlag());
-  nMiss3.inc(p == MissPrediction && dinst->getStatsFlag());
-  nNoPredict3.inc(p == NoPrediction && dinst->getStatsFlag());
+  // nMiss3.inc(p != CorrectPrediction && dinst->has_stats());
+  nMiss3.inc(p == MissPrediction && dinst->has_stats());
+  nNoPredict3.inc(p == NoPrediction && dinst->has_stats());
 
   return p;
 }
@@ -1451,7 +1451,7 @@ TimeDelta_t BPredictor::predict(Dinst *dinst, bool *fastfix) {
 
   if (dinst->getInst()->isFuncRet() || dinst->getInst()->isFuncCall()) {
     dinst->setBiasBranch(true);
-    ras->tryPrefetch(il1, dinst->getStatsFlag(), 1);
+    ras->tryPrefetch(il1, dinst->has_stats(), 1);
   }
 
   if (outcome1 == CorrectPrediction && outcome2 == CorrectPrediction && outcome3 == CorrectPrediction) {
@@ -1504,7 +1504,7 @@ TimeDelta_t BPredictor::predict(Dinst *dinst, bool *fastfix) {
   }
 
   if (dinst->getInst()->doesJump2Label()) {
-    nBTAC.inc(dinst->getStatsFlag());
+    nBTAC.inc(dinst->has_stats());
     return bpredDelay1 - 1;
   }
 
@@ -1522,21 +1522,21 @@ TimeDelta_t BPredictor::predict(Dinst *dinst, bool *fastfix) {
   if (outcome1 == CorrectPrediction && (outcome2 == CorrectPrediction || outcome2 == NoPrediction || outcome2 == NoBTBPrediction)
       && (outcome3 == CorrectPrediction || outcome3 == NoPrediction || outcome3 == NoBTBPrediction)) {
     I(bpredDelay1 <= bpredDelay3);
-    nFixes1.inc(dinst->getStatsFlag());
+    nFixes1.inc(dinst->has_stats());
     bpred_total_delay = bpredDelay1 - 1;
 
   } else if (/*outcome1 != CorrectPrediction && */ outcome3 == CorrectPrediction) {
     I(bpredDelay3 <= bpredDelay2);
-    nFixes3.inc(dinst->getStatsFlag());
+    nFixes3.inc(dinst->has_stats());
     bpred_total_delay = bpredDelay3 - 1;
 
   } else if (/*outcome1 != CorrectPrediction && outcome3 != CorrectPrediction && */ outcome2 == CorrectPrediction) {
     if (outcome1 != CorrectPrediction) {
       if (outcome3 == CorrectPrediction) {
-        nFixes3.inc(dinst->getStatsFlag());
+        nFixes3.inc(dinst->has_stats());
         bpred_total_delay = bpredDelay3 - 1;
       } else if (outcome3 == NoPrediction || outcome3 == NoBTBPrediction) {
-        nFixes2.inc(dinst->getStatsFlag());
+        nFixes2.inc(dinst->has_stats());
         bpred_total_delay = bpredDelay2 - 1;
       }
     }
@@ -1544,7 +1544,7 @@ TimeDelta_t BPredictor::predict(Dinst *dinst, bool *fastfix) {
     I(outcome3 != CorrectPrediction || (outcome2 == MissPrediction && outcome3 == NoPrediction)
       || (outcome1 != CorrectPrediction && outcome2 == NoPrediction && outcome3 == NoPrediction));
 
-    nUnFixes.inc(dinst->getStatsFlag());
+    nUnFixes.inc(dinst->has_stats());
     *fastfix          = false;
     bpred_total_delay = 2;  // Anything but zero
   }

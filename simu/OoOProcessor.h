@@ -49,8 +49,6 @@ private:
   const bool    MemoryReplay;
   const int32_t RetireDelay;
 
-  FetchEngine IFID;
-  PipeQueue   pipeQ;
   LSQFull     lsq;
 
   uint32_t serialize_level;
@@ -60,7 +58,6 @@ private:
   Dinst   *last_serialized;
   Dinst   *last_serializedST;
 
-  int32_t spaceInInstQueue;
   Dinst  *RAT[LREG_MAX];
   int32_t nTotalRegs;
 
@@ -70,7 +67,6 @@ private:
 
   bool   busy;
   bool   replayRecovering;
-  bool   getStatsFlag;
   Time_t replayID;
   bool   flushing;
 

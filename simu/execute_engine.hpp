@@ -34,7 +34,7 @@ protected:
   std::shared_ptr<Emul_base> eint;
   GMemorySystem             *memorySystem;
 
-  bool adjust_clock();
+  bool adjust_clock(bool en);
 
   Execute_engine(GMemorySystem *gm, Hartid_t i);
 
@@ -53,25 +53,7 @@ public:
   bool is_power_up() const { return !power_down; }
   bool is_power_down() const { return power_down; }
 
-  void adjust_clock(bool en = true) {
-    clockTicks.inc(en);
-
-    trackactivity();
-
-    if (lastWallClock == globalClock || !en)
-      return;
-
-    lastWallClock = globalClock;
-    wallclock.inc(en);
-  }
   static Time_t getWallClock() { return lastWallClock; }
-
-  void trackactivity() {
-    if (activeclock_end != (lastWallClock - 1)) {
-      activeclock_start = lastWallClock;
-    }
-    activeclock_end = lastWallClock;
-  }
 
   GMemorySystem *ref_memory_system() const { return memorySystem; }
 

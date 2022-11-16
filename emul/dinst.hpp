@@ -144,7 +144,7 @@ private:
   bool performed;
 
   bool     interCluster;
-  bool     keepStats;
+  bool     keep_stats;
   bool     biasBranch;
   uint32_t branch_signature;
   bool     imli_highconf;
@@ -276,7 +276,7 @@ public:
   bool is_spec() const { return speculative; }
   void mark_safe() { speculative = false; }
 
-  bool getStatsFlag() const { return keepStats; }
+  bool has_stats() const { return keep_stats; }
 
   #if 0
   void setLdCache() { isLdCache = true; }
@@ -295,7 +295,7 @@ public:
   void          clearSafe() { isSafe = false; }
   #endif
 
-  static Dinst *create(const Instruction *inst, Addr_t pc, Addr_t address, Hartid_t fid, bool keepStats) {
+  static Dinst *create(const Instruction *inst, Addr_t pc, Addr_t address, Hartid_t fid, bool keep_stats) {
     Dinst *i = dInstPool.out();
 
     I(inst);
@@ -324,7 +324,7 @@ public:
     i->br_op_type  = -1;
 #endif
     i->fetched   = 0;
-    i->keepStats = keepStats;
+    i->keep_stats = keep_stats;
 
     i->setup();
     I(i->getInst()->getOpcode());

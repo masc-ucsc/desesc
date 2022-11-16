@@ -10,43 +10,16 @@
 #include "Pipeline.h"
 #include "iassert.hpp"
 
-struct SMTFetch {
-  FetchEngine *fe;
-  Time_t       smt_lastTime;
-  int          smt_cnt;
-  int          smt_active;
-  int          smt_turn;
-
-  SMTFetch() {
-    fe           = 0;
-    smt_lastTime = 0;
-    smt_cnt      = 1;
-    smt_active   = 1;
-    smt_turn     = 0;
-  };
-
-  bool update(bool space);
-};
 class InOrderProcessor : public GProcessor {
 private:
   const int32_t RetireDelay;
 
-  FetchEngine *ifid;
-  PipeQueue    pipeQ;
-  int32_t      spaceInInstQueue;
-
   LSQNone lsq;
   bool    busy;
-  bool    lastrob_getStatsFlag;
 
-  std::shared_ptr<SMTFetch> sf;
-
-  // Dinst *RAT[LREG_MAX];
   Dinst **RAT;
 
   void fetch();
-
-  static inline absl::flat_hash_map<std::string, std::shared_ptr<SMTFetch>> fetch_map;
 
 protected:
   ClusterManager clusterManager;

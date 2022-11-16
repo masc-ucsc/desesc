@@ -70,13 +70,13 @@ void Prefetcher::exe(Dinst *dinst)
   if (conf_level == Conf_level::None || conf_level == Conf_level::Low)
     return;  // too low of a chance
 
-  avgPrefetchConf.sample(conf, dinst->getStatsFlag());
+  avgPrefetchConf.sample(conf, dinst->has_stats());
   if (pending_prefetch && (curPrefetch - distance) > 0)
     avgPrefetchNum.sample(curPrefetch - distance, pending_statsFlag);
 
   pending_preq_pc   = dinst->getPC();
   pending_preq_conf = 4 * static_cast<int>(conf_level);
-  pending_statsFlag = dinst->getStatsFlag();
+  pending_statsFlag = dinst->has_stats();
   if (dinst->getChained()) {
     I(dinst->getFetchEngine());
     curPrefetch         = dinst->getChained();

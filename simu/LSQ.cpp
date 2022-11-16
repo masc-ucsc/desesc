@@ -1,7 +1,8 @@
 // See LICENSE for details.
 
-#include "LSQ.h"
+#include "fmt/format.h"
 
+#include "LSQ.h"
 #include "GProcessor.h"
 #include "config.hpp"
 
@@ -69,7 +70,7 @@ Dinst *LSQFull::executing(Dinst *dinst)
     } else {
       if (!dinst->isLoadForwarded() && inst->isLoad() && qinst->isStore() && qdinst->isExecuted()) {
         dinst->setLoadForwarded();
-        stldForwarding.inc(dinst->getStatsFlag());
+        stldForwarding.inc(dinst->has_stats());
       }
     }
   }
@@ -183,7 +184,7 @@ Addr_t LSQVPC::replayCheck(Dinst *dinst)  // return non-zero if replay needed
     }
     if (instIt->second->getID() < dinst->getID()) {
       if (instIt->second->getAddr() == dinst->getAddr()) {
-        LSQVPC_replays.inc(dinst->getStatsFlag());
+        LSQVPC_replays.inc(dinst->has_stats());
         return 1;
       }
     }

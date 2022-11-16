@@ -50,7 +50,7 @@ Resource::Resource(uint8_t type, Cluster *cls, PortGeneric *aGen, TimeDelta_t l,
 /* }}} */
 
 void Resource::setStats(const Dinst *dinst) {
-  if (!dinst->getStatsFlag())
+  if (!dinst->has_stats())
     return;
 
   Time_t t;
@@ -291,7 +291,7 @@ void FULoad::executing(Dinst *dinst) {
 #endif
 
   cluster->executing(dinst);
-  Time_t when = gen->nextSlot(dinst->getStatsFlag()) + lat;
+  Time_t when = gen->nextSlot(dinst->has_stats()) + lat;
 
   Dinst *qdinst = lsq->executing(dinst);
   I(qdinst == 0);
@@ -299,7 +299,7 @@ void FULoad::executing(Dinst *dinst) {
     I(qdinst->getInst()->isStore());
     dinst->getGProc()->replay(dinst);
     if (!dinst->getGProc()->is_nuking())
-      stldViolations.inc(dinst->getStatsFlag());
+      stldViolations.inc(dinst->has_stats());
 
     storeset->stldViolation(qdinst, dinst);
   }
@@ -326,14 +326,14 @@ void FULoad::cacheDispatched(Dinst *dinst) {
 
   if (false && dinst->is_spec()) {  // Future Spectre Related
     MemRequest::sendSpecReqDL1Read(firstLevelMemObj,
-                                   dinst->getStatsFlag(),
+                                   dinst->has_stats(),
                                    dinst->getAddr(),
                                    dinst->getPC(),
                                    dinst,
                                    performedCB::create(this, dinst));
   } else {
     MemRequest::sendSafeReqDL1Read(firstLevelMemObj,
-                                   dinst->getStatsFlag(),
+                                   dinst->has_stats(),
                                    dinst->getAddr(),
                                    dinst->getPC(),
                                    dinst,
@@ -404,7 +404,7 @@ bool FULoad::retire(Dinst *dinst, bool flushing)
 #ifdef MEM_TSO2
   if (DL1->Invalid(dinst->getAddr())) {
     // MSG("Sync head/tail @%lld",globalClock);
-    tso2Replay.inc(dinst->getStatsFlag());
+    tso2Replay.inc(dinst->has_stats());
     dinst->getGProc()->replay(dinst);
   }
 #endif
@@ -520,18 +520,18 @@ void FUStore::executing(Dinst *dinst) {
     if (qdinst) {
       dinst->getGProc()->replay(qdinst);
       if (!dinst->getGProc()->is_nuking())
-        stldViolations.inc(dinst->getStatsFlag());
+        stldViolations.inc(dinst->has_stats());
       storeset->stldViolation(qdinst, dinst);
     }
   }
 
   cluster->executing(dinst);
-  gen->nextSlot(dinst->getStatsFlag());
+  gen->nextSlot(dinst->has_stats());
 
   if (dinst->getInst()->isStoreAddress()) {
 #if 0
     if (enableDcache && !firstLevelMemObj->isBusy(dinst->getAddr()) ){
-      MemRequest::sendReqWritePrefetch(firstLevelMemObj, dinst->getStatsFlag(), dinst->getAddr(), 0); // executedCB::create(this,dinst));
+      MemRequest::sendReqWritePrefetch(firstLevelMemObj, dinst->has_stats(), dinst->getAddr(), 0); // executedCB::create(this,dinst));
     }
     executed(dinst);
 #else
@@ -576,7 +576,7 @@ bool FUStore::preretire(Dinst *dinst, bool flushing) {
 
   if (enableDcache) {
     MemRequest::sendReqWrite(firstLevelMemObj,
-                             dinst->getStatsFlag(),
+                             dinst->has_stats(),
                              dinst->getAddr(),
                              dinst->getPC(),
                              performedCB::create(this, dinst));
@@ -642,7 +642,7 @@ StallCause FUGeneric::canIssue(Dinst *dinst) {
 
 void FUGeneric::executing(Dinst *dinst) {
   /* executing {{{1 */
-  Time_t nlat = gen->nextSlot(dinst->getStatsFlag()) + lat;
+  Time_t nlat = gen->nextSlot(dinst->has_stats()) + lat;
 #if 0
   if (dinst->getPC() == 1073741832) {
     MSG("@%lld Scheduling callback for FID[%d] PE[%d] Warp [%d] pc 1073741832 at @%lld"
@@ -676,6 +676,7 @@ bool FUGeneric::preretire(Dinst *dinst, bool flushing)
 bool FUGeneric::retire(Dinst *dinst, bool flushing)
 /* retire {{{1 */
 {
+  (void)flushing;
   setStats(dinst);
 
   return true;
@@ -714,7 +715,7 @@ StallCause FUBranch::canIssue(Dinst *dinst) {
 void FUBranch::executing(Dinst *dinst) {
   /* executing {{{1 */
   cluster->executing(dinst);
-  executedCB::scheduleAbs(gen->nextSlot(dinst->getStatsFlag()) + lat, this, dinst);
+  executedCB::scheduleAbs(gen->nextSlot(dinst->has_stats()) + lat, this, dinst);
 }
 /* }}} */
 
@@ -735,6 +736,7 @@ void FUBranch::executed(Dinst *dinst) {
 bool FUBranch::preretire(Dinst *dinst, bool flushing)
 /* preretire {{{1 */
 {
+  (void)flushing;
   if (drainOnMiss && dinst->isExecuted() && dinst->isBranchMiss()) {
     (dinst->getFetchEngine())->unBlockFetch(dinst, dinst->getFetchTime());
   }
@@ -793,9 +795,9 @@ StallCause FURALU::canIssue(Dinst *dinst)
     if (dinst->getGProc()->isROBEmpty())
       return NoStall;
     if (dinst->getAddr() == 0xbeefbeef)
-      imemoryBarrier.inc(dinst->getStatsFlag());
+      imemoryBarrier.inc(dinst->has_stats());
     else
-      dmemoryBarrier.inc(dinst->getStatsFlag());
+      dmemoryBarrier.inc(dinst->has_stats());
     // FIXME return SyscallStall;
   }
 
@@ -807,7 +809,7 @@ void FURALU::executing(Dinst *dinst)
 /* executing {{{1 */
 {
   cluster->executing(dinst);
-  executedCB::scheduleAbs(gen->nextSlot(dinst->getStatsFlag()) + lat, this, dinst);
+  executedCB::scheduleAbs(gen->nextSlot(dinst->has_stats()) + lat, this, dinst);
 
   // Recommended poweron the GPU threads and then poweroff the QEMU thread?
 }

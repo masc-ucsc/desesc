@@ -234,10 +234,10 @@ StallCause Cluster::canIssue(Dinst *dinst) const {
 }
 
 void Cluster::add_inst(Dinst *dinst) {
-  rdRegPool.add(2, dinst->getStatsFlag());  // 2 reads
+  rdRegPool.add(2, dinst->has_stats());  // 2 reads
 
   if (!lateAlloc && dinst->getInst()->hasDstRegister()) {
-    wrRegPool.inc(dinst->getStatsFlag());
+    wrRegPool.inc(dinst->has_stats());
     I(regPool > 0);
     regPool--;
   }
@@ -254,7 +254,7 @@ void ExecutingCluster::executing(Dinst *dinst) {
   nready--;
 
   if (lateAlloc && dinst->getInst()->hasDstRegister()) {
-    wrRegPool.inc(dinst->getStatsFlag());
+    wrRegPool.inc(dinst->has_stats());
     I(regPool > 0);
     regPool--;
   }
@@ -281,7 +281,7 @@ bool ExecutingCluster::retire(Dinst *dinst, bool reply) {
     I(regPool <= nRegs);
   }
 
-  winNotUsed.sample(windowSize, dinst->getStatsFlag());
+  winNotUsed.sample(windowSize, dinst->has_stats());
 
   return true;
 }
@@ -292,7 +292,7 @@ void ExecutedCluster::executing(Dinst *dinst) {
   nready--;
 
   if (lateAlloc && dinst->getInst()->hasDstRegister()) {
-    wrRegPool.inc(dinst->getStatsFlag());
+    wrRegPool.inc(dinst->has_stats());
     I(regPool > 0);
     regPool--;
   }
@@ -319,7 +319,7 @@ bool ExecutedCluster::retire(Dinst *dinst, bool reply) {
   }
   // dinst->dump("ret");
 
-  winNotUsed.sample(windowSize, dinst->getStatsFlag());
+  winNotUsed.sample(windowSize, dinst->has_stats());
 
   return true;
 }
@@ -330,7 +330,7 @@ void RetiredCluster::executing(Dinst *dinst) {
   nready--;
 
   if (lateAlloc && dinst->getInst()->hasDstRegister()) {
-    wrRegPool.inc(dinst->getStatsFlag());
+    wrRegPool.inc(dinst->has_stats());
     regPool--;
   }
   dinst->getGProc()->executing(dinst);
@@ -355,7 +355,7 @@ bool RetiredCluster::retire(Dinst *dinst, bool reply) {
     I(regPool <= nRegs);
   }
 
-  winNotUsed.sample(windowSize, dinst->getStatsFlag());
+  winNotUsed.sample(windowSize, dinst->has_stats());
 
   delEntry();
 

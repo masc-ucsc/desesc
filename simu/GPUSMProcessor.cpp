@@ -94,34 +94,9 @@ void GPUSMProcessor::fetch(Hartid_t hid) { /*{{{*/
 } /*}}}*/
 
 bool GPUSMProcessor::advance_clock_drain() {
-  if (!busy)
-    return false;
-
-  bool getStatsFlag = false;
-  if (!ROB.empty()) {
-    getStatsFlag = ROB.top()->getStatsFlag();
-  }
-
-  adjust_clock(getStatsFlag);
-
-  bool new_clk = adjust_clock();
-  if (!new_clk)
-    return true;
-
-  // ID Stage (insert to instQueue)
-  if (spaceInInstQueue >= FetchWidth) {
-    // MSG("\nFor CPU %d:",getID());
-    IBucket *bucket = pipeQ.pipeLine.nextItem();
-    if (bucket) {
-      I(!bucket->empty());
-      spaceInInstQueue -= bucket->size();
-      pipeQ.instQueue.push(bucket);
-    } else {
-      noFetch2.inc(getStatsFlag);
-    }
-  } else {
-    noFetch.inc(getStatsFlag);
-  }
+  bool abort = decode_stage();
+  if (abort || !busy)
+    return busy;
 
   if (!pipeQ.instQueue.empty()) {
     for (uint32_t i = 0; i < numSP; i++) {
@@ -216,7 +191,7 @@ StallCause GPUSMProcessor::add_inst(Dinst *dinst) {
   inst_perpe_percyc[dinst->getPE()] = true;
   // MSG("Setting Dinst %lld PE-%d, GlobalClock = %lld ",dinst->getID(), dinst->getPE(),globalClock);
 
-  nInst[inst->getOpcode()]->inc(dinst->getStatsFlag());
+  nInst[inst->getOpcode()]->inc(dinst->has_stats());
 
   ROB.push(dinst);
 
@@ -263,7 +238,7 @@ void GPUSMProcessor::retire() { /*{{{*/
   bool stats = false;
   while (!ROB.empty()) {
     Dinst *dinst = ROB.top();
-    stats        = dinst->getStatsFlag();
+    stats        = dinst->has_stats();
 
     if (!dinst->isExecuted())
       break;
@@ -275,7 +250,7 @@ void GPUSMProcessor::retire() { /*{{{*/
     rROB.push(dinst);
     ROB.pop();
 
-    nCommitted.inc(dinst->getStatsFlag());
+    nCommitted.inc(dinst->has_stats());
   }
 
   robUsed.sample(ROB.size(), stats);

@@ -2,6 +2,9 @@
 
 #pragma once
 
+#include <cstdint>
+#include <vector>
+
 #include "stats.hpp"
 #include "iassert.hpp"
 
@@ -27,14 +30,12 @@ public:
 
   // the chunk parameters are from the least significant to
   // the most significant portion of the address
-  BloomFilter(int32_t nv, ...);
+  BloomFilter(const std::vector<int> &bits, const std::vector<int> &size);
   BloomFilter() : BFBuild(false) {}
 
   BloomFilter(const BloomFilter &bf);
 
   BloomFilter &operator=(const BloomFilter &bf);
-
-  void init(int32_t nv, ...);
 
   void insert(unsigned e);
   void remove(unsigned e);

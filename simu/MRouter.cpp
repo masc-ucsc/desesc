@@ -306,7 +306,7 @@ int32_t MRouter::sendSetStateOthers(MemRequest *mreq, MsgAction ma, TimeDelta_t 
   if (up_node.size() <= 1)
     return 0;  // if single node, for sure it does not get one
 
-  bool   doStats = mreq->getStatsFlag();
+  bool   doStats = mreq->has_stats();
   Addr_t addr    = mreq->getAddr();
 
   const auto it = up_map.find(mreq->getHomeNode());
@@ -318,10 +318,6 @@ int32_t MRouter::sendSetStateOthers(MemRequest *mreq, MsgAction ma, TimeDelta_t 
   for (size_t i = 0; i < up_node.size(); i++) {
     if (up_node[i] == skip_mobj)
       continue;
-
-    if (addr == 0xa000000005601213) {
-      I(0);
-    }
 
     MemRequest *breq = MemRequest::createSetState(self_mobj, mreq->getCreator(), ma, addr, doStats);
     breq->addPendingSetStateAck(mreq);
@@ -340,12 +336,8 @@ int32_t MRouter::sendSetStateOthersPos(uint32_t pos, MemRequest *mreq, MsgAction
   if (up_node.size() <= 1)
     return 0;  // if single node, for sure it does not get one
 
-  bool   doStats = mreq->getStatsFlag();
+  bool   doStats = mreq->has_stats();
   Addr_t addr    = mreq->getAddr();
-
-  if (addr == 0xa000000005601213) {
-    I(0);
-  }
 
   MemRequest *breq = MemRequest::createSetState(self_mobj, mreq->getCreator(), ma, addr, doStats);
   breq->addPendingSetStateAck(mreq);
@@ -362,11 +354,8 @@ int32_t MRouter::sendSetStateAll(MemRequest *mreq, MsgAction ma, TimeDelta_t lat
   if (up_node.empty())
     return 0;  // top node?
 
-  bool   doStats = mreq->getStatsFlag();
+  bool   doStats = mreq->has_stats();
   Addr_t addr    = mreq->getAddr();
-  if (addr == 0xa000000005601213) {
-    I(0);
-  }
 
   I(mreq->isSetState());
   int32_t conta = 0;

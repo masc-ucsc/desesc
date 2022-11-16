@@ -60,7 +60,7 @@ void Store_buffer::add_st(Dinst *dinst) {
     line.set_waiting_wb();
 
     CallbackBase *cb = ownership_doneCB::create(this, st_addr);
-    MemRequest::sendReqWrite(dl1, dinst->getStatsFlag(), st_addr, dinst->getPC(), cb);
+    MemRequest::sendReqWrite(dl1, dinst->has_stats(), st_addr, dinst->getPC(), cb);
     return;
   }
 
@@ -69,7 +69,7 @@ void Store_buffer::add_st(Dinst *dinst) {
     return;  // DONE
 
   it->second.set_waiting_wb();
-  MemRequest::sendReqWrite(dl1, dinst->getStatsFlag(), st_addr, dinst->getPC(), ownership_doneCB::create(this, st_addr));
+  MemRequest::sendReqWrite(dl1, dinst->has_stats(), st_addr, dinst->getPC(), ownership_doneCB::create(this, st_addr));
 }
 
 void Store_buffer::ownership_done(Addr_t st_addr) {

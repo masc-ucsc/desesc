@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "absl/container/flat_hash_map.h"
+#include "dinst.hpp"
 #include "callback.hpp"
 #include "opcode.hpp"
 

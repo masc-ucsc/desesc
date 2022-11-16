@@ -1,42 +1,25 @@
 // See LICENSE for details.
 
 #include "InOrderProcessor.h"
-
+#include "config.hpp"
 #include "ClusterManager.h"
 #include "FetchEngine.h"
 #include "GMemorySystem.h"
 #include "TaskHandler.h"
 #include "config.hpp"
-#include "estl.h"
 
 InOrderProcessor::InOrderProcessor(GMemorySystem *gm, CPU_t i)
     : GProcessor(gm, i)
     , RetireDelay(Config::get_integer("soc", "core", i, "retire_delay"))
-    , pipeQ(i)
     , lsq(i, 32768)
     , clusterManager(gm, i, this) {  // {{{1
 
-  auto fName = fmt::format("fetch({})", smt_ctx);
 
-  auto it = fetch_map.find(fName);
-  if (it != fetch_map.end() && smt > 1) {
-    ifid = new FetchEngine(i, gm, it->second->fe);
-    sf   = it->second;
-  } else {
-    ifid             = new FetchEngine(i, gm);
-    sf               = std::make_shared<SMTFetch>();
-    sf->fe           = ifid;
-    fetch_map[fName] = sf;
-  }
-
-  spaceInInstQueue = InstQueueSize;
-
-  uint32_t smtnum = 1;  // getMaxFlows();
+  auto smtnum = get_smt_size();
   RAT             = new Dinst *[LREG_MAX * smtnum * 128];
   bzero(RAT, sizeof(Dinst *) * LREG_MAX * smtnum * 128);
 
   busy                 = false;
-  lastrob_getStatsFlag = false;
 }
 // 1}}}
 
@@ -45,40 +28,16 @@ InOrderProcessor::~InOrderProcessor() { /*{{{*/
   // Nothing to do
 } /*}}}*/
 
-bool SMTFetch::update(bool space) {
-  // {{{1
-  if (smt_lastTime != globalClock) {
-    smt_lastTime = globalClock;
-    smt_active   = smt_cnt;
-    smt_cnt      = 1;
-  } else {
-    smt_cnt++;
-  }
-  I(smt_active > 0);
-
-  smt_turn--;
-  if (smt_turn < 0 && space) {
-    if (smt_cnt == smt_active)
-      smt_turn = 0;
-    else
-      smt_turn = smt_active;
-    return true;
-  }
-
-  return false;
-}  // 1}}}
 
 void InOrderProcessor::fetch() { /*{{{*/
   // TODO: Move this to GProcessor (same as in OoOProcessor)
   I(eint);
   I(is_power_up());
 
-  if (smt > 1) {
-    bool run = sf->update(spaceInInstQueue >= FetchWidth);
-    if (!run)
-      return;
-  }
+  if (spaceInInstQueue < FetchWidth)
+    return false;
 
+  auto ifid = smt_fetch.fetch_next();
   if (ifid->isBlocked())
     return;
 
@@ -91,29 +50,10 @@ void InOrderProcessor::fetch() { /*{{{*/
 } /*}}}*/
 
 bool InOrderProcessor::advance_clock_drain() {
-  bool getStatsFlag = lastrob_getStatsFlag;
-  if (!ROB.empty()) {
-    getStatsFlag         = ROB.top()->getStatsFlag();
-    lastrob_getStatsFlag = getStatsFlag;
-  }
+  bool abort = decode_stage();
+  if (abort || !busy)
+    return busy;
 
-  adjust_clock(getStatsFlag);
-
-  // ID Stage (insert to instQueue)
-  if (spaceInInstQueue >= FetchWidth) {
-    IBucket *bucket = pipeQ.pipeLine.nextItem();
-    if (bucket) {
-      I(!bucket->empty());
-      spaceInInstQueue -= bucket->size();
-      pipeQ.instQueue.push(bucket);
-    } else {
-      noFetch2.inc(getStatsFlag);
-    }
-  } else {
-    noFetch.inc(getStatsFlag);
-  }
-
-  busy = true;
   // RENAME Stage
   if (!pipeQ.instQueue.empty()) {
     uint32_t n_insn = issue(pipeQ);
@@ -143,16 +83,16 @@ void InOrderProcessor::executed(Dinst *dinst) { (void)dinst; }
 StallCause InOrderProcessor::add_inst(Dinst *dinst) { /*{{{*/
 
   const Instruction *inst = dinst->getInst();
-  Hartid_t           rat_off
-      = 0;  // no need, add_inst is private per thread. Cluster is shared (dinst->getFlowId() % getMaxFlows())*LREG_MAX;
+
+  size_t rat_off = dinst->getFlowId() % get_smt_size();
 
 #if 1
 #if 0
   // Simple in-order
-  if(((RAT[inst->getSrc1()] != 0) && (inst->getSrc1() != LREG_NoDependence) && (inst->getSrc1() != LREG_InvalidOutput)) ||
-     ((RAT[inst->getSrc2()] != 0) && (inst->getSrc2() != LREG_NoDependence) && (inst->getSrc2() != LREG_InvalidOutput))||
-     ((RAT[inst->getDst1()] != 0) && (inst->getDst1() != LREG_InvalidOutput))||
-     ((RAT[inst->getDst2()] != 0) && (inst->getDst2() != LREG_InvalidOutput))) {
+  if(((RAT[inst->getSrc1()+rat_off] != 0) && (inst->getSrc1() != LREG_NoDependence) && (inst->getSrc1() != LREG_InvalidOutput)) ||
+     ((RAT[inst->getSrc2()+rat_off] != 0) && (inst->getSrc2() != LREG_NoDependence) && (inst->getSrc2() != LREG_InvalidOutput))||
+     ((RAT[inst->getDst1()+rat_off] != 0) && (inst->getDst1() != LREG_InvalidOutput))||
+     ((RAT[inst->getDst2()+rat_off] != 0) && (inst->getDst2() != LREG_InvalidOutput))) {
 #else
 #if 1
   // Simple in-order for RAW, but not WAW or WAR
@@ -160,8 +100,8 @@ StallCause InOrderProcessor::add_inst(Dinst *dinst) { /*{{{*/
       || ((RAT[inst->getSrc2() + rat_off] != 0) && (inst->getSrc2() != LREG_NoDependence))) {
 #else
             // scoreboard, no output dependence
-  if (((RAT[inst->getDst1()] != 0) && (inst->getDst1() != LREG_InvalidOutput))
-      || ((RAT[inst->getDst2()] != 0) && (inst->getDst2() != LREG_InvalidOutput))) {
+  if (((RAT[inst->getDst1()+rat_off] != 0) && (inst->getDst1() != LREG_InvalidOutput))
+      || ((RAT[inst->getDst2()+rat_off] != 0) && (inst->getDst2() != LREG_InvalidOutput))) {
 #endif
 #endif
 
@@ -221,7 +161,7 @@ if (sc != NoStall)
 // BEGIN INSERTION (note that cluster already inserted in the window)
 // dinst->dump("");
 
-nInst[inst->getOpcode()]->inc(dinst->getStatsFlag());  // FIXME: move to cluster
+nInst[inst->getOpcode()]->inc(dinst->has_stats());  // FIXME: move to cluster
 
 ROB.push(dinst);
 
@@ -260,7 +200,7 @@ void InOrderProcessor::retire() { /*{{{*/
   bool stats = false;
   while (!ROB.empty()) {
     Dinst *dinst = ROB.top();
-    stats        = dinst->getStatsFlag();
+    stats        = dinst->has_stats();
 
     I(hid == dinst->getFlowId());
 
@@ -271,7 +211,7 @@ void InOrderProcessor::retire() { /*{{{*/
     rROB.push(dinst);
     ROB.pop();
 
-    nCommitted.inc(dinst->getStatsFlag());
+    nCommitted.inc(dinst->has_stats());
   }
 
   robUsed.sample(ROB.size(), stats);
@@ -309,7 +249,7 @@ void InOrderProcessor::replay(Dinst *dinst) { /*{{{*/
 
   // FIXME: foo should be equal to the number of in-flight instructions (check OoOProcessor)
   size_t foo = 1;
-  nReplayInst.sample(foo, dinst->getStatsFlag());
+  nReplayInst.sample(foo, dinst->has_stats());
 
   // FIXME: How do we manage a replay in this processor??
 } /*}}}*/

@@ -10,8 +10,37 @@
 #include "fmt/format.h"
 #include "report.hpp"
 
+bool SMT_fetch::update() {
+  if (smt_lastTime != globalClock) {
+    smt_lastTime = globalClock;
+    smt_active   = smt_cnt;
+    smt_cnt      = 1;
+  } else {
+    smt_cnt++;
+  }
+  I(smt_active > 0);
+
+  smt_turn--;
+  if (smt_turn < 0) {
+    if (smt_cnt == smt_active)
+      smt_turn = 0;
+    else
+      smt_turn = smt_active;
+  }
+}
+
+std::shared_ptr<FetchEngine> SMT_fetch::fetch_next() {
+
+  auto ptr = fe[smt_turn];
+
+  update();
+
+  return ptr;
+}
+
 GProcessor::GProcessor(GMemorySystem *gm, Hartid_t i)
     : Execute_engine(gm, i)
+    , pipeQ(i)
     , FetchWidth(Config::get_integer("soc", "core", i, "fetch_width"))
     , IssueWidth(Config::get_integer("soc", "core", i, "issue_width"))
     , RetireWidth(Config::get_integer("soc", "core", i, "retire_width"))
@@ -27,10 +56,8 @@ GProcessor::GProcessor(GMemorySystem *gm, Hartid_t i)
     , nCommitted(fmt::format("({}):nCommitted", i))  // Should be the same as robUsed - replayed
     , noFetch(fmt::format("({}):noFetch", i))
     , noFetch2(fmt::format("({}):noFetch2", i)) {
-  smt     = Config::get_integer("soc", "core", i, "smt", 1, 32);
-  smt_ctx = i - (i % smt);
 
-  maxFlows = smt;
+  smt_size     = Config::get_integer("soc", "core", i, "smt", 1, 32);
 
   lastReplay = 0;
 
@@ -55,6 +82,16 @@ GProcessor::GProcessor(GMemorySystem *gm, Hartid_t i)
   scb        = std::make_shared<Store_buffer>(i);
   storeset   = std::make_shared<StoreSet>(i);
   prefetcher = std::make_shared<Prefetcher>(gm->getDL1(), i);
+
+  use_stats = false;
+
+  smt_fetch.fe.emplace_back(std::make_unique<FetchEngine>(i, gm));
+
+  for(auto n=1u;n<smt_size;++n) {
+    smt_fetch.fe.emplace_back(std::make_unique<FetchEngine>(i, gm, smt_fetch.fe[0]->ref_bpred()));
+  }
+
+  spaceInInstQueue = InstQueueSize;
 }
 
 GProcessor::~GProcessor() {}
@@ -87,7 +124,7 @@ int32_t GProcessor::issue(PipeQueue &pipeQ) {
       StallCause c = add_inst(dinst);
       if (c != NoStall) {
         if (i < RealisticWidth)
-          nStall[c]->add(RealisticWidth - i, dinst->getStatsFlag());
+          nStall[c]->add(RealisticWidth - i, dinst->has_stats());
         return i;
       }
       i++;
@@ -101,4 +138,30 @@ int32_t GProcessor::issue(PipeQueue &pipeQ) {
   } while (!pipeQ.instQueue.empty());
 
   return i;
+}
+
+bool GProcessor::decode_stage() {
+  if (!ROB.empty()) {
+    use_stats = ROB.top()->has_stats();
+  }
+
+  bool new_clock = adjust_clock(use_stats);
+  if (!new_clock)
+    return true;
+
+  // ID Stage (insert to instQueue)
+  if (spaceInInstQueue >= FetchWidth) {
+    IBucket *bucket = pipeQ.pipeLine.nextItem();
+    if (bucket) {
+      I(!bucket->empty());
+      spaceInInstQueue -= bucket->size();
+      pipeQ.instQueue.push(bucket);
+    } else {
+      noFetch2.inc(use_stats);
+    }
+  } else {
+    noFetch.inc(use_stats);
+  }
+
+  return false;
 }

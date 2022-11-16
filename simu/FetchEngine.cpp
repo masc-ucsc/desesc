@@ -22,9 +22,7 @@ extern bool MIMDmode;
 // #define SBPT_JUSTLAST 1
 // #define SBPT_JUSTDELTA0 1
 
-extern "C" uint64_t esesc_mem_read(uint64_t addr);
-
-FetchEngine::FetchEngine(Hartid_t id, GMemorySystem *gms_, FetchEngine *fe)
+FetchEngine::FetchEngine(Hartid_t id, GMemorySystem *gms_, std::shared_ptr<BPredictor> shared_bpred)
     : gms(gms_)
     , avgFetchLost(fmt::format("({})_FetchEngine_avgFetchLost", id))
     , avgBranchTime(fmt::format("({})_FetchEngine_avgBranchTime", id))
@@ -66,10 +64,10 @@ FetchEngine::FetchEngine(Hartid_t id, GMemorySystem *gms_, FetchEngine *fe)
 
   max_bb_cycle = Config::get_integer("soc", "core", id, "max_bb_cycle", 1, 1024);
 
-  if (fe)
-    bpred = new BPredictor(id, gms->getIL1(), gms->getDL1(), fe->bpred);
+  if (shared_bpred)
+    bpred = std::make_shared<BPredictor>(id, gms->getIL1(), gms->getDL1(), shared_bpred);
   else
-    bpred = new BPredictor(id, gms->getIL1(), gms->getDL1());
+    bpred = std::make_shared<BPredictor>(id, gms->getIL1(), gms->getDL1());
 
   missInst = false;
 
@@ -103,7 +101,7 @@ FetchEngine::FetchEngine(Hartid_t id, GMemorySystem *gms_, FetchEngine *fe)
 #endif
 }
 
-FetchEngine::~FetchEngine() { delete bpred; }
+FetchEngine::~FetchEngine() { }
 
 bool FetchEngine::processBranch(Dinst *dinst, uint16_t n2Fetch) {
   (void)n2Fetch;
@@ -141,7 +139,7 @@ bool FetchEngine::processBranch(Dinst *dinst, uint16_t n2Fetch) {
   setMissInst(dinst);
 
   Time_t n = (globalClock - lastMissTime);
-  avgFetchTime.sample(n, dinst->getStatsFlag());
+  avgFetchTime.sample(n, dinst->has_stats());
 
 #if 0
   if (!dinst->isBiasBranch()) {
@@ -209,7 +207,7 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
         uint64_t pc_br = dinst->getPC();
         pc_br = pc_br<<16;
 
-        nbranchMissHist.sample(dinst->getStatsFlag(),pc_br);
+        nbranchMissHist.sample(dinst->has_stats(),pc_br);
 
         uint64_t ldpc_Src1 = oracleDataRAT[dinst->getInst()->getSrc1()].ldpc;
         uint64_t ldpc_Src2 = oracleDataRAT[dinst->getInst()->getSrc2()].ldpc;
@@ -224,10 +222,10 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
 
         load_data_Src2=pc_br|(load_data_Src2 & 0xFFFF);
         load_addr_Src2=pc_br|(load_addr_Src2 & 0xFFFF);
-        nLoadData_per_branch.sample(dinst->getStatsFlag(),load_data_Src1);//pc|16bit data cnt++
-        nLoadData_per_branch.sample(dinst->getStatsFlag(),load_data_Src2);//cnt++ same data stucture
-        nLoadAddr_per_branch.sample(dinst->getStatsFlag(),load_addr_Src1);//pc|16bit data cnt++
-        nLoadAddr_per_branch.sample(dinst->getStatsFlag(),load_addr_Src2);//cnt++ same data stucture
+        nLoadData_per_branch.sample(dinst->has_stats(),load_data_Src1);//pc|16bit data cnt++
+        nLoadData_per_branch.sample(dinst->has_stats(),load_data_Src2);//cnt++ same data stucture
+        nLoadAddr_per_branch.sample(dinst->has_stats(),load_addr_Src1);//pc|16bit data cnt++
+        nLoadAddr_per_branch.sample(dinst->has_stats(),load_addr_Src2);//cnt++ same data stucture
       }//p ends
     }//control
 #endif
@@ -427,8 +425,8 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
         Addr_t data = oracleDataLast[ldpc].data;
         Addr_t addr = oracleDataLast[ldpc].addr;
 
-        // bool tracking = dinst->getPC() == 0x12001b870 && dinst->getStatsFlag();
-        // bool tracking = dinst->getPC() == 0x100072dc && dinst->getStatsFlag();
+        // bool tracking = dinst->getPC() == 0x12001b870 && dinst->has_stats();
+        // bool tracking = dinst->getPC() == 0x100072dc && dinst->has_stats();
         bool tracking = dinst->getPC() == 0x10006548;
         tracking      = false;
 
@@ -615,7 +613,7 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
           fetchLost += (fetchMaxPos - il1_line_size / 4);
         }
 
-        avgFetchLost.sample(fetchLost, dinst->getStatsFlag());
+        avgFetchLost.sample(fetchLost, dinst->has_stats());
 
         n2Fetch -= fetchLost;
       }
@@ -628,7 +626,7 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
       } else {
         maxBB--;
         if (maxBB < 1) {
-          nDelayInst2.add(n2Fetch, dinst->getStatsFlag());
+          nDelayInst2.add(n2Fetch, dinst->has_stats());
           break;
         }
       }
@@ -772,9 +770,9 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
   bpred->fetchBoundaryEnd();
 
   if (il1_enable && !bucket->empty()) {
-    avgFetched.sample(bucket->size(), bucket->top()->getStatsFlag());
+    avgFetched.sample(bucket->size(), bucket->top()->has_stats());
     MemRequest::sendReqRead(gms->getIL1(),
-                            bucket->top()->getStatsFlag(),
+                            bucket->top()->has_stats(),
                             bucket->top()->getPC(),
                             0xdeaddead,
                             &(bucket->markFetchedCB));  // 0xdeaddead as PC signature
@@ -885,11 +883,11 @@ void FetchEngine::unBlockFetchBPredDelay(Dinst *dinst, Time_t missFetchTime) {
   clearMissInst(dinst, missFetchTime);
 
   Time_t n = (globalClock - missFetchTime);
-  avgBranchTime2.sample(n, dinst->getStatsFlag());  // Not short branches
+  avgBranchTime2.sample(n, dinst->has_stats());  // Not short branches
   // n *= fetch_width; // FOR CPU
   n *= 1;  // FOR GPU
 
-  nDelayInst3.add(n, dinst->getStatsFlag());
+  nDelayInst3.add(n, dinst->has_stats());
 }
 
 void FetchEngine::unBlockFetch(Dinst *dinst, Time_t missFetchTime) {
@@ -899,10 +897,10 @@ void FetchEngine::unBlockFetch(Dinst *dinst, Time_t missFetchTime) {
 
   I(globalClock > missFetchTime);
   Time_t n = (globalClock - missFetchTime);
-  avgBranchTime.sample(n, dinst->getStatsFlag());  // Not short branches
+  avgBranchTime.sample(n, dinst->has_stats());  // Not short branches
   // n *= fetch_width;  //FOR CPU
   n *= 1;  // FOR GPU and for MIMD
-  nDelayInst1.add(n, dinst->getStatsFlag());
+  nDelayInst1.add(n, dinst->has_stats());
 
   lastMissTime = globalClock;
 }

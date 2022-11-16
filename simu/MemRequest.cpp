@@ -149,7 +149,7 @@ MemRequest *MemRequest::create(MemObj *mobj, Addr_t addr, bool doStats, Callback
   r->dropped            = false;
   r->retrying           = false;
   r->needsDisp          = false;
-  r->doStats            = doStats;
+  r->keep_stats         = keep_stats;
   r->warmup             = false;
   r->nonCacheable       = false;
   r->pendingSetStateAck = 0;

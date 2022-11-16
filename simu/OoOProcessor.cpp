@@ -138,7 +138,6 @@ OoOProcessor::OoOProcessor(GMemorySystem *gm, CPU_t i)
   busy             = false;
   flushing         = false;
   replayRecovering = false;
-  getStatsFlag     = false;
   replayID         = 0;
 
   last_state.dinst_ID = 0xdeadbeef;
@@ -189,7 +188,7 @@ void OoOProcessor::fetch()
     if (bucket) {
       IFID.fetch(bucket, eint, smt_hid);
       if (!bucket->empty()) {
-        avgFetchWidth.sample(bucket->size(), bucket->top()->getStatsFlag());
+        avgFetchWidth.sample(bucket->size(), bucket->top()->has_stats());
         busy = true;
       }
     }
@@ -198,37 +197,9 @@ void OoOProcessor::fetch()
 /* }}} */
 
 bool OoOProcessor::advance_clock_drain() {
-  if (!ROB.empty()) {
-    // else use last time
-    getStatsFlag = ROB.top()->getStatsFlag();
-  }
-
-  adjust_clock(getStatsFlag);
-
-  if (!busy)
-    return false;
-
-  bool new_clock = adjust_clock();
-  if (!new_clock)
-    return true;
-
-  // ID Stage (insert to instQueue)
-  if (spaceInInstQueue >= FetchWidth) {
-    IBucket *bucket = pipeQ.pipeLine.nextItem();
-    if (bucket) {
-      I(!bucket->empty());
-      //      I(bucket->top()->getInst()->getAddr());
-
-      spaceInInstQueue -= bucket->size();
-      pipeQ.instQueue.push(bucket);
-
-      // GMSG(getID()==1,"instqueue insert %p", bucket);
-    } else {
-      noFetch2.inc(getStatsFlag);
-    }
-  } else {
-    noFetch.inc(getStatsFlag);
-  }
+  bool abort = decode_stage();
+  if (abort || !busy)
+    return busy;
 
   // RENAME Stage
   if (replayRecovering) {
@@ -255,7 +226,7 @@ bool OoOProcessor::advance_clock_drain() {
 
       lastReplay = replayID;
     } else {
-      nStall[ReplaysStall]->add(RealisticWidth, getStatsFlag);
+      nStall[ReplaysStall]->add(RealisticWidth, use_stats);
       retire();
       return true;
     }
@@ -291,7 +262,7 @@ void OoOProcessor::executing(Dinst *dinst)
     nTotalRegs--;
 #endif
 #ifdef TRACK_FORWARDING
-  if (dinst->getStatsFlag()) {
+  if (dinst->has_stats()) {
     const Instruction *inst = dinst->getInst();
     avgNumSrc.sample(inst->getnsrc(), true);
 
@@ -441,7 +412,7 @@ StallCause OoOProcessor::add_inst(Dinst *dinst) {
     }
   }
 
-  nInst[inst->getOpcode()]->inc(dinst->getStatsFlag());  // FIXME: move to cluster
+  nInst[inst->getOpcode()]->inc(dinst->has_stats());  // FIXME: move to cluster
 
   ROB.push(dinst);
   if (dinst->getInst()->isLoad()) {
@@ -477,8 +448,8 @@ StallCause OoOProcessor::add_inst(Dinst *dinst) {
     }
   }
 #ifdef TRACK_FORWARDING
-  avgNumSrc.sample(inst->getnsrc(), dinst->getStatsFlag());
-  avgNumDep.sample(n, dinst->getStatsFlag());
+  avgNumSrc.sample(inst->getnsrc(), dinst->has_stats());
+  avgNumDep.sample(n, dinst->has_stats());
 #endif
 
   dinst->setRAT1Entry(&RAT[inst->getDst1()]);
@@ -501,7 +472,7 @@ StallCause OoOProcessor::add_inst(Dinst *dinst) {
   // add instruction to wavesnap
   if (!SINGLE_WINDOW) {
     if (WITH_SAMPLING) {
-      if (dinst->getStatsFlag()) {
+      if (dinst->has_stats()) {
         snap->add_instruction(dinst);
       }
     } else {
@@ -1331,7 +1302,7 @@ void OoOProcessor::btt_trigger_load(Dinst *dinst, Addr_t ld_ptr) {
         // Addr_t trigger_addr = lor_start_addr + (lor_delta * (31 + i)); //trigger few delta ahead of current ld_addr
         Addr_t trigger_addr = lor_start_addr + (lor_delta * (trig_ld_dist + i));  // trigger few delta ahead of current ld_addr
         MemRequest::triggerReqRead(DL1,
-                                   dinst->getStatsFlag(),
+                                   dinst->has_stats(),
                                    trigger_addr,
                                    ld_ptr,
                                    dinst->getPC(),
@@ -1551,7 +1522,7 @@ void OoOProcessor::retire()
     ROB.pop();
   }
 
-  if (!ROB.empty() && ROB.top()->getStatsFlag()) {
+  if (!ROB.empty() && ROB.top()->has_stats()) {
     robUsed.sample(ROB.size(), true);
 #ifdef TRACK_TIMELEAK
     int total_hit  = 0;
@@ -1560,7 +1531,7 @@ void OoOProcessor::retire()
       uint32_t pos   = ROB.getIDFromTop(i);
       Dinst   *dinst = ROB.getData(pos);
 
-      if (!dinst->getStatsFlag())
+      if (!dinst->has_stats())
         continue;
       if (!dinst->getInst()->isLoad())
         continue;
@@ -1578,10 +1549,10 @@ void OoOProcessor::retire()
   }
 
   if (!rROB.empty()) {
-    rrobUsed.sample(rROB.size(), rROB.top()->getStatsFlag());
+    rrobUsed.sample(rROB.size(), rROB.top()->has_stats());
 
 #ifdef ESESC_CODEPROFILE
-    if (rROB.top()->getStatsFlag()) {
+    if (rROB.top()->has_stats()) {
       if (codeProfile_trigger <= clockTicks.getDouble()) {
         Dinst *dinst = rROB.top();
 
@@ -1641,10 +1612,10 @@ void OoOProcessor::retire()
     // Call eint->markTrace
 #endif
 
-    nCommitted.inc(!flushing && dinst->getStatsFlag());
+    nCommitted.inc(!flushing && dinst->has_stats());
 
 #ifdef ESESC_BRANCHPROFILE
-    if (dinst->getInst()->isBranch() && dinst->getStatsFlag()) {
+    if (dinst->getInst()->isBranch() && dinst->has_stats()) {
       codeProfile.sample(dinst->getPC(),
                          dinst->getID(),
                          0,
@@ -1724,7 +1695,7 @@ void OoOProcessor::retire()
     // updading wavesnap instruction windows
     if (SINGLE_WINDOW) {
       if (WITH_SAMPLING) {
-        if (!flushing && dinst->getStatsFlag()) {
+        if (!flushing && dinst->has_stats()) {
           snap->update_single_window(dinst, (uint64_t)globalClock);
         }
       } else {
@@ -1732,7 +1703,7 @@ void OoOProcessor::retire()
       }
     } else {
       if (WITH_SAMPLING) {
-        if (dinst->getStatsFlag()) {
+        if (dinst->has_stats()) {
           snap->update_window(dinst, (uint64_t)globalClock);
         }
       } else {
@@ -1787,7 +1758,7 @@ void OoOProcessor::replay(Dinst *target)
   fetch2rename += (InstQueueSize - spaceInInstQueue);
   fetch2rename += pipeQ.pipeLine.size();
 
-  nReplayInst.sample(fetch2rename + ROB.size(), target->getStatsFlag());
+  nReplayInst.sample(fetch2rename + ROB.size(), target->has_stats());
 }
 /* }}} */
 

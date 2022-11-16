@@ -45,7 +45,7 @@ void DepWindow::preSelect(Dinst *dinst) {
 }
 
 void DepWindow::select(Dinst *dinst) {
-  Time_t schedTime = schedPort->nextSlot(dinst->getStatsFlag());
+  Time_t schedTime = schedPort->nextSlot(dinst->has_stats());
   if (dinst->hasInterCluster())
     schedTime += inter_cluster_lat;
   else
@@ -87,7 +87,7 @@ void DepWindow::executed(Dinst *dinst) {
       I(dstCluster);
 
       if (dstCluster != srcCluster) {
-        inter_cluster_fwd.inc(dstReady->getStatsFlag());
+        inter_cluster_fwd.inc(dstReady->has_stats());
         dstReady->markInterCluster();
       }
 

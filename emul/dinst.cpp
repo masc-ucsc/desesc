@@ -27,7 +27,7 @@ void Dinst::dump(const char *str) {
           this,
           fid,
           (long long)ID,
-          keepStats ? 't' : 'd',
+          keep_stats ? 't' : 'd',
           (long long)pc,
           (long long)addr,
           (int)(inst.getSrc1()),
@@ -215,7 +215,7 @@ Dinst *Dinst::clone() {
   i->data_sign = data_sign;
   i->chained   = 0;
 #endif
-  i->keepStats = keepStats;
+  i->keep_stats = keep_stats;
 
   i->setup();
 

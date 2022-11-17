@@ -12,6 +12,7 @@ public:
   Emul_dromajo(Config conf);
   virtual ~Emul_dromajo();
 
+  void destroy_machine();
   bool init_dromajo_machine(int argc, char **argv) {
     machine = virt_machine_main(argc, argv);
     if (machine == NULL)

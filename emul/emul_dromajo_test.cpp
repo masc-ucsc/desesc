@@ -26,10 +26,9 @@
 #include "gtest/gtest.h"
 
 class Emul_Dromajo_test : public ::testing::Test {
-public:
-  Emul_dromajo* dromajo_emul = 0;
-
-  Emul_Dromajo_test() {
+protected:
+  void SetUp() override {
+    fmt::print("\nnew setup\n");
     std::ofstream file;
     file.open("emul_dromajo_test.toml");
 
@@ -41,17 +40,17 @@ public:
     Config configuration;
     configuration.init("emul_dromajo_test.toml");
 
-    dromajo_emul = new Emul_dromajo(configuration);
-    int argc = 2;
-    char *argv[2] = { "emul_dromajo_test", "/home/mark/desesc/conf/dhrystone.riscv"};
+    int argc              = 2;
+    char bin_name[]       = "emul_dromajo_test";
+    char benchmark_name[] = "/home/mark/desesc/conf/dhrystone.riscv";
+    char *argv[2]         = { bin_name, benchmark_name };
 
-    dromajo_emul->init_dromajo_machine(argc, argv);
-    dromajo_emul->skip_rabbit(0, 805);
+    Emul_dromajo dromajo_emul(configuration);
+    dromajo_emul.init_dromajo_machine(argc, argv);
+    dromajo_ptr = &dromajo_emul;
   }
 
-  ~Emul_Dromajo_test() {
-      delete dromajo_emul;
-   }
+  Emul_dromajo* dromajo_ptr;
 
   void TearDown() override {
     // Graph_library::sync_all();
@@ -59,42 +58,52 @@ public:
 
 };
 
-TEST_F(Emul_Dromajo_test, bge_test) {
-  Dinst *dinst = dromajo_emul->peek(0);
-  EXPECT_EQ(0x000000008000208c, dinst->getPC());
-  EXPECT_EQ(0x0000000080002098, dinst->getAddr());
+TEST_F(Emul_Dromajo_test, dhrystone_test) {
+  Emul_dromajo dromajo_emul = *dromajo_ptr;
+  EXPECT_FALSE(dromajo_ptr == NULL);
+
+  dromajo_emul.skip_rabbit(0, 656);
+  Dinst *dinst = dromajo_emul.peek(0); //csrr
+  EXPECT_EQ(0x0000000080002ae4, dinst->getPC());
   const Instruction *inst = dinst->getInst();
+  EXPECT_EQ(15, inst->getDst1());
+  dinst->recycle();
+
+  dromajo_emul.skip_rabbit(0, 187);
+  dinst = dromajo_emul.peek(0); //bge
+  EXPECT_EQ(0x0000000080002094, dinst->getPC());
+  EXPECT_EQ(0x00000000800020a4, dinst->getAddr());
+  inst = dinst->getInst();
   EXPECT_EQ(0 ,inst->getSrc1());
   EXPECT_EQ(10 ,inst->getSrc2());
   EXPECT_FALSE(inst->hasDstRegister());
   EXPECT_TRUE(inst->isBranch());
   dinst->recycle();
-  //delete dromajo_emul;
-}
 
-TEST_F(Emul_Dromajo_test, addi_test) {
-  dromajo_emul->skip_rabbit(0, 7);
-  Dinst *dinst = dromajo_emul->peek(0);
-  EXPECT_EQ(0x0000000080002afc, dinst->getPC());
-  const Instruction *inst = dinst->getInst();
-  EXPECT_EQ(3 ,inst->getSrc1());
+  dromajo_emul.skip_rabbit(0, 6);  //ret
+  dinst = dromajo_emul.peek(0);
+  EXPECT_EQ(0x00000000800020ae, dinst->getPC());
+  inst = dinst->getInst();
+  EXPECT_TRUE(inst->isFuncRet());
+  dinst->recycle();
+
+  dromajo_emul.skip_rabbit(0, 2);  //addi
+  dinst = dromajo_emul.peek(0);
+  EXPECT_EQ(0x0000000080002b46, dinst->getPC());
+  inst = dinst->getInst();
+  EXPECT_EQ(14 ,inst->getSrc1());
   EXPECT_EQ(14, inst->getDst1());
   EXPECT_TRUE(inst->isALU());
   dinst->recycle();
-  //delete dromajo_emul;
-}
 
-TEST_F(Emul_Dromajo_test, sw_test) {
-  dromajo_emul->skip_rabbit(0, 13);
-  Dinst *dinst = dromajo_emul->peek(0);
-  EXPECT_EQ(0x0000000080002b0e, dinst->getPC());
-  EXPECT_EQ(0x0000000080025E98, dinst->getAddr());
-  const Instruction *inst = dinst->getInst();
+  dromajo_emul.skip_rabbit(0, 7);  //sw
+  dinst = dromajo_emul.peek(0);
+  EXPECT_EQ(0x0000000080002b5a, dinst->getPC());
+  EXPECT_EQ(0x0000000080025f18, dinst->getAddr());
+  inst = dinst->getInst();
   EXPECT_EQ(8 ,inst->getSrc1());
-  EXPECT_EQ(25 ,inst->getSrc2());
+  EXPECT_EQ(15 ,inst->getSrc2());
   EXPECT_FALSE(inst->hasDstRegister());
   EXPECT_TRUE(inst->isStore());
   dinst->recycle();
-  //delete dromajo_emul;
 }
-

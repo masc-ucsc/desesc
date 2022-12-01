@@ -6,11 +6,11 @@ emul = ["drom_emu", "drom_emu"]
 
 [drom_emu]
 type      = "dromajo"
-bootroom  = "linux_checkpoint_1"
+load      = "linux_checkpoint_1"
 start_roi = false
-rabbit    = 1*1024*1024
-detail    = 1*1024*1024
-time      = 2*1024*1024
+rabbit    = 1e6
+detail    = 1e6
+time      = 2e6
 
 [rand_emu]
 type = "random"  # Generate random instructions (coverage testing?)

@@ -15,7 +15,9 @@ protected:
   std::string section;
   std::string type;  // dromajo, trace,...
   int         num;
-
+  int         rabbit;
+  int         detail;
+  int         time;
 public:
   Emul_base(Config conf);
   virtual ~Emul_base();

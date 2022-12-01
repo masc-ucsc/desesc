@@ -13,11 +13,30 @@ public:
   virtual ~Emul_dromajo();
 
   void destroy_machine();
-  bool init_dromajo_machine(int argc, char **argv) {
-    machine = virt_machine_main(argc, argv);
-    if (machine == NULL)
-      return false;
-    return true;
+  bool init_dromajo_machine(char *dromajo_cfg) {
+    assert(type == "dromajo");
+    assert(dromajo_cfg);
+
+    std::vector<char*> dromajo_args;
+    char dummy_arg[] = "arg0";
+    dromajo_args.push_back(dummy_arg);
+    dromajo_args.push_back(dromajo_cfg);
+
+
+    std::vector<std::string> list_args = { "cmdline", "ncpus", "load", "simpoint", "save", "maxinsns", 
+                                           "terminate-event", "trace", "ignore_sbi_shutdown",
+                                           "dump_memories", "memory_size", "memory_addr", "bootrom",
+                                           "dtb, compact_bootrom", "reset_vector", "plic", "clint",
+                                           "custom_extension", "gdbinit", "clear_ids" };
+    dromajo_args.reserve(list_args.size());
+    for (auto&& item : list_args)
+        if (Config::has_entry("drom_emu", item)) {
+            std::string arg = "--" + item + "=" + Config::get_string("drom_emu", item);
+            dromajo_args.push_back(const_cast<char*>(arg.c_str()));
+        }
+
+    machine = virt_machine_main(dromajo_args.size(), &dromajo_args[0]);
+    return machine;
   }
 
   virtual Dinst *peek(Hartid_t fid) final;

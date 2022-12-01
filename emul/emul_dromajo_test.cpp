@@ -28,25 +28,28 @@
 class Emul_Dromajo_test : public ::testing::Test {
 protected:
   void SetUp() override {
-    fmt::print("\nnew setup\n");
     std::ofstream file;
     file.open("emul_dromajo_test.toml");
 
-    file << "[emul]\n";
+    file << "[soc]\n";
+    file << "core = \"c0\"\n";
+    file << "emul = \"drom_emu\"\n";
+    file << "\n[drom_emu]\n";
     file << "num = \"1\"\n";
     file << "type = \"dromajo\"\n";
+    file << "load = \"ck1\"\n";
+    file << "rabbit = 1e6\n";
+    file << "detail = 1e6\n";
+    file << "time = 2e6\n";
     file.close();
 
     Config configuration;
     configuration.init("emul_dromajo_test.toml");
 
-    int argc              = 2;
-    char bin_name[]       = "emul_dromajo_test";
-    char benchmark_name[] = "/home/mark/desesc/conf/dhrystone.riscv";
-    char *argv[2]         = { bin_name, benchmark_name };
+    char benchmark_name[] = "dhrystone.riscv";
 
     Emul_dromajo dromajo_emul(configuration);
-    dromajo_emul.init_dromajo_machine(argc, argv);
+    dromajo_emul.init_dromajo_machine(benchmark_name);
     dromajo_ptr = &dromajo_emul;
   }
 
@@ -62,7 +65,7 @@ TEST_F(Emul_Dromajo_test, dhrystone_test) {
   Emul_dromajo dromajo_emul = *dromajo_ptr;
   EXPECT_FALSE(dromajo_ptr == NULL);
 
-  dromajo_emul.skip_rabbit(0, 656);
+  dromajo_emul.skip_rabbit(0, 553);
   Dinst *dinst = dromajo_emul.peek(0); //csrr
   EXPECT_EQ(0x0000000080002ae4, dinst->getPC());
   const Instruction *inst = dinst->getInst();

@@ -8,7 +8,6 @@
 int32_t BloomFilter::numDumps = 0;
 
 BloomFilter::BloomFilter(const std::vector<int> &bits, const std::vector<int> &size) {
-
   I(bits.size() == size.size());
 
   nVectors     = bits.size();
@@ -39,8 +38,9 @@ BloomFilter::BloomFilter(const std::vector<int> &bits, const std::vector<int> &s
 }
 
 BloomFilter::~BloomFilter() {
-  if (!BFBuild)
+  if (!BFBuild) {
     return;
+  }
 
   delete[] vSize;
   delete[] vBits;
@@ -89,12 +89,14 @@ BloomFilter::BloomFilter(const BloomFilter &bf) {
 }
 
 BloomFilter &BloomFilter::operator=(const BloomFilter &bf) {
-  if (this == &bf)
+  if (this == &bf) {
     return *this;
+  }
 
   if (!bf.BFBuild) {
-    if (BFBuild)
+    if (BFBuild) {
       clear();
+    }
     return *this;
   }
 
@@ -129,7 +131,9 @@ void BloomFilter::initMasks() {
   int32_t totShift = 0;
   for (int32_t i = 0; i < nVectors; i++) {
     unsigned mask = 0;
-    for (int32_t m = 0; m < vBits[i]; m++) mask = mask | 1 << m;
+    for (int32_t m = 0; m < vBits[i]; m++) {
+      mask = mask | 1 << m;
+    }
 
     mask      = mask << totShift;
     vMask[i]  = mask;
@@ -160,8 +164,9 @@ int32_t BloomFilter::getIndex(unsigned val, int32_t chunkPos) {
 }
 
 void BloomFilter::insert(unsigned e) {
-  if (!BFBuild)
+  if (!BFBuild) {
     return;
+  }
 
   for (int32_t i = 0; i < nVectors; i++) {
     int32_t idx = getIndex(e, i);
@@ -176,8 +181,9 @@ void BloomFilter::insert(unsigned e) {
 }
 
 void BloomFilter::remove(unsigned e) {
-  if (!BFBuild)
+  if (!BFBuild) {
     return;
+  }
 
   for (int32_t i = 0; i < nVectors; i++) {
     int32_t idx = getIndex(e, i);
@@ -195,8 +201,9 @@ void BloomFilter::remove(unsigned e) {
 }
 
 void BloomFilter::clear() {
-  if (!BFBuild)
+  if (!BFBuild) {
     return;
+  }
 
   for (int32_t i = 0; i < nVectors; i++) {
     for (int32_t j = 0; j < vSize[i]; j++) {
@@ -209,20 +216,23 @@ void BloomFilter::clear() {
 }
 
 bool BloomFilter::mayExist(unsigned e) {
-  if (!BFBuild)
+  if (!BFBuild) {
     return true;
+  }
 
   for (int32_t i = 0; i < nVectors; i++) {
     int32_t idx = getIndex(e, i);
-    if (countVec[i][idx] == 0)
+    if (countVec[i][idx] == 0) {
       return false;
+    }
   }
   return true;
 }
 
 bool BloomFilter::mayIntersect(BloomFilter &otherbf) {
-  if (!BFBuild || !otherbf.BFBuild)
+  if (!BFBuild || !otherbf.BFBuild) {
     return true;
+  }
 
   I(nVectors == otherbf.nVectors);
 #ifndef NDEBUG
@@ -249,8 +259,9 @@ bool BloomFilter::mayIntersect(BloomFilter &otherbf) {
 }
 
 void BloomFilter::mergeWith(BloomFilter &otherbf) {
-  if (!BFBuild || !otherbf.BFBuild)
+  if (!BFBuild || !otherbf.BFBuild) {
     return;
+  }
 
   I(nVectors == otherbf.nVectors);
 #ifndef NDEBUG
@@ -263,15 +274,17 @@ void BloomFilter::mergeWith(BloomFilter &otherbf) {
     nonZeroCount[v] = 0;
     for (int32_t e = 0; e < vSize[v]; e++) {
       countVec[v][e] += otherbf.countVec[v][e];
-      if (countVec[v][e] != 0)
+      if (countVec[v][e] != 0) {
         nonZeroCount[v]++;
+      }
     }
   }
 }
 
 void BloomFilter::subtract(BloomFilter &otherbf) {
-  if (!BFBuild || !otherbf.BFBuild)
+  if (!BFBuild || !otherbf.BFBuild) {
     return;
+  }
 
   I(nVectors == otherbf.nVectors);
 #ifndef NDEBUG
@@ -285,8 +298,9 @@ void BloomFilter::subtract(BloomFilter &otherbf) {
     for (int32_t e = 0; e < vSize[v]; e++) {
       countVec[v][e] -= otherbf.countVec[v][e];
       I(countVec[v][e] >= 0);
-      if (countVec[v][e] != 0)
+      if (countVec[v][e] != 0) {
         nonZeroCount[v]++;
+      }
     }
   }
 }
@@ -306,19 +320,23 @@ void BloomFilter::dump(const char *msg) {
 }
 
 int32_t BloomFilter::getSize() {
-  if (!BFBuild)
+  if (!BFBuild) {
     return 0;
+  }
 
   int32_t size = 0;
 
-  for (int32_t i = 0; i < nVectors; i++) size += vSize[i];
+  for (int32_t i = 0; i < nVectors; i++) {
+    size += vSize[i];
+  }
 
   return size;
 }
 
 int32_t BloomFilter::getSizeRLE(int32_t base, int32_t runBits) {
-  if (!BFBuild)
+  if (!BFBuild) {
     return 0;
+  }
 
   int32_t rleSize = 0;
   int32_t runSize = 0;
@@ -342,8 +360,9 @@ int32_t BloomFilter::getSizeRLE(int32_t base, int32_t runBits) {
 }
 
 bool BloomFilter::isSubsetOf(BloomFilter &otherbf) {
-  if (!BFBuild || !otherbf.BFBuild)
+  if (!BFBuild || !otherbf.BFBuild) {
     return true;
+  }
 
   I(nVectors == otherbf.nVectors);
 #ifndef NDEBUG
@@ -364,7 +383,6 @@ bool BloomFilter::isSubsetOf(BloomFilter &otherbf) {
 }
 
 void BloomFilter::begin_dump_pychart(const char *bname) {
-
   auto str = fmt::format("{}.{}.py", bname, numDumps);
 
   numDumps++;
@@ -399,8 +417,9 @@ void BloomFilter::add_dump_line(unsigned e) {
   for (int32_t i = 0; i < nVectors; i++) {
     int32_t idx = getIndex(e, i);
 
-    if (i == 2)
+    if (i == 2) {
       idx *= 32;
+    }
 
     if (i != nVectors - 1) {
       fprintf(dumpPtr, "[%d, %d],", i, idx);
@@ -417,8 +436,9 @@ int32_t BloomFilter::countAlias(unsigned e) {
 
   for (int32_t i = 0; i < nVectors; i++) {
     int32_t idx = getIndex(e, i);
-    if (countVec[i][idx] != 0)
+    if (countVec[i][idx] != 0) {
       a++;
+    }
   }
 
   return a;

@@ -5,27 +5,26 @@
 #include <algorithm>
 #include <vector>
 
-#include "stats_code.hpp"
 #include "FastQueue.h"
 #include "FetchEngine.h"
-#include "Pipeline.h"
 #include "GProcessor.h"
-
-#include "stats.hpp"
+#include "Pipeline.h"
 #include "callback.hpp"
 #include "iassert.hpp"
+#include "stats.hpp"
+#include "stats_code.hpp"
 
-//#define TRACK_FORWARDING 1
+// #define TRACK_FORWARDING 1
 #define TRACK_TIMELEAK 1
 #define DEP_LIST_SIZE  64
 
-//#define BTT_SIZE 512 //16 //512
+// #define BTT_SIZE 512 //16 //512
 #define NUM_LOADS               6  // 32 //32 //6 //6 //16 // maximum number of loads trackable by LDBP framework
 #define NUM_OPS                 6  // 32 //4 //8 //16 // maximum number of operations between LD and BR in code snippet
 #define BTT_MAX_ACCURACY        7
 #define MAX_POWER_SAVE_MODE_CTR 100000
-//#define ENABLE_LDBP
-//#define PRINT_LDBP 1
+// #define ENABLE_LDBP
+// #define PRINT_LDBP 1
 
 class OoOProcessor : public GProcessor {
 private:
@@ -49,7 +48,7 @@ private:
   const bool    MemoryReplay;
   const int32_t RetireDelay;
 
-  LSQFull     lsq;
+  LSQFull lsq;
 
   uint32_t serialize_level;
   uint32_t serialize;
@@ -179,8 +178,8 @@ protected:
 #endif
 
   // BEGIN VIRTUAL FUNCTIONS of GProcessor
-  bool       advance_clock_drain() override final;
-  bool       advance_clock() override final;
+  bool advance_clock_drain() override final;
+  bool advance_clock() override final;
 
   StallCause add_inst(Dinst *dinst) override final;
   void       retire();
@@ -348,12 +347,14 @@ public:
 
     void btt_update_accuracy(Dinst *dinst, int id) {
       if (dinst->isBranch_hit2_miss3()) {
-        if (accuracy > 0)
+        if (accuracy > 0) {
           accuracy--;
+        }
         //}else if(dinst->isBranch_hit3_miss2()) {
       } else if (dinst->isBranchHit_level3()) {
-        if (accuracy < 7)
+        if (accuracy < 7) {
           accuracy++;
+        }
       }
     }
   };
@@ -772,7 +773,7 @@ public:
 
   void   executing(Dinst *dinst) override final;
   void   executed(Dinst *dinst) override final;
-  LSQ   *getLSQ()  override final{ return &lsq; }
+  LSQ   *getLSQ() override final { return &lsq; }
   void   replay(Dinst *target) override final;
   bool   is_nuking() override final { return flushing; }
   bool   isReplayRecovering() override final { return replayRecovering; }

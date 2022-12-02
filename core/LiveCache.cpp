@@ -45,8 +45,8 @@
 
 #include <iostream>
 
-//#define MTRACE(a...)   do{ fprintf(stderr,"@%lld %s %d 0x%x:",(long long int)globalClock,getName(), (int)mreq->getID(), (unsigned
-// int)mreq->getAddr()); fprintf(stderr,##a); fprintf(stderr,"\n"); }while(0)
+// #define MTRACE(a...)   do{ fprintf(stderr,"@%lld %s %d 0x%x:",(long long int)globalClock,getName(), (int)mreq->getID(), (unsigned
+//  int)mreq->getAddr()); fprintf(stderr,##a); fprintf(stderr,"\n"); }while(0)
 #define MTRACE(a...)
 
 LiveCache::LiveCache() {
@@ -64,10 +64,11 @@ LiveCache::~LiveCache() { cacheBank->destroy(); }
 
 void LiveCache::read(uint64_t addr) {
   uint64_t tmp;
-  if (cacheBank->findLine(addr))
+  if (cacheBank->findLine(addr)) {
     tmp = cacheBank->findLine(addr)->getTag();
-  else
+  } else {
     tmp = 0;
+  }
   Line *l = cacheBank->fillLine(addr);
   if (l->getTag() != tmp) {
     l->st = false;
@@ -100,10 +101,11 @@ uint64_t LiveCache::traverse(uint64_t *addrs, bool *st) {
   for (uint64_t i = 0; i < cnt; i++) {
     if (arr[i]->getTag() > 0) {
       addrs[in] = (uint64_t)cacheBank->calcAddr4Tag(arr[i]->getTag());
-      if (arr[i]->st)
+      if (arr[i]->st) {
         st[in] = true;
-      else
+      } else {
         st[in] = false;
+      }
       in++;
     }
   }
@@ -113,8 +115,9 @@ uint64_t LiveCache::traverse(uint64_t *addrs, bool *st) {
 
 void LiveCache::mergeSort(Line **arr, uint64_t len) {
   // in case we had one element
-  if (len < 2)
+  if (len < 2) {
     return;
+  }
 
   // in case we had two elements
   if (len == 2) {
@@ -131,8 +134,12 @@ void LiveCache::mergeSort(Line **arr, uint64_t len) {
   uint64_t mid = (uint64_t)(len / 2);
   Line    *arr1[mid];
   Line    *arr2[len - mid];
-  for (uint64_t i = 0; i < mid; i++) arr1[i] = arr[i];
-  for (uint64_t i = 0; i < len - mid; i++) arr2[i] = arr[mid + i];
+  for (uint64_t i = 0; i < mid; i++) {
+    arr1[i] = arr[i];
+  }
+  for (uint64_t i = 0; i < len - mid; i++) {
+    arr2[i] = arr[mid + i];
+  }
   mergeSort(arr1, mid);
   mergeSort(arr2, len - mid);
 

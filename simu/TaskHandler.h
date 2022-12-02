@@ -5,7 +5,6 @@
 #include <vector>
 
 #include "absl/container/flat_hash_set.h"
-
 #include "emul_base.hpp"
 #include "iassert.hpp"
 
@@ -15,26 +14,25 @@ class TaskHandler {
 private:
   class EmulSimuMapping {
   public:
-    Hartid_t       fid;
-    bool           active;
-    bool           deactivating;
-    std::shared_ptr<Emul_base >  emul;
-    std::shared_ptr<GProcessor>  simu;
+    Hartid_t                    fid;
+    bool                        active;
+    bool                        deactivating;
+    std::shared_ptr<Emul_base>  emul;
+    std::shared_ptr<GProcessor> simu;
   };
 
-  static inline bool   terminate_all{false};
+  static inline bool terminate_all{false};
 
   static inline std::vector<EmulSimuMapping> allmaps;
 
   static inline absl::flat_hash_set<Hartid_t> running;
 
-  static inline std::vector<std::shared_ptr<Emul_base>  > emuls;  // associated emula
+  static inline std::vector<std::shared_ptr<Emul_base> >  emuls;  // associated emula
   static inline std::vector<std::shared_ptr<GProcessor> > simus;  // All the simus in the system
 
   static inline bool plugging{false};
 
 public:
-
   static void core_create(std::shared_ptr<GProcessor> gproc);
   static void core_resume(Hartid_t uid);
   static void core_pause(Hartid_t fid);

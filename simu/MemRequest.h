@@ -7,7 +7,7 @@
 #include "iassert.hpp"
 
 #ifndef NDEBUG
-//#define DEBUG_CALLPATH 1
+// #define DEBUG_CALLPATH 1
 #endif
 
 class MemRequest {
@@ -147,7 +147,10 @@ protected:
   void dump_calledge(TimeDelta_t lat, bool interesting = false);
   void upce();
 #else
-  void rawdump_calledge(TimeDelta_t lat = 0, Time_t total = 0){ (void)lat; (void)total; };
+  void rawdump_calledge(TimeDelta_t lat = 0, Time_t total = 0) {
+    (void)lat;
+    (void)total;
+  };
   void dump_calledge(TimeDelta_t lat) { (void)lat; }
   void upce(){};
 #endif
@@ -249,7 +252,7 @@ public:
   }
 
   static MemRequest *createSafeReqRead(MemObj *m, bool keep_stats, Addr_t addr, Addr_t pc, CallbackBase *cb = 0) {
-    MemRequest *mreq        = create(m, addr, keep_stats, cb);
+    MemRequest *mreq = create(m, addr, keep_stats, cb);
     I(!mreq->spec);
     mreq->notifyScbDirectly = false;
     mreq->mt                = mt_req;
@@ -381,8 +384,9 @@ public:
   void forceReqAction(MsgAction _ma) { ma = _ma; }
 
   void adjustReqAction(MsgAction _ma) {
-    if (firstCache)
+    if (firstCache) {
       return;
+    }
 
     firstCache    = currMemObj;
     firstCache_ma = ma;
@@ -392,8 +396,9 @@ public:
   }
   void recoverReqAction() {
     I(mt == mt_reqAck || prefetch);
-    if (firstCache != currMemObj)
+    if (firstCache != currMemObj) {
       return;
+    }
     firstCache = 0;
     ma         = firstCache_ma;
   }
@@ -493,8 +498,9 @@ public:
   MsgAction getOrigAction() const { return ma_orig; }
 
   void trySetTopCoherentNode(MemObj *cache) {
-    if (topCoherentNode == 0)
+    if (topCoherentNode == 0) {
       topCoherentNode = cache;
+    }
   }
 
   bool isMMU() const { return ma == ma_MMU; }
@@ -502,13 +508,15 @@ public:
 
   void ack() {
     if (cb) {
-      if (dropped)
+      if (dropped) {
         cb->destroy();
-      else
+      } else {
         cb->call();
+      }
     }
-    if (mt == mt_setStateAck)
+    if (mt == mt_setStateAck) {
       setStateAckDone(0);
+    }
 
     dump_calledge(0);
     destroy();
@@ -519,18 +527,21 @@ public:
       cb->schedule(lat);
     }
 
-    if (mt == mt_setStateAck)
+    if (mt == mt_setStateAck) {
       setStateAckDone(lat);
+    }
 
     dump_calledge(lat);
     destroy();
   }
   void ackAbs(Time_t when) {
     I(when);
-    if (cb)
+    if (cb) {
       cb->scheduleAbs(when);
-    if (mt == mt_setStateAck)
+    }
+    if (mt == mt_setStateAck) {
       setStateAckDone(when - globalClock);
+    }
 
     dump_calledge(when - globalClock);
     destroy();

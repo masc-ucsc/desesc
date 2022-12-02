@@ -4,7 +4,6 @@
 
 #include "ClusterScheduler.h"
 #include "DepWindow.h"
-
 #include "dinst.hpp"
 #include "iassert.hpp"
 

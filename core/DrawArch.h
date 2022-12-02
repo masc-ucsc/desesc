@@ -27,7 +27,6 @@ public:
   void addObj(const std::string &mystr) { rows.push_back(mystr); }
 
   void drawArchDot(const std::string &filename) {
-
     std::fstream fs(filename, std::fstream::out);
     if (!fs.good()) {
       std::cerr << "WriteFile() : Opening " << filename << " file failed." << std::endl;

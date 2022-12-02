@@ -4,10 +4,9 @@
 
 #include "AddressPredictor.h"
 #include "CacheCore.h"
-
+#include "callback.hpp"
 #include "port.hpp"
 #include "stats.hpp"
-#include "callback.hpp"
 
 class MemObj;
 
@@ -21,8 +20,8 @@ private:
 
   AddressPredictor *apred;
 
-  int32_t  degree;
-  int32_t  distance;
+  int32_t degree;
+  int32_t distance;
 
   int32_t  curPrefetch;
   uint32_t lineSizeBits;

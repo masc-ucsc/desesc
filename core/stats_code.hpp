@@ -3,7 +3,6 @@
 #pragma once
 
 #include "absl/container/flat_hash_map.h"
-
 #include "stats.hpp"
 
 class Stats_code : public Stats {
@@ -72,8 +71,6 @@ public:
               bool bp3_hit = 0, bool hit2_miss3 = 0, bool hit3_miss2 = 0, bool tl1_pred = 0, bool tl1_unpred = 0, bool tl2_pred = 0,
               bool tl2_unpred = 0, int trig_ld_status = -1);
 
-
   void report() const final;
   void reset() final;
 };
-

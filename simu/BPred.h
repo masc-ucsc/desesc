@@ -22,15 +22,14 @@
 #include "CacheCore.h"
 #include "DOLC.h"
 #include "SCTable.h"
-#include "estl.h"
-
-#include "stats.hpp"
 #include "dinst.hpp"
+#include "estl.h"
 #include "iassert.hpp"
+#include "stats.hpp"
 
 #define RAP_T_NT_ONLY 1
-//#define ENABLE_LDBP
-//#define DOC_SIZE 512 //128
+// #define ENABLE_LDBP
+// #define DOC_SIZE 512 //128
 enum PredType { CorrectPrediction = 0, NoPrediction, NoBTBPrediction, MissPrediction };
 enum BrOpType { BEQ = 0, BNE = 1, BLT = 4, BGE = 5, BLTU = 6, BGEU = 7, ILLEGAL_BR = 8 };
 
@@ -74,11 +73,13 @@ public:
 
   PredType doPredict(Dinst *dinst, bool doStats = true) {
     PredType pred = predict(dinst, true, doStats);
-    if (pred == NoPrediction)
+    if (pred == NoPrediction) {
       return pred;
+    }
 
-    if (dinst->getInst()->isJump())
+    if (dinst->getInst()->isJump()) {
       return pred;
+    }
 
     nHit.inc(pred == CorrectPrediction && dinst->has_stats() && doStats);
     nMiss.inc(pred == MissPrediction && dinst->has_stats() && doStats);
@@ -95,7 +96,7 @@ private:
   const uint16_t rasPrefetch;
 
   std::vector<Addr_t> stack;
-  int32_t index;
+  int32_t             index;
 
 protected:
 public:
@@ -115,7 +116,10 @@ private:
 
   class BTBState : public StateGeneric<Addr_t> {
   public:
-    BTBState(int32_t lineSize) { (void)lineSize; inst = 0; }
+    BTBState(int32_t lineSize) {
+      (void)lineSize;
+      inst = 0;
+    }
 
     Addr_t inst;
 
@@ -141,7 +145,8 @@ private:
 
 protected:
 public:
-  BPOracle(int32_t i, const std::string &section, const std::string &sname) : BPred(i, section, sname, "Oracle"), btb(i, section, sname) {}
+  BPOracle(int32_t i, const std::string &section, const std::string &sname)
+      : BPred(i, section, sname, "Oracle"), btb(i, section, sname) {}
 
   PredType predict(Dinst *dinst, bool doUpdate, bool doStats);
 };
@@ -152,7 +157,8 @@ private:
 
 protected:
 public:
-  BPNotTaken(int32_t i, const std::string &section, const std::string &sname) : BPred(i, section, sname, "NotTaken"), btb(i, section, sname) {
+  BPNotTaken(int32_t i, const std::string &section, const std::string &sname)
+      : BPred(i, section, sname, "NotTaken"), btb(i, section, sname) {
     // Done
   }
 
@@ -190,7 +196,8 @@ private:
 
 protected:
 public:
-  BPTaken(int32_t i, const std::string &section, const std::string &sname) : BPred(i, section, sname, "Taken"), btb(i, section, sname) {
+  BPTaken(int32_t i, const std::string &section, const std::string &sname)
+      : BPred(i, section, sname, "Taken"), btb(i, section, sname) {
     // Done
   }
 
@@ -483,15 +490,17 @@ public:
       }
       // this if loop updates DOC counters
       if (outcome == true) {
-        if (taken < max_counter)
+        if (taken < max_counter) {
           taken++;
-        else if (ntaken > 0)
+        } else if (ntaken > 0) {
           ntaken--;
+        }
       } else {
-        if (ntaken < max_counter)
+        if (ntaken < max_counter) {
           ntaken++;
-        else if (taken > 0)
+        } else if (taken > 0) {
           taken--;
+        }
       }
       return conf_pred;
     }
@@ -510,8 +519,9 @@ public:
         }
 #endif
       if (m < 1) {
-        if (taken > ntaken)
+        if (taken > ntaken) {
           return 1;
+        }
         return 2;
       }
       return 0;

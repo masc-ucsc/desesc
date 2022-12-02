@@ -56,11 +56,13 @@ MRouter::~MRouter()
 /* }}} */
 
 int16_t MRouter::getCreatorPort(const MemRequest *mreq) const {
-  if (up_node.empty())
+  if (up_node.empty()) {
     return -1;
+  }
 
-  if (up_node.size() == 1)
+  if (up_node.size() == 1) {
     return 0;  // Most common case
+  }
 
   UPMapType::const_iterator it = up_map.find(mreq->getCreator());
   if (it == up_map.end()) {
@@ -70,8 +72,9 @@ int16_t MRouter::getCreatorPort(const MemRequest *mreq) const {
   MemObj *obj = it->second;
 
   for (size_t i = 0; i < up_node.size(); i++) {
-    if (up_node[i] == obj)
+    if (up_node[i] == obj) {
       return i;
+    }
   }
 
   return -1;  // Not Found
@@ -93,10 +96,11 @@ void MRouter::fillRouteTables()
   MRouter *rb     = this;
   while (rb) {
     bottom = rb->self_mobj;
-    if (rb->down_node.empty())
+    if (rb->down_node.empty()) {
       rb = 0;
-    else
+    } else {
       rb = rb->down_node[0]->getRouter();
+    }
   }
   rb = bottom->getRouter();
   rb->self_mobj->clearNeedsCoherence();
@@ -303,8 +307,9 @@ void MRouter::sendCleanDisp(Addr_t addr, bool prefetch, bool doStats, TimeDelta_
 int32_t MRouter::sendSetStateOthers(MemRequest *mreq, MsgAction ma, TimeDelta_t lat)
 /* send setState to others, return how many {{{1 */
 {
-  if (up_node.size() <= 1)
+  if (up_node.size() <= 1) {
     return 0;  // if single node, for sure it does not get one
+  }
 
   bool   doStats = mreq->has_stats();
   Addr_t addr    = mreq->getAddr();
@@ -316,8 +321,9 @@ int32_t MRouter::sendSetStateOthers(MemRequest *mreq, MsgAction ma, TimeDelta_t 
   int32_t conta = 0;
   I(mreq->isReq() || mreq->isReqAck());
   for (size_t i = 0; i < up_node.size(); i++) {
-    if (up_node[i] == skip_mobj)
+    if (up_node[i] == skip_mobj) {
       continue;
+    }
 
     MemRequest *breq = MemRequest::createSetState(self_mobj, mreq->getCreator(), ma, addr, doStats);
     breq->addPendingSetStateAck(mreq);
@@ -333,8 +339,9 @@ int32_t MRouter::sendSetStateOthers(MemRequest *mreq, MsgAction ma, TimeDelta_t 
 int32_t MRouter::sendSetStateOthersPos(uint32_t pos, MemRequest *mreq, MsgAction ma, TimeDelta_t lat)
 /* send setState to specific pos, return how many {{{1 */
 {
-  if (up_node.size() <= 1)
+  if (up_node.size() <= 1) {
     return 0;  // if single node, for sure it does not get one
+  }
 
   bool   doStats = mreq->has_stats();
   Addr_t addr    = mreq->getAddr();
@@ -351,8 +358,9 @@ int32_t MRouter::sendSetStateOthersPos(uint32_t pos, MemRequest *mreq, MsgAction
 int32_t MRouter::sendSetStateAll(MemRequest *mreq, MsgAction ma, TimeDelta_t lat)
 /* send setState to others, return how many {{{1 */
 {
-  if (up_node.empty())
+  if (up_node.empty()) {
     return 0;  // top node?
+  }
 
   bool   doStats = mreq->has_stats();
   Addr_t addr    = mreq->getAddr();

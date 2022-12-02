@@ -5,10 +5,9 @@
 #include <vector>
 
 #include "Resource.h"
-
 #include "dinst.hpp"
 
-using ResourcesPoolType=std::vector<std::vector<Resource *>>;
+using ResourcesPoolType = std::vector<std::vector<Resource *>>;
 
 class ClusterScheduler {
 private:

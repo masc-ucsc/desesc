@@ -2,9 +2,8 @@
 #include <sys/time.h>
 
 #include "CacheCore.h"
-
-#include "report.hpp"
 #include "config.hpp"
+#include "report.hpp"
 
 class SampleState : public StateGeneric<long> {
 public:

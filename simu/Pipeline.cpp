@@ -74,10 +74,11 @@ void Pipeline::readyItem(IBucket *b) {
   // out-of-order the memory requests)
   minItemCntr++;
 
-  if (b->empty())
+  if (b->empty()) {
     doneItem(b);
-  else
+  } else {
     buffer.push(b);
+  }
 
   clearItems();  // Try to insert on minItem reveiced (OoO) buckets
 }
@@ -94,10 +95,11 @@ void Pipeline::clearItems() {
 
     minItemCntr++;
 
-    if (b->empty())
+    if (b->empty()) {
       doneItem(b);
-    else
+    } else {
       buffer.push(b);
+    }
   }
 }
 
@@ -171,8 +173,9 @@ PipeQueue::~PipeQueue() {
 }
 
 IBucket *Pipeline::newItem() {
-  if (nIRequests == 0 || bucketPool.empty())
+  if (nIRequests == 0 || bucketPool.empty()) {
     return 0;
+  }
 
   nIRequests--;
 

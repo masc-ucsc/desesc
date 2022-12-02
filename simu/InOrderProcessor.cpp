@@ -1,7 +1,7 @@
 // See LICENSE for details.
 
 #include "InOrderProcessor.h"
-#include "config.hpp"
+
 #include "ClusterManager.h"
 #include "FetchEngine.h"
 #include "GMemorySystem.h"
@@ -14,12 +14,11 @@ InOrderProcessor::InOrderProcessor(GMemorySystem *gm, CPU_t i)
     , lsq(i, 32768)
     , clusterManager(gm, i, this) {  // {{{1
 
-
   auto smtnum = get_smt_size();
-  RAT             = new Dinst *[LREG_MAX * smtnum * 128];
+  RAT         = new Dinst *[LREG_MAX * smtnum * 128];
   bzero(RAT, sizeof(Dinst *) * LREG_MAX * smtnum * 128);
 
-  busy                 = false;
+  busy = false;
 }
 // 1}}}
 
@@ -28,18 +27,19 @@ InOrderProcessor::~InOrderProcessor() { /*{{{*/
   // Nothing to do
 } /*}}}*/
 
-
 void InOrderProcessor::fetch() { /*{{{*/
   // TODO: Move this to GProcessor (same as in OoOProcessor)
   I(eint);
   I(is_power_up());
 
-  if (spaceInInstQueue < FetchWidth)
+  if (spaceInInstQueue < FetchWidth) {
     return false;
+  }
 
   auto ifid = smt_fetch.fetch_next();
-  if (ifid->isBlocked())
+  if (ifid->isBlocked()) {
     return;
+  }
 
   auto     smt_hid = hid;  // FIXME: do SMT fetch
   IBucket *bucket  = pipeQ.pipeLine.newItem();
@@ -51,8 +51,9 @@ void InOrderProcessor::fetch() { /*{{{*/
 
 bool InOrderProcessor::advance_clock_drain() {
   bool abort = decode_stage();
-  if (abort || !busy)
+  if (abort || !busy) {
     return busy;
+  }
 
   // RENAME Stage
   if (!pipeQ.instQueue.empty()) {
@@ -99,9 +100,9 @@ StallCause InOrderProcessor::add_inst(Dinst *dinst) { /*{{{*/
   if (((RAT[inst->getSrc1() + rat_off] != 0) && (inst->getSrc1() != LREG_NoDependence))
       || ((RAT[inst->getSrc2() + rat_off] != 0) && (inst->getSrc2() != LREG_NoDependence))) {
 #else
-            // scoreboard, no output dependence
-  if (((RAT[inst->getDst1()+rat_off] != 0) && (inst->getDst1() != LREG_InvalidOutput))
-      || ((RAT[inst->getDst2()+rat_off] != 0) && (inst->getDst2() != LREG_InvalidOutput))) {
+  // scoreboard, no output dependence
+  if (((RAT[inst->getDst1() + rat_off] != 0) && (inst->getDst1() != LREG_InvalidOutput))
+      || ((RAT[inst->getDst2() + rat_off] != 0) && (inst->getDst2() != LREG_InvalidOutput))) {
 #endif
 #endif
 
@@ -140,8 +141,9 @@ StallCause InOrderProcessor::add_inst(Dinst *dinst) { /*{{{*/
 }
 #endif
 
-if ((ROB.size() + rROB.size()) >= (MaxROBSize - 1))
+if ((ROB.size() + rROB.size()) >= (MaxROBSize - 1)) {
   return SmallROBStall;
+}
 
 Cluster *cluster = dinst->getCluster();
 if (!cluster) {
@@ -153,8 +155,9 @@ if (!cluster) {
 I(dinst->getFlowId() == hid);
 
 StallCause sc = cluster->canIssue(dinst);
-if (sc != NoStall)
+if (sc != NoStall) {
   return sc;
+}
 
 // FIXME: rafactor the rest of the function that it is the same as in OoOProcessor (share same function in GPRocessor)
 
@@ -168,14 +171,17 @@ ROB.push(dinst);
 if (!dinst->isSrc2Ready()) {
   // It already has a src2 dep. It means that it is solved at
   // retirement (Memory consistency. coherence issues)
-  if (RAT[inst->getSrc1() + rat_off])
+  if (RAT[inst->getSrc1() + rat_off]) {
     RAT[inst->getSrc1() + rat_off]->addSrc1(dinst);
+  }
 } else {
-  if (RAT[inst->getSrc1() + rat_off])
+  if (RAT[inst->getSrc1() + rat_off]) {
     RAT[inst->getSrc1() + rat_off]->addSrc1(dinst);
+  }
 
-  if (RAT[inst->getSrc2() + rat_off])
+  if (RAT[inst->getSrc2() + rat_off]) {
     RAT[inst->getSrc2() + rat_off]->addSrc2(dinst);
+  }
 }
 
 I(!dinst->isExecuted());
@@ -205,8 +211,9 @@ void InOrderProcessor::retire() { /*{{{*/
     I(hid == dinst->getFlowId());
 
     bool done = dinst->getClusterResource()->preretire(dinst, false);
-    if (!done)
+    if (!done) {
       break;
+    }
 
     rROB.push(dinst);
     ROB.pop();
@@ -220,21 +227,25 @@ void InOrderProcessor::retire() { /*{{{*/
   for (uint16_t i = 0; i < RetireWidth && !rROB.empty(); i++) {
     Dinst *dinst = rROB.top();
 
-    if (!dinst->isExecuted())
+    if (!dinst->isExecuted()) {
       break;
+    }
 
-    if ((dinst->getExecutedTime() + RetireDelay) >= globalClock)
+    if ((dinst->getExecutedTime() + RetireDelay) >= globalClock) {
       break;
+    }
 
     I(dinst->getCluster());
 
     bool done = dinst->getCluster()->retire(dinst, false);
-    if (!done)
+    if (!done) {
       return;
+    }
 
 #ifndef NDEBUG
-    if (!dinst->getInst()->isStore())  // Stores can perform after retirement
+    if (!dinst->getInst()->isStore()) {  // Stores can perform after retirement
       I(dinst->isPerformed());
+    }
 #endif
 
     if (dinst->isPerformed()) {  // Stores can perform after retirement

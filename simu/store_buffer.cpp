@@ -16,8 +16,9 @@ Store_buffer::Store_buffer(Hartid_t hid) {
 }
 
 bool Store_buffer::can_accept_st(Addr_t st_addr) const {
-  if ((lines.size() - scb_clean_lines) < scb_size)
+  if ((lines.size() - scb_clean_lines) < scb_size) {
     return true;
+  }
 
   auto it = lines.find(calc_line(st_addr));
   return it != lines.end();
@@ -65,8 +66,9 @@ void Store_buffer::add_st(Dinst *dinst) {
   }
 
   it->second.add_st(calc_offset(st_addr));
-  if (it->second.is_waiting_wb())
+  if (it->second.is_waiting_wb()) {
     return;  // DONE
+  }
 
   it->second.set_waiting_wb();
   MemRequest::sendReqWrite(dl1, dinst->has_stats(), st_addr, dinst->getPC(), ownership_doneCB::create(this, st_addr));
@@ -84,8 +86,9 @@ void Store_buffer::ownership_done(Addr_t st_addr) {
 
 bool Store_buffer::is_ld_forward(Addr_t addr) const {
   const auto it = lines.find(calc_line(addr));
-  if (it == lines.end())
+  if (it == lines.end()) {
     return false;
+  }
 
   return it->second.is_ld_forward(calc_offset(addr));
 }

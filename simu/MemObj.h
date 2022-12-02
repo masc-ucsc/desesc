@@ -3,15 +3,14 @@
 #pragma once
 
 #include <queue>
-#include <vector>
 #include <string>
+#include <vector>
 
 #include "MRouter.h"
-
-#include "port.hpp"
 #include "callback.hpp"
 #include "dinst.hpp"
 #include "iassert.hpp"
+#include "port.hpp"
 
 class MemRequest;
 
@@ -27,14 +26,14 @@ class MemRequest;
 #define CIR_QUEUE_WINDOW 512  // FIXME: need to change this to a conf variable
 
 #define LOT_QUEUE_SIZE 64  // 512 //FIXME: need to change this to a conf variable
-//#define BOT_SIZE 512 //16 //512
-//#define LOR_SIZE 512
-//#define LOAD_TABLE_SIZE 512 //64 //512
-//#define PLQ_SIZE 512 //512
+// #define BOT_SIZE 512 //16 //512
+// #define LOR_SIZE 512
+// #define LOAD_TABLE_SIZE 512 //64 //512
+// #define PLQ_SIZE 512 //512
 #define LOAD_TABLE_CONF      63
 #define LOAD_TABLE_DATA_CONF 63
-//#define NUM_FSM_ALU 32
-//#define ENABLE_LDBP
+// #define NUM_FSM_ALU 32
+// #define ENABLE_LDBP
 
 class MemObj {
 private:
@@ -169,15 +168,17 @@ public:
       ld_addr      = dinst->getAddr();
       delta        = ld_addr - prev_ld_addr;
       if (delta == prev_delta) {
-        if (conf < (LOAD_TABLE_CONF + 1))
+        if (conf < (LOAD_TABLE_CONF + 1)) {
           conf++;
+        }
       } else {
         // conf = conf / 2;
 #if 1
-        if (conf > (LOAD_TABLE_CONF / 2))
+        if (conf > (LOAD_TABLE_CONF / 2)) {
           conf = conf - 4;
-        else
+        } else {
           conf = conf / 2;
+        }
 #endif
       }
       prev_data_delta = data_delta;
@@ -185,15 +186,17 @@ public:
       ld_data         = dinst->getData();
       data_delta      = ld_data - prev_ld_data;
       if (data_delta == prev_data_delta) {
-        if (data_conf < (LOAD_TABLE_DATA_CONF + 1))
+        if (data_conf < (LOAD_TABLE_DATA_CONF + 1)) {
           data_conf++;
+        }
       } else {
         // conf = conf / 2;
 #if 1
-        if (data_conf > (LOAD_TABLE_DATA_CONF / 2))
+        if (data_conf > (LOAD_TABLE_DATA_CONF / 2)) {
           data_conf = data_conf - 4;
-        else
+        } else {
           data_conf = data_conf / 2;
+        }
 #endif
       }
     }
@@ -320,15 +323,14 @@ public:
 
   std::vector<branch_outcome_table> bot_vec = std::vector<branch_outcome_table>(BOT_SIZE);
 
-
 #endif
 
   const std::string &getSection() const { return section; }
   const std::string &getName() const { return name; }
   const std::string &get_type() const { return mem_type; }
-  uint16_t    getID() const { return id; }
-  int16_t     getCoreID() const { return coreid; }
-  void        setCoreDL1(int16_t cid) {
+  uint16_t           getID() const { return id; }
+  int16_t            getCoreID() const { return coreid; }
+  void               setCoreDL1(int16_t cid) {
     coreid        = cid;
     firstLevelDL1 = true;
   }

@@ -17,18 +17,18 @@ private:
 protected:
   const std::string name;
 
-  void  subscribe();
-  void  unsubscribe();
+  void subscribe();
+  void unsubscribe();
 
 public:
-  Stats(const std::string n) : name(n) {};
+  Stats(const std::string n) : name(n){};
   virtual ~Stats();
 
-  static void  report(const std::string &str);
-  static void  reset_all();
+  static void report(const std::string &str);
+  static void reset_all();
 
   virtual void report() const = 0;
-  virtual void reset() = 0;
+  virtual void reset()        = 0;
 };
 
 class Stats_cntr : public Stats {
@@ -99,4 +99,3 @@ public:
   void report() const final;
   void reset() final;
 };
-

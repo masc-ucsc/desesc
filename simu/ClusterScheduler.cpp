@@ -50,8 +50,9 @@ Resource *LRUClusterScheduler::getResource(Dinst *dinst) {
   Resource          *touse = res[type][0];
 
   for (size_t i = 1; i < res[type].size(); i++) {
-    if (touse->getUsedTime() > res[type][i]->getUsedTime())
+    if (touse->getUsedTime() > res[type][i]->getUsedTime()) {
       touse = res[type][i];
+    }
   }
 
   touse->setUsedTime();
@@ -96,11 +97,13 @@ Resource *UseClusterScheduler::getResource(Dinst *dinst) {
 
   for (size_t i = 0; i < res[type].size(); i++) {
     uint16_t n = p + i;
-    if (n >= res[type].size())
+    if (n >= res[type].size()) {
       n -= res[type].size();
+    }
 
-    if (res[type][n]->getCluster()->getAvailSpace() <= 0)
+    if (res[type][n]->getCluster()->getAvailSpace() <= 0) {
       continue;
+    }
 
     int nintra = (cused[inst->getSrc1()] != res[type][n]->getCluster() && cused[inst->getSrc1()])
                  + (cused[inst->getSrc2()] != res[type][n]->getCluster() && cused[inst->getSrc2()]);

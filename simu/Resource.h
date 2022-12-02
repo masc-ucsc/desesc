@@ -6,10 +6,9 @@
 #include "FastQueue.h"
 #include "Prefetcher.h"
 #include "StoreSet.h"
-
-#include "stats.hpp"
 #include "callback.hpp"
 #include "iassert.hpp"
+#include "stats.hpp"
 #include "store_buffer.hpp"
 
 class PortGeneric;
@@ -99,13 +98,13 @@ protected:
   const uint32_t lfSize;
 
   std::shared_ptr<StoreSet> storeset;
-  void      replayManage(Dinst *dinst);
+  void                      replayManage(Dinst *dinst);
   struct FailType {
-    SSID_t     ssid;
-    Time_t     id;
-    Addr_t     pc;
-    Addr_t     addr;
-    Addr_t     data;
+    SSID_t ssid;
+    Time_t id;
+    Addr_t pc;
+    Addr_t addr;
+    Addr_t data;
     Opcode op;
   };
   FailType *lf;
@@ -117,18 +116,19 @@ public:
 class MemResource : public MemReplay {
 private:
 protected:
-  MemObj        *firstLevelMemObj;
-  MemObj        *DL1;
-  GMemorySystem *memorySystem;
-  LSQ           *lsq;
+  MemObj                       *firstLevelMemObj;
+  MemObj                       *DL1;
+  GMemorySystem                *memorySystem;
+  LSQ                          *lsq;
   std::shared_ptr<Prefetcher>   pref;
   std::shared_ptr<Store_buffer> scb;
-  Stats_cntr     stldViolations;
+  Stats_cntr                    stldViolations;
 
   bool LSQlateAlloc;
 
-  MemResource(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *lsq, std::shared_ptr<StoreSet> ss, std::shared_ptr<Prefetcher> pref, std::shared_ptr<Store_buffer> scb, TimeDelta_t l,
-              GMemorySystem *ms, int32_t id, const char *cad);
+  MemResource(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *lsq, std::shared_ptr<StoreSet> ss,
+              std::shared_ptr<Prefetcher> pref, std::shared_ptr<Store_buffer> scb, TimeDelta_t l, GMemorySystem *ms, int32_t id,
+              const char *cad);
 
 public:
 };
@@ -148,8 +148,9 @@ protected:
   typedef CallbackMember1<FULoad, Dinst *, &FULoad::cacheDispatched> cacheDispatchedCB;
 
 public:
-  FULoad(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *lsq, std::shared_ptr<StoreSet> ss, std::shared_ptr<Prefetcher> pref, std::shared_ptr<Store_buffer> scb, TimeDelta_t lsdelay,
-         TimeDelta_t l, GMemorySystem *ms, int32_t size, int32_t id, const char *cad);
+  FULoad(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *lsq, std::shared_ptr<StoreSet> ss, std::shared_ptr<Prefetcher> pref,
+         std::shared_ptr<Store_buffer> scb, TimeDelta_t lsdelay, TimeDelta_t l, GMemorySystem *ms, int32_t size, int32_t id,
+         const char *cad);
 
   StallCause canIssue(Dinst *dinst);
   void       executing(Dinst *dinst);
@@ -172,8 +173,8 @@ private:
   // SCBQueueType               scbQueue;
 
 public:
-  FUStore(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *lsq, std::shared_ptr<StoreSet> ss, std::shared_ptr<Prefetcher> pref, std::shared_ptr<Store_buffer> scb, TimeDelta_t l,
-          GMemorySystem *ms, int32_t size, int32_t id, const char *cad);
+  FUStore(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *lsq, std::shared_ptr<StoreSet> ss, std::shared_ptr<Prefetcher> pref,
+          std::shared_ptr<Store_buffer> scb, TimeDelta_t l, GMemorySystem *ms, int32_t size, int32_t id, const char *cad);
 
   StallCause canIssue(Dinst *dinst);
   void       executing(Dinst *dinst);

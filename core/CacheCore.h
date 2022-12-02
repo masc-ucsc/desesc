@@ -9,10 +9,10 @@
 #include <string>
 #include <string_view>
 
-#include "stats.hpp"
 #include "config.hpp"
 #include "iassert.hpp"
 #include "snippets.hpp"
+#include "stats.hpp"
 
 //-------------------------------------------------------------
 #define RRIP_M 4  // max value = 2^M   | 4 | 8   | 16   |
@@ -113,8 +113,8 @@ protected:
 
 public:
   // Do not use this interface, use other create
-  static CacheGeneric<State, Addr_t> *create(int32_t size, int32_t assoc, int32_t blksize, int32_t addrUnit, const std::string &pStr,
-                                             bool skew, bool xr,
+  static CacheGeneric<State, Addr_t> *create(int32_t size, int32_t assoc, int32_t blksize, int32_t addrUnit,
+                                             const std::string &pStr, bool skew, bool xr,
                                              uint32_t shct_size = 13);  // 13 is the optimal size specified in the paper
   static CacheGeneric<State, Addr_t> *create(const std::string &section, const std::string &append, const std::string &format);
   void                                destroy() { delete this; }
@@ -371,15 +371,17 @@ protected:
       if (demand_trend < 0) {
         demand_trend = nDemand;
       } else if (demand_trend == nDemand) {
-        if (conf < 15)
+        if (conf < 15) {
           conf++;
+        }
       } else {
         if (conf > 0 && (demand_trend >> 1) != (nDemand >> 1)) {
           conf--;
         }
         demand_trend = (nDemand + demand_trend) / 2;
-        if (nDemand && nDemand > demand_trend)
+        if (nDemand && nDemand > demand_trend) {
           demand_trend++;
+        }
       }
     }
   };
@@ -390,23 +392,26 @@ protected:
   CacheAssoc(int32_t size, int32_t assoc, int32_t blksize, int32_t addrUnit, const std::string &pStr, bool xr);
 
   void adjustRRIP(Line **theSet, Line **setEnd, Line *change_line, uint16_t next_rrip) {
-    if ((change_line)->rrip == next_rrip)
+    if ((change_line)->rrip == next_rrip) {
       return;
+    }
 
     if ((change_line)->rrip > next_rrip) {
       change_line->rrip = next_rrip;
       Line **l          = setEnd - 1;
       while (l >= theSet) {
-        if ((*l)->rrip < change_line->rrip && (*l)->rrip >= next_rrip)
+        if ((*l)->rrip < change_line->rrip && (*l)->rrip >= next_rrip) {
           (*l)->rrip++;
+        }
         l--;
       }
     } else {
       change_line->rrip = next_rrip;
       Line **l          = setEnd - 1;
       while (l >= theSet) {
-        if ((*l)->rrip > change_line->rrip && (*l)->rrip <= next_rrip)
+        if ((*l)->rrip > change_line->rrip && (*l)->rrip <= next_rrip) {
           (*l)->rrip--;
+        }
         l--;
       }
     }
@@ -562,8 +567,8 @@ public:
 
   Addr_t getTag() const { return tag; }
   void   setTag(Addr_t a) {
-      I(a);
-      tag = a;
+    I(a);
+    tag = a;
   }
   void clearTag() {
     tag = 0;
@@ -585,15 +590,18 @@ public:
 
   void setRRPV(uint8_t a) {
     rrpv = a;
-    if (rrpv > (RRIP_M - 1))
+    if (rrpv > (RRIP_M - 1)) {
       rrpv = RRIP_M - 1;
-    if (rrpv < 0)
+    }
+    if (rrpv < 0) {
       rrpv = 0;
+    }
   }
 
   void incRRPV() {
-    if (rrpv < (RRIP_M - 1))
+    if (rrpv < (RRIP_M - 1)) {
       rrpv++;
+    }
   }
 
   virtual bool isValid() const { return tag; }
@@ -637,9 +645,9 @@ public:
 
   Addr_t getTag() const { return tag; }
   void   setTag(Addr_t a) {
-      I(a);
-      tag     = a;
-      nDemand = 0;
+    I(a);
+    tag     = a;
+    nDemand = 0;
   }
   void clearTag() {
     tag     = 0;
@@ -690,7 +698,6 @@ inline constexpr std::string_view k_UAR     = "uar";
 template <class State, class Addr_t>
 CacheGeneric<State, Addr_t> *CacheGeneric<State, Addr_t>::create(int32_t size, int32_t assoc, int32_t bsize, int32_t addrUnit,
                                                                  const std::string &pStr, bool skew, bool xr, uint32_t shct_size) {
-
   if (size / bsize < assoc) {
     Config::add_error(fmt::format("Invalid cache configuration size {}, line {}, assoc {} (increase size, or decrease line)",
                                   size,
@@ -705,7 +712,7 @@ CacheGeneric<State, Addr_t> *CacheGeneric<State, Addr_t>::create(int32_t size, i
   }
 
   std::string pStr_lc{pStr};
-  std::transform(pStr_lc.begin(), pStr_lc.end(), pStr_lc.begin(), [](unsigned char c){ return std::tolower(c); });
+  std::transform(pStr_lc.begin(), pStr_lc.end(), pStr_lc.begin(), [](unsigned char c) { return std::tolower(c); });
 
   CacheGeneric *cache;
   if (skew) {
@@ -768,7 +775,8 @@ void CacheGeneric<State, Addr_t>::createStats(const std::string &section, const 
 }
 
 template <class State, class Addr_t>
-CacheGeneric<State, Addr_t> *CacheGeneric<State, Addr_t>::create(const std::string &section, const std::string &append, const std::string &cache_name) {
+CacheGeneric<State, Addr_t> *CacheGeneric<State, Addr_t>::create(const std::string &section, const std::string &append,
+                                                                 const std::string &cache_name) {
   CacheGeneric *cache = 0;
 
   auto size_sec        = fmt::format("{}_size", append);
@@ -789,16 +797,23 @@ CacheGeneric<State, Addr_t> *CacheGeneric<State, Addr_t>::create(const std::stri
   }
   // printf("Created %s cache, with size:%d, assoc %d, bsize %d\n",section,s,a,b);
   bool sk = false;
-  if (Config::has_entry(section, skew_sec))
+  if (Config::has_entry(section, skew_sec)) {
     sk = Config::get_bool(section, skew_sec);
+  }
   int32_t u = 1;
   if (Config::has_entry(section, addrUnit_sec)) {
     u = Config::get_power2(section, addrUnit_sec, 0, b);
   }
 
   // C++20 will cleanup this avoiding explicit std::string conversion
-  std::vector<std::string> allowed = {std::string(k_RANDOM), std::string(k_LRU), std::string(k_SHIP), std::string(k_LRUp), std::string(k_HAWKEYE), std::string(k_PAR), std::string(k_UAR)};
-  auto pStr_lc = Config::get_string(section, repl_policy_sec, allowed);
+  std::vector<std::string> allowed = {std::string(k_RANDOM),
+                                      std::string(k_LRU),
+                                      std::string(k_SHIP),
+                                      std::string(k_LRUp),
+                                      std::string(k_HAWKEYE),
+                                      std::string(k_PAR),
+                                      std::string(k_UAR)};
+  auto                     pStr_lc = Config::get_string(section, repl_policy_sec, allowed);
 
   // SHIP
   uint32_t shct_size = 0;
@@ -824,24 +839,25 @@ CacheGeneric<State, Addr_t> *CacheGeneric<State, Addr_t>::create(const std::stri
  *********************************************************/
 
 template <class State, class Addr_t>
-CacheAssoc<State, Addr_t>::CacheAssoc(int32_t size, int32_t assoc, int32_t blksize, int32_t addrUnit, const std::string &pStr, bool xr)
+CacheAssoc<State, Addr_t>::CacheAssoc(int32_t size, int32_t assoc, int32_t blksize, int32_t addrUnit, const std::string &pStr,
+                                      bool xr)
     : CacheGeneric<State, Addr_t>(size, assoc, blksize, addrUnit, xr) {
   I(numLines > 0);
 
   std::string pStr_lc{pStr};
-  std::transform(pStr_lc.begin(), pStr_lc.end(), pStr_lc.begin(), [](unsigned char c){ return std::tolower(c); });
+  std::transform(pStr_lc.begin(), pStr_lc.end(), pStr_lc.begin(), [](unsigned char c) { return std::tolower(c); });
 
-  if (pStr_lc == k_RANDOM)
+  if (pStr_lc == k_RANDOM) {
     policy = RANDOM;
-  else if (pStr_lc == k_LRU)
+  } else if (pStr_lc == k_LRU) {
     policy = LRU;
-  else if (pStr_lc == k_LRUp)
+  } else if (pStr_lc == k_LRUp) {
     policy = LRUp;
-  else if (pStr_lc == k_PAR)
+  } else if (pStr_lc == k_PAR) {
     policy = PAR;
-  else if (pStr_lc == k_UAR)
+  } else if (pStr_lc == k_UAR) {
     policy = UAR;
-  else if (pStr_lc == k_HAWKEYE) {
+  } else if (pStr_lc == k_HAWKEYE) {
     Config::add_error(fmt::format("Invalid cache policy. HawkCache should be used [{}]", pStr_lc));
   } else {
     Config::add_error(fmt::format("Invalid cache policy [{}]", pStr_lc));
@@ -891,8 +907,9 @@ typename CacheAssoc<State, Addr_t>::Line *CacheAssoc<State, Addr_t>::findLineNoE
     }
   }
 
-  if (lineHit == 0)
+  if (lineHit == 0) {
     return 0;
+  }
 
   return *lineHit;
 }
@@ -1013,8 +1030,9 @@ typename CacheAssoc<State, Addr_t>::Line *CacheAssoc<State, Addr_t>::findLine2Re
     GI(tag, (*theSet)->isValid());
 
     if (policy == PAR || policy == UAR) {
-      if (prefetch)
+      if (prefetch) {
         I(tag == 0);
+      }
 
       uint16_t next_rrip = (*theSet)->rrip;
       if (tag) {
@@ -1022,8 +1040,9 @@ typename CacheAssoc<State, Addr_t>::Line *CacheAssoc<State, Addr_t>::findLine2Re
       } else if ((*theSet)->rrip < RRIP_PREF_MAX) {
         if (prefetch) {
           next_rrip = RRIP_PREF_MAX;
-        } else
+        } else {
           next_rrip = RRIP_MAX;
+        }
       }
       adjustRRIP(theSet, setEnd, *theSet, next_rrip);
     }
@@ -1042,15 +1061,16 @@ typename CacheAssoc<State, Addr_t>::Line *CacheAssoc<State, Addr_t>::findLine2Re
         lineHit = l;
         break;
       }
-      if (!(*l)->isValid())
+      if (!(*l)->isValid()) {
         lineFree = l;
-      else if (lineFree == 0)
+      } else if (lineFree == 0) {
         lineFree = l;
-      else if ((*l)->rrip < (*lineFree)->rrip)  // == too to add a bit of LRU order between same RIPs
+      } else if ((*l)->rrip < (*lineFree)->rrip) {  // == too to add a bit of LRU order between same RIPs
         lineFree = l;
-      else if (policy == UAR && ((*l)->rrip == (*lineFree)->rrip)) {
-        if (pc2tracker[(*l)->getPC()].demand_trend < pc2tracker[(*lineFree)->getPC()].demand_trend)
+      } else if (policy == UAR && ((*l)->rrip == (*lineFree)->rrip)) {
+        if (pc2tracker[(*l)->getPC()].demand_trend < pc2tracker[(*lineFree)->getPC()].demand_trend) {
           lineFree = l;
+        }
       }
 
       l--;
@@ -1065,8 +1085,9 @@ typename CacheAssoc<State, Addr_t>::Line *CacheAssoc<State, Addr_t>::findLine2Re
     if (policy == RANDOM) {
       lineFree = &theSet[irand];
       irand    = (irand + 1) & maskAssoc;
-      if (irand == 0)
+      if (irand == 0) {
         irand = (irand + 1) & maskAssoc;  // Not MRU
+      }
     } else {
       I(policy == LRU || policy == LRUp || policy == PAR || policy == UAR);
       // Get the oldest line possible
@@ -1075,8 +1096,9 @@ typename CacheAssoc<State, Addr_t>::Line *CacheAssoc<State, Addr_t>::findLine2Re
 
     I(lineFree);
 
-    if (lineFree == theSet && policy != PAR && policy != UAR)
+    if (lineFree == theSet && policy != PAR && policy != UAR) {
       return *lineFree;  // Hit in the first possition
+    }
 
     tmp     = *lineFree;
     tmp_pos = lineFree;
@@ -1175,12 +1197,13 @@ typename CacheAssoc<State, Addr_t>::Line *CacheAssoc<State, Addr_t>::findLine2Re
  *********************************************************/
 
 template <class State, class Addr_t>
-HawkCache<State, Addr_t>::HawkCache(int32_t size, int32_t assoc, int32_t blksize, int32_t addrUnit, const std::string &pStr, bool xr)
+HawkCache<State, Addr_t>::HawkCache(int32_t size, int32_t assoc, int32_t blksize, int32_t addrUnit, const std::string &pStr,
+                                    bool xr)
     : CacheGeneric<State, Addr_t>(size, assoc, blksize, addrUnit, xr) {
   I(numLines > 0);
 
   std::string pStr_lc{pStr};
-  std::transform(pStr_lc.begin(), pStr_lc.end(), pStr_lc.begin(), [](unsigned char c){ return std::tolower(c); });
+  std::transform(pStr_lc.begin(), pStr_lc.end(), pStr_lc.begin(), [](unsigned char c) { return std::tolower(c); });
 
   if (pStr_lc != k_HAWKEYE) {
     Config::add_error(fmt::format("Invalid cache policy. Cache should be used [{}]", pStr_lc));
@@ -1242,8 +1265,9 @@ typename HawkCache<State, Addr_t>::Line *HawkCache<State, Addr_t>::findLineNoEff
     }
   }
 
-  if (lineHit == 0)
+  if (lineHit == 0) {
     return 0;
+  }
 
   return *lineHit;
 }
@@ -1295,14 +1319,16 @@ typename HawkCache<State, Addr_t>::Line *HawkCache<State, Addr_t>::findLinePriva
     }
   }
   for (int i = 0; i < trAddSize; i++) {  // Update usage interval for all tracked addresses
-    if (trackedAddresses[i] == 0)
+    if (trackedAddresses[i] == 0) {
       continue;
+    }
     if (trackedAddresses[i] == tag) {
       curAddr = i;
     }
 
-    if (usageInterval[getUsageIntervalHash(trackedAddresses[i])] < 255)
+    if (usageInterval[getUsageIntervalHash(trackedAddresses[i])] < 255) {
       usageInterval[getUsageIntervalHash(trackedAddresses[i])]++;
+    }
   }
 
   if (usageInterval[hashAddr] > 0) {  // Address has been loaded before
@@ -1322,8 +1348,9 @@ typename HawkCache<State, Addr_t>::Line *HawkCache<State, Addr_t>::findLinePriva
     // If it doesn't miss, increase occupancy vector during liveness interval
     if (missFlag != 1) {
       for (int i = limit; i < occVectIterator; i++) {
-        if (occupancyVector[i] < 255)
+        if (occupancyVector[i] < 255) {
           occupancyVector[i]++;
+        }
       }
       usageInterval[hashAddr]   = 0;
       trackedAddresses[curAddr] = 0;
@@ -1342,8 +1369,9 @@ typename HawkCache<State, Addr_t>::Line *HawkCache<State, Addr_t>::findLinePriva
     }
     if (!found) {
       trackedAddresses[trackedAddresses_ptr++] = tag;
-      if (trackedAddresses_ptr >= trackedAddresses.size())
+      if (trackedAddresses_ptr >= trackedAddresses.size()) {
         trackedAddresses_ptr = 0;
+      }
     }
   }
 
@@ -1418,10 +1446,11 @@ typename HawkCache<State, Addr_t>::Line *HawkCache<State, Addr_t>::findLine2Repl
         lineHit = l;
         break;
       }
-      if (!(*l)->isValid())
+      if (!(*l)->isValid()) {
         lineFree = l;
-      else if (lineFree == 0)
+      } else if (lineFree == 0) {
         lineFree = l;
+      }
 
       l--;
     }
@@ -1447,8 +1476,9 @@ typename HawkCache<State, Addr_t>::Line *HawkCache<State, Addr_t>::findLine2Repl
   // if no lines have rrip == 7, revert to LRU and detrain hawk prediction
   if (lineFree == tmp && (*lineFree)->rrip != 7) {
     lineFree = setEnd - 1;
-    if (prediction[getPredictionHash(pc)] > 0)
+    if (prediction[getPredictionHash(pc)] > 0) {
       prediction[getPredictionHash(pc)]--;
+    }
   }
 
   I(lineFree);
@@ -1619,13 +1649,14 @@ typename CacheDMSkew<State, Addr_t>::Line *CacheDMSkew<State, Addr_t>::findLine2
   }
 
   while (1) {
-    if (rand_number > 2)
+    if (rand_number > 2) {
       rand_number = 0;
+    }
 
     if (rand_number == 0) {
-      if (line1->recent)
+      if (line1->recent) {
         line1->recent = false;
-      else {
+      } else {
         line1->recent = true;
         line2->recent = false;
         line3->recent = false;
@@ -1633,18 +1664,18 @@ typename CacheDMSkew<State, Addr_t>::Line *CacheDMSkew<State, Addr_t>::findLine2
       }
     }
     if (rand_number == 1) {
-      if (line2->recent)
+      if (line2->recent) {
         line2->recent = false;
-      else {
+      } else {
         line1->recent = false;
         line2->recent = true;
         line3->recent = false;
         return line2;
       }
     } else {
-      if (line3->recent)
+      if (line3->recent) {
         line3->recent = false;
-      else {
+      } else {
         line1->recent = false;
         line2->recent = false;
         line3->recent = true;
@@ -1653,8 +1684,9 @@ typename CacheDMSkew<State, Addr_t>::Line *CacheDMSkew<State, Addr_t>::findLine2
     }
   }
 #else
-  if ((rand_number & 1) == 0)
+  if ((rand_number & 1) == 0) {
     return line1;
+  }
   return line2;
 #endif
   // END Skew cache
@@ -1674,7 +1706,7 @@ CacheSHIP<State, Addr_t>::CacheSHIP(int32_t size, int32_t assoc, int32_t blksize
   SHCT = new uint8_t[(2 << log2shct)];
 
   std::string pStr_lc{pStr};
-  std::transform(pStr_lc.begin(), pStr_lc.end(), pStr_lc.begin(), [](unsigned char c){ return std::tolower(c); });
+  std::transform(pStr_lc.begin(), pStr_lc.end(), pStr_lc.begin(), [](unsigned char c) { return std::tolower(c); });
 
   if (pStr_lc == k_SHIP) {
     policy = SHIP;
@@ -1754,8 +1786,9 @@ typename CacheSHIP<State, Addr_t>::Line *CacheSHIP<State, Addr_t>::findLinePriva
 
     (*lineHit)->setOutcome(true);
 
-    if (SHCT[signature] < 7)  // 3 bit counter. But why? Whatabout 2^log2Assoc - 1
+    if (SHCT[signature] < 7) {  // 3 bit counter. But why? Whatabout 2^log2Assoc - 1
       SHCT[signature] += 1;
+    }
   }
 
   (*lineHit)->setRRPV(0);

@@ -8,10 +8,9 @@
 
 #include "DepWindow.h"
 #include "estl.h"
-
-#include "stats.hpp"
 #include "iassert.hpp"
 #include "instruction.hpp"
+#include "stats.hpp"
 
 class Resource;
 class GMemorySystem;
@@ -75,8 +74,9 @@ public:
   void       add_inst(Dinst *dinst);
 
   int32_t getAvailSpace() const {
-    if (regPool < windowSize)
+    if (regPool < windowSize) {
       return regPool;
+    }
     return windowSize;
   }
   int32_t getNReady() const { return nready; }

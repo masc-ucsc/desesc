@@ -46,10 +46,11 @@ void DepWindow::preSelect(Dinst *dinst) {
 
 void DepWindow::select(Dinst *dinst) {
   Time_t schedTime = schedPort->nextSlot(dinst->has_stats());
-  if (dinst->hasInterCluster())
+  if (dinst->hasInterCluster()) {
     schedTime += inter_cluster_lat;
-  else
+  } else {
     schedTime += sched_lat;
+  }
 
   I(srcCluster == dinst->getCluster());
 
@@ -65,8 +66,9 @@ void DepWindow::executed(Dinst *dinst) {
   dinst->markExecuted();
   dinst->clearRATEntry();
 
-  if (!dinst->hasPending())
+  if (!dinst->hasPending()) {
     return;
+  }
 
   // NEVER HERE FOR in-order cores
 

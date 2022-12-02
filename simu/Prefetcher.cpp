@@ -59,20 +59,24 @@ Prefetcher::Prefetcher(MemObj *_l1, int hartid)
 void Prefetcher::exe(Dinst *dinst)
 /* forward bus read {{{1 */
 {
-  if (apred == 0)
+  if (apred == 0) {
     return;
+  }
 
   auto conf_level = apred->exe_update(dinst->getPC(), dinst->getAddr(), dinst->getData());
 
-  if (pending_preq_pc == dinst->getPC() && pending_preq_conf > 4 * static_cast<int>(conf_level))
+  if (pending_preq_pc == dinst->getPC() && pending_preq_conf > 4 * static_cast<int>(conf_level)) {
     return;  // Do not kill itself
+  }
 
-  if (conf_level == Conf_level::None || conf_level == Conf_level::Low)
+  if (conf_level == Conf_level::None || conf_level == Conf_level::Low) {
     return;  // too low of a chance
+  }
 
   avgPrefetchConf.sample(conf, dinst->has_stats());
-  if (pending_prefetch && (curPrefetch - distance) > 0)
+  if (pending_prefetch && (curPrefetch - distance) > 0) {
     avgPrefetchNum.sample(curPrefetch - distance, pending_statsFlag);
+  }
 
   pending_preq_pc   = dinst->getPC();
   pending_preq_conf = 4 * static_cast<int>(conf_level);
@@ -99,8 +103,9 @@ void Prefetcher::exe(Dinst *dinst)
 void Prefetcher::ret(Dinst *dinst)
 // {{{1 update prefetcher state at retirement
 {
-  if (apred == nullptr)
+  if (apred == nullptr) {
     return;
+  }
 
   apred->ret_update(dinst->getPC(), dinst->getAddr(), dinst->getData());
 }
@@ -111,11 +116,13 @@ void Prefetcher::nextPrefetch()
 {
   I(apred);
 
-  if (!pending_prefetch)
+  if (!pending_prefetch) {
     return;
+  }
 
-  if (pending_preq_conf > 0)
+  if (pending_preq_conf > 0) {
     pending_preq_conf--;
+  }
 
   curPrefetch++;
 
@@ -137,8 +144,9 @@ void Prefetcher::nextPrefetch()
   if ((paddr >> 12) == 0) {
     bool chain = apred->try_chain_predict(DL1, pending_preq_pc, curPrefetch + (curPrefetch - distance));
     if (!chain) {
-      if ((curPrefetch - distance - 1) > 0)
+      if ((curPrefetch - distance - 1) > 0) {
         avgPrefetchNum.sample(curPrefetch - distance - 1, pending_statsFlag);
+      }
       pending_prefetch    = false;
       pending_chain_fetch = 0;
       pending_preq_conf   = 0;

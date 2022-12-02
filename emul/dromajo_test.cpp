@@ -33,7 +33,7 @@
 #include <time.h>
 #include <unistd.h>
 
-//#define REGRESS_COSIM 1
+// #define REGRESS_COSIM 1
 #ifdef REGRESS_COSIM
 #include "dromajo_cosim.h"
 #endif
@@ -48,10 +48,11 @@ void print_branch_info(uint64_t last_pc, uint32_t insn_raw) {
   // for (int i = 0; i < m->ncpus; ++i)
   {
     if (branch_flag) {
-      if (last_pc - last_last_pc == 4)
+      if (last_pc - last_last_pc == 4) {
         fprintf(pc_trace, "%32s\n", "Not Taken Branch");
-      else
+      } else {
         fprintf(pc_trace, "%32s\n", "Taken Branch");
+      }
       branch_flag = 0;
     }
 
@@ -135,10 +136,11 @@ int simpoint_step(RISCVMachine *m, int hartid) {
   static std::unordered_map<uint64_t, int> pc2id;
   static int                               next_id = 1;
   if (m->common.maxinsns <= next_bbv_dump) {
-    if (m->common.maxinsns > SIMPOINT_SIZE)
+    if (m->common.maxinsns > SIMPOINT_SIZE) {
       next_bbv_dump = m->common.maxinsns - SIMPOINT_SIZE;
-    else
+    } else {
       next_bbv_dump = 0;
+    }
 
     if (bbv.size()) {
       fprintf(simpoint_bb_file, "T");
@@ -174,9 +176,10 @@ int simpoint_step(RISCVMachine *m, int hartid) {
 #endif
 
 int iterate_core(RISCVMachine *m, int hartid) {
-  if (m->common.maxinsns-- <= 0)
+  if (m->common.maxinsns-- <= 0) {
     /* Succeed after N instructions without failure. */
     return 0;
+  }
 
   RISCVCPUState *cpu = m->cpu_state[hartid];
 
@@ -195,8 +198,9 @@ int iterate_core(RISCVMachine *m, int hartid) {
 #endif  // BRANCHPROF
 
   int keep_going = virt_machine_run(m, hartid);
-  if (last_pc == virt_machine_get_pc(m, hartid))
+  if (last_pc == virt_machine_get_pc(m, hartid)) {
     return 0;
+  }
 
   if (m->common.trace) {
     --m->common.trace;
@@ -213,23 +217,25 @@ int iterate_core(RISCVMachine *m, int hartid) {
   int iregno = riscv_get_most_recently_written_reg(cpu);
   int fregno = riscv_get_most_recently_written_fp_reg(cpu);
 
-  if (cpu->pending_exception != -1)
+  if (cpu->pending_exception != -1) {
     fprintf(dromajo_stderr,
             " exception %d, tval %016" PRIx64,
             cpu->pending_exception,
             riscv_get_priv_level(cpu) == PRV_M ? cpu->mtval : cpu->stval);
-  else if (iregno > 0)
+  } else if (iregno > 0) {
     fprintf(dromajo_stderr, " x%2d 0x%016" PRIx64, iregno, virt_machine_get_reg(m, hartid, iregno));
-  else if (fregno >= 0)
+  } else if (fregno >= 0) {
     fprintf(dromajo_stderr, " f%2d 0x%016" PRIx64, fregno, virt_machine_get_fpreg(m, hartid, fregno));
-  else
-    for (int i = 31; i >= 0; i--)
+  } else {
+    for (int i = 31; i >= 0; i--) {
       if (cpu->most_recently_written_vregs[i]) {
         fprintf(dromajo_stderr, " v%2d 0x", i);
         for (int j = VLEN / 8 - 1; j >= 0; j--) {
           fprintf(dromajo_stderr, "%02" PRIx8, cpu->v_reg[i][j]);
         }
       }
+    }
+  }
 
   putc('\n', dromajo_stderr);
 
@@ -275,20 +281,24 @@ int main(int argc, char **argv) {
   dromajo_cosim_state_t *costate = 0;
   costate                        = dromajo_cosim_init(argc, argv);
 
-  if (!costate)
+  if (!costate) {
     return 1;
+  }
 
-  while (!dromajo_cosim_step(costate, 0, 0, 0, 0, 0, false))
+  while (!dromajo_cosim_step(costate, 0, 0, 0, 0, 0, false)) {
     ;
+  }
   dromajo_cosim_fini(costate);
 #else
 
   RISCVMachine *m = virt_machine_main(argc, argv);
-  if (!m)
+  if (!m) {
     return 1;
+  }
 
-  if (port_num)
+  if (port_num) {
     gdb_stub(m, port_num);
+  }
 
 #ifdef SIMPOINT_BBhartid
   if (m->common.simpoints.empty()) {
@@ -319,11 +329,14 @@ int main(int argc, char **argv) {
   int keep_going;
   do {
     keep_going = 0;
-    for (int i = 0; i < m->ncpus; ++i) keep_going |= iterate_core(m, i);
+    for (int i = 0; i < m->ncpus; ++i) {
+      keep_going |= iterate_core(m, i);
+    }
 #ifdef SIMPOINT_BB
     if (roi_region) {
-      if (!simpoint_step(m, 0))
+      if (!simpoint_step(m, 0)) {
         break;
+      }
     }
 #endif
     /*#ifdef BRANCHPROF

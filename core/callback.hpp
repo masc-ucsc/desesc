@@ -394,9 +394,9 @@ public:
 #ifndef NDEBUG
     I(isFree);
 #endif
-    if (tim == globalClock)
+    if (tim == globalClock) {
       (*funcPtr)(a1, a2);
-    else {
+    } else {
       p1 = a1;
       p2 = a2;
 #ifndef NDEBUG
@@ -435,9 +435,9 @@ public:
   }
 
   void scheduleAbs(Time_t tim) {
-    if (tim == globalClock)
+    if (tim == globalClock) {
       (*funcPtr)();
-    else {
+    } else {
       EventScheduler::scheduleAbs(tim, this);
     }
   }
@@ -917,9 +917,9 @@ public:
 #ifndef NDEBUG
     I(isFree);
 #endif
-    if (delta == 0)
+    if (delta == 0) {
       (instance->*memberPtr)(a1, a2);
-    else {
+    } else {
       p1 = a1;
       p2 = a2;
 #ifndef NDEBUG
@@ -933,9 +933,9 @@ public:
 #ifndef NDEBUG
     I(isFree);
 #endif
-    if (tim == globalClock)
+    if (tim == globalClock) {
       (instance->*memberPtr)(a1, a2);
-    else {
+    } else {
       p1 = a1;
       p2 = a2;
 #ifndef NDEBUG
@@ -980,9 +980,9 @@ public:
 #ifndef NDEBUG
     I(isFree);
 #endif
-    if (delta == 0)
+    if (delta == 0) {
       (instance->*memberPtr)(a1);
-    else {
+    } else {
       p1 = a1;
 #ifndef NDEBUG
       isFree = false;
@@ -995,9 +995,9 @@ public:
 #ifndef NDEBUG
     I(isFree);
 #endif
-    if (tim == globalClock)
+    if (tim == globalClock) {
       (instance->*memberPtr)(a1);
-    else {
+    } else {
       p1 = a1;
 #ifndef NDEBUG
       isFree = false;
@@ -1038,9 +1038,9 @@ public:
 #ifndef NDEBUG
     I(isFree);
 #endif
-    if (delta == 0)
+    if (delta == 0) {
       call();
-    else {
+    } else {
 #ifndef NDEBUG
       isFree = false;
 #endif
@@ -1052,9 +1052,9 @@ public:
 #ifndef NDEBUG
     I(isFree);
 #endif
-    if (tim == globalClock)
+    if (tim == globalClock) {
       call();
-    else {
+    } else {
 #ifndef NDEBUG
       isFree = false;
 #endif
@@ -1109,8 +1109,9 @@ public:
 
   void call() {
     // optimization for te most common case
-    if (first == 0)
+    if (first == 0) {
       return;
+    }
 
     do {
       CallbackBase *cb = first;
@@ -1121,8 +1122,9 @@ public:
 #ifndef NDEBUG
       t->setNextCallbackBase(0);
 #endif
-      if (first == 0)
+      if (first == 0) {
         last = 0;
+      }
       cb->call();
       size--;
     } while (first);
@@ -1130,8 +1132,9 @@ public:
 
   void mycall() {
     // optimization for te most common case
-    if (first == 0)
+    if (first == 0) {
       return;
+    }
 
     uint64_t mysize = size;
     do {
@@ -1143,8 +1146,9 @@ public:
 #ifndef NDEBUG
       t->setNextCallbackBase(0);
 #endif
-      if (first == 0)
+      if (first == 0) {
         last = 0;
+      }
       cb->call();
       size--;
       mysize--;
@@ -1152,8 +1156,9 @@ public:
   }
 
   void callNext() {
-    if (first == 0)
+    if (first == 0) {
       return;
+    }
 
     CallbackBase *cb = first;
 #ifndef NDEBUG
@@ -1163,8 +1168,9 @@ public:
 #ifndef NDEBUG
     t->setNextCallbackBase(0);
 #endif
-    if (first == 0)
+    if (first == 0) {
       last = 0;
+    }
 
     cb->call();
   }

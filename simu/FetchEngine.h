@@ -4,12 +4,11 @@
 
 #include "AddressPredictor.h"
 #include "BPred.h"
-
-#include "stats.hpp"
 #include "emul_base.hpp"
 #include "iassert.hpp"
+#include "stats.hpp"
 
-//#define ENABLE_LDBP
+// #define ENABLE_LDBP
 
 class GMemorySystem;
 class IBucket;
@@ -49,14 +48,16 @@ private:
       data   = d;
       delta0 = (addr == a);
       addr   = a;
-      if (used > 0)
+      if (used > 0) {
         used--;
+      }
     }
 
     bool isChained() const { return used >= 6; }
     void chain() {
-      if (used < 6)
+      if (used < 6) {
         used += 2;
+      }
       used = 0;  // disable chaining loads
     }
 
@@ -65,8 +66,9 @@ private:
       return chained;
     }
     void dec_chain() {
-      if (chained == 0)
+      if (chained == 0) {
         return;
+      }
       chained--;
     }
   };

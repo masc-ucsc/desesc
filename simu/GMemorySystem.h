@@ -16,7 +16,7 @@ class MemoryObjContainer {
 private:
   std::vector<MemObj *>                   mem_node;
   typedef std::map<std::string, MemObj *> StrToMemoryObjMapper;
-  StrToMemoryObjMapper intlMemoryObjContainer;
+  StrToMemoryObjMapper                    intlMemoryObjContainer;
 
 public:
   void addMemoryObj(const std::string &device_name, MemObj *obj);
@@ -30,7 +30,7 @@ public:
 class GMemorySystem {
 private:
   typedef std::map<std::string, uint32_t> StrCounterType;
-  static StrCounterType usedNames;
+  static StrCounterType                   usedNames;
 
   static MemoryObjContainer sharedMemoryObjContainer;
   MemoryObjContainer       *localMemoryObjContainer;

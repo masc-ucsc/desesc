@@ -39,8 +39,9 @@ Resource::Resource(uint8_t type, Cluster *cls, PortGeneric *aGen, TimeDelta_t l,
     , coreid(cpuid)
     , usedTime(0) {
   I(cls);
-  if (gen)
+  if (gen) {
     gen->subscribe();
+  }
 
   auto core_type = Config::get_string("soc", "core", cpuid, "type", {"inorder", "ooo", "accel"});
   std::transform(core_type.begin(), core_type.end(), core_type.begin(), [](unsigned char c) { return std::toupper(c); });
@@ -50,8 +51,9 @@ Resource::Resource(uint8_t type, Cluster *cls, PortGeneric *aGen, TimeDelta_t l,
 /* }}} */
 
 void Resource::setStats(const Dinst *dinst) {
-  if (!dinst->has_stats())
+  if (!dinst->has_stats()) {
     return;
+  }
 
   Time_t t;
 
@@ -75,8 +77,9 @@ Resource::~Resource()
     fmt::print("Resources destroyed with {} pending instructions (small is OK)\n", EventScheduler::size());
   }
 
-  if (gen)
+  if (gen) {
     gen->unsubscribe();
+  }
 }
 /* }}} */
 
@@ -119,8 +122,9 @@ MemReplay::MemReplay(uint8_t type, Cluster *cls, PortGeneric *gen, std::shared_p
 }
 
 void MemReplay::replayManage(Dinst *dinst) {
-  if (dinst->getSSID() == -1)
+  if (dinst->getSSID() == -1) {
     return;
+  }
 
   int  pos     = -1;
   int  pos2    = 0;
@@ -129,11 +133,13 @@ void MemReplay::replayManage(Dinst *dinst) {
   SSID_t did = dinst->getSSID();
 
   for (uint32_t i = 0; i < lfSize; i++) {
-    if (lf[pos2].id < lf[i].id && lf[i].ssid != did)
+    if (lf[pos2].id < lf[i].id && lf[i].ssid != did) {
       pos2 = i;
+    }
 
-    if (lf[i].id >= dinst->getID())
+    if (lf[i].id >= dinst->getID()) {
       continue;
+    }
     if (lf[i].ssid == -1) {
       if (!updated) {
         lf[i].ssid = did;
@@ -160,8 +166,9 @@ void MemReplay::replayManage(Dinst *dinst) {
       continue;
     }
     if (lf[i].addr != dinst->getAddr()) {
-      if (pos == -1)
+      if (pos == -1) {
         pos = i;
+      }
       continue;
     }
 
@@ -221,8 +228,9 @@ void MemReplay::replayManage(Dinst *dinst) {
                  dinst->getID() - lf[i].id);
 #endif
       storeset->mergeset(lf[i].ssid, dinst->getSSID());
-      if (lf[i].ssid > dinst->getSSID())
+      if (lf[i].ssid > dinst->getSSID()) {
         lf[i].ssid = dinst->getSSID();
+      }
 
       lf[i].ssid = dinst->getSSID();
       lf[i].id   = dinst->getID();
@@ -261,23 +269,28 @@ StallCause FULoad::canIssue(Dinst *dinst) {
 #endif
     return OutsLoadsStall;
   }
-  if (!lsq->hasFreeEntries())
+  if (!lsq->hasFreeEntries()) {
     return OutsLoadsStall;
+  }
 
-  if (inorder)
-    if (lsq->hasPendingResolution())
+  if (inorder) {
+    if (lsq->hasPendingResolution()) {
       return OutsLoadsStall;
+    }
+  }
 
-  if (!lsq->insert(dinst))
+  if (!lsq->insert(dinst)) {
     return OutsLoadsStall;
+  }
 
   storeset->insert(dinst);
   // call vtage->rename() here????
 
   lsq->decFreeEntries();
 
-  if (!LSQlateAlloc)
+  if (!LSQlateAlloc) {
     freeEntries--;
+  }
   return NoStall;
 }
 /* }}} */
@@ -286,8 +299,9 @@ void FULoad::executing(Dinst *dinst) {
   /* executing {{{1 */
 
 #ifndef LSQ_LATE_EXECUTED
-  if (LSQlateAlloc)
+  if (LSQlateAlloc) {
     freeEntries--;
+  }
 #endif
 
   cluster->executing(dinst);
@@ -298,8 +312,9 @@ void FULoad::executing(Dinst *dinst) {
   if (qdinst) {
     I(qdinst->getInst()->isStore());
     dinst->getGProc()->replay(dinst);
-    if (!dinst->getGProc()->is_nuking())
+    if (!dinst->getGProc()->is_nuking()) {
       stldViolations.inc(dinst->has_stats());
+    }
 
     storeset->stldViolation(qdinst, dinst);
   }
@@ -348,8 +363,9 @@ void FULoad::executed(Dinst *dinst) {
   /* executed {{{1 */
 
 #ifdef LSQ_LATE_EXECUTED
-  if (LSQlateAlloc)
+  if (LSQlateAlloc) {
     freeEntries--;
+  }
 #endif
 
   if (dinst->getChained()) {
@@ -376,8 +392,9 @@ bool FULoad::preretire(Dinst *dinst, bool flushing)
   (void)flushing;
 
   bool done = dinst->isDispatched();
-  if (!done)
+  if (!done) {
     return false;
+  }
 
 #ifdef USE_PNR
   freeEntries++;
@@ -393,8 +410,9 @@ bool FULoad::retire(Dinst *dinst, bool flushing)
 /* retire {{{1 */
 {
   (void)flushing;
-  if (!dinst->isPerformed())
+  if (!dinst->isPerformed()) {
     return false;
+  }
 
   lsq->incFreeEntries();
 #ifndef USE_PNR
@@ -450,22 +468,27 @@ FUStore::FUStore(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *_lsq, std::
 StallCause FUStore::canIssue(Dinst *dinst) {
   /* canIssue {{{1 */
 
-  if (dinst->getInst()->isStoreAddress())
+  if (dinst->getInst()->isStoreAddress()) {
     return NoStall;
+  }
 
   if (freeEntries <= 0) {
     I(freeEntries == 0);  // Can't be negative
     return OutsStoresStall;
   }
-  if (!lsq->hasFreeEntries())
+  if (!lsq->hasFreeEntries()) {
     return OutsStoresStall;
+  }
 
-  if (inorder)
-    if (lsq->hasPendingResolution())
+  if (inorder) {
+    if (lsq->hasPendingResolution()) {
       return OutsStoresStall;
+    }
+  }
 
-  if (!lsq->insert(dinst))
+  if (!lsq->insert(dinst)) {
     return OutsStoresStall;
+  }
 
   storeset->insert(dinst);
 
@@ -519,8 +542,9 @@ void FUStore::executing(Dinst *dinst) {
     Dinst *qdinst = lsq->executing(dinst);
     if (qdinst) {
       dinst->getGProc()->replay(qdinst);
-      if (!dinst->getGProc()->is_nuking())
+      if (!dinst->getGProc()->is_nuking()) {
         stldViolations.inc(dinst->has_stats());
+      }
       storeset->stldViolation(qdinst, dinst);
     }
   }
@@ -546,8 +570,9 @@ void FUStore::executing(Dinst *dinst) {
 void FUStore::executed(Dinst *dinst) {
   /* executed */
 
-  if (dinst->getInst()->isStore())
+  if (dinst->getInst()->isStore()) {
     storeset->remove(dinst);
+  }
 
   cluster->executed(dinst);
 }
@@ -565,8 +590,9 @@ bool FUStore::preretire(Dinst *dinst, bool flushing) {
     performed(dinst);
     return true;
   }
-  if (!scb->can_accept_st(dinst->getAddr()))
+  if (!scb->can_accept_st(dinst->getAddr())) {
     return false;
+  }
 
   if (firstLevelMemObj->isBusy(dinst->getAddr())) {
     return false;
@@ -703,8 +729,9 @@ StallCause FUBranch::canIssue(Dinst *dinst) {
   /* canIssue {{{1 */
 
   I(dinst->getInst()->isControl());
-  if (freeBranches == 0)
+  if (freeBranches == 0) {
     return OutsBranchesStall;
+  }
 
   freeBranches--;
 
@@ -792,12 +819,14 @@ StallCause FURALU::canIssue(Dinst *dinst)
 
     return SyscallStall;
   } else if (!dinst->getInst()->hasDstRegister() && !dinst->getInst()->hasSrc1Register() && !dinst->getInst()->hasSrc2Register()) {
-    if (dinst->getGProc()->isROBEmpty())
+    if (dinst->getGProc()->isROBEmpty()) {
       return NoStall;
-    if (dinst->getAddr() == 0xbeefbeef)
+    }
+    if (dinst->getAddr() == 0xbeefbeef) {
       imemoryBarrier.inc(dinst->has_stats());
-    else
+    } else {
       dmemoryBarrier.inc(dinst->has_stats());
+    }
     // FIXME return SyscallStall;
   }
 

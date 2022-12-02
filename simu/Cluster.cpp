@@ -50,8 +50,9 @@ void Cluster::buildUnit(const std::string &clusterName, uint32_t pos, GMemorySys
                         GProcessor *gproc) {
   auto unitType = Instruction::opcode2Name(type);
 
-  if (!Config::has_entry(clusterName, unitType))
+  if (!Config::has_entry(clusterName, unitType)) {
     return;
+  }
   auto sUnitName = Config::get_string(clusterName, unitType);
 
   int id      = cpuid;
@@ -118,8 +119,9 @@ void Cluster::buildUnit(const std::string &clusterName, uint32_t pos, GMemorySys
       case iBALU_RCALL:
       case iBALU_RET: {
         auto max_branches = Config::get_integer("soc", "core", cpuid, "max_branches");
-        if (max_branches == 0)
+        if (max_branches == 0) {
           max_branches = INT_MAX;
+        }
         bool drain_on_miss = Config::get_bool("soc", "core", cpuid, "drain_on_miss");
 
         r = new FUBranch(type, cluster, gen, lat, cpuid, max_branches, drain_on_miss);
@@ -127,8 +129,9 @@ void Cluster::buildUnit(const std::string &clusterName, uint32_t pos, GMemorySys
       case iLALU_LD: {
         TimeDelta_t st_fwd_delay = Config::get_integer("soc", "core", cpuid, "st_fwd_delay");
         int32_t     ldq_size     = Config::get_integer("soc", "core", cpuid, "ldq_size", 0, 256 * 1024);
-        if (ldq_size == 0)
+        if (ldq_size == 0) {
           ldq_size = 256 * 1024;
+        }
 
         r = new FULoad(type,
                        cluster,
@@ -149,8 +152,9 @@ void Cluster::buildUnit(const std::string &clusterName, uint32_t pos, GMemorySys
       case iSALU_ST:
       case iSALU_ADDR: {
         int32_t stq_size = Config::get_integer("soc", "core", cpuid, "stq_size", 0, 256 * 1024);
-        if (stq_size == 0)
+        if (stq_size == 0) {
           stq_size = 256 * 1024;
+        }
 
         r = new FUStore(type,
                         cluster,
@@ -220,15 +224,18 @@ void Cluster::select(Dinst *dinst) {
 }
 
 StallCause Cluster::canIssue(Dinst *dinst) const {
-  if (regPool <= 0)
+  if (regPool <= 0) {
     return SmallREGStall;
+  }
 
-  if (windowSize <= 0)
+  if (windowSize <= 0) {
     return SmallWinStall;
+  }
 
   StallCause sc = window.canIssue(dinst);
-  if (sc != NoStall)
+  if (sc != NoStall) {
     return sc;
+  }
 
   return dinst->getClusterResource()->canIssue(dinst);
 }
@@ -271,8 +278,9 @@ void ExecutingCluster::executed(Dinst *dinst) {
 bool ExecutingCluster::retire(Dinst *dinst, bool reply) {
   bool done = dinst->getClusterResource()->retire(dinst, reply);
 
-  if (!done)
+  if (!done) {
     return false;
+  }
 
   bool hasDest = (dinst->getInst()->hasDstRegister());
 
@@ -309,8 +317,9 @@ void ExecutedCluster::executed(Dinst *dinst) {
 
 bool ExecutedCluster::retire(Dinst *dinst, bool reply) {
   bool done = dinst->getClusterResource()->retire(dinst, reply);
-  if (!done)
+  if (!done) {
     return false;
+  }
 
   bool hasDest = (dinst->getInst()->hasDstRegister());
   if (hasDest) {
@@ -343,8 +352,9 @@ void RetiredCluster::executed(Dinst *dinst) {
 
 bool RetiredCluster::retire(Dinst *dinst, bool reply) {
   bool done = dinst->getClusterResource()->retire(dinst, reply);
-  if (!done)
+  if (!done) {
     return false;
+  }
 
   I(dinst->getGProc()->get_hid() == dinst->getFlowId());
 

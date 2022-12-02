@@ -64,11 +64,13 @@ bool SCTable::predict(uint32_t cid, bool taken) {
   bool ptaken = ((*entry) >= Saturate);
 
   if (taken) {
-    if (*entry < MaxValue)
+    if (*entry < MaxValue) {
       *entry = (*entry) + 1;
+    }
   } else {
-    if (*entry > 0)
+    if (*entry > 0) {
       *entry = (*entry) - 1;
+    }
   }
 
   return ptaken;
@@ -76,28 +78,32 @@ bool SCTable::predict(uint32_t cid, bool taken) {
 
 void SCTable::inc(uint32_t cid, int d) {
   uint8_t *entry = &table[cid & sizeMask];
-  if ((d + *entry) < MaxValue)
+  if ((d + *entry) < MaxValue) {
     *entry = (*entry) + d;
-  else
+  } else {
     *entry = MaxValue;
+  }
 }
 
 void SCTable::dec(uint32_t cid, int d) {
   uint8_t *entry = &table[cid & sizeMask];
-  if ((d - *entry) > 0)
+  if ((d - *entry) > 0) {
     *entry = (*entry) + d;
-  else
+  } else {
     *entry = 0;
+  }
 }
 
 void SCTable::update(uint32_t cid, bool taken) {
   uint8_t *entry = &table[cid & sizeMask];
 
   if (taken) {
-    if (*entry < MaxValue)
+    if (*entry < MaxValue) {
       *entry = (*entry) + 1;
+    }
   } else {
-    if (*entry > 0)
+    if (*entry > 0) {
       *entry = (*entry) - 1;
+    }
   }
 }

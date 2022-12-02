@@ -45,8 +45,9 @@ CacheDebugAccess *CacheDebugAccess::getInstance() {
 
 void CacheDebugAccess::setCacheAccess(char *cacheLevel) {
   string s = string(cacheLevel);
-  if (s.compare("DL10") == 0 || s.compare("niceCache0") == 0 || s.compare("L3") == 0 || s.compare("L20") == 0)
+  if (s.compare("DL10") == 0 || s.compare("niceCache0") == 0 || s.compare("L3") == 0 || s.compare("L20") == 0) {
     debugMap[s] = true;
+  }
 }
 
 // Careful! Returns false for non-existing entry in map.
@@ -60,8 +61,9 @@ int CacheDebugAccess::cacheAccessSum(void) {
   int                         sum = 0;
   map<string, bool>::iterator it;
   for (it = debugMap.begin(); it != debugMap.end(); it++) {
-    if (it->second)
+    if (it->second) {
       sum++;
+    }
   }
   return sum;
 }

@@ -16,10 +16,11 @@ void counter_fsm() {
 
   // printf("counter_fms local:%d clock:@%lld\n", local, (long long)globalClock);
 
-  if (total & 1)
+  if (total & 1) {
     counter2_fsmCB::create()->schedule(1);  // +1cycle
-  else
+  } else {
     counter2_fsmCB::create()->schedule(3);  // +3cycle
+  }
 
   total++;
 }

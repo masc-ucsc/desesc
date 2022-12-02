@@ -18,6 +18,7 @@ protected:
   int         rabbit;
   int         detail;
   int         time;
+
 public:
   Emul_base(Config conf);
   virtual ~Emul_base();

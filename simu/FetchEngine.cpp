@@ -64,10 +64,11 @@ FetchEngine::FetchEngine(Hartid_t id, GMemorySystem *gms_, std::shared_ptr<BPred
 
   max_bb_cycle = Config::get_integer("soc", "core", id, "max_bb_cycle", 1, 1024);
 
-  if (shared_bpred)
+  if (shared_bpred) {
     bpred = std::make_shared<BPredictor>(id, gms->getIL1(), gms->getDL1(), shared_bpred);
-  else
+  } else {
     bpred = std::make_shared<BPredictor>(id, gms->getIL1(), gms->getDL1());
+  }
 
   missInst = false;
 
@@ -83,8 +84,9 @@ FetchEngine::FetchEngine(Hartid_t id, GMemorySystem *gms_, std::shared_ptr<BPred
   auto                     isection = v[0];
 
   auto itype = Config::get_string(isection, "type", {"cache", "nice", "bus"});
-  if (itype != "nice")
+  if (itype != "nice") {
     il1_enable = true;
+  }
 
   il1_line_size = Config::get_power2(isection, "line_size", fetch_width * 2, 8192);
   il1_line_bits = log2i(il1_line_size);
@@ -101,7 +103,7 @@ FetchEngine::FetchEngine(Hartid_t id, GMemorySystem *gms_, std::shared_ptr<BPred
 #endif
 }
 
-FetchEngine::~FetchEngine() { }
+FetchEngine::~FetchEngine() {}
 
 bool FetchEngine::processBranch(Dinst *dinst, uint16_t n2Fetch) {
   (void)n2Fetch;
@@ -384,10 +386,11 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
         // Closest ldpc
         Addr_t x1 = dinst->getPC() - oracleDataRAT[dinst->getInst()->getSrc1()].ldpc;
         Addr_t x2 = dinst->getPC() - oracleDataRAT[dinst->getInst()->getSrc2()].ldpc;
-        if (d1 < d2)
+        if (d1 < d2) {
           d = d1;
-        else
+        } else {
           d = d2;
+        }
         if (x1 < x2) {
           ldpc        = oracleDataRAT[dinst->getInst()->getSrc1()].ldpc;
           dep_reg_id1 = dinst->getInst()->getSrc1();
@@ -727,8 +730,9 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
             bucket->push(dinstn);
             n2Fetch--;
           }
-        } else if (dinstn == 0)
+        } else if (dinstn == 0) {
           zeroDinst.inc(true);
+        }
 
 #ifdef FETCH_TRACE
         if (dinst->isBiasBranch() && dinst->getFetchEngine()) {

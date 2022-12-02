@@ -7,8 +7,9 @@ Lightson::Lightson() {
 }
 
 void Lightson::register_member(string name) {
-  if (schema != "")
+  if (schema != "") {
     schema += ",";
+  }
   schema += name;
   count++;
 }
@@ -16,24 +17,27 @@ void Lightson::register_member(string name) {
 void Lightson::clear() { str = ""; }
 
 void Lightson::push(int val) {
-  if (str != "")
+  if (str != "") {
     str += ",";
+  }
   ostringstream s;
   s << val;
   str += s.str();
 }
 
 void Lightson::push(double val) {
-  if (str != "")
+  if (str != "") {
     str += ",";
+  }
   ostringstream s;
   s << val;
   str += s.str();
 }
 
 void Lightson::push(string val) {
-  if (str != "")
+  if (str != "") {
     str += ",";
+  }
   str += "\"" + val + "\"";
 }
 
@@ -69,9 +73,10 @@ string Lightson::pull_element() {
     }
   }
   string out = str.substr(1, i - 2);
-  if (f)
+  if (f) {
     str = "";
-  else
+  } else {
     str = str.substr(i + 1);
+  }
   return out;
 }

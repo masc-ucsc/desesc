@@ -39,28 +39,32 @@ void Dinst::dump(const char *str) {
   Time_t t;
 
   t = getRenamedTime() - getFetchTime();
-  if (getRenamedTime())
+  if (getRenamedTime()) {
     fprintf(stderr, " %5d", (int)t);
-  else
+  } else {
     fprintf(stderr, "    na");
+  }
 
   t = getIssuedTime() - getRenamedTime();
-  if (getIssuedTime())
+  if (getIssuedTime()) {
     fprintf(stderr, " %5d", (int)t);
-  else
+  } else {
     fprintf(stderr, "    na");
+  }
 
   t = getExecutedTime() - getIssuedTime();
-  if (getExecutedTime())
+  if (getExecutedTime()) {
     fprintf(stderr, " %5d", (int)t);
-  else
+  } else {
     fprintf(stderr, "    na");
+  }
 
   t = globalClock - getExecutedTime();
-  if (getExecutedTime())
+  if (getExecutedTime()) {
     fprintf(stderr, " %5d", (int)t);
-  else
+  } else {
     fprintf(stderr, "    na");
+  }
 
   if (performed) {
     fprintf(stderr, " performed");
@@ -73,17 +77,22 @@ void Dinst::dump(const char *str) {
   } else {
     fprintf(stderr, " non-issued");
   }
-  if (replay)
+  if (replay) {
     fprintf(stderr, " REPLAY ");
+  }
 
-  if (hasPending())
+  if (hasPending()) {
     fprintf(stderr, " has pending");
-  if (!isSrc1Ready())
+  }
+  if (!isSrc1Ready()) {
     fprintf(stderr, " has src1 deps");
-  if (!isSrc2Ready())
+  }
+  if (!isSrc2Ready()) {
     fprintf(stderr, " has src2 deps");
-  if (!isSrc3Ready())
+  }
+  if (!isSrc3Ready()) {
     fprintf(stderr, " has src3 deps");
+  }
 
   // inst.dump("Inst->");
 
@@ -92,13 +101,17 @@ void Dinst::dump(const char *str) {
 
 void Dinst::clearRATEntry() {
   I(RAT1Entry);
-  if ((*RAT1Entry) == this)
+  if ((*RAT1Entry) == this) {
     *RAT1Entry = 0;
-  if ((*RAT2Entry) == this)
+  }
+  if ((*RAT2Entry) == this) {
     *RAT2Entry = 0;
-  if (serializeEntry)
-    if ((*serializeEntry) == this)
+  }
+  if (serializeEntry) {
+    if ((*serializeEntry) == this) {
       *serializeEntry = 0;
+    }
+  }
 }
 
 #ifdef ESESC_TRACE_DATA
@@ -106,53 +119,53 @@ DataSign Dinst::calcDataSign(int64_t _data) {
   DataSign data_sign;
   int64_t  hash, code;
 
-  if (_data == 0)
+  if (_data == 0) {
     data_sign = DS_V0;
-  else if (_data == 1)
+  } else if (_data == 1) {
     data_sign = DS_P1;
-  else if (_data == 2)
+  } else if (_data == 2) {
     data_sign = DS_P2;
-  else if (_data == 3)
+  } else if (_data == 3) {
     data_sign = DS_P3;
-  else if (_data == 4)
+  } else if (_data == 4) {
     data_sign = DS_P4;
-  else if (_data == 5)
+  } else if (_data == 5) {
     data_sign = DS_P5;
-  else if (_data == 6)
+  } else if (_data == 6) {
     data_sign = DS_P6;
-  else if (_data == 7)
+  } else if (_data == 7) {
     data_sign = DS_P7;
-  else if (_data == 8)
+  } else if (_data == 8) {
     data_sign = DS_P8;
-  else if (_data == 9)
+  } else if (_data == 9) {
     data_sign = DS_P9;
-  else if (_data == 10)
+  } else if (_data == 10) {
     data_sign = DS_P10;
-  else if (_data == 11)
+  } else if (_data == 11) {
     data_sign = DS_P11;
-  else if (_data == 12)
+  } else if (_data == 12) {
     data_sign = DS_P12;
-  else if (_data == 13)
+  } else if (_data == 13) {
     data_sign = DS_P13;
-  else if (_data == 14)
+  } else if (_data == 14) {
     data_sign = DS_P14;
-  else if (_data == 15)
+  } else if (_data == 15) {
     data_sign = DS_P15;
-  else if (_data == 16)
+  } else if (_data == 16) {
     data_sign = DS_P16;
-  else if (_data == 32)
+  } else if (_data == 32) {
     data_sign = DS_P32;
-  else if (_data == -1)
+  } else if (_data == -1) {
     data_sign = DS_N1;
-  else if (_data == -2)
+  } else if (_data == -2) {
     data_sign = DS_N2;
-  else if (_data % 5 == 0)
+  } else if (_data % 5 == 0) {
     data_sign = DS_FIVE;
-  else if (std::ceil(log2(_data)) == std::floor(log2(_data)))  // if data is power of 2
+  } else if (std::ceil(log2(_data)) == std::floor(log2(_data))) {  // if data is power of 2
     data_sign = DS_POW;
-  else if (_data > 1024 * 1024 || _data < -1024 * 1024)
+  } else if (_data > 1024 * 1024 || _data < -1024 * 1024) {
     data_sign = DS_PTR;
-  else {
+  } else {
     int v     = static_cast<int>(DS_OPos) + (_data % 255);
     data_sign = static_cast<DataSign>(v);
   }
@@ -180,13 +193,13 @@ void Dinst::addDataSign(int ds, int64_t _data, Addr_t _ldpc) {
     else if (_data != data)
       data_sign = DS_NE;*/  // FIXME: add DS_LT, DS_LE, DS...
 
-    if (_data == data)  // beq; rs(data) == rt(_data)
+    if (_data == data) {  // beq; rs(data) == rt(_data)
       data_sign = DS_EQ;
-    else if (data < _data)  // bltc; rs < rt (bgtc alias for bltc)
+    } else if (data < _data) {  // bltc; rs < rt (bgtc alias for bltc)
       data_sign = DS_LTC;
-    else if (data > _data)  // bgec; rs >= rt (blec is alias for bgec)
+    } else if (data > _data) {  // bgec; rs >= rt (blec is alias for bgec)
       data_sign = DS_GEC;
-    else {
+    } else {
       I(_data != data);  // bne; rs ! = rt
       data_sign = DS_NE;
     }

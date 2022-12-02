@@ -29,8 +29,9 @@ MemObj *MemoryObjContainer::searchMemoryObj(const std::string &descr_section, co
 
   StrToMemoryObjMapper::const_iterator it = intlMemoryObjContainer.find(device_name);
 
-  if (it == intlMemoryObjContainer.end())
+  if (it == intlMemoryObjContainer.end()) {
     return nullptr;
+  }
 
   const auto sec = it->second->getSection();
   if (sec == descr_section) {
@@ -46,8 +47,9 @@ MemObj *MemoryObjContainer::searchMemoryObj(const std::string &descr_section, co
 MemObj *MemoryObjContainer::searchMemoryObj(const std::string &device_name) const {
   I(!device_name.empty());
 
-  if (intlMemoryObjContainer.count(device_name) != 1)
+  if (intlMemoryObjContainer.count(device_name) != 1) {
     return nullptr;
+  }
 
   return intlMemoryObjContainer.find(device_name)->second;
 }
@@ -69,17 +71,21 @@ GMemorySystem::GMemorySystem(int32_t processorId) : coreId(processorId) {
 }
 
 GMemorySystem::~GMemorySystem() {
-  if (DL1)
+  if (DL1) {
     delete DL1;
+  }
 
-  if (IL1 && DL1 != IL1)
+  if (IL1 && DL1 != IL1) {
     delete IL1;
+  }
 
-  if (vpc)
+  if (vpc) {
     delete vpc;
+  }
 
-  if (pref)
+  if (pref) {
     delete pref;
+  }
 
   delete localMemoryObjContainer;
 }
@@ -105,17 +111,19 @@ void GMemorySystem::buildMemorySystem() {
   IL1->getRouter()->fillRouteTables();
   IL1->setCoreIL1(coreId);
 
-  if (IL1->get_type() == "tlb")
+  if (IL1->get_type() == "tlb") {
     IL1->getRouter()->getDownNode()->setCoreIL1(coreId);
+  }
 
   DL1 = declareMemoryObj(def_block, "dl1");
   DL1->getRouter()->fillRouteTables();
   DL1->setCoreDL1(coreId);
 
-  if (DL1->get_type() == "tlb")
+  if (DL1->get_type() == "tlb") {
     DL1->getRouter()->getDownNode()->setCoreDL1(coreId);
-  else if (DL1->get_type() == "prefetcher")
+  } else if (DL1->get_type() == "prefetcher") {
     DL1->getRouter()->getDownNode()->setCoreDL1(coreId);
+  }
 }
 
 std::string GMemorySystem::buildUniqueName(const std::string &device_type) {
@@ -223,16 +231,18 @@ MemObj *GMemorySystem::finishDeclareMemoryObj(const std::vector<std::string> &vP
     device_name = fmt::format("{}{}", device_name, name_suffix);
 
     MemObj *memdev = searchMemoryObj(shared, device_descr_section, device_name);
-    if (memdev)
+    if (memdev) {
       return memdev;
+    }
 
   } else {
     device_name = buildUniqueName(device_type);
   }
 
   MemObj *newMem = buildMemoryObj(device_type, device_descr_section, device_name);
-  if (newMem)  // Would be 0 in known-error mode
+  if (newMem) {  // Would be 0 in known-error mode
     getMemoryObjContainer(shared)->addMemoryObj(device_name, newMem);
+  }
 
   return newMem;
 }

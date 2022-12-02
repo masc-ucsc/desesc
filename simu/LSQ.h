@@ -2,15 +2,14 @@
 
 #pragma once
 
+#include <array>
 #include <map>
 #include <set>
 #include <vector>
-#include <array>
 
-#include "estl.h"
-
-#include "stats.hpp"
 #include "dinst.hpp"
+#include "estl.h"
+#include "stats.hpp"
 
 class LSQ {
 private:

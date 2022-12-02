@@ -3,10 +3,9 @@
 #pragma once
 
 #include "Resource.h"
-
-#include "stats.hpp"
-#include "port.hpp"
 #include "iassert.hpp"
+#include "port.hpp"
+#include "stats.hpp"
 
 class Dinst;
 class Cluster;

@@ -95,8 +95,9 @@ void GPUSMProcessor::fetch(Hartid_t hid) { /*{{{*/
 
 bool GPUSMProcessor::advance_clock_drain() {
   bool abort = decode_stage();
-  if (abort || !busy)
+  if (abort || !busy) {
     return busy;
+  }
 
   if (!pipeQ.instQueue.empty()) {
     for (uint32_t i = 0; i < numSP; i++) {
@@ -164,10 +165,11 @@ StallCause GPUSMProcessor::add_inst(Dinst *dinst) {
     return SmallWinStall;
   }
 
-  if ((ROB.size() + rROB.size()) >= (MaxROBSize - 1))
+  if ((ROB.size() + rROB.size()) >= (MaxROBSize - 1)) {
     return SmallROBStall;
+  }
 
-    // FIXME: if nInstPECounter is >0 for this cycle, do a DivertStall
+  // FIXME: if nInstPECounter is >0 for this cycle, do a DivertStall
 #if 0
   if (inst_perpe_percyc[dinst->getPE()] == true){
     //MSG("d-%d",dinst->getPE());
@@ -182,8 +184,9 @@ StallCause GPUSMProcessor::add_inst(Dinst *dinst) {
   }
 
   StallCause sc = cluster->canIssue(dinst);
-  if (sc != NoStall)
+  if (sc != NoStall) {
     return sc;
+  }
 
   // BEGIN INSERTION (note that cluster already inserted in the window)
   // dinst->dump("");
@@ -208,14 +211,17 @@ StallCause GPUSMProcessor::add_inst(Dinst *dinst) {
   if (!dinst->isSrc2Ready()) {
     // It already has a src2 dep. It means that it is solved at
     // retirement (Memory consistency. coherence issues)
-    if (RAT[inst->getSrc1()])
+    if (RAT[inst->getSrc1()]) {
       RAT[inst->getSrc1()]->addSrc1(dinst);
+    }
   } else {
-    if (RAT[inst->getSrc1()])
+    if (RAT[inst->getSrc1()]) {
       RAT[inst->getSrc1()]->addSrc1(dinst);
+    }
 
-    if (RAT[inst->getSrc2()])
+    if (RAT[inst->getSrc2()]) {
       RAT[inst->getSrc2()]->addSrc2(dinst);
+    }
   }
 
   dinst->setRAT1Entry(&RAT[inst->getDst1()]);
@@ -240,12 +246,14 @@ void GPUSMProcessor::retire() { /*{{{*/
     Dinst *dinst = ROB.top();
     stats        = dinst->has_stats();
 
-    if (!dinst->isExecuted())
+    if (!dinst->isExecuted()) {
       break;
+    }
 
     bool done = dinst->getClusterResource()->preretire(dinst, false);
-    if (!done)
+    if (!done) {
       break;
+    }
 
     rROB.push(dinst);
     ROB.pop();
@@ -259,8 +267,9 @@ void GPUSMProcessor::retire() { /*{{{*/
   for (uint16_t i = 0; i < RetireWidth && !rROB.empty(); i++) {
     Dinst *dinst = rROB.top();
 
-    if (!dinst->isExecuted())
+    if (!dinst->isExecuted()) {
       break;
+    }
 
     I(dinst->getCluster());
 

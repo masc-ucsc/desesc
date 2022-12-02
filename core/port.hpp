@@ -21,9 +21,9 @@
 //
 // Enjoy!
 
-#include "stats.hpp"
 #include "callback.hpp"
 #include "iassert.hpp"
+#include "stats.hpp"
 
 typedef uint16_t NumUnits_t;
 
@@ -120,8 +120,8 @@ public:
 class PortNPipe : public PortGeneric {
 private:
 protected:
-  const TimeDelta_t ocp;
-  const NumUnits_t  nUnits;
+  const TimeDelta_t   ocp;
+  const NumUnits_t    nUnits;
   std::vector<Time_t> portBusyUntil;
 
 public:
@@ -132,4 +132,3 @@ public:
   Time_t nextSlot(int32_t occupancy, bool en);
   Time_t calcNextSlot() const;
 };
-

@@ -7,7 +7,7 @@
 #include "iassert.hpp"
 #include "snippets.hpp"
 
-//#define FASTQUEUE_USE_QUEUE 1
+// #define FASTQUEUE_USE_QUEUE 1
 
 #ifdef FASTQUEUE_USE_QUEUE
 template <class Data>
@@ -44,7 +44,9 @@ public:
     pipeMask = size;
     I(size < (256 * 1024));  // define FASTQUEUE_USE_QUEUE for those cases
 
-    while (pipeMask & (pipeMask - 1)) pipeMask++;
+    while (pipeMask & (pipeMask - 1)) {
+      pipeMask++;
+    }
 
     pipe = (Data *)malloc(sizeof(Data) * pipeMask);
 

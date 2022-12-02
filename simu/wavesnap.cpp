@@ -187,8 +187,9 @@ void Wavesnap::calculate_ipc() {
   for (auto &sign_kv : window_sign_info) {
     pipeline_info pipe_info = sign_kv.second;
     uint64_t      count     = pipe_info.count;
-    if (count <= COUNT_ALLOW)
+    if (count <= COUNT_ALLOW) {
       continue;
+    }
 
     total_count += count;
     // average the cycles

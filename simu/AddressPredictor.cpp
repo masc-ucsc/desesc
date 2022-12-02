@@ -24,28 +24,33 @@ void BimodalLastEntry::update(int ndelta, uint16_t max_conf) {
     if (conf < max_conf) {
       conf++;
     } else {
-      if (conf2 > (max_conf >> 2))
+      if (conf2 > (max_conf >> 2)) {
         conf2 /= 2;
-      else if (conf2)
+      } else if (conf2) {
         conf2--;
+      }
     }
   } else {
-    if (conf > max_conf)
+    if (conf > max_conf) {
       conf /= 2;
-    else if (conf)
+    } else if (conf) {
       conf--;
+    }
 
     if (delta2 == ndelta) {
-      if (conf2 < max_conf)
+      if (conf2 < max_conf) {
         conf2++;
+      }
     } else {
-      if (conf2 > (max_conf >> 2))
+      if (conf2 > (max_conf >> 2)) {
         conf2 /= 2;
-      else if (conf2)
+      } else if (conf2) {
         conf2--;
+      }
     }
-    if (conf2 == 0)
+    if (conf2 == 0) {
       delta2 = ndelta;
+    }
   }
 
   if (conf < conf2) {
@@ -77,8 +82,9 @@ void BimodalStride::update_addr(Addr_t pc, Addr_t naddr) { table[get_index(pc)].
 
 void BimodalStride::update_delta(Addr_t pc, int ndelta) {
 #ifndef STRIDE_DELTA0
-  if (ndelta == 0)
+  if (ndelta == 0) {
     return;
+  }
 #endif
 
   table[get_index(pc)].update(ndelta, max_conf);
@@ -109,19 +115,22 @@ Conf_level Stride_address_predictor::ret_update(Addr_t pc, Addr_t addr, Data_t d
 }
 
 Addr_t Stride_address_predictor::predict(Addr_t ppc, int distance, bool inLines) {
-  if (bimodal.has_conf(ppc) == Conf_level::None)
+  if (bimodal.has_conf(ppc) == Conf_level::None) {
     return 0;  // not predictable;
+  }
 
   int delta = bimodal.get_delta(ppc);
 #ifndef STRIDE_DELTA0
-  if (delta == 0 && !inLines)
+  if (delta == 0 && !inLines) {
     return 0;
+  }
 #endif
 
   int offset = delta * distance;
 
-  if (delta < 64 && inLines)
+  if (delta < 64 && inLines) {
     offset = 64 * distance;  // At least 1 cache line delta
+  }
 
   return bimodal.get_addr(ppc) + offset;
 }
@@ -231,8 +240,9 @@ Addr_t Tage_address_predictor::gindex(uint16_t offset, int bank) {
 
   int bits  = logg[bank];
   int i_max = m[bank];
-  if (i_max > 256)
+  if (i_max > 256) {
     i_max = 256;
+  }
 
   uint16_t nbits = 0;
   Addr_t   sign  = pcSign(lastBoundaryPC);
@@ -293,14 +303,16 @@ Addr_t Tage_address_predictor::predict(Addr_t pc, int distance, bool inLines) {
   if (bimodal.has_conf(pc) == Conf_level::High) {
     int delta = bimodal.get_delta(pc);
 #ifndef STRIDE_DELTA0
-    if (delta == 0 && !inLines)
+    if (delta == 0 && !inLines) {
       return 0;
+    }
 #endif
 
     int offset = delta * distance;
 
-    if (delta < 64 && inLines)
+    if (delta < 64 && inLines) {
       offset = 64 * distance;  // At least 1 cache line delta
+    }
 
     tagePrefetchBaseNum.inc();
     return bimodal.get_addr(pc) + offset;
@@ -326,17 +338,19 @@ Addr_t Tage_address_predictor::predict(Addr_t pc, int distance, bool inLines) {
     last[get_last_index(pc)].spec_add(pred_delta);
 
 #ifdef DEBUG_STRIDESO2
-    if (pc == 0x12000e220)
+    if (pc == 0x12000e220) {
       printf("dist:%d addr:%llx pred_delta:%d delta:%d conf:%d\n",
              i,
              addr,
              pred_delta,
              (int)addr - (int)last[get_last_index(pc)].addr,
              pred_conf);
+    }
 #endif
 
-    if (inLines && pred_delta < 64)
+    if (inLines && pred_delta < 64) {
       pred_delta = 64;
+    }
 
     addr = addr + pred_delta;
   }
@@ -364,8 +378,9 @@ Conf_level Tage_address_predictor::exe_update(Addr_t pc, Addr_t addr, Data_t dat
   int ndelta = last[get_last_index(pc)].get_delta(addr);
 
 #ifndef STRIDE_DELTA0
-  if (ndelta == 0)
+  if (ndelta == 0) {
     return 0;
+  }
 #endif
 
 #if 0
@@ -384,7 +399,7 @@ Conf_level Tage_address_predictor::exe_update(Addr_t pc, Addr_t addr, Data_t dat
   last[get_last_index(pc)].add(addr, pc);  // WARNING: also clears the spec history
 
 #ifdef DEBUG_STRIDESO2
-  if (pc == 0x12000e220)
+  if (pc == 0x12000e220) {
     printf("pc:%llx addr:%llx pred_delta:%d delta:%d conf:%d a:%d h:%d\n",
            pc,
            addr,
@@ -393,6 +408,7 @@ Conf_level Tage_address_predictor::exe_update(Addr_t pc, Addr_t addr, Data_t dat
            pred_conf,
            alt_bank,
            hit_bank);
+  }
 #endif
 
   return pred_conf;
@@ -412,13 +428,16 @@ void Tage_address_predictor::updateVtage(Addr_t pc, int ndelta, uint16_t loff) {
   auto pc_conf = bimodal.has_conf(pc);
   if (pc_conf == Conf_level::High) {
     alloc = false;  // Do not alloc if bimodal is highly confident
-  } else if (pc_conf != Conf_level::None)
-    if (bimodal.get_delta(pc) == ndelta)
+  } else if (pc_conf != Conf_level::None) {
+    if (bimodal.get_delta(pc) == ndelta) {
       alloc = false;  // Do not learn deltas that match bimodal
+    }
+  }
 
   if (hit_bank > 0 && use_alt_pred) {
-    if (altpred_delta == pred_delta)
+    if (altpred_delta == pred_delta) {
       alloc = false;
+    }
   }
 
   if (alloc) {
@@ -433,13 +452,15 @@ void Tage_address_predictor::updateVtage(Addr_t pc, int ndelta, uint16_t loff) {
       if (gtable[i][GI[i]].isTagHit()) {
         weakBank = i;
 
-        if (!gtable[i][GI[i]].conf_steal())
+        if (!gtable[i][GI[i]].conf_steal()) {
           continue;
+        }
 
         NA++;
         T--;
-        if (T <= 0)
+        if (T <= 0) {
           break;
+        }
       }
     }
 
@@ -456,8 +477,9 @@ void Tage_address_predictor::updateVtage(Addr_t pc, int ndelta, uint16_t loff) {
 
           NA++;
 
-          if (T <= 0)
+          if (T <= 0) {
             break;
+          }
 
           i += 1;
           T -= 1;
@@ -470,10 +492,11 @@ void Tage_address_predictor::updateVtage(Addr_t pc, int ndelta, uint16_t loff) {
 
     // Could not find a place to allocate
     TICK += (penalty - NA);
-    if (TICK < -127)
+    if (TICK < -127) {
       TICK = -127;
-    else if (TICK > 63)
+    } else if (TICK > 63) {
       TICK = 63;
+    }
 
     if (T) {
       if (TICK > 0) {
@@ -501,8 +524,9 @@ void Tage_address_predictor::updateVtage(Addr_t pc, int ndelta, uint16_t loff) {
     }
     if (hitpred_delta != altpred_delta) {  // hit_bank and alt_bank dissagree
       if (correct) {
-        if (!use_alt_pred)
+        if (!use_alt_pred) {
           gtable[hit_bank][GI[hit_bank]].u_inc();
+        }
       } else {
         gtable[hit_bank][GI[hit_bank]].u_dec();
       }
@@ -539,14 +563,17 @@ void vtage_gentry::select(Addr_t t, int b) {
 }
 
 bool vtage_gentry::conf_steal() {
-  if (hit)
+  if (hit) {
     return true;
+  }
 
-  if (!thit)
+  if (!thit) {
     return false;
+  }
 
-  if (conf != -1 && conf != 0)
+  if (conf != -1 && conf != 0) {
     return false;
+  }
 
   conf = 0;
   hit  = thit;
@@ -555,8 +582,9 @@ bool vtage_gentry::conf_steal() {
 }
 
 void vtage_gentry::conf_force_steal(int ndelta) {
-  if (!thit)
+  if (!thit) {
     return;
+  }
 
   delta = ndelta;
   conf  = 0;
@@ -577,18 +605,20 @@ void vtage_gentry::reset(Addr_t t, uint16_t _loff, int ndelta) {
 }
 
 void vtage_gentry::conf_update(int ndelta) {
-  if (!thit)
+  if (!thit) {
     return;
+  }
 
   if (delta == ndelta) {
     if (conf < 63) {
       conf++;
     }
   } else {
-    if (conf > 16)
+    if (conf > 16) {
       conf /= 2;
-    else if (conf)
+    } else if (conf) {
       conf--;
+    }
 
     if (conf == 0) {
       delta = ndelta;
@@ -641,8 +671,9 @@ Conf_level Indirect_address_predictor::exe_update(Addr_t pc, Addr_t addr, Data_t
 extern "C" uint64_t esesc_mem_read(uint64_t addr);
 
 Conf_level Indirect_address_predictor::ret_update(Addr_t pc, Addr_t addr, Data_t data) {
-  if (!chainPredict)
+  if (!chainPredict) {
     return Conf_level::None;
+  }
 
   auto bim_conf = bimodal.has_conf(pc);
 
@@ -655,8 +686,9 @@ Conf_level Indirect_address_predictor::ret_update(Addr_t pc, Addr_t addr, Data_t
     pa.addr        = addr;
     pa.data        = data;
     pa.predictable = Conf_level::High == bim_conf;
-    if (pa.predictable)
+    if (pa.predictable) {
       pa.source_pc = 0;
+    }
   } else {
     pa.data       = 0;
     pa.addr       = 0;
@@ -675,18 +707,21 @@ Conf_level Indirect_address_predictor::ret_update(Addr_t pc, Addr_t addr, Data_t
       Addr_t pred_addr = adhist[pa.source_pc].base + adhist[pa.source_pc].factor * adhist[pa.source_pc].data;
 
       if (pred_addr == addr) {
-        if (pa.conf < 63)
+        if (pa.conf < 63) {
           pa.conf++;
+        }
         // PTRACE("pc:%llx predictable with addr:%llx pc:%llx c:%d factor:%d
         // base:%llx",pc,addr,pa.source_pc,pa.conf,adhist[pa.source_pc].factor, adhist[pa.source_pc].base);
       } else {
-        if (pa.conf > 0)
+        if (pa.conf > 0) {
           pa.conf--;
+        }
         // PTRACE("pc:%llx NOT predict with addr:%llx %llx pc:%llx c:%d",pc,addr,pred_addr,pa.source_pc,pa.conf);
       }
       if (pa.conf == 0) {
-        if (pa.source_pc)
+        if (pa.source_pc) {
           adhist[pa.source_pc].factor = 0;  // Disable indirect
+        }
 
         pa.source_pc = 0;  // Try to re-learn again
       } else {
@@ -695,14 +730,17 @@ Conf_level Indirect_address_predictor::ret_update(Addr_t pc, Addr_t addr, Data_t
     } else {
       for (size_t i = 0; i < last_pcs.size(); i++) {
         int pos = last_pcs_pos - i;
-        if (pos < 0)
+        if (pos < 0) {
           pos = last_pcs.size() - 1;
+        }
 
         Addr_t ppc = last_pcs[pos];
-        if (!adhist[ppc].predictable)
+        if (!adhist[ppc].predictable) {
           continue;  // Only try to correlate predictable
-        if (adhist[ppc].data_delta == 0)
+        }
+        if (adhist[ppc].data_delta == 0) {
           continue;
+        }
 
         for (int factor = 1; factor < 32; factor++) {  // Try some easy to multiply factors (Power2)
           Addr_t pred_addr = last_addr + factor * adhist[ppc].data_delta;
@@ -721,8 +759,9 @@ Conf_level Indirect_address_predictor::ret_update(Addr_t pc, Addr_t addr, Data_t
             break;
           }
         }
-        if (pa.source_pc)
+        if (pa.source_pc) {
           break;
+        }
       }
     }
   }
@@ -730,29 +769,34 @@ Conf_level Indirect_address_predictor::ret_update(Addr_t pc, Addr_t addr, Data_t
   adhist[pc] = pa;
 
   last_pcs_pos++;
-  if (last_pcs_pos >= last_pcs.size())
+  if (last_pcs_pos >= last_pcs.size()) {
     last_pcs_pos = 0;
+  }
   last_pcs[last_pcs_pos] = pc;
 
   return indirect ? Conf_level::High : Conf_level::None;
 }
 
 Addr_t Indirect_address_predictor::predict(Addr_t ppc, int distance, bool inLines) {
-  if (chainPredict)
+  if (chainPredict) {
     return 0;
+  }
 
-  if (bimodal.has_conf(ppc) == Conf_level::None)
+  if (bimodal.has_conf(ppc) == Conf_level::None) {
     return 0;  // not predictable;
+  }
 
   int delta = bimodal.get_delta(ppc);
 #ifndef STRIDE_DELTA0
-  if (delta == 0 && !inLines)
+  if (delta == 0 && !inLines) {
     return 0;
+  }
 #endif
   int offset = delta * distance;
 
-  if (delta < 64 && inLines)
+  if (delta < 64 && inLines) {
     offset = 64 * distance;  // At least 1 cache line delta
+  }
 
   return bimodal.get_addr(ppc) + offset;
 }
@@ -760,15 +804,18 @@ Addr_t Indirect_address_predictor::predict(Addr_t ppc, int distance, bool inLine
 void Indirect_address_predictor::performed(MemObj *DL1, Addr_t pc, Addr_t ld1_addr) {
   I(chainPredict);
 
-  if (adhist.find(pc) == adhist.end())
+  if (adhist.find(pc) == adhist.end()) {
     return;
+  }
 
-  if (adhist[pc].data == 0 || adhist[pc].factor == 0)
+  if (adhist[pc].data == 0 || adhist[pc].factor == 0) {
     return;
+  }
 
   uint64_t ld1_data = esesc_mem_read(ld1_addr);
-  if (adhist[pc].factor != 1)
+  if (adhist[pc].factor != 1) {
     ld1_data = (uint32_t)ld1_data;  // No long
+  }
 
   Addr_t pred_addr = adhist[pc].base + (adhist[pc].factor * ld1_data);
 
@@ -780,26 +827,31 @@ void Indirect_address_predictor::performed(MemObj *DL1, Addr_t pc, Addr_t ld1_ad
 }
 
 bool Indirect_address_predictor::try_chain_predict(MemObj *DL1, Addr_t pc, int distance) {
-  if (!chainPredict)
+  if (!chainPredict) {
     return false;
+  }
 
   auto bim_conf = bimodal.has_conf(pc);
-  if (bim_conf == Conf_level::None)
+  if (bim_conf == Conf_level::None) {
     return false;  // not predictable;
+  }
 
   int offset = bimodal.get_delta(pc) * distance;
-  if (offset == 0)
+  if (offset == 0) {
     return false;
+  }
 
   Addr_t ld1_addr = bimodal.get_addr(pc) + offset;
 
   // PTRACE("try_chain pc:%llx conf:%d factor:%d dist:%d",pc, bimodal.has_conf(pc), adhist[pc].factor, distance);
 
   bool chain = true;
-  if (adhist.find(pc) == adhist.end())
+  if (adhist.find(pc) == adhist.end()) {
     chain = false;
-  if (adhist[pc].data == 0 || adhist[pc].factor == 0)
+  }
+  if (adhist[pc].data == 0 || adhist[pc].factor == 0) {
     chain = false;
+  }
 
   CallbackBase *cb = 0;
   if (distance >= 2 && chain) {

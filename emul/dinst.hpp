@@ -5,9 +5,9 @@
 #include "callback.hpp"
 #include "iassert.hpp"
 #include "instruction.hpp"
+#include "opcode.hpp"
 #include "pool.hpp"
 #include "snippets.hpp"
-#include "opcode.hpp"
 
 using SSID_t = int32_t;
 
@@ -18,7 +18,7 @@ class Cluster;
 class Resource;
 class GProcessor;
 
-//#define ESESC_TRACE 1
+// #define ESESC_TRACE 1
 #define DINST_PARENT
 
 class DinstNext {
@@ -48,8 +48,8 @@ public:
 #ifdef DINST_PARENT
   Dinst *getParentDinst() const { return parentDinst; }
   void   setParentDinst(Dinst *d) {
-      GI(d, isUsed);
-      parentDinst = d;
+    GI(d, isUsed);
+    parentDinst = d;
   }
 #else
   void            setParentDinst(Dinst *d) {}
@@ -264,12 +264,12 @@ private:
 protected:
 public:
   Dinst();
-  #if 0
+#if 0
   bool   isSpec       = false;
   bool   isSafe       = false;
   bool   isLdCache    = false;
   Time_t memReqTimeL1 = 0;
-  #endif
+#endif
   Dinst *clone();
 
   bool is_safe() const { return !speculative; }
@@ -278,7 +278,7 @@ public:
 
   bool has_stats() const { return keep_stats; }
 
-  #if 0
+#if 0
   void setLdCache() { isLdCache = true; }
   bool getLdCache() { return isLdCache; }
   void resetLdCache() { isLdCache = false; }
@@ -293,7 +293,7 @@ public:
   void          clearSpec() { isSpec = false; }
   void          setSafe() { isSafe = true; }
   void          clearSafe() { isSafe = false; }
-  #endif
+#endif
 
   static Dinst *create(const Instruction *inst, Addr_t pc, Addr_t address, Hartid_t fid, bool keep_stats) {
     Dinst *i = dInstPool.out();
@@ -323,7 +323,7 @@ public:
     i->br_ld_chain = false;
     i->br_op_type  = -1;
 #endif
-    i->fetched   = 0;
+    i->fetched    = 0;
     i->keep_stats = keep_stats;
 
     i->setup();
@@ -394,11 +394,11 @@ public:
 
   Addr_t getLDPC() const { return ldpc; }
   void   setChain(FetchEngine *fe, int c) {
-      I(fetch == 0);
-      I(c);
-      I(fe);
-      fetch   = fe;
-      chained = c;
+    I(fetch == 0);
+    I(c);
+    I(fe);
+    fetch   = fe;
+    chained = c;
   }
   int getChained() const { return chained; }
 #else
@@ -409,8 +409,8 @@ public:
   Data_t   getData() const { return 0; }
   DataSign getDataSign() const { return DS_NoData; }
   void     setDataSign(int64_t _data, Addr_t ldpc) {
-        (void)_data;
-        (void)ldpc;
+    (void)_data;
+    (void)ldpc;
   }
 
   void addDataSign(int ds, int64_t _data, Addr_t ldpc) {
@@ -421,8 +421,8 @@ public:
   void   setData(uint64_t _data) { (void)_data; }
   Addr_t getLDPC() const { return 0; }
   void   setChain(FetchEngine *fe, int c) {
-      (void)fe;
-      (void)c;
+    (void)fe;
+    (void)c;
   }
   int getChained() const { return 0; }
 
@@ -479,18 +479,21 @@ public:
 
 #ifdef DINST_PARENT
   Dinst *getParentSrc1() const {
-    if (pend[0].isUsed)
+    if (pend[0].isUsed) {
       return pend[0].getParentDinst();
+    }
     return 0;
   }
   Dinst *getParentSrc2() const {
-    if (pend[1].isUsed)
+    if (pend[1].isUsed) {
       return pend[1].getParentDinst();
+    }
     return 0;
   }
   Dinst *getParentSrc3() const {
-    if (pend[2].isUsed)
+    if (pend[2].isUsed) {
       return pend[2].getParentDinst();
+    }
     return 0;
   }
 #endif
@@ -570,13 +573,15 @@ public:
   bool isBranchMiss_level3() const { return branchMiss_level3; }
 
   void set_trig_ld_status() {  // set to 0
-    if (trig_ld_status == -1)
+    if (trig_ld_status == -1) {
       trig_ld_status = 0;
+    }
   }
 
   void inc_trig_ld_status() {  // inc on late TL
-    if (trig_ld_status == 0)
+    if (trig_ld_status == 0) {
       trig_ld_status = 1;
+    }
   }
 
   int get_trig_ld_status() const { return trig_ld_status; }

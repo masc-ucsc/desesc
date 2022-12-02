@@ -43,8 +43,9 @@ MemObj::MemObj(const std::string &sSection, const std::string &sName)
     return;
   }
   auto lower_level_type = Config::get_string(lower_level[0], "type");
-  if (lower_level_type != "cache" && mem_type == "cache")
+  if (lower_level_type != "cache" && mem_type == "cache") {
     isLLC = true;
+  }
 
   // Create router (different objects may override the default router)
   router = new MRouter(this);
@@ -906,8 +907,9 @@ void DummyMemObj::tryPrefetch(Addr_t addr, bool doStats, int degree, Addr_t pref
   (void)degree;
   (void)pref_sign;
   (void)pc;
-  if (cb)
+  if (cb) {
     cb->destroy();
+  }
 }
 /* }}} */
 

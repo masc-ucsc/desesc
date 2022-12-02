@@ -22,15 +22,15 @@ bool SMT_fetch::update() {
 
   smt_turn--;
   if (smt_turn < 0) {
-    if (smt_cnt == smt_active)
+    if (smt_cnt == smt_active) {
       smt_turn = 0;
-    else
+    } else {
       smt_turn = smt_active;
+    }
   }
 }
 
 std::shared_ptr<FetchEngine> SMT_fetch::fetch_next() {
-
   auto ptr = fe[smt_turn];
 
   update();
@@ -56,8 +56,7 @@ GProcessor::GProcessor(GMemorySystem *gm, Hartid_t i)
     , nCommitted(fmt::format("({}):nCommitted", i))  // Should be the same as robUsed - replayed
     , noFetch(fmt::format("({}):noFetch", i))
     , noFetch2(fmt::format("({}):noFetch2", i)) {
-
-  smt_size     = Config::get_integer("soc", "core", i, "smt", 1, 32);
+  smt_size = Config::get_integer("soc", "core", i, "smt", 1, 32);
 
   lastReplay = 0;
 
@@ -87,7 +86,7 @@ GProcessor::GProcessor(GMemorySystem *gm, Hartid_t i)
 
   smt_fetch.fe.emplace_back(std::make_unique<FetchEngine>(i, gm));
 
-  for(auto n=1u;n<smt_size;++n) {
+  for (auto n = 1u; n < smt_size; ++n) {
     smt_fetch.fe.emplace_back(std::make_unique<FetchEngine>(i, gm, smt_fetch.fe[0]->ref_bpred()));
   }
 
@@ -123,8 +122,9 @@ int32_t GProcessor::issue(PipeQueue &pipeQ) {
       dinst->setGProc(this);
       StallCause c = add_inst(dinst);
       if (c != NoStall) {
-        if (i < RealisticWidth)
+        if (i < RealisticWidth) {
           nStall[c]->add(RealisticWidth - i, dinst->has_stats());
+        }
         return i;
       }
       i++;
@@ -146,8 +146,9 @@ bool GProcessor::decode_stage() {
   }
 
   bool new_clock = adjust_clock(use_stats);
-  if (!new_clock)
+  if (!new_clock) {
     return true;
+  }
 
   // ID Stage (insert to instQueue)
   if (spaceInInstQueue >= FetchWidth) {

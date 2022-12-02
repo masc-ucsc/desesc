@@ -49,8 +49,9 @@ public:
   };
 
   bool full() const {
-    if (((tail + 2) & 32767) == head)
+    if (((tail + 2) & 32767) == head) {
       return true;
+    }
     IndexType nextTail = ((tail + 1) & 32767);  // Give some space
     return (nextTail == head);
   }
@@ -75,9 +76,9 @@ public:
   Type *getHeadRef() { return &array[head]; }
   Type *getNextHeadRef() { return &array[static_cast<IndexType>((head + 1) & 32767)]; }
   void  pop(Type *obj) {
-     *obj = array[head];
-     // AtomicAdd(&head,static_cast<IndexType>(1));
-     head = (head + 1) & 32767;
+    *obj = array[head];
+    // AtomicAdd(&head,static_cast<IndexType>(1));
+    head = (head + 1) & 32767;
   };
 };
 

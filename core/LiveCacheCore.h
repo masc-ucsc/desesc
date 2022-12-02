@@ -377,8 +377,8 @@ public:
 
   Addr_t getTag() const { return tag; }
   void   setTag(Addr_t a) {
-      I(a);
-      tag = a;
+    I(a);
+    tag = a;
   }
   void clearTag() {
     tag = 0;
@@ -403,15 +403,18 @@ public:
 
   void setRRPV(uint8_t a) {
     rrpv = a;
-    if (rrpv > (RRIP_M - 1))
+    if (rrpv > (RRIP_M - 1)) {
       rrpv = RRIP_M - 1;
-    if (rrpv < 0)
+    }
+    if (rrpv < 0) {
       rrpv = 0;
+    }
   }
 
   void incRRPV() {
-    if (rrpv < (RRIP_M - 1))
+    if (rrpv < (RRIP_M - 1)) {
       rrpv++;
+    }
   }
 
   virtual bool isValid() const { return tag; }
@@ -431,8 +434,8 @@ public:
 
   Addr_t getTag() const { return tag; }
   void   setTag(Addr_t a) {
-      I(a);
-      tag = a;
+    I(a);
+    tag = a;
   }
   void clearTag() { tag = 0; }
   void initialize(void *c) {
@@ -448,8 +451,8 @@ public:
 
   Addr_t getSignature() const { return 0; }
   void   setSignature(Addr_t a) {
-      (void)a;
-      I(0);  // Incorrect state used for SHIP
+    (void)a;
+    I(0);  // Incorrect state used for SHIP
   }
   bool getOutcome() const { return 0; }
   void setOutcome(bool a) {
@@ -584,13 +587,13 @@ CacheAssoc<State, Addr_t>::CacheAssoc(int32_t size_, int32_t assoc_, int32_t blk
     : CacheGeneric<State, Addr_t>(size_, assoc_, blksize, addrUnit_, xr) {
   I(numLines > 0);
 
-  if (strcasecmp(pStr, k_RANDOM) == 0)
+  if (strcasecmp(pStr, k_RANDOM) == 0) {
     policy = RANDOM;
-  else if (strcasecmp(pStr, k_LRU) == 0)
+  } else if (strcasecmp(pStr, k_LRU) == 0) {
     policy = LRU;
-  else if (strcasecmp(pStr, k_LRUp) == 0)
+  } else if (strcasecmp(pStr, k_LRUp) == 0) {
     policy = LRUp;
-  else {
+  } else {
     fmt::print("ERROR: Invalid cache policy [{}]\n", pStr);
     exit(0);
   }
@@ -641,8 +644,9 @@ typename CacheAssoc<State, Addr_t>::Line *CacheAssoc<State, Addr_t>::findLinePri
     }
   }
 
-  if (lineHit == 0)
+  if (lineHit == 0) {
     return 0;
+  }
 
   // I((*lineHit)->isValid()); //TODO: see why this assertion is failing
 
@@ -689,10 +693,11 @@ typename CacheAssoc<State, Addr_t>::Line *CacheAssoc<State, Addr_t>::findLine2Re
         lineHit = l;
         break;
       }
-      if (!(*l)->isValid())
+      if (!(*l)->isValid()) {
         lineFree = l;
-      else if (lineFree == 0)
+      } else if (lineFree == 0) {
         lineFree = l;
+      }
 
       l--;
     }
@@ -706,8 +711,9 @@ typename CacheAssoc<State, Addr_t>::Line *CacheAssoc<State, Addr_t>::findLine2Re
     if (policy == RANDOM) {
       lineFree = &theSet[irand];
       irand    = (irand + 1) & maskAssoc;
-      if (irand == 0)
+      if (irand == 0) {
         irand = (irand + 1) & maskAssoc;  // Not MRU
+      }
     } else {
       I(policy == LRU || policy == LRUp);
       // Get the oldest line possible
@@ -716,8 +722,9 @@ typename CacheAssoc<State, Addr_t>::Line *CacheAssoc<State, Addr_t>::findLine2Re
 
     I(lineFree);
 
-    if (lineFree == theSet)
+    if (lineFree == theSet) {
       return *lineFree;  // Hit in the first possition
+    }
 
     tmp     = *lineFree;
     tmp_pos = lineFree;
@@ -917,13 +924,14 @@ typename CacheDMSkew<State, Addr_t>::Line *CacheDMSkew<State, Addr_t>::findLine2
   }
 
   while (1) {
-    if (rand_number > 2)
+    if (rand_number > 2) {
       rand_number = 0;
+    }
 
     if (rand_number == 0) {
-      if (line1->recent)
+      if (line1->recent) {
         line1->recent = false;
-      else {
+      } else {
         line1->recent = true;
         line2->recent = false;
         line3->recent = false;
@@ -931,18 +939,18 @@ typename CacheDMSkew<State, Addr_t>::Line *CacheDMSkew<State, Addr_t>::findLine2
       }
     }
     if (rand_number == 1) {
-      if (line2->recent)
+      if (line2->recent) {
         line2->recent = false;
-      else {
+      } else {
         line1->recent = false;
         line2->recent = true;
         line3->recent = false;
         return line2;
       }
     } else {
-      if (line3->recent)
+      if (line3->recent) {
         line3->recent = false;
-      else {
+      } else {
         line1->recent = false;
         line2->recent = false;
         line3->recent = true;
@@ -951,8 +959,9 @@ typename CacheDMSkew<State, Addr_t>::Line *CacheDMSkew<State, Addr_t>::findLine2
     }
   }
 #else
-  if ((rand_number & 1) == 0)
+  if ((rand_number & 1) == 0) {
     return line1;
+  }
   return line2;
 #endif
   // END Skew cache
@@ -1030,8 +1039,9 @@ typename CacheSHIP<State, Addr_t>::Line *CacheSHIP<State, Addr_t>::findLinePriva
 
     (*lineHit)->setOutcome(true);
 
-    if (SHCT[signature] < 7)  // 3 bit counter. But why? Whatabout 2^log2Assoc - 1
+    if (SHCT[signature] < 7) {  // 3 bit counter. But why? Whatabout 2^log2Assoc - 1
       SHCT[signature] += 1;
+    }
   }
 
   (*lineHit)->setRRPV(0);

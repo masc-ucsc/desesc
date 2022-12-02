@@ -2,7 +2,7 @@
 #ifndef DOLC_H
 #define DOLC_H
 
-//#define DOLC_RLE
+// #define DOLC_RLE
 
 class DOLC {
 private:
@@ -43,14 +43,16 @@ private:
       } else if (i == 6) {
         obits = 1;
       }
-      if (obits < 1)
+      if (obits < 1) {
         obits = 1;
+      }
 #else
       if ((i == 128) || (i == 256) || (i == 64) || (i == 32) || (i == 3316)) {
         obits--;
       }
-      if (obits < 1)
+      if (obits < 1) {
         obits = 1;
+      }
 #endif
 
       histBits[i] = obits;
@@ -163,8 +165,9 @@ public:
     uint64_t sign  = 0;
 
     int i_max = m;
-    if (i_max > static_cast<int>(depth))
+    if (i_max > static_cast<int>(depth)) {
       i_max = depth;
+    }
 
     for (int i = 0; i < i_max; i++) {
       uint64_t oBits = histBits[i];

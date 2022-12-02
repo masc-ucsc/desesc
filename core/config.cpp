@@ -8,8 +8,9 @@ void Config::init(const std::string f) {
   filename = f;
 
   const char *e = getenv("DESESCCONF");
-  if (e)
+  if (e) {
     filename = e;
+  }
 
   data = toml::parse(filename);
 }
@@ -46,7 +47,7 @@ std::string Config::get_string(const std::string &block, const std::string &name
     if (e) {
       std::string v{e};
 
-      std::transform(v.begin(), v.end(), v.begin(), [](unsigned char c){ return std::tolower(c); });
+      std::transform(v.begin(), v.end(), v.begin(), [](unsigned char c) { return std::tolower(c); });
       return v;
     }
   }
@@ -64,7 +65,7 @@ std::string Config::get_string(const std::string &block, const std::string &name
         return std::toupper(c1) == std::toupper(c2);
       });
       if (same) {
-        std::transform(e.begin(), e.end(), e.begin(), [](unsigned char c){ return std::tolower(c); });
+        std::transform(e.begin(), e.end(), e.begin(), [](unsigned char c) { return std::tolower(c); });
         return e;
       }
     }
@@ -73,7 +74,7 @@ std::string Config::get_string(const std::string &block, const std::string &name
     return "INVALID";
   }
 
-  std::transform(val.begin(), val.end(), val.begin(), [](unsigned char c){ return std::tolower(c); });
+  std::transform(val.begin(), val.end(), val.begin(), [](unsigned char c) { return std::tolower(c); });
   return val;
 }
 
@@ -185,8 +186,8 @@ size_t Config::get_array_size(const std::string &block, const std::string &name,
     return 0;
   }
 
-  auto i= ent.as_array().size();
-  if (i>max_size) {
+  auto i = ent.as_array().size();
+  if (i > max_size) {
     errors.emplace_back(fmt::format("conf:{} section:{} field:{} has too many entries\n", filename, block, name));
     return max_size;
   }
@@ -246,7 +247,7 @@ std::string Config::get_array_string(const std::string &block, const std::string
   }
 
   std::string e = arr[pos].as_string();
-  std::transform(e.begin(), e.end(), e.begin(), [](unsigned char c){ return std::tolower(c); });
+  std::transform(e.begin(), e.end(), e.begin(), [](unsigned char c) { return std::tolower(c); });
   return e;
 }
 
@@ -266,8 +267,9 @@ bool Config::has_entry(const std::string &block, const std::string &name) {
 }
 
 bool Config::has_entry(const std::string &block, const std::string &name, size_t pos, const std::string &name2) {
-  if (!has_entry(block, name))
+  if (!has_entry(block, name)) {
     return false;
+  }
 
   auto ent = toml::find(data, block, name);
   if (!ent.is_array()) {
@@ -299,7 +301,7 @@ bool Config::get_bool(const std::string &block, const std::string &name) {
 
     const char *e = getenv(env_var.c_str());
     if (e) {
-      return strcasecmp(e,"true")==0;
+      return strcasecmp(e, "true") == 0;
     }
   }
 
@@ -343,7 +345,7 @@ bool Config::get_bool(const std::string &block, const std::string &name, size_t 
 
     const char *e = getenv(env_var.c_str());
     if (e) {
-      return strcasecmp(e,"true")==0;
+      return strcasecmp(e, "true") == 0;
     }
   }
 
@@ -357,14 +359,15 @@ bool Config::get_bool(const std::string &block, const std::string &name, size_t 
 }
 
 int Config::check_power2(const std::string &block, const std::string &name, int v) {
-  if (v == 0)
+  if (v == 0) {
     return 0;
+  }
 
   if (v < 0) {
     add_error(fmt::format("entry {} field {}={} is negative, not a power of two", block, name, v));
     return 0;
   }
-  if ((v& (v - 1)) != 0) {
+  if ((v & (v - 1)) != 0) {
     add_error(fmt::format("entry {} field {}={} is not a power of two", block, name, v));
     return 0;
   }
@@ -382,5 +385,4 @@ int Config::get_power2(const std::string &block, const std::string &name, size_t
   int v = get_integer(block, name, pos, name2, from, to);
 
   return check_power2(block, name, v);
-
 }

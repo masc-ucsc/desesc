@@ -63,11 +63,11 @@ inline void cvtEndian(T &val) {
 
 template <typename T>
 inline void cvtEndian(T &val, int32_t byteOrder) {
-  if (byteOrder == __BIG_ENDIAN)
+  if (byteOrder == __BIG_ENDIAN) {
     cvtEndian<T, __BIG_ENDIAN, __BYTE_ORDER>(val);
-  else if (byteOrder == __LITTLE_ENDIAN)
+  } else if (byteOrder == __LITTLE_ENDIAN) {
     cvtEndian<T, __LITTLE_ENDIAN, __BYTE_ORDER>(val);
-  else {
+  } else {
     errno = EINVAL;
     perror("cvtEndian with invalid byteOrder");
     exit(1);

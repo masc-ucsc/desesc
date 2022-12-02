@@ -11,9 +11,9 @@
 #include "snippets.hpp"
 
 #ifndef NDEBUG
-//#define POOL_TIMEOUT 1
+// #define POOL_TIMEOUT 1
 #define POOL_SIZE_CHECK 1
-//#define CLEAR_ON_INSERT 1
+// #define CLEAR_ON_INSERT 1
 #endif
 
 #ifdef POOL_TIMEOUT
@@ -94,8 +94,9 @@ public:
     thid     = 0;
 #endif
 
-    if (first == 0)
+    if (first == 0) {
       reproduce();
+    }
   }
 
   ~pool1() {
@@ -113,8 +114,9 @@ public:
 
   void doChecks() {
 #ifdef POOL_TIMEOUT
-    if (noTimeCheck)
+    if (noTimeCheck) {
       return;
+    }
     if (need2cycle < globalClock) {
       Holder *tmp = allFirst;
       while (tmp) {
@@ -128,8 +130,9 @@ public:
 
   void in(Ttype *data) {
 #ifndef NDEBUG
-    if (thid == 0)
+    if (thid == 0) {
       thid = pthread_self();
+    }
     I(thid == pthread_self());
     I(!deleted);
 #endif
@@ -152,8 +155,9 @@ public:
 
   Ttype *out() {
 #ifndef NDEBUG
-    if (thid == 0)
+    if (thid == 0) {
       thid = pthread_self();
+    }
     I(thid == pthread_self());
     I(!deleted);
 #endif
@@ -178,8 +182,9 @@ public:
 
     Ttype *h = static_cast<Ttype *>(first);
     first    = first->holderNext;
-    if (first == 0)
+    if (first == 0) {
       reproduce();
+    }
 
     return h;
   }
@@ -281,8 +286,9 @@ public:
       old_first = AtomicCompareSwap(&first, c_first, c_first->holderNext);
     } while (old_first != c_first);
 
-    if (first == 0)
+    if (first == 0) {
       reproduce();
+    }
 
     Ttype *h = (Ttype *)(c_first);
     I(c_first->inPool);
@@ -368,8 +374,9 @@ public:
     thid     = 0;
 #endif
 
-    if (first == 0)
+    if (first == 0) {
       reproduce();
+    }
   }
 
   ~pool() {
@@ -389,8 +396,9 @@ public:
 
   void doChecks() {
 #ifdef POOL_TIMEOUT
-    if (noTimeCheck)
+    if (noTimeCheck) {
       return;
+    }
     if (need2cycle < globalClock) {
       Holder *tmp = allFirst;
       while (tmp) {
@@ -407,8 +415,9 @@ public:
     Holder *tmp = static_cast<Holder *>(current);
     tmp         = tmp->allNext;
     while (tmp) {
-      if (!tmp->inPool)
+      if (!tmp->inPool) {
         return static_cast<Ttype *>(tmp);
+      }
       tmp = tmp->allNext;
     }
     return 0;
@@ -418,8 +427,9 @@ public:
 
   void in(Ttype *data) {
 #ifndef NDEBUG
-    if (thid == 0)
+    if (thid == 0) {
       thid = pthread_self();
+    }
     I(thid == pthread_self());
     I(!deleted);
 #endif
@@ -446,8 +456,9 @@ public:
 
   Ttype *out() {
 #ifndef NDEBUG
-    if (thid == 0)
+    if (thid == 0) {
       thid = pthread_self();
+    }
     I(thid == pthread_self());
     I(!deleted);
     I(first);
@@ -471,8 +482,9 @@ public:
 
     Ttype *h = static_cast<Ttype *>(first);
     first    = first->holderNext;
-    if (first == 0)
+    if (first == 0) {
       reproduce();
+    }
 
 #if defined(CLEAR_ON_INSERT) && defined(DEBUG)
     const char *ptr = (const char *)(h);
@@ -557,8 +569,9 @@ public:
     allFirst = 0;
 #endif
 
-    if (first == 0)
+    if (first == 0) {
       reproduce();
+    }
   }
 
   ~poolplus() {
@@ -576,8 +589,9 @@ public:
 
   void doChecks() {
 #ifdef POOL_TIMEOUT
-    if (!timeCheck)
+    if (!timeCheck) {
       return;
+    }
     if (need2cycle < globalClock) {
       Holder *tmp = allFirst;
       while (tmp) {
@@ -631,8 +645,9 @@ public:
 
     Ttype *h = static_cast<Ttype *>(first);
     first    = first->holderNext;
-    if (first == 0)
+    if (first == 0) {
       reproduce();
+    }
 
     h->Ttype::prepare();
 

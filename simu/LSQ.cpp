@@ -1,10 +1,10 @@
 // See LICENSE for details.
 
-#include "fmt/format.h"
-
 #include "LSQ.h"
+
 #include "GProcessor.h"
 #include "config.hpp"
+#include "fmt/format.h"
 
 LSQFull::LSQFull(Hartid_t hid, int32_t size)
     /* constructor {{{1 */
@@ -61,10 +61,11 @@ Dinst *LSQFull::executing(Dinst *dinst)
     if (oooExecuted) {
       if (qdinst->isExecuted() && qdinst->getPC() != dinst->getPC()) {
         if (inst->isStore() && qinst->isLoad()) {
-          if (faulty == 0)
+          if (faulty == 0) {
             faulty = qdinst;
-          else if (faulty->getID() < qdinst->getID())
+          } else if (faulty->getID() < qdinst->getID()) {
             faulty = qdinst;
+          }
         }
       }
     } else {
@@ -118,8 +119,9 @@ bool LSQNone::insert(Dinst *dinst)
 /* Insert dinst in LSQ (in-order) {{{1 */
 {
   int i = getEntry(dinst->getAddr());
-  if (addrTable[i])
+  if (addrTable[i]) {
     return false;
+  }
 
   addrTable[i] = dinst;
 
@@ -214,7 +216,8 @@ void LSQVPC::remove(Dinst *dinst)
       return;
     }
     instIt++;
-    if (instIt == instMap.end())
+    if (instIt == instMap.end()) {
       return;
+    }
   }
 }

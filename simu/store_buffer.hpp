@@ -6,8 +6,8 @@
 #include <vector>
 
 #include "absl/container/flat_hash_map.h"
-#include "dinst.hpp"
 #include "callback.hpp"
+#include "dinst.hpp"
 #include "opcode.hpp"
 
 class MemObj;  // To break circular dependencies

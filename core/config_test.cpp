@@ -34,8 +34,10 @@ protected:
     file << "a = [\"leaf1\", \"leaf2\"]\n";
     file << "[leaf1]\n";
     file << "v=3\n";
+    file << "str=foo\n";
     file << "[leaf2]\n";
     file << "v=4\n";
+    file << "str=bar\n";
 
     file.close();
   }
@@ -75,4 +77,7 @@ TEST_F(Config_test, indirect) {
   EXPECT_EQ(Config::get_integer("base", "a", 1, "v"), 4);
   EXPECT_EQ(Config::get_integer("base", "a", 0, "v", -10, 10), 3);
   EXPECT_EQ(Config::get_integer("base", "a", 1, "v", -1, 2), 0);
+
+  EXPECT_EQ(Config::get_string("base", "a", 0, "str"), "foo");
+  EXPECT_EQ(Config::get_string("base", "a", 1, "str"), "bar");
 }

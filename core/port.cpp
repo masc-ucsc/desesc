@@ -66,8 +66,9 @@ Time_t PortFullyPipe::nextSlot(bool en) {
   Time_t cns = calcNextSlot();
 #endif
 
-  if (lTime < globalClock)
+  if (lTime < globalClock) {
     lTime = globalClock;
+  }
 
 #ifndef NDEBUG
   I(cns == lTime);
@@ -119,8 +120,9 @@ Time_t PortPipe::nextSlot(bool en) {
   Time_t cns = calcNextSlot();
 #endif
 
-  if (lTime < globalClock)
+  if (lTime < globalClock) {
     lTime = globalClock;
+  }
 
   Time_t st = lTime;
   lTime += ocp;
@@ -138,7 +140,7 @@ PortNPipe::PortNPipe(const std::string &name, NumUnits_t nFU, TimeDelta_t occ) :
   portBusyUntil.resize(nFU, globalClock);
 }
 
-PortNPipe::~PortNPipe() { }
+PortNPipe::~PortNPipe() {}
 
 Time_t PortNPipe::nextSlot(bool en) { return nextSlot(ocp, en); }
 
@@ -186,8 +188,10 @@ Time_t PortNPipe::nextSlot(int32_t occupancy, bool en) {
 Time_t PortNPipe::calcNextSlot() const {
   Time_t firsttime = portBusyUntil[0];
 
-  for (NumUnits_t i = 1; i < nUnits; i++)
-    if (portBusyUntil[i] < firsttime)
+  for (NumUnits_t i = 1; i < nUnits; i++) {
+    if (portBusyUntil[i] < firsttime) {
       firsttime = portBusyUntil[i];
+    }
+  }
   return (firsttime < globalClock) ? globalClock : firsttime;
 }

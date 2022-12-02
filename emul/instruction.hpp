@@ -23,7 +23,7 @@ public:
   static const char *opcode2Name(Opcode type);
   void               set(Opcode op, RegType src1, RegType src2, RegType dst1, RegType dst2);
   bool               doesJump2Label() const {
-                  return opcode == iBALU_LJUMP || opcode == iBALU_LCALL;
+    return opcode == iBALU_LJUMP || opcode == iBALU_LCALL;
   }  // No branch label, just unconditional instructions
   bool        doesCtrl2Label() const { return opcode == iBALU_LJUMP || opcode == iBALU_LCALL || opcode == iBALU_LBRANCH; }
   Opcode      getOpcode() const { return opcode; }
@@ -40,9 +40,9 @@ public:
   bool hasSrc1Register() const { return src1 != LREG_NoDependence; }
   bool hasSrc2Register() const { return src2 != LREG_NoDependence; }
   int  getnsrc() const {
-     int n = hasSrc1Register() ? 1 : 0;
-     n += hasSrc2Register() ? 1 : 0;
-     return n;
+    int n = hasSrc1Register() ? 1 : 0;
+    n += hasSrc2Register() ? 1 : 0;
+    return n;
   }
 
   bool isFuncCall() const { return opcode == iBALU_RCALL || opcode == iBALU_LCALL; }

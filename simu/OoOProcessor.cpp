@@ -198,8 +198,9 @@ void OoOProcessor::fetch()
 
 bool OoOProcessor::advance_clock_drain() {
   bool abort = decode_stage();
-  if (abort || !busy)
+  if (abort || !busy) {
     return busy;
+  }
 
   // RENAME Stage
   if (replayRecovering) {
@@ -244,8 +245,9 @@ bool OoOProcessor::advance_clock_drain() {
 }
 
 bool OoOProcessor::advance_clock() {
-  if (!active)
+  if (!active) {
     return false;
+  }
 
   fetch();
 
@@ -258,8 +260,9 @@ void OoOProcessor::executing(Dinst *dinst)
   dinst->markExecuting();
 
 #ifdef LATE_ALLOC_REGISTER
-  if (dinst->getInst()->hasDstRegister())
+  if (dinst->getInst()->hasDstRegister()) {
     nTotalRegs--;
+  }
 #endif
 #ifdef TRACK_FORWARDING
   if (dinst->has_stats()) {
@@ -271,30 +274,34 @@ void OoOProcessor::executing(Dinst *dinst)
     if (inst->hasSrc1Register()) {
       nNeeded++;
       Time_t t = fwdDone[inst->getSrc1()];
-      if ((t + 2) >= globalClock)
+      if ((t + 2) >= globalClock) {
         nForward++;
+      }
     }
     if (inst->hasSrc2Register()) {
       nNeeded++;
       Time_t t = fwdDone[inst->getSrc2()];
-      if ((t + 2) >= globalClock)
+      if ((t + 2) >= globalClock) {
         nForward++;
+      }
     }
 
-    if (nNeeded == 0)
+    if (nNeeded == 0) {
       fwd0done0.inc(true);
-    else if (nNeeded == 1) {
-      if (nForward)
+    } else if (nNeeded == 1) {
+      if (nForward) {
         fwd1done1.inc(true);
-      else
+      } else {
         fwd1done0.inc(true);
+      }
     } else {
-      if (nForward == 2)
+      if (nForward == 2) {
         fwd2done2.inc(true);
-      else if (nForward == 1)
+      } else if (nForward == 1) {
         fwd2done1.inc(true);
-      else
+      } else {
         fwd2done0.inc(true);
+      }
     }
   }
 #endif
@@ -313,13 +320,15 @@ StallCause OoOProcessor::add_inst(Dinst *dinst) {
     return ReplaysStall;
   }
 
-  if ((ROB.size() + rROB.size()) >= (MaxROBSize - 1))
+  if ((ROB.size() + rROB.size()) >= (MaxROBSize - 1)) {
     return SmallROBStall;
+  }
 
   const Instruction *inst = dinst->getInst();
 
-  if (nTotalRegs <= 0)
+  if (nTotalRegs <= 0) {
     return SmallREGStall;
+  }
 
   Cluster *cluster = dinst->getCluster();
   if (!cluster) {
@@ -394,8 +403,9 @@ StallCause OoOProcessor::add_inst(Dinst *dinst) {
           if (inst->isMemory()) {
             if (serializeRAT[last_serializeLogical]) {
               if (inst->isLoad()) {
-                if (serializeRAT[last_serializeLogical]->getInst()->isStore())
+                if (serializeRAT[last_serializeLogical]->getInst()->isStore()) {
                   serializeRAT[last_serializeLogical]->addSrc3(dinst);
+                }
               } else {
                 serializeRAT[last_serializeLogical]->addSrc3(dinst);
               }
@@ -1087,12 +1097,15 @@ void OoOProcessor::rtt_br_hit(Dinst *dinst) {
       int    lt_idx = DL1->return_load_table_index(ld_pc);
       num_loads_non_ldbp.inc(true);  // inc load counter
       if ((lt_idx != -1)) {
-        if (DL1->load_table_vec[lt_idx].conf > DL1->getLoadTableConf())
+        if (DL1->load_table_vec[lt_idx].conf > DL1->getLoadTableConf()) {
           num_ld_conf_non_ldbp.inc(true);
-        if (DL1->load_table_vec[lt_idx].data_conf > DL1->getLoadDataConf())
+        }
+        if (DL1->load_table_vec[lt_idx].data_conf > DL1->getLoadDataConf()) {
           num_ld_data_conf_non_ldbp.inc(true);
-        if (DL1->load_table_vec[lt_idx].chain_child)
+        }
+        if (DL1->load_table_vec[lt_idx].chain_child) {
           num_chain_child.inc(true);
+        }
       }
     }
 
@@ -1101,12 +1114,15 @@ void OoOProcessor::rtt_br_hit(Dinst *dinst) {
       int    lt_idx = DL1->return_load_table_index(ld_pc);
       num_loads_non_ldbp.inc(true);  // inc load counter
       if ((lt_idx != -1)) {
-        if (DL1->load_table_vec[lt_idx].conf > DL1->getLoadTableConf())
+        if (DL1->load_table_vec[lt_idx].conf > DL1->getLoadTableConf()) {
           num_ld_conf_non_ldbp.inc(true);
-        if (DL1->load_table_vec[lt_idx].data_conf > DL1->getLoadDataConf())
+        }
+        if (DL1->load_table_vec[lt_idx].data_conf > DL1->getLoadDataConf()) {
           num_ld_data_conf_non_ldbp.inc(true);
-        if (DL1->load_table_vec[lt_idx].chain_child)
+        }
+        if (DL1->load_table_vec[lt_idx].chain_child) {
           num_chain_child.inc(true);
+        }
       }
     }
     /*********************************************
@@ -1315,8 +1331,9 @@ void OoOProcessor::btt_trigger_load(Dinst *dinst, Addr_t ld_ptr) {
                                    0,
                                    0);
         // if(trig_ld_dist < 64)
-        if (trig_ld_dist < MAX_TRIG_DIST)
+        if (trig_ld_dist < MAX_TRIG_DIST) {
           DL1->lor_vec[lor_id].trig_ld_dist++;
+        }
       }
       // update lor_start by delta so that next TL doesnt trigger redundant loads
       DL1->lor_vec[lor_id].ld_start = DL1->lor_vec[lor_id].ld_start + DL1->lor_vec[lor_id].ld_delta;
@@ -1406,8 +1423,9 @@ int OoOProcessor::btt_pointer_check(Dinst *dinst, int btt_id) {
         DL1->plq_vec.push_back(MemObj::pending_load_queue());
       }
     }
-    if (all_ptr_track)
+    if (all_ptr_track) {
       return 1;
+    }
   }
 
   return 0;
@@ -1453,10 +1471,12 @@ void OoOProcessor::retire()
       DL1->hit_on_load_table(dinst, false);
       int lt_idx = DL1->return_load_table_index(dinst->getPC());
       if ((lt_idx != -1)) {
-        if (DL1->load_table_vec[lt_idx].conf > DL1->getLoadTableConf())
+        if (DL1->load_table_vec[lt_idx].conf > DL1->getLoadTableConf()) {
           num_ld_conf.inc(true);
-        if (DL1->load_table_vec[lt_idx].data_conf > DL1->getLoadDataConf())
+        }
+        if (DL1->load_table_vec[lt_idx].data_conf > DL1->getLoadDataConf()) {
           num_ld_data_conf.inc(true);
+        }
       }
       rtt_load_hit(dinst);
     }
@@ -1501,8 +1521,9 @@ void OoOProcessor::retire()
       for (uint32_t i = 0; i < ROB.size(); i++) {  // calculate num of inflight branches
         uint32_t pos       = ROB.getIDFromTop(i);
         Dinst   *tmp_dinst = ROB.getData(pos);
-        if (tmp_dinst->getInst()->isBranch() && (tmp_dinst->getPC() == dinst->getPC()))
+        if (tmp_dinst->getInst()->isBranch() && (tmp_dinst->getPC() == dinst->getPC())) {
           num_inflight_branches++;
+        }
       }
       inflight_branch = num_inflight_branches;
       dinst->setInflight(inflight_branch);
@@ -1531,17 +1552,21 @@ void OoOProcessor::retire()
       uint32_t pos   = ROB.getIDFromTop(i);
       Dinst   *dinst = ROB.getData(pos);
 
-      if (!dinst->has_stats())
+      if (!dinst->has_stats()) {
         continue;
-      if (!dinst->getInst()->isLoad())
+      }
+      if (!dinst->getInst()->isLoad()) {
         continue;
-      if (dinst->isPerformed())
+      }
+      if (dinst->isPerformed()) {
         continue;
+      }
 
-      if (dinst->isFullMiss())
+      if (dinst->isFullMiss()) {
         total_miss++;
-      else
+      } else {
         total_hit++;
+      }
     }
     avgPNRHitLoadSpec.sample(total_hit, true);
     avgPNRMissLoadSpec.sample(true, total_miss);
@@ -1599,8 +1624,9 @@ void OoOProcessor::retire()
     I(dinst->getCluster());
 
     bool done = dinst->getCluster()->retire(dinst, flushing);
-    if (!done)
+    if (!done) {
       break;
+    }
 
     Hartid_t smt_hid = dinst->getFlowId();
     if (dinst->isReplay()) {
@@ -1642,8 +1668,9 @@ void OoOProcessor::retire()
     }
 #endif
 #ifdef ESESC_TRACE1
-    if (dinst->getPC() == 0x1100c || dinst->getPC() == 0x11008)
+    if (dinst->getPC() == 0x1100c || dinst->getPC() == 0x11008) {
       MSG("TR %8llx %lld\n", dinst->getPC(), dinst->getAddr());
+    }
 #endif
 #ifdef ESESC_TRACE2
     MSG("TR %8lld %8llx R%-2d,R%-2d=R%-2d op=%-2d R%-2d   %lld %lld %lld %lld %lld",
@@ -1677,7 +1704,7 @@ void OoOProcessor::retire()
 #endif
 
 #ifdef ESESC_TRACE3
-    if (dinst->getPC() == 0x10c96 || dinst->getPC() == 0x10c9a || dinst->getPC() == 0x10c9e)
+    if (dinst->getPC() == 0x10c96 || dinst->getPC() == 0x10c9a || dinst->getPC() == 0x10c9e) {
       MSG("TR %8lld %8llx R%-2d,R%-2d=R%-2d op=%-2d R%-2d  %lld %lld %lld",
           dinst->getID(),
           dinst->getPC(),
@@ -1689,6 +1716,7 @@ void OoOProcessor::retire()
           dinst->getData(),
           dinst->getData2(),
           dinst->getAddr());
+    }
 #endif
 
 #ifdef WAVESNAP_EN
@@ -1711,20 +1739,25 @@ void OoOProcessor::retire()
       }
     }
 #endif
-    if (dinst->getInst()->hasDstRegister())
+    if (dinst->getInst()->hasDstRegister()) {
       nTotalRegs++;
+    }
 
-    if (!dinst->getInst()->isStore())  // Stores can perform after retirement
+    if (!dinst->getInst()->isStore()) {  // Stores can perform after retirement
       I(dinst->isPerformed());
+    }
 
-    if (dinst->isPerformed())  // Stores can perform after retirement
+    if (dinst->isPerformed()) {  // Stores can perform after retirement
       dinst->destroy(eint);
+    }
   }
 
-  if (last_serialized == dinst)
+  if (last_serialized == dinst) {
     last_serialized = 0;
-  if (last_serializedST == dinst)
+  }
+  if (last_serializedST == dinst) {
     last_serializedST = 0;
+  }
 
   rROB.pop();
 }
@@ -1734,8 +1767,9 @@ void OoOProcessor::retire()
 void OoOProcessor::replay(Dinst *target)
 /* trigger a processor replay {{{1 */
 {
-  if (serialize_for)
+  if (serialize_for) {
     return;
+  }
 
   I(serialize_for <= 0);
   // Same load can be marked by several stores in a OoO core : I(replayID != target->getID());
@@ -1746,11 +1780,13 @@ void OoOProcessor::replay(Dinst *target)
   }
   target->markReplay();
 
-  if (replayID < target->getID())
+  if (replayID < target->getID()) {
     replayID = target->getID();
+  }
 
-  if (replayRecovering)
+  if (replayRecovering) {
     return;
+  }
   replayRecovering = true;
 
   // Count the # instructions wasted
@@ -1781,8 +1817,9 @@ void OoOProcessor::dumpROB()
     uint32_t pos = rROB.getIDFromTop(i);
 
     Dinst *dinst = rROB.getData(pos);
-    if (dinst->isReplay())
+    if (dinst->isReplay()) {
       fmt::print("-----REPLAY--------\n");
+    }
     dinst->dump("");
   }
 }

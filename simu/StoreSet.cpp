@@ -20,8 +20,9 @@ StoreSet::StoreSet(const int32_t id)
 #ifdef STORESET_CLEARING
   clear_interval = CLR_INTRVL;
   Time_t when    = clear_interval + globalClock;
-  if (when >= (globalClock * 2))
+  if (when >= (globalClock * 2)) {
     when = globalClock * 2 - 1;  // To avoid assertion about possible bug. Long enough anyway
+  }
   clearStoreSetsTimerCB.scheduleAbs(when);
 #endif
 }
@@ -75,8 +76,9 @@ void StoreSet::merge_sets(Dinst *m_dinst, Dinst *d_dinst)
   uint64_t merge_this_set_pc   = m_dinst->getPC();  // <<1 + m_dinst->getUopOffset();
   uint64_t destroy_this_set_pc = d_dinst->getPC();  // <<1 + d_dinst->getUopOffset();
   SSID_t   merge_SSID          = get_SSID(merge_this_set_pc);
-  if (!isValidSSID(merge_SSID))
+  if (!isValidSSID(merge_SSID)) {
     merge_SSID = create_set(merge_this_set_pc);
+  }
 
   set_SSID(destroy_this_set_pc, merge_SSID);
 }
@@ -94,7 +96,9 @@ void StoreSet::clear_SSIT()
 void StoreSet::clear_LFST(void)
 /* clear all the LFST entries {{{1 */
 {
-  for (size_t i = 0; i < LFST.size(); i++) LFST[i] = nullptr;
+  for (size_t i = 0; i < LFST.size(); i++) {
+    LFST[i] = nullptr;
+  }
 }
 /* }}} */
 
@@ -105,8 +109,9 @@ void StoreSet::clearStoreSetsTimer()
   clear_SSIT();
   clear_LFST();
   Time_t when = clear_interval + globalClock;
-  if (when >= (globalClock * 2))
+  if (when >= (globalClock * 2)) {
     when = globalClock * 2 - 1;  // To avoid assertion about possible bug. Long enough anyway
+  }
   clearStoreSetsTimerCB.scheduleAbs(when);
 }
 /* }}} */
@@ -136,8 +141,9 @@ bool StoreSet::insert(Dinst *dinst)
   set_LFS(inst_SSID,
           dinst);  // make this instruction the Last Fetched Store(Should be renamed to instruction since loads are included).
 
-  if (lfs_dinst == 0)
+  if (lfs_dinst == 0) {
     return true;
+  }
 
   I(!lfs_dinst->isExecuted());
   I(!dinst->isExecuted());
@@ -154,8 +160,9 @@ void StoreSet::remove(Dinst *dinst)
 
   SSID_t inst_SSID = dinst->getSSID();
 
-  if (!isValidSSID(inst_SSID))
+  if (!isValidSSID(inst_SSID)) {
     return;
+  }
 
   Dinst *lfs_dinst = get_LFS(inst_SSID);
 
@@ -204,8 +211,9 @@ void StoreSet::stldViolation_withmerge(Dinst *ld_dinst, Dinst *st_dinst)
   if (isValidSSID(st_SSID)) {
     if (st_SSID != ld_SSID) {
       for (int i = 0; i < StoreSetSize; i++) {  // iterate SSIT, move all PCs from old set to THIS LD's set.
-        if (SSIT[i] == st_SSID)
+        if (SSIT[i] == st_SSID) {
           SSIT[i] = ld_SSID;
+        }
       }
       LFST[st_SSID] = nullptr;  // Wipe out any pending LFST for the destroyed set.
     }
@@ -217,15 +225,17 @@ void StoreSet::stldViolation_withmerge(Dinst *ld_dinst, Dinst *st_dinst)
 SSID_t StoreSet::mergeset(SSID_t id1, SSID_t id2)
 /* add a new st/ld violation {{{1 */
 {
-  if (id1 == id2)
+  if (id1 == id2) {
     return id1;
+  }
 
   // SSID_t newid = create_id();
   SSID_t newid;
-  if (id1 < id2)
+  if (id1 < id2) {
     newid = id1;
-  else
+  } else {
     newid = id2;
+  }
 
   I(id1 != -1);
   I(id2 != -1);
@@ -234,8 +244,9 @@ SSID_t StoreSet::mergeset(SSID_t id1, SSID_t id2)
   set_LFS(id2, 0);
 
   for (int i = 0; i < StoreSetSize; i++) {  // iterate SSIT, move all PCs from old set to THIS LD's set.
-    if (SSIT[i] == id1 || SSIT[i] == id2)
+    if (SSIT[i] == id1 || SSIT[i] == id2) {
       SSIT[i] = newid;
+    }
   }
 
   return newid;
@@ -266,8 +277,9 @@ void StoreSet::assign_SSID(Dinst *dinst, SSID_t target_SSID) {
       // if(dinst->getID() == lfs_dinst->getID()){ //is this store or load the most recent from the set
       // if(dinst->getpersistentID() == lfs_dinst->getpersistentID()){ //is this store or load the most recent from the set
       if ((lfs_dinst == nullptr) || (lfs_dinst == dinst)) {
-        if (inst_pc == lfs_dinst->getPC())
+        if (inst_pc == lfs_dinst->getPC()) {
           set_LFS(inst_SSID, 0);  // remove self from LFS to prevent a deadlock after leaving this set
+        }
       }
     }
   }

@@ -20,14 +20,14 @@
  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-//#define LARGE_SC
-//#define STRICTSIZE
-// uncomment to get the 256 Kbits record predictor mentioned in the paper achieves 2.228 MPKI
+// #define LARGE_SC
+// #define STRICTSIZE
+//  uncomment to get the 256 Kbits record predictor mentioned in the paper achieves 2.228 MPKI
 
-//#define POSTPREDICT
-// uncomment to get a realistic predictor around 256 Kbits , with 12 1024 entries tagged tables in the TAGE predictor, and a global
-// history and single local history GEHL statistical corrector total misprediction numbers TAGE-SC-L : 2.435 MPKI TAGE-SC-L  + IMLI:
-// 2.294 MPKI TAGE-GSC + IMLI: 2.370 MPKI TAGE-GSC : 2.531 MPKI TAGE alone: 2.602 MPKI
+// #define POSTPREDICT
+//  uncomment to get a realistic predictor around 256 Kbits , with 12 1024 entries tagged tables in the TAGE predictor, and a global
+//  history and single local history GEHL statistical corrector total misprediction numbers TAGE-SC-L : 2.435 MPKI TAGE-SC-L  +
+//  IMLI: 2.294 MPKI TAGE-GSC + IMLI: 2.370 MPKI TAGE-GSC : 2.531 MPKI TAGE alone: 2.602 MPKI
 
 #pragma once
 
@@ -37,12 +37,12 @@
 #include <vector>
 
 #include "DOLC.h"
-#include "dinst.hpp"   // AddrType and Opcode
+#include "dinst.hpp"  // AddrType and Opcode
 
-//#define MEDIUM_TAGE 1
-//#define IMLI_150K 1
+// #define MEDIUM_TAGE 1
+// #define IMLI_150K 1
 #define IMLI_256K 1
-//#define MEGA_IMLI 1
+// #define MEGA_IMLI 1
 
 #if defined(MEGA_IMLI) && defined(MEDIUM_TAGE)
 #error "Pick one"
@@ -51,14 +51,14 @@
 #define SIMPLER_DOLC_PATH
 
 #ifdef MEDIUM_TAGE
-//#define LOOPPREDICTOR //  use loop  predictor
-//#define LOCALH			// use local histories
-//#define IMLI			// using IMLI component
-//#define IMLISIC            //use IMLI-SIC
-//#define IMLIOH		//use IMLI-OH
+// #define LOOPPREDICTOR //  use loop  predictor
+// #define LOCALH			// use local histories
+// #define IMLI			// using IMLI component
+// #define IMLISIC            //use IMLI-SIC
+// #define IMLIOH		//use IMLI-OH
 #define LOGG  10 /* logsize of the  tagged TAGE tables*/
 #define TBITS 13 /* minimum tag width*/
-//#define USE_DOLC 1
+// #define USE_DOLC 1
 
 #elif MEGA_IMLI        // 1M IMLI
 // nhist = 9
@@ -135,8 +135,8 @@
 #define MAXHIST 71
 #define MINHIST 5
 #else
-//#define MINHIST 7
-//#define MAXHIST 1000
+// #define MINHIST 7
+// #define MAXHIST 1000
 #define MINHIST 1
 #define MAXHIST 71
 #endif
@@ -278,7 +278,7 @@ int8_t FirstH, SecondH, ThirdH;
 #define HISTBUFFERLENGTH 4096  // we use a 4K entries history buffer to store the branch history
 
 // the counter(s) to chose between longest match and alternate prediction on TAGE when weak counters
-//#define LOGSIZEUSEALT 0
+// #define LOGSIZEUSEALT 0
 #define LOGSIZEUSEALT 2
 #define SIZEUSEALT    (1 << (LOGSIZEUSEALT))
 #define INDUSEALT     ((pcSign(lastBoundaryPC)) & (SIZEUSEALT - 1))
@@ -375,24 +375,28 @@ public:
 
   void update(bool taken) {
     if (bwidth > 4) {
-      if (taken && pred[pos_p] < -1)
+      if (taken && pred[pos_p] < -1) {
         pred[pos_p] = pred[pos_p] / 2;
-      else if (!taken && pred[pos_p] > 0)
+      } else if (!taken && pred[pos_p] > 0) {
         pred[pos_p] = pred[pos_p] / 2;
-      else if (taken) {
-        if (pred[pos_p] < ((1 << (bwidth - 1)) - 1))
+      } else if (taken) {
+        if (pred[pos_p] < ((1 << (bwidth - 1)) - 1)) {
           pred[pos_p]++;
+        }
       } else {
-        if (pred[pos_p] > -(1 << (bwidth - 1)))
+        if (pred[pos_p] > -(1 << (bwidth - 1))) {
           pred[pos_p]--;
+        }
       }
     } else {
       if (taken) {
-        if (pred[pos_p] < ((1 << (bwidth - 1)) - 1))
+        if (pred[pos_p] < ((1 << (bwidth - 1)) - 1)) {
           pred[pos_p]++;
+        }
       } else {
-        if (pred[pos_p] > -(1 << (bwidth - 1)))
+        if (pred[pos_p] > -(1 << (bwidth - 1))) {
           pred[pos_p]--;
+        }
       }
     }
   }
@@ -433,7 +437,9 @@ public:
 
   void dump() {
     fprintf(stderr, "nsub=%d tag=%x hit=%d thit=%d u=%d loff=%d", nsub, tag, hit, thit, u[0], last_boff);
-    for (int i = 0; i < nsub; i++) fprintf(stderr, ": off=%d ctr=%d", boff[i], ctr[i]);
+    for (int i = 0; i < nsub; i++) {
+      fprintf(stderr, ": off=%d ctr=%d", boff[i], ctr[i]);
+    }
   }
 
   bool isHit() const { return hit; }
@@ -484,8 +490,9 @@ public:
   }
 
   void ctr_force_steal(bool taken) {
-    if (!thit)
+    if (!thit) {
       return;
+    }
 
     int p = nsub - 1;
 
@@ -499,11 +506,13 @@ public:
         break;
       }
       int ioff = 0;
-      if (ctr[i] < 0)
+      if (ctr[i] < 0) {
         ioff = 1;
+      }
       int poff = 0;
-      if (ctr[p] < 0)
+      if (ctr[p] < 0) {
         poff = 1;
+      }
 
       if (abs(ctr[i] + ioff) < abs(ctr[p] + poff)) {
         p = i;
@@ -525,16 +534,19 @@ public:
 
     int p = nsub - 1;
 
-    if (hit)
+    if (hit) {
       return true;
+    }
 
-    if (!thit)
+    if (!thit) {
       return false;
+    }
 
 #if 1
     // Better to steal even if u is not zero if we have a tag hit
-    if (p == 0)
+    if (p == 0) {
       return false;
+    }
 #endif
 
     bool weak = false;
@@ -553,8 +565,9 @@ public:
       }
 #endif
     }
-    if (!weak)
+    if (!weak) {
       return false;
+    }
 
     boff[p] = last_boff;
     ctr[p]  = taken ? 0 : -1;
@@ -564,8 +577,9 @@ public:
   }
 
   void ctr_update(bool taken) {
-    if (!thit)
+    if (!thit) {
       return;
+    }
     if (!hit) {
       int freepos = nsub;
 
@@ -580,52 +594,60 @@ public:
         pos           = freepos;
       } else {
         bool s = ctr_steal(taken);
-        if (!s)
+        if (!s) {
           return;
+        }
       }
       hit = true;
     }
 
 #if CWIDTH > 4
-    if (taken && ctr[pos] < -1)
+    if (taken && ctr[pos] < -1) {
       ctr[pos] = ctr[pos] / 2;
-    else if (!taken && ctr[pos] > 0)
+    } else if (!taken && ctr[pos] > 0) {
       ctr[pos] = ctr[pos] / 2;
-    else if (taken) {
-      if (ctr[pos] < ((1 << (CWIDTH - 1)) - 1))
+    } else if (taken) {
+      if (ctr[pos] < ((1 << (CWIDTH - 1)) - 1)) {
         ctr[pos]++;
+      }
     } else {
-      if (ctr[pos] > -(1 << (CWIDTH - 1)))
+      if (ctr[pos] > -(1 << (CWIDTH - 1))) {
         ctr[pos]--;
+      }
     }
 #else
     if (taken) {
-      if (ctr[pos] < ((1 << (CWIDTH - 1)) - 1))
+      if (ctr[pos] < ((1 << (CWIDTH - 1)) - 1)) {
         ctr[pos]++;
+      }
     } else {
-      if (ctr[pos] > -(1 << (CWIDTH - 1)))
+      if (ctr[pos] > -(1 << (CWIDTH - 1))) {
         ctr[pos]--;
+      }
     }
 #endif
   }
 
   bool ctr_weak() const {
-    if (!hit)
+    if (!hit) {
       return true;
+    }
 
     return ctr[pos] == 0 || ctr[pos] == -1;
   }
 
   bool ctr_highconf() const {
-    if (!hit)
+    if (!hit) {
       return false;
+    }
 
     return (abs(2 * ctr[pos] + 1) >= (1 << CWIDTH) - 1);
   }
 
   int ctr_get() const {
-    if (!hit)
+    if (!hit) {
       return 0;  // bias to taken if nothing is known
+    }
 
     return ctr[pos];
   }
@@ -635,13 +657,15 @@ public:
   int u_get() const { return u[0]; }
 
   void u_inc() {
-    if (u[0] < (1 << UWIDTH) - 1)
+    if (u[0] < (1 << UWIDTH) - 1) {
       u[0]++;
+    }
   }
 
   void u_dec() {
-    if (u[0])
+    if (u[0]) {
       u[0]--;
+    }
   }
   void u_clear() { u[0] = 0; }
 };
@@ -666,24 +690,28 @@ public:
 
   uint32_t postp_index(uint32_t a, uint32_t b, uint32_t c) {
     int ctr[POSTPEXTRA + 1];
-    if (a)
+    if (a) {
       ctr[0] = gtable[a][GI[a]].ctr_get();
-    else
+    } else {
       ctr[0] = bimodal.predict();
-    if (b)
+    }
+    if (b) {
       ctr[1] = gtable[b][GI[b]].ctr_get();
-    else
+    } else {
       ctr[1] = bimodal.predict();
-    if (c)
+    }
+    if (c) {
       ctr[2] = gtable[c][GI[c]].ctr_get();
-    else
+    } else {
       ctr[2] = bimodal.predict();
+    }
 
     for (int i = 0; i < 3; i++) {
-      if (ctr[i] >= 3)
+      if (ctr[i] >= 3) {
         ctr[i] = 3;
-      else if (ctr[i] <= -4)
+      } else if (ctr[i] <= -4) {
         ctr[i] = -4;
+      }
     }
 
     int v = 0;
@@ -906,20 +934,25 @@ public:
 #endif
 
 #ifdef IMLISIC
-    for (int i = 0; i < INB; i++) Im[i] = 10;  // the IMLIcounter is limited to 10 bits
+    for (int i = 0; i < INB; i++) {
+      Im[i] = 10;  // the IMLIcounter is limited to 10 bits
+    }
 #endif
 
 #ifdef IMLIOH
-    for (int i = 0; i < FNB; i++) Fm[i] = 2;
+    for (int i = 0; i < FNB; i++) {
+      Fm[i] = 2;
+    }
 #endif
 
     m[1]     = MINHIST;
     m[nhist] = MAXHIST;
     for (int i = 2; i <= nhist; i++) {
-      if (MAXHIST <= nhist)
+      if (MAXHIST <= nhist) {
         m[i] = i;
-      else
+      } else {
         m[i] = (int)(((double)MINHIST * pow((double)(MAXHIST) / (double)MINHIST, (double)(i - 1) / (double)((nhist - 1)))) + 0.5);
+      }
     }
 
     for (int i = 1; i <= nhist; i++) {
@@ -940,10 +973,11 @@ public:
       gtable[i] = new gentry[1 << (logg[i])];
       for (int j = 0; j < (1 << logg[i]); j++) {
         int s;
-        if (i >= ngalloc)
+        if (i >= ngalloc) {
           s = galloc[ngalloc];
-        else
+        } else {
           s = galloc[i];
+        }
         gtable[i][j].allocate(s);
       }
     }
@@ -963,57 +997,80 @@ public:
     phist = 0;
     Seed  = 0;
 
-    for (int i = 0; i < HISTBUFFERLENGTH; i++) ghist[0] = 0;
+    for (int i = 0; i < HISTBUFFERLENGTH; i++) {
+      ghist[0] = 0;
+    }
     ptghist = 0;
 
-    for (int i = 0; i < (1 << LOGSIZEUP); i++) Pupdatethreshold[i] = 35;
+    for (int i = 0; i < (1 << LOGSIZEUP); i++) {
+      Pupdatethreshold[i] = 35;
+    }
 
-    for (int i = 0; i < GNB; i++) GGEHL[i] = &GGEHLA[i][0];
-    for (int i = 0; i < LNB; i++) LGEHL[i] = &LGEHLA[i][0];
+    for (int i = 0; i < GNB; i++) {
+      GGEHL[i] = &GGEHLA[i][0];
+    }
+    for (int i = 0; i < LNB; i++) {
+      LGEHL[i] = &LGEHLA[i][0];
+    }
 
-    for (int i = 0; i < GNB; i++)
+    for (int i = 0; i < GNB; i++) {
       for (int j = 0; j < ((1 << LOGGNB) - 1); j++) {
         if (!(j & 1)) {
           GGEHL[i][j] = -1;
         }
       }
-    for (int i = 0; i < LNB; i++)
+    }
+    for (int i = 0; i < LNB; i++) {
       for (int j = 0; j < ((1 << LOGLNB) - 1); j++) {
         if (!(j & 1)) {
           LGEHL[i][j] = -1;
         }
       }
-    for (int i = 0; i < PNB; i++) PGEHL[i] = &PGEHLA[i][0];
-    for (int i = 0; i < PNB; i++)
+    }
+    for (int i = 0; i < PNB; i++) {
+      PGEHL[i] = &PGEHLA[i][0];
+    }
+    for (int i = 0; i < PNB; i++) {
       for (int j = 0; j < ((1 << LOGPNB) - 1); j++) {
         if (!(j & 1)) {
           PGEHL[i][j] = -1;
         }
       }
+    }
 
 #ifdef IMLI
 #ifdef IMLIOH
-    for (int i = 0; i < FNB; i++) FGEHL[i] = &FGEHLA[i][0];
-    for (int i = 0; i < FNB; i++)
+    for (int i = 0; i < FNB; i++) {
+      FGEHL[i] = &FGEHLA[i][0];
+    }
+    for (int i = 0; i < FNB; i++) {
       for (int j = 0; j < ((1 << LOGFNB) - 1); j++) {
         if (!(j & 1)) {
           FGEHL[i][j] = -1;
         }
       }
+    }
 #endif
 #ifdef IMLISIC
-    for (int i = 0; i < INB; i++) IGEHL[i] = &IGEHLA[i][0];
-    for (int i = 0; i < INB; i++)
+    for (int i = 0; i < INB; i++) {
+      IGEHL[i] = &IGEHLA[i][0];
+    }
+    for (int i = 0; i < INB; i++) {
       for (int j = 0; j < ((1 << LOGINB) - 1); j++) {
         if (!(j & 1)) {
           IGEHL[i][j] = -1;
         }
       }
+    }
 #endif
 #endif
 
-    for (int j = 0; j < (1 << (LOGBIAS + 1)); j++) Bias[j] = (j & 1) ? 15 : -16;
-    for (int j = 0; j < (1 << (LOGBIAS + 1)); j++) BiasSK[j] = (j & 1) ? 15 : -16;
+    for (int j = 0; j < (1 << (LOGBIAS + 1)); j++) {
+      Bias[j] = (j & 1) ? 15 : -16;
+    }
+    for (int j = 0; j < (1 << (LOGBIAS + 1)); j++) {
+      BiasSK[j] = (j & 1) ? 15 : -16;
+    }
 
     for (int i = 0; i < NLOCAL; i++) {
       L_shist[i] = 0;
@@ -1075,11 +1132,13 @@ public:
   // up-down saturating counter
   void ctrupdate(int8_t &ctr, bool taken, int nbits) {
     if (taken) {
-      if (ctr < ((1 << (nbits - 1)) - 1))
+      if (ctr < ((1 << (nbits - 1)) - 1)) {
         ctr++;
+      }
     } else {
-      if (ctr > -(1 << (nbits - 1)))
+      if (ctr > -(1 << (nbits - 1))) {
         ctr--;
+      }
     }
   }
 
@@ -1106,9 +1165,9 @@ public:
         LHIT   = i;
         LVALID = ((ltable[index].confid == CONFLOOP) || (ltable[index].confid * ltable[index].NbIter > 128));
         {}
-        if (ltable[index].CurrentIter + 1 == ltable[index].NbIter)
+        if (ltable[index].CurrentIter + 1 == ltable[index].NbIter) {
           return (!(ltable[index].dir));
-        else {
+        } else {
           return ((ltable[index].dir));
         }
       }
@@ -1131,9 +1190,11 @@ public:
           ltable[index].CurrentIter = 0;
           return;
 
-        } else if ((predloop != tage_pred) || ((MYRANDOM() & 7) == 0))
-          if (ltable[index].age < CONFLOOP)
+        } else if ((predloop != tage_pred) || ((MYRANDOM() & 7) == 0)) {
+          if (ltable[index].age < CONFLOOP) {
             ltable[index].age++;
+          }
+        }
       }
 
       ltable[index].CurrentIter++;
@@ -1146,8 +1207,9 @@ public:
       }
       if (Taken != ltable[index].dir) {
         if (ltable[index].CurrentIter == ltable[index].NbIter) {
-          if (ltable[index].confid < CONFLOOP)
+          if (ltable[index].confid < CONFLOOP) {
             ltable[index].confid++;
+          }
           if (ltable[index].NbIter < 3)
           // just do not predict when the loop count is 1 or 2
           {
@@ -1176,9 +1238,9 @@ public:
     {
       Addr_t X = MYRANDOM() & 3;
 
-      if ((MYRANDOM() & 3) == 0)
+      if ((MYRANDOM() & 3) == 0) {
         for (int i = 0; i < 4; i++) {
-          int LHIT2  = (X + i) & 3;
+          int LHIT2 = (X + i) & 3;
           int index = (LI ^ ((LIB >> LHIT2) << 2)) + LHIT2;
           if (ltable[index].age == 0) {
             ltable[index].dir = !Taken;
@@ -1190,10 +1252,12 @@ public:
             ltable[index].CurrentIter = 0;
             break;
 
-          } else
+          } else {
             ltable[index].age--;
+          }
           break;
         }
+      }
     }
   }
 #endif
@@ -1252,10 +1316,11 @@ public:
     }
 
     if (HitBank > 0) {
-      if (AltBank > 0)
+      if (AltBank > 0) {
         alttaken = (gtable[AltBank][GI[AltBank]].ctr_isTaken());
-      else
+      } else {
         alttaken = bimodal.predict();
+      }
     } else {
       alttaken         = bimodal.predict();
       LongestMatchPred = alttaken;
@@ -1263,10 +1328,11 @@ public:
 #else
     // computes the prediction and the alternate prediction
     if (HitBank > 0) {
-      if (AltBank > 0)
+      if (AltBank > 0) {
         alttaken = (gtable[AltBank][GI[AltBank]].ctr_isTaken());
-      else
+      } else {
         alttaken = bimodal.predict();
+      }
 
       // if the entry is recognized as a newly allocated entry and
       // USE_ALT_ON_NA is positive  use the alternate prediction
@@ -1331,8 +1397,9 @@ public:
 
   void fetchBoundaryEnd() {
 #ifdef USE_DOLC
-    if (lastBoundaryCtrl)
+    if (lastBoundaryCtrl) {
       idolc.update(lastBoundarySign);
+    }
 #endif
   }
 
@@ -1382,8 +1449,9 @@ public:
 #ifdef LOOPPREDICTOR
     predloop   = getloop(PC);  // loop prediction
     pred_taken = ((WITHLOOP >= 0) && (LVALID)) ? predloop : pred_taken;
-    if ((WITHLOOP >= 0) && (LVALID))
+    if ((WITHLOOP >= 0) && (LVALID)) {
       bias = true;
+    }
 #endif
 
     pred_inter = pred_taken;
@@ -1408,8 +1476,9 @@ public:
     LSUM += 8;
 #endif
 
-    if (!pred_inter)
+    if (!pred_inter) {
       LSUM = -LSUM;
+    }
     ////////////////////////////////////
     // integrate BIAS prediction
     int8_t ctr = Bias[INDBIAS];
@@ -1426,8 +1495,9 @@ public:
       localoh = ohhisttable[(((PC ^ (PC >> 4)) << SHIFTFUTURE) + IMLIcount + i) & (OHHISTTABLESIZE - 1)] + (localoh << 1);
     }
 
-    if (IMLIcount >= 2)
+    if (IMLIcount >= 2) {
       LSUM += 2 * Gpredict((PC << 2), localoh, Fm, FGEHL, FNB, LOGFNB);
+    }
 #endif
 
 #ifdef IMLISIC
@@ -1464,18 +1534,21 @@ public:
       // Choser uses TAGE confidence and |LSUM|
       pred_taken = SCPRED;
       if (HighConf) {
-        if ((abs(LSUM) < Pupdatethreshold[INDUPD] / 3))
+        if ((abs(LSUM) < Pupdatethreshold[INDUPD] / 3)) {
           pred_taken = (FirstH < 0) ? SCPRED : pred_inter;
+        }
 
-        else if ((abs(LSUM) < 2 * Pupdatethreshold[INDUPD] / 3))
+        else if ((abs(LSUM) < 2 * Pupdatethreshold[INDUPD] / 3)) {
           pred_taken = (SecondH < 0) ? SCPRED : pred_inter;
-        else if ((abs(LSUM) < Pupdatethreshold[INDUPD]))
+        } else if ((abs(LSUM) < Pupdatethreshold[INDUPD])) {
           pred_taken = (ThirdH < 0) ? SCPRED : pred_inter;
+        }
       }
     }
 
-    if (pred_taken == tage_pred && HighConf)
+    if (pred_taken == tage_pred && HighConf) {
       bias = true;
+    }
 
     return pred_taken;
   }
@@ -1484,15 +1557,16 @@ public:
                      folded_history *G, folded_history *J, long long &LH, long long &GBRHIST) {
     // special treatment for unconditional branchs;
     int maxt;
-    if (brtype == iBALU_LBRANCH)
+    if (brtype == iBALU_LBRANCH) {
       maxt = 1;
-    else
+    } else {
       maxt = 4;
+    }
 
-      // the return stack associated history
+    // the return stack associated history
 
 #ifdef IMLI
-    if (brtype == iBALU_LBRANCH)
+    if (brtype == iBALU_LBRANCH) {
       if (target < PC) {
         // This branch is a branch "loop"
         if (!taken) {
@@ -1500,12 +1574,14 @@ public:
           IMLIcount = 0;
         }
         if (taken) {
-          if (IMLIcount < (MAXIMLIcount))
+          if (IMLIcount < (MAXIMLIcount)) {
             IMLIcount++;
+          }
         }
       }
+    }
 #ifdef IMLIOH
-    if (IMLIcount >= 1)
+    if (IMLIcount >= 1) {
       if (brtype == iBALU_LBRANCH) {
         if (target >= PC) {
           PIPE[(PC ^ (PC >> 4)) & (PASTSIZE - 1)]
@@ -1513,6 +1589,7 @@ public:
           ohhisttable[(((PC ^ (PC >> 4)) << SHIFTFUTURE) + IMLIcount) & (OHHISTTABLESIZE - 1)] = taken;
         }
       }
+    }
 #endif
 #endif
 
@@ -1549,9 +1626,9 @@ public:
       ghist[Y & (HISTBUFFERLENGTH - 1)] = DIR;
       X                                 = (X << 1) ^ PATHBIT;
       for (int i = 1; i <= nhist; i++) {
-                H[i].update(ghist, Y);
-                G[i].update(ghist, Y);
-                J[i].update(ghist, Y);
+        H[i].update(ghist, Y);
+        G[i].update(ghist, Y);
+        J[i].update(ghist, Y);
       }
 #endif
     }
@@ -1566,8 +1643,9 @@ public:
 
 #ifdef LOOPPREDICTOR
     if (LVALID) {
-      if (pred_taken != predloop)
+      if (pred_taken != predloop) {
         ctrupdate(WITHLOOP, (predloop == resolveDir), 7);
+      }
     }
 
     loopupdate(resolveDir, (pred_taken != resolveDir));
@@ -1578,27 +1656,31 @@ public:
       if (HighConf) {
         if (pred_inter != SCPRED) {
           if ((abs(LSUM) < Pupdatethreshold[INDUPD])) {
-            if ((abs(LSUM) < Pupdatethreshold[INDUPD] / 3)) 
+            if ((abs(LSUM) < Pupdatethreshold[INDUPD] / 3)) {
               ctrupdate(FirstH, (pred_inter == resolveDir), CONFWIDTH);
-            else if ((abs(LSUM) < 2 * Pupdatethreshold[INDUPD] / 3))
+            } else if ((abs(LSUM) < 2 * Pupdatethreshold[INDUPD] / 3)) {
               ctrupdate(SecondH, (pred_inter == resolveDir), CONFWIDTH);
-            else if ((abs(LSUM) < Pupdatethreshold[INDUPD]))
+            } else if ((abs(LSUM) < Pupdatethreshold[INDUPD])) {
               ctrupdate(ThirdH, (pred_inter == resolveDir), CONFWIDTH);
+            }
           }
         }
       }
 
       if ((SCPRED != resolveDir) || ((abs(LSUM) < Pupdatethreshold[INDUPD]))) {
-        if (SCPRED != resolveDir)
+        if (SCPRED != resolveDir) {
           Pupdatethreshold[INDUPD] += 1;
-        else
+        } else {
           Pupdatethreshold[INDUPD] -= 1;
+        }
 
-        if (Pupdatethreshold[INDUPD] >= 256)
+        if (Pupdatethreshold[INDUPD] >= 256) {
           Pupdatethreshold[INDUPD] = 255;
+        }
 
-        if (Pupdatethreshold[INDUPD] < 0)
+        if (Pupdatethreshold[INDUPD] < 0) {
           Pupdatethreshold[INDUPD] = 0;
+        }
 
         ctrupdate(Bias[INDBIAS], resolveDir, PERCWIDTH);
         ctrupdate(BiasSK[INDBIASSK], resolveDir, PERCWIDTH);
@@ -1622,8 +1704,9 @@ public:
 #endif
 
 #ifdef IMLIOH
-        if (IMLIcount >= 2)
+        if (IMLIcount >= 2) {
           Gupdate((PC << 2), resolveDir, localoh, Fm, FGEHL, FNB, LOGFNB);
+        }
 #endif
 
 #endif
@@ -1634,9 +1717,11 @@ public:
     // TAGE UPDATE
     if (true) {
       bool ALLOC = ((tage_pred != resolveDir) & (HitBank < nhist));
-      if (pred_taken == resolveDir)
-        if ((MYRANDOM() & 31) != 0)
+      if (pred_taken == resolveDir) {
+        if ((MYRANDOM() & 31) != 0) {
           ALLOC = false;
+        }
+      }
 
       if (HitBank > 0) {
         // Manage the selection between longest matching and alternate matching
@@ -1644,11 +1729,12 @@ public:
         bool PseudoNewAlloc = gtable[HitBank][GI[HitBank]].ctr_weak();
         // an entry is considered as newly allocated if its prediction counter is weak
         if (PseudoNewAlloc) {
-          if (LongestMatchPred == resolveDir)
+          if (LongestMatchPred == resolveDir) {
             ALLOC = false;
+          }
 
-            // if it was delivering the correct prediction, no need to allocate a new entry
-            // even if the overall prediction was false
+          // if it was delivering the correct prediction, no need to allocate a new entry
+          // even if the overall prediction was false
 #ifndef POSTPREDICT
           // FIXME: Have a PC (or T1 history) based use_alt table
           if (LongestMatchPred != alttaken) {
@@ -1666,31 +1752,34 @@ public:
         int T = 1;  // nhist; // Seznec has 1
 
         int A = 1;
-        if ((MYRANDOM() & 127) < 32 && nhist > 8)
+        if ((MYRANDOM() & 127) < 32 && nhist > 8) {
           A = 2;
+        }
 
         int Penalty = 0;
         int NA      = 0;
 
         int weakBank = HitBank + A;
 #ifdef SUBENTRIES
-        std::vector<bool> skip(nhist+1, false);
+        std::vector<bool> skip(nhist + 1, false);
 
         // First try tag (but not offset hit)
         for (int i = weakBank; i <= nhist; i += 1) {
           if (gtable[i][GI[i]].isTagHit()) {
             weakBank = i;
 
-            if (!gtable[i][GI[i]].ctr_steal(resolveDir))
+            if (!gtable[i][GI[i]].ctr_steal(resolveDir)) {
               continue;
+            }
 
             skip[i] = true;
             // gtable[i][GI[i]].dump(); printf(" alloc pc=%x\n",PC);
 
             NA++;
             T--;
-            if (T <= 0)
+            if (T <= 0) {
               break;
+            }
           }
         }
 #endif
@@ -1699,8 +1788,9 @@ public:
         if (T > 0) {
           weakBank = HitBank + A;
           for (int i = weakBank; i <= nhist; i += 1) {
-            if (skip[i])
+            if (skip[i]) {
               continue;
+            }
 
             if (gtable[i][GI[i]].u_get() == 0) {
               weakBank = i;
@@ -1720,8 +1810,9 @@ public:
 
               NA++;
 
-              if (T <= 0)
+              if (T <= 0) {
                 break;
+              }
 
               i += 1;
               T -= 1;
@@ -1734,10 +1825,11 @@ public:
 
         TICK += (Penalty - NA);
 #if 1
-        if (TICK < -127)
+        if (TICK < -127) {
           TICK = -127;
-        else if (TICK > 63)
+        } else if (TICK > 63) {
           TICK = 63;
+        }
         if (T) {
           if (TICK > 0) {
             for (int i = HitBank + 1; i <= nhist; i += 1) {
@@ -1754,13 +1846,15 @@ public:
         }
 #else
         // just the best formula for the Championship
-        if (TICK < 0)
+        if (TICK < 0) {
           TICK = 0;
+        }
         if (TICK > 1023) {
-                  for (int i = 1; i <= nhist; i++)
+          for (int i = 1; i <= nhist; i++) {
             for (int j = 0; j <= (1 << logg[i]) - 1; j++) {
-                      gtable[i][j].u_dec();
+              gtable[i][j].u_dec();
             }
+          }
           TICK = 0;
         }
 #endif
@@ -1800,17 +1894,7 @@ public:
 #endif
     // END TAGE UPDATE
 
-    HistoryUpdate(PC,
-                  iBALU_LBRANCH,
-                  resolveDir,
-                  branchTarget,
-                  phist,
-                  ptghist,
-                  ch_i,
-                  ch_t[0],
-                  ch_t[1],
-                  L_shist[INDLOCAL],
-                  GHIST);
+    HistoryUpdate(PC, iBALU_LBRANCH, resolveDir, branchTarget, phist, ptghist, ch_i, ch_t[0], ch_t[1], L_shist[INDLOCAL], GHIST);
     // END PREDICTOR UPDATE
   }
 

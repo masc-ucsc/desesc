@@ -20,8 +20,9 @@ ClusterManager::ClusterManager(GMemorySystem *ms, uint32_t cpuid, GProcessor *gp
 
     for (int32_t t = 0; t < iMAX; t++) {
       Resource *r = cluster->getResource(static_cast<Opcode>(t));
-      if (r)
+      if (r) {
         res[t].push_back(r);
+      }
     }
   }
 
@@ -41,8 +42,9 @@ ClusterManager::ClusterManager(GMemorySystem *ms, uint32_t cpuid, GProcessor *gp
 
   // 0 is an invalid opcde. All the other should be defined
   for (Opcode i = static_cast<Opcode>(1); i < iMAX; i = static_cast<Opcode>((int)i + 1)) {
-    if (!res[i].empty())
+    if (!res[i].empty()) {
       continue;
+    }
 
     Config::add_error(fmt::format("core:{} does not support instruction type {}", coreSection, Instruction::opcode2Name(i)));
   }

@@ -5,8 +5,8 @@
 #include <cstdint>
 #include <vector>
 
-#include "stats.hpp"
 #include "iassert.hpp"
+#include "stats.hpp"
 
 class BloomFilter {
 private:
@@ -57,7 +57,7 @@ public:
   void        dump(const char *msg);
   const char *getDesc() { return desc; }
 
-  int32_t size() {  //# of elements encoded
+  int32_t size() {  // # of elements encoded
     return nElements;
   }
 
@@ -87,7 +87,9 @@ public:
 
   BitSelection(int32_t *bitPos, int32_t n) {
     nBits = 0;
-    for (int32_t i = 0; i < n; i++) addBit(bitPos[i]);
+    for (int32_t i = 0; i < n; i++) {
+      addBit(bitPos[i]);
+    }
   }
 
   ~BitSelection() {}
@@ -117,4 +119,3 @@ public:
     printf("\n");
   }
 };
-

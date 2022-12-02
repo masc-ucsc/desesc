@@ -95,10 +95,12 @@ void MemRequest::addPendingSetStateAck(MemRequest *mreq) {
 
 void MemRequest::setStateAckDone(TimeDelta_t lat) {
   MemRequest *orig = setStateAckOrig;
-  if (orig == 0)
+  if (orig == 0) {
     return;
-  if (orig->mt == mt_setState)
+  }
+  if (orig->mt == mt_setState) {
     orig->needsDisp |= needsDisp;
+  }
 
   setStateAckOrig = 0;
   I(orig->pendingSetStateAck > 0);
@@ -123,7 +125,7 @@ void MemRequest::setStateAckDone(TimeDelta_t lat) {
   }
 }
 
-MemRequest *MemRequest::create(MemObj *mobj, Addr_t addr, bool doStats, CallbackBase *cb) {
+MemRequest *MemRequest::create(MemObj *mobj, Addr_t addr, bool keep_stats, CallbackBase *cb) {
   I(mobj);
 
   MemRequest *r = actPool.out();
@@ -171,16 +173,18 @@ void MemRequest::dump_all() {
 
 void MemRequest::dump_calledge(TimeDelta_t lat, bool interesting) {
 #if 1
-  if (!interesting && !forcemsgdump)
+  if (!interesting && !forcemsgdump) {
     return;
+  }
 #endif
 
   Time_t total      = 0;
   Time_t last_tismo = 0;
   for (size_t i = 0; i < calledge.size(); i++) {
     CallEdge ce = calledge[i];
-    if (last_tismo == 0)
+    if (last_tismo == 0) {
       last_tismo = ce.tismo;
+    }
     total += ce.tismo - last_tismo;
     last_tismo = ce.tismo;
     if (ce.mt == mt_setState || ce.mt == mt_disp) {
@@ -193,8 +197,9 @@ void MemRequest::dump_calledge(TimeDelta_t lat, bool interesting) {
 }
 
 void MemRequest::rawdump_calledge(TimeDelta_t lat, Time_t total) {
-  if (calledge.empty())
+  if (calledge.empty()) {
     return;
+  }
 
   printf("digraph path{\n");
   printf("  ce [label=\"0x%x addr id %ld delta %lu @%lld\"]\n", (unsigned int)addr, id, total, (long long)globalClock);
@@ -256,8 +261,9 @@ void MemRequest::rawdump_calledge(TimeDelta_t lat, Time_t total) {
     gname[k] = 0;
     printf(" -> %s", gname);
 
-    if (last_tismo == 0xdeadbeef)
+    if (last_tismo == 0xdeadbeef) {
       last_tismo = ce.tismo;
+    }
     printf(" [label=\"%d%s_%s_%lld_d%d\"]\n", (int)i, t, a, (long long int)ce.tismo, (int)(ce.tismo - last_tismo));
     last_tismo = ce.tismo;
   }

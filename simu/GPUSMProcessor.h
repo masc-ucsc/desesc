@@ -12,7 +12,7 @@ class GPUSMProcessor : public GProcessor {
 private:
   FetchEngine IFID;
 
-  uint32_t    numSP;
+  uint32_t numSP;
 
   LSQNone lsq;
   bool    busy;
@@ -55,4 +55,3 @@ public:
 
   std::string get_type() const final { return "gpu"; }
 };
-

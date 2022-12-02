@@ -72,26 +72,30 @@ public:
   bool empty() { return (tail == head); }
 
   bool isMostlyFull() {
-    if (valid_size > max_size / 4 * 3)
+    if (valid_size > max_size / 4 * 3) {
       state = MostlyFull;
+    }
     return state == MostlyFull;
   }
 
   bool isSomewhatFull() {
-    if ((valid_size <= max_size / 4 * 3) && (valid_size > max_size / 2))
+    if ((valid_size <= max_size / 4 * 3) && (valid_size > max_size / 2)) {
       state = SomewhatFull;
+    }
     return state == SomewhatFull;
   }
 
   bool isSomewhatEmpty() {
-    if ((valid_size <= max_size / 2) && (valid_size > max_size / 4))
+    if ((valid_size <= max_size / 2) && (valid_size > max_size / 4)) {
       state = SomewhatEmpty;
+    }
     return state == SomewhatEmpty;
   }
 
   bool isMostlyEmpty() {
-    if (valid_size <= max_size / 4)
+    if (valid_size <= max_size / 4) {
       state = MostlyEmpty;
+    }
     return state == MostlyEmpty;
   }
 

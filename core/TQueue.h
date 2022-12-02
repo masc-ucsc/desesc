@@ -145,8 +145,9 @@ public:
       tooFar.push_back(data);
       std::push_heap(tooFar.begin(), tooFar.end(), dLess);
 
-      if (minTooFar > time)
+      if (minTooFar > time) {
         minTooFar = time;
+      }
     }
   };
 
@@ -160,8 +161,9 @@ public:
       return node;
     }
 
-    if (minTooFar <= cTime)
+    if (minTooFar <= cTime) {
       adjustTooFar();
+    }
 
     if (nNodes == 0) {
       minTime = cTime;
@@ -177,8 +179,9 @@ public:
       node = access[minPos];
     }
 
-    if (node == 0)
+    if (node == 0) {
       return 0;
+    }
 
     I(minTime <= cTime);
 
@@ -196,10 +199,11 @@ public:
         std::pop_heap(tooFar.begin(), tooFar.end(), dLess);
         tooFar.pop_back();
 
-        if (tooFar.empty())
+        if (tooFar.empty()) {
           minTooFar = MaxTime;
-        else
+        } else {
           minTooFar = tooFar.front()->getTQTime();
+        }
 
       } else {
         typedef typename std::vector<Data>::iterator DataIter;
@@ -290,8 +294,9 @@ void TQueue<Data, Time>::reset() {
 
 template <class Data, class Time>
 TQueue<Data, Time>::~TQueue() {
-  if (nNodes)
+  if (nNodes) {
     fmt::print("Destroying TQueue {} with pending nodes\n", nNodes);
+  }
 
   free(accessTail);
 

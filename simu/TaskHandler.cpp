@@ -40,7 +40,7 @@ void TaskHandler::core_create(std::shared_ptr<GProcessor> gproc) {
 
   I(simus.size() == static_cast<size_t>(gproc->get_hid()));
 
-  for(auto i=0;i<gproc->get_smt_size();++i) {
+  for (auto i = 0; i < gproc->get_smt_size(); ++i) {
     simus.push_back(gproc);
 
     EmulSimuMapping map;
@@ -83,8 +83,9 @@ void TaskHandler::core_pause(Hartid_t fid) {
   fprintf(stderr, "P");
   I(allmaps[fid].fid == fid);
   I(fid < 65535);
-  if (terminate_all)
+  if (terminate_all) {
     return;
+  }
 
   if (allmaps[fid].active) {
     allmaps[fid].active       = false;  // So that no more populate is called
@@ -99,8 +100,9 @@ void TaskHandler::core_terminate_all()
   terminate_all = true;
 
   for (size_t i = 0; i < allmaps.size(); i++) {
-    if (!allmaps[i].active)
+    if (!allmaps[i].active) {
       continue;
+    }
     allmaps[i].active       = false;
     allmaps[i].deactivating = false;
   }
@@ -136,10 +138,12 @@ void TaskHandler::boot() {
 
 #ifndef NDEBUG
     for (size_t i = 0; i < allmaps.size(); i++) {
-      if (allmaps[i].active)
+      if (allmaps[i].active) {
         continue;
-      if (allmaps[i].deactivating)
+      }
+      if (allmaps[i].deactivating) {
         continue;
+      }
       I(allmaps[i].simu->isROBEmpty());
     }
 #endif
@@ -177,10 +181,11 @@ void TaskHandler::plugEnd()
                     emuls.size(),
                     nCPUThreads));
   } else if (emuls.size() < nCPUThreads) {
-    if (emuls.size() != 0)
+    if (emuls.size() != 0) {
       fmt::print("Warning: There are more cores than threads ({} vs {}). Powering down unusable cores\n",
                  emuls.size(),
                  nCPUThreads);
+    }
   }
 
   // Tie the emuls to the all maps
@@ -229,8 +234,9 @@ void TaskHandler::unplug()
 Hartid_t TaskHandler::getNumActiveCores() {
   Hartid_t numActives = 0;
   for (size_t i = 0; i < allmaps.size(); i++) {
-    if (allmaps[i].active)
+    if (allmaps[i].active) {
       numActives++;
+    }
   }
   return numActives;
 }

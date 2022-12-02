@@ -1,3 +1,5 @@
+// This file is distributed under the BSD 3-Clause License. See LICENSE for details.
+
 #include "emul_dromajo.hpp"
 
 #include <assert.h>
@@ -65,14 +67,14 @@ TEST_F(Emul_Dromajo_test, dhrystone_test) {
   Emul_dromajo dromajo_emul = *dromajo_ptr;
   EXPECT_FALSE(dromajo_ptr == NULL);
 
-  dromajo_emul.skip_rabbit(0, 553);
+  dromajo_emul.skip_rabbit(0, 560);
   Dinst *dinst = dromajo_emul.peek(0); //csrr
-  EXPECT_EQ(0x0000000080002ae4, dinst->getPC());
+  EXPECT_EQ(0x0000000080002aaa, dinst->getPC());
   const Instruction *inst = dinst->getInst();
   EXPECT_EQ(15, inst->getDst1());
   dinst->recycle();
 
-  dromajo_emul.skip_rabbit(0, 187);
+  dromajo_emul.skip_rabbit(0, 197);
   dinst = dromajo_emul.peek(0); //bge
   EXPECT_EQ(0x0000000080002094, dinst->getPC());
   EXPECT_EQ(0x00000000800020a4, dinst->getAddr());
@@ -92,17 +94,17 @@ TEST_F(Emul_Dromajo_test, dhrystone_test) {
 
   dromajo_emul.skip_rabbit(0, 2);  //addi
   dinst = dromajo_emul.peek(0);
-  EXPECT_EQ(0x0000000080002b46, dinst->getPC());
+  EXPECT_EQ(0x0000000080002b38, dinst->getPC());
   inst = dinst->getInst();
-  EXPECT_EQ(14 ,inst->getSrc1());
-  EXPECT_EQ(14, inst->getDst1());
+  EXPECT_EQ(8 ,inst->getSrc1());
+  EXPECT_EQ(12, inst->getDst1());
   EXPECT_TRUE(inst->isALU());
   dinst->recycle();
 
-  dromajo_emul.skip_rabbit(0, 7);  //sw
+  dromajo_emul.skip_rabbit(0, 5);  //sw
   dinst = dromajo_emul.peek(0);
-  EXPECT_EQ(0x0000000080002b5a, dinst->getPC());
-  EXPECT_EQ(0x0000000080025f18, dinst->getAddr());
+  EXPECT_EQ(0x0000000080002b46, dinst->getPC());
+  EXPECT_EQ(0x0000000080025658, dinst->getAddr());
   inst = dinst->getInst();
   EXPECT_EQ(8 ,inst->getSrc1());
   EXPECT_EQ(15 ,inst->getSrc2());

@@ -39,7 +39,6 @@ protected:
     file << "\n[drom_emu]\n";
     file << "num = \"1\"\n";
     file << "type = \"dromajo\"\n";
-    file << "load = \"ck1\"\n";
     file << "rabbit = 1e6\n";
     file << "detail = 1e6\n";
     file << "time = 2e6\n";
@@ -67,7 +66,7 @@ TEST_F(Emul_Dromajo_test, dhrystone_test) {
   Emul_dromajo dromajo_emul = *dromajo_ptr;
   EXPECT_FALSE(dromajo_ptr == NULL);
 
-  dromajo_emul.skip_rabbit(0, 560);
+  dromajo_emul.skip_rabbit(0, 664);
   Dinst *dinst = dromajo_emul.peek(0); //csrr
   EXPECT_EQ(0x0000000080002aaa, dinst->getPC());
   const Instruction *inst = dinst->getInst();

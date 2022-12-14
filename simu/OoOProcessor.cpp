@@ -102,12 +102,9 @@ OoOProcessor::OoOProcessor(GMemorySystem *gm, CPU_t i)
     , num_ldbr_others(fmt::format("P({})_num_ldbr_others", i))
 #endif
     , RetireDelay(Config::get_integer("soc", "core", i, "commit_delay"))
-    , IFID(i, gm)
-    , pipeQ(i)
     , lsq(i, Config::get_integer("soc", "core", i, "ldq_size", 1))
     , retire_lock_checkCB(this)
     , clusterManager(gm, i, this)
-    , avgFetchWidth(fmt::format("P({})_avgFetchWidth", i))
 #ifdef TRACK_TIMELEAK
     , avgPNRHitLoadSpec(fmt::format("P({})_avgPNRHitLoadSpec", i))
     , avgPNRMissLoadSpec(fmt::format("P({})_avgPNRMissLoadSpec", i))
@@ -135,7 +132,6 @@ OoOProcessor::OoOProcessor(GMemorySystem *gm, CPU_t i)
 
   nTotalRegs = Config::get_integer("soc", "core", gm->getCoreId(), "num_regs", 32);
 
-  busy             = false;
   flushing         = false;
   replayRecovering = false;
   replayID         = 0;
@@ -173,29 +169,6 @@ OoOProcessor::~OoOProcessor()
 }
 /* }}} */
 
-void OoOProcessor::fetch()
-/* fetch {{{1 */
-{
-  I(is_power_up());
-  I(eint);
-
-  auto smt_hid = hid;  // FIXME: for SMT
-
-  if (IFID.isBlocked()) {
-    busy = true;
-  } else {
-    IBucket *bucket = pipeQ.pipeLine.newItem();
-    if (bucket) {
-      IFID.fetch(bucket, eint, smt_hid);
-      if (!bucket->empty()) {
-        avgFetchWidth.sample(bucket->size(), bucket->top()->has_stats());
-        busy = true;
-      }
-    }
-  }
-}
-/* }}} */
-
 bool OoOProcessor::advance_clock_drain() {
   bool abort = decode_stage();
   if (abort || !busy) {
@@ -206,9 +179,6 @@ bool OoOProcessor::advance_clock_drain() {
   if (replayRecovering) {
     if ((rROB.empty() && ROB.empty())) {
       // Recovering done
-      EmulInterface *eint = TaskHandler::getEmul(flushing_fid);
-      eint->syncHeadTail(flushing_fid);
-
       I(flushing);
       replayRecovering = false;
       flushing         = false;
@@ -234,7 +204,7 @@ bool OoOProcessor::advance_clock_drain() {
   }
 
   if (!pipeQ.instQueue.empty()) {
-    spaceInInstQueue += issue(pipeQ);
+    spaceInInstQueue += issue();
   } else if (ROB.empty() && rROB.empty() && !pipeQ.pipeLine.hasOutstandingItems()) {
     return false;
   }
@@ -245,13 +215,13 @@ bool OoOProcessor::advance_clock_drain() {
 }
 
 bool OoOProcessor::advance_clock() {
-  if (!active) {
+  if (!TaskHandler::is_active(hid)) {
     return false;
   }
 
   fetch();
 
-  return advance_clock_drain());
+  return advance_clock_drain();
 }
 
 void OoOProcessor::executing(Dinst *dinst)
@@ -308,7 +278,7 @@ void OoOProcessor::executing(Dinst *dinst)
 }
 // 1}}}
 //
-void OoOProcessor::executed(Dinst *dinst) {
+void OoOProcessor::executed([[maybe_unused]] Dinst *dinst) {
 #ifdef TRACK_FORWARDING
   fwdDone[dinst->getInst()->getDst1()] = globalClock;
   fwdDone[dinst->getInst()->getDst2()] = globalClock;
@@ -425,14 +395,6 @@ StallCause OoOProcessor::add_inst(Dinst *dinst) {
   nInst[inst->getOpcode()]->inc(dinst->has_stats());  // FIXME: move to cluster
 
   ROB.push(dinst);
-  if (dinst->getInst()->isLoad()) {
-    if (loadIsSpec()) {
-      dinst->isSpec = true;
-    } else {
-      dinst->isSafe = true;
-    }
-  }
-
   I(dinst->getCluster() != 0);  // Resource::schedule must set the resource field
 
   int n = 0;
@@ -499,11 +461,6 @@ void OoOProcessor::retire_lock_check()
 /* Detect simulator locks and flush the pipeline {{{1 */
 {
   RetireState state;
-  if (active) {
-    state.committed = nCommitted.getDouble();
-  } else {
-    state.committed = 0;
-  }
   if (!rROB.empty()) {
     state.r_dinst    = rROB.top();
     state.r_dinst_ID = rROB.top()->getID();
@@ -514,9 +471,9 @@ void OoOProcessor::retire_lock_check()
     state.dinst_ID = ROB.top()->getID();
   }
 
-  if (last_state == state && active) {
-    I(0);
-    MSG("Lock detected in P(%d), flushing pipeline", getID());
+  if (last_state == state && TaskHandler::is_active(hid)) {
+    fmt::print("Lock detected in P({}), flushing pipeline\n", hid);
+    I(false);
   }
 
   last_state = state;
@@ -1430,10 +1387,10 @@ int OoOProcessor::btt_pointer_check(Dinst *dinst, int btt_id) {
 
   return 0;
 }
+#endif
 
-void OoOProcessor::retire()
-/* Try to retire instructions {{{1 */
-{
+void OoOProcessor::retire() {
+
 #ifdef ENABLE_LDBP
   int64_t gclock = int64_t(clockTicks.getDouble());
   if (gclock != power_clock) {
@@ -1454,10 +1411,8 @@ void OoOProcessor::retire()
 #endif
   // Pass all the ready instructions to the rrob
   while (!ROB.empty()) {
-    Dinst   *dinst                 = ROB.top();
-    uint64_t num_inflight_branches = 0;
-
-    bool done = dinst->getClusterResource()->preretire(dinst, flushing);
+    auto *dinst = ROB.top();
+    bool  done  = dinst->getClusterResource()->preretire(dinst, flushing);
     // Addr_t ppc = dinst->getPC();
     // MSG("MV");
     GI(flushing && dinst->isExecuted(), done);
@@ -1537,8 +1492,6 @@ void OoOProcessor::retire()
 
 #endif
 
-    I(IFID.getMissDinst() != dinst);
-
     rROB.push(dinst);
     ROB.pop();
   }
@@ -1609,6 +1562,12 @@ void OoOProcessor::retire()
 
   for (uint16_t i = 0; i < RetireWidth && !rROB.empty(); i++) {
     Dinst *dinst = rROB.top();
+    if (last_serialized == dinst) {
+      last_serialized = 0;
+    }
+    if (last_serializedST == dinst) {
+      last_serializedST = 0;
+    }
 
     if ((dinst->getExecutedTime() + RetireDelay) >= globalClock) {
 #ifdef SUPERDUMP
@@ -1633,10 +1592,6 @@ void OoOProcessor::retire()
       flushing     = true;
       flushing_fid = smt_hid;  // It can be different from hid due to SMT
     }
-
-#ifdef FETCH_TRACE
-    // Call eint->markTrace
-#endif
 
     nCommitted.inc(!flushing && dinst->has_stats());
 
@@ -1663,8 +1618,6 @@ void OoOProcessor::retire()
                          dinst->isTrig_ld2_pred(),
                          dinst->isTrig_ld2_unpred(),
                          dinst->get_trig_ld_status());
-      Addr_t p = dinst->getPC();
-      // MSG("BR_PROFILE clk=%u brpc=%llx br_miss=%d\n", globalClock, dinst->getPC(), dinst->isBranchMiss());
     }
 #endif
 #ifdef ESESC_TRACE1
@@ -1748,21 +1701,13 @@ void OoOProcessor::retire()
     }
 
     if (dinst->isPerformed()) {  // Stores can perform after retirement
-      dinst->destroy(eint);
+      dinst->destroy();
     }
   }
 
-  if (last_serialized == dinst) {
-    last_serialized = 0;
-  }
-  if (last_serializedST == dinst) {
-    last_serializedST = 0;
-  }
 
   rROB.pop();
 }
-}
-/* }}} */
 
 void OoOProcessor::replay(Dinst *target)
 /* trigger a processor replay {{{1 */
@@ -1828,9 +1773,10 @@ bool OoOProcessor::loadIsSpec() {
   std::vector<double> mem_unresolved;
   std::vector<double> br_unresolved;
   std::vector<double> div_unresolved;
-  int                 robSize = ROB.size();
+
+  auto robSize = ROB.size();
   if (robSize > 0) {
-    for (uint32_t i = 0; i < robSize; i++) {
+    for (uint32_t i = 0u; i < robSize; i++) {
       uint32_t pos   = ROB.getIDFromTop(i);
       Dinst   *dinst = ROB.getData(pos);
       if (dinst->getInst()->isMemory()) {

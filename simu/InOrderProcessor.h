@@ -14,7 +14,6 @@ private:
   const int32_t RetireDelay;
 
   LSQNone lsq;
-  bool    busy;
 
   Dinst **RAT;
 

@@ -30,14 +30,12 @@ class OoOProcessor : public GProcessor {
 private:
   class RetireState {
   public:
-    double committed;
     Time_t r_dinst_ID;
     Time_t dinst_ID;
     Dinst *r_dinst;
     Dinst *dinst;
-    bool   operator==(const RetireState &a) const { return a.committed == committed; };
+    bool   operator==(const RetireState &a) const { return a.dinst_ID == dinst_ID || a.r_dinst_ID == r_dinst_ID; };
     RetireState() {
-      committed  = 0;
       r_dinst_ID = 0;
       dinst_ID   = 0;
       r_dinst    = 0;
@@ -64,7 +62,6 @@ private:
   RegType last_serializeLogical;
   Addr_t  last_serializePC;
 
-  bool   busy;
   bool   replayRecovering;
   Time_t replayID;
   bool   flushing;
@@ -76,12 +73,9 @@ private:
   bool                                                                  scooreMemory;
   StaticCallbackMember0<OoOProcessor, &OoOProcessor::retire_lock_check> retire_lock_checkCB;
 
-  void fetch();
-
 protected:
   ClusterManager clusterManager;
 
-  Stats_avg avgFetchWidth;
 #ifdef TRACK_TIMELEAK
   Stats_avg  avgPNRHitLoadSpec;
   Stats_hist avgPNRMissLoadSpec;

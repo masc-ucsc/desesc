@@ -1324,9 +1324,9 @@ BPred *BPredictor::getBPred(int32_t id, const std::string &sec, const std::strin
   return pred;
 }
 
-BPredictor::BPredictor(int32_t i, MemObj *iobj, MemObj *dobj, BPredictor *bpred)
+BPredictor::BPredictor(int32_t i, MemObj *iobj, MemObj *dobj, std::shared_ptr<BPredictor> bpred)
     : id(i)
-    , SMTcopy(bpred != 0)
+    , SMTcopy(bpred != nullptr)
     , il1(iobj)
     , dl1(dobj)
     , nBTAC(fmt::format("P({})_BPred:nBTAC", id))

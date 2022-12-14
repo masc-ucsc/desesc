@@ -46,7 +46,8 @@ struct SMT_fetch {
     smt_turn     = 0;
   };
 
-  bool update();
+  std::shared_ptr<FetchEngine> fetch_next();
+  void update();
 };
 
 class GProcessor : public Execute_engine {
@@ -70,8 +71,10 @@ protected:
   FastQueue<Dinst *> ROB;
 
   uint32_t smt;  // 1...
+  bool busy;
 
   // BEGIN  Statistics
+  Stats_avg avgFetchWidth;
   std::array<std::unique_ptr<Stats_cntr>, MaxStall> nStall;
   std::array<std::unique_ptr<Stats_cntr>, iMAX>     nInst;
 
@@ -94,14 +97,15 @@ protected:
   void buildUnit(const std::string &clusterName, GMemorySystem *ms, Cluster *cluster, Opcode type);
 
   GProcessor(GMemorySystem *gm, Hartid_t i);
-  int32_t issue(PipeQueue &pipeQ);
 
-  // virtual void       fetch(Hartid_t fid)     = 0;
+  int32_t    issue();
+  void       fetch();
+
   virtual StallCause add_inst(Dinst *dinst) = 0;
 
   bool use_stats;  // Stats mode to use when dinst->has_stats() is not available
 
-  static inline absl::flat_hash_map<std::string, std::shared_ptr<SMTFetch>> fetch_map;
+  static inline absl::flat_hash_map<std::string, std::shared_ptr<SMT_fetch>> fetch_map;
 
   SMT_fetch smt_fetch;
 

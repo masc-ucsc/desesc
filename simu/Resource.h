@@ -164,13 +164,6 @@ class FUStore : public MemResource {
 private:
   int32_t freeEntries;
   bool    enableDcache;
-  int32_t scbSize;
-  int32_t scbEntries;
-  // int32_t  scbMerge[1024];
-  uint32_t lineSizeBits;
-
-  // typedef std::list<Dinst *> SCBQueueType;
-  // SCBQueueType               scbQueue;
 
 public:
   FUStore(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *lsq, std::shared_ptr<StoreSet> ss, std::shared_ptr<Prefetcher> pref,

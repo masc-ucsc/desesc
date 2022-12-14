@@ -10,7 +10,7 @@
 #include "fmt/format.h"
 #include "report.hpp"
 
-bool SMT_fetch::update() {
+void SMT_fetch::update() {
   if (smt_lastTime != globalClock) {
     smt_lastTime = globalClock;
     smt_active   = smt_cnt;
@@ -38,9 +38,33 @@ std::shared_ptr<FetchEngine> SMT_fetch::fetch_next() {
   return ptr;
 }
 
+void GProcessor::fetch() {
+  // TODO: Move this to GProcessor (same as in OoOProcessor)
+  I(eint);
+  I(is_power_up());
+
+  if (spaceInInstQueue < FetchWidth) {
+    return;
+  }
+
+  auto ifid = smt_fetch.fetch_next();
+  if (ifid->isBlocked()) {
+    return;
+  }
+
+  auto     smt_hid = hid;  // FIXME: do SMT fetch
+  IBucket *bucket  = pipeQ.pipeLine.newItem();
+  if (bucket) {
+    ifid->fetch(bucket, eint, smt_hid);
+    if (!bucket->empty()) {
+      avgFetchWidth.sample(bucket->size(), bucket->top()->has_stats());
+      busy = true;
+    }
+  }
+}
+
 GProcessor::GProcessor(GMemorySystem *gm, Hartid_t i)
     : Execute_engine(gm, i)
-    , pipeQ(i)
     , FetchWidth(Config::get_integer("soc", "core", i, "fetch_width"))
     , IssueWidth(Config::get_integer("soc", "core", i, "issue_width"))
     , RetireWidth(Config::get_integer("soc", "core", i, "retire_width"))
@@ -50,12 +74,15 @@ GProcessor::GProcessor(GMemorySystem *gm, Hartid_t i)
     , memorySystem(gm)
     , rROB(Config::get_integer("soc", "core", i, "rob_size"))
     , ROB(MaxROBSize)
+    , avgFetchWidth(fmt::format("P({})_avgFetchWidth", i))
     , rrobUsed(fmt::format("({})_rrobUsed", i))  // avg
     , robUsed(fmt::format("({})_robUsed", i))    // avg
     , nReplayInst(fmt::format("({})_nReplayInst", i))
     , nCommitted(fmt::format("({}):nCommitted", i))  // Should be the same as robUsed - replayed
     , noFetch(fmt::format("({}):noFetch", i))
-    , noFetch2(fmt::format("({}):noFetch2", i)) {
+    , noFetch2(fmt::format("({}):noFetch2", i))
+    , pipeQ(i) {
+
   smt_size = Config::get_integer("soc", "core", i, "smt", 1, 32);
 
   lastReplay = 0;
@@ -91,6 +118,8 @@ GProcessor::GProcessor(GMemorySystem *gm, Hartid_t i)
   }
 
   spaceInInstQueue = InstQueueSize;
+
+  busy = false;
 }
 
 GProcessor::~GProcessor() {}
@@ -102,7 +131,7 @@ void GProcessor::buildInstStats(const std::string &txt) {
   }
 }
 
-int32_t GProcessor::issue(PipeQueue &pipeQ) {
+int32_t GProcessor::issue() {
   int32_t i = 0;  // Instructions executed counter
 
   I(!pipeQ.instQueue.empty());

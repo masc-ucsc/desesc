@@ -18,23 +18,50 @@ void Emul_dromajo::destroy_machine() {
   // XXX - dromajo has a memory leak, needs to be fixed on that end
 }
 
+static inline Addr_t I_type_addr_decode(uint32_t insn_raw) {
+  Addr_t address = insn_raw >> 20;
+  address |= (~address & 0x800) + 0xFFFFFFFFFFFFF800ull;
+  return address;
+}
+
+static inline Addr_t S_type_addr_decode(uint32_t funct7, uint32_t rd) {
+  Addr_t address = (funct7 << 5) | rd;
+  address |= (~address & 0x800) + 0xFFFFFFFFFFFFF800ull;
+  return address;
+}
+
+static inline Addr_t SB_type_addr_decode(uint32_t funct7, uint32_t rd) {
+  Addr_t address = ((funct7 & 0x40) << 6) | ((rd & 1) << 11)
+                 | ((funct7 & 0x3F) << 5) | (rd & 0x1E);
+  address |= (~address & 0x1000) + 0xFFFFFFFFFFFFF000ull;
+  return address;
+}
+
+static inline Addr_t UJ_type_addr_decode(uint32_t funct7, uint32_t rs2, uint32_t rs1, uint32_t funct3) {
+  Addr_t address = ((funct7 & 0x40) << 14) | (rs1 << 15)
+                          | (funct3 << 12) | ((rs2 & 1) << 11)
+                  | ((funct7 & 0x3F) << 5) | (rs2 & 0x1E);
+  address |= (~address & 0x100000) + 0xFFFFFFFFFFF00000ull;
+  return address;
+}
+
 Dinst *Emul_dromajo::peek(Hartid_t fid) {
   uint64_t last_pc  = virt_machine_get_pc(machine, fid);
   uint32_t insn_raw = -1;
   (void)riscv_read_insn(machine->cpu_state[fid], &insn_raw, last_pc);
   Instruction esesc_insn;
 
-  Opcode   opcode  = iAALU;  // dromajo wont pass invalid insns, default to ALU
-  RegType  src1    = LREG_R0;
-  RegType  src2    = LREG_R0;
-  RegType  dst1    = LREG_InvalidOutput;
-  RegType  dst2    = LREG_InvalidOutput;
-  Addr_t   address = 0;
   uint32_t funct7  = (insn_raw >> 25) & 0x7F;
   uint32_t funct3  = (insn_raw >> 12) & 0x7;
   uint32_t rs1     = (insn_raw >> 15) & 0x1F;
   uint32_t rs2     = (insn_raw >> 20) & 0x1F;
   uint32_t rd      = (insn_raw >> 7) & 0x1F;
+  Opcode   opcode  = iAALU;  // dromajo wont pass invalid insns, default to ALU
+  RegType  src1    = (RegType)(rs1);
+  RegType  src2    = (RegType)(rs2);
+  RegType  dst1    = (RegType)(rd);
+  RegType  dst2    = LREG_InvalidOutput;
+  Addr_t   address = 0;
   switch (insn_raw & 0x3) {  // compressed
     case 0x0:                // C0
       break;
@@ -57,39 +84,25 @@ Dinst *Emul_dromajo::peek(Hartid_t fid) {
         case 0x03:
           if (funct3 < 6) {
             opcode  = iLALU_LD;
-            src1    = (RegType)(rs1);
-            dst1    = (RegType)(rd);
-            address = insn_raw >> 20;
-            if (address & 0x800) {  // sign extend
-              address |= 0xFFFFFFFFFFFFF000ull;
-            }
-            address += virt_machine_get_reg(machine, fid, rs1);
+            src2    = LREG_InvalidOutput;
+            address = I_type_addr_decode(insn_raw) + virt_machine_get_reg(machine, fid, rs1);
           }
           break;
         case 0x0F: opcode = iRALU; break;
         case 0x13:
-          opcode = iAALU;
-          src1   = (RegType)(rs1);
-          dst1   = (RegType)(rd);
+          src2   = LREG_InvalidOutput;
           break;
         case 0x23:
           if (funct3 < 4) {
             opcode  = iSALU_ST;
-            src1    = (RegType)(rs1);
-            src2    = (RegType)(rs2);
-            address = (funct7 << 5) | rd;
-            if (address & 0x800) {  // sign extend
-              address |= 0xFFFFFFFFFFFFF000ull;
-            }
-            address += virt_machine_get_reg(machine, fid, rs1);
+            dst1    = LREG_InvalidOutput;
+            address = S_type_addr_decode(funct7, rd) + virt_machine_get_reg(machine, fid, rs1);
           }
           break;
         case 0x2F:
           opcode = iRALU;
-          src1   = (RegType)(rs1);
-          dst1   = (RegType)(rd);
-          if (rs2) {
-            src2 = (RegType)(rs2);
+          if (!rs2) {
+            src2 = LREG_InvalidOutput;
           }
           break;
         case 0x33:
@@ -99,13 +112,7 @@ Dinst *Emul_dromajo::peek(Hartid_t fid) {
             } else {
               opcode = iCALU_DIV;
             }
-          } else {
-            opcode = iAALU;
           }
-
-          src1 = (RegType)(rs1);
-          src2 = (RegType)(rs2);
-          dst1 = (RegType)(rd);
           break;
         case 0x3b:
           if (funct7 == 1) {
@@ -114,34 +121,25 @@ Dinst *Emul_dromajo::peek(Hartid_t fid) {
             } else if (funct3 > 3) {
               opcode = iCALU_DIV;
             }
-          } else {
-            opcode = iAALU;
           }
-
-          src1 = (RegType)(rs1);
-          src2 = (RegType)(rs2);
-          dst1 = (RegType)(rd);
+          break;
+        case 0x53:
+          if (funct7 == 8 || funct7 == 9 || ) {
+              opcode = iCALU_FPMULT;
+          } else if (funct7 == 0xC || funct7 == 0x2C) {
+              opcode = iCALU_FPDIV;
+          }
           break;
         case 0x63:
           opcode  = iBALU_LBRANCH;
-          address = ((funct7 & 0x40) << 6) | ((rd & 1) << 11) | ((funct7 & 0x3F) << 5) | (rd & 0x1E);
-          if (address & 0x1000) {  // sign extend
-            address |= 0xFFFFFFFFFFFFE000ull;
-          }
-          address += last_pc;
-
-          src1 = (RegType)(rs1);
-          src2 = (RegType)(rs2);
+          address = SB_type_addr_decode(funct7, rd) + last_pc;
+          dst1    = LREG_InvalidOutput;
           break;
-        case 0x67:
+        case 0x67:      // jalr
           if (funct3 == 0) {
             opcode  = iBALU_RJUMP;
-            src1    = (RegType)(rs1);
-            dst1    = (RegType)(rd);
-            address = (funct7 << 5) | rs2;
-            if (address & 0x800) {  // sign extend
-              address |= 0xFFFFFFFFFFFFF000ull;
-            }
+            src2    = LREG_InvalidOutput;
+            address = I_type_addr_decode(insn_raw);
 
             if (dst1 == LREG_R0 && src1 == LREG_R1 && address == 0) {
               opcode = iBALU_RET;
@@ -154,13 +152,8 @@ Dinst *Emul_dromajo::peek(Hartid_t fid) {
           break;
         case 0x6F:
           opcode = iBALU_LJUMP;
-          dst1   = (RegType)(rd);
-          address
-              = ((funct7 & 0x40) << 14) | (rs1 << 15) | (funct3 << 12) | ((rs2 & 1) << 11) | ((funct7 & 0x3F) << 5) | (rs2 & 0x1E);
-          if (address & 0x100000) {  // sign extend
-            address |= 0xFFFFFFFFFFE00000ull;
-          }
-          address += last_pc;
+          src1 = src2 = LREG_InvalidOutput;
+          address = UJ_type_addr_decode(funct7, rs2, rs1, funct3) + last_pc;
 
           if (dst1 == LREG_R1) {
             opcode = iBALU_LCALL;
@@ -169,10 +162,12 @@ Dinst *Emul_dromajo::peek(Hartid_t fid) {
         case 0x73:
           opcode = iRALU;
           if (funct3 && funct3 != 0x4) {
-            if (funct3 < 4) {
-              src1 = (RegType)(rs1);
-              dst1 = (RegType)(rd);
+              src2 = LREG_InvalidOutput;
+            if (funct3 > 4) {
+              src1 = LREG_InvalidOutput;
             }
+          } else {
+              dst1 = src1 = src2 = LREG_InvalidOutput;
           }
           break;
         default: break;
@@ -196,6 +191,3 @@ bool Emul_dromajo::is_sleeping(Hartid_t fid) const {
   fmt::print("called is_sleeping on hartid {}\n", fid);
   return true;
 }
-
-// TO-DO: Config::init(dromajo.cfg) ... as started below:
-// auto bootroom  = Config::get_string("emul", "bootroom");

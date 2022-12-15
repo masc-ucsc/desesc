@@ -35,14 +35,14 @@ protected:
     file.open("emul_dromajo_test.toml");
 
     file << "[soc]\n";
-    file << "core = \"c0\"\n";
-    file << "emul = \"drom_emu\"\n";
+    file << "core = [\"c0\", \"c0\"]\n";
+    file << "emul = [\"drom_emu\", \"drom_emu\"]\n";
     file << "\n[drom_emu]\n";
-    file << "num = \"1\"\n";
-    file << "type = \"dromajo\"\n";
-    file << "rabbit = 1e6\n";
-    file << "detail = 1e6\n";
-    file << "time = 2e6\n";
+    file << "num    = 1\n";
+    file << "type   = \"dromajo\"\n";
+    file << "rabbit = 1E+6\n";
+    file << "detail = 1E+6\n";
+    file << "time   = 2E+6\n";
     file.close();
 
     Config configuration;

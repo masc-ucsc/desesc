@@ -40,7 +40,7 @@ void TaskHandler::core_create(std::shared_ptr<GProcessor> gproc) {
 
   I(simus.size() == static_cast<size_t>(gproc->get_hid()));
 
-  for (auto i = 0; i < gproc->get_smt_size(); ++i) {
+  for (auto i = 0u; i < gproc->get_smt_size(); ++i) {
     simus.push_back(gproc);
 
     EmulSimuMapping map;
@@ -230,6 +230,13 @@ void TaskHandler::unplug()
 #endif
 }
 /* }}} */
+
+bool TaskHandler::is_active(Hartid_t hid) {
+  if (hid>=allmaps.size())
+    return false;
+
+  return allmaps[hid].active;
+}
 
 Hartid_t TaskHandler::getNumActiveCores() {
   Hartid_t numActives = 0;

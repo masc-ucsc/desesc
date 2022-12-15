@@ -17,36 +17,12 @@ InOrderProcessor::InOrderProcessor(GMemorySystem *gm, CPU_t i)
   auto smtnum = get_smt_size();
   RAT         = new Dinst *[LREG_MAX * smtnum * 128];
   bzero(RAT, sizeof(Dinst *) * LREG_MAX * smtnum * 128);
-
-  busy = false;
 }
 // 1}}}
 
 InOrderProcessor::~InOrderProcessor() { /*{{{*/
   delete RAT;
   // Nothing to do
-} /*}}}*/
-
-void InOrderProcessor::fetch() { /*{{{*/
-  // TODO: Move this to GProcessor (same as in OoOProcessor)
-  I(eint);
-  I(is_power_up());
-
-  if (spaceInInstQueue < FetchWidth) {
-    return false;
-  }
-
-  auto ifid = smt_fetch.fetch_next();
-  if (ifid->isBlocked()) {
-    return;
-  }
-
-  auto     smt_hid = hid;  // FIXME: do SMT fetch
-  IBucket *bucket  = pipeQ.pipeLine.newItem();
-  if (bucket) {
-    ifid->fetch(bucket, eint, smt_hid);
-  }
-
 } /*}}}*/
 
 bool InOrderProcessor::advance_clock_drain() {
@@ -57,7 +33,7 @@ bool InOrderProcessor::advance_clock_drain() {
 
   // RENAME Stage
   if (!pipeQ.instQueue.empty()) {
-    uint32_t n_insn = issue(pipeQ);
+    uint32_t n_insn = issue();
     spaceInInstQueue += n_insn;
   } else if (ROB.empty() && rROB.empty()) {
     // Still busy if we have some in-flight requests

@@ -10,12 +10,9 @@
 
 class GPUSMProcessor : public GProcessor {
 private:
-  FetchEngine IFID;
-
   uint32_t numSP;
 
   LSQNone lsq;
-  bool    busy;
 
   bool *inst_perpe_percyc;  // Only needed for the GPUSMProc
 

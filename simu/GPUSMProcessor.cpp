@@ -66,31 +66,11 @@ GPUSMProcessor::GPUSMProcessor(GMemorySystem *gm, CPU_t i)
   // uint64_t ratsize =4294967296; //2^32
   RAT = new Dinst *[ratsize];
   bzero(RAT, sizeof(Dinst *) * ratsize);
-
-  busy = false;
 } /*}}}*/
 
 GPUSMProcessor::~GPUSMProcessor() { /*{{{*/
   delete RAT;
   // Nothing to do
-} /*}}}*/
-
-void GPUSMProcessor::fetch(Hartid_t hid) { /*{{{*/
-  I(eint);
-  I(is_power_up());
-
-  // Do not block fetch for a branch miss
-  if (IFID.isBlocked(0)) {
-    busy = true;
-  } else {
-    IBucket *bucket = pipeQ.pipeLine.newItem();
-    if (bucket) {
-      IFID.fetch(bucket, eint, hid);
-      if (!bucket->empty()) {
-        busy = true;
-      }
-    }
-  }
 } /*}}}*/
 
 bool GPUSMProcessor::advance_clock_drain() {
@@ -103,7 +83,7 @@ bool GPUSMProcessor::advance_clock_drain() {
     for (uint32_t i = 0; i < numSP; i++) {
       inst_perpe_percyc[i] = false;
     }
-    uint32_t n_insn = issue(pipeQ);
+    uint32_t n_insn = issue();
     spaceInInstQueue += n_insn;
   } else if (ROB.empty() && rROB.empty()) {
     busy = pipeQ.pipeLine.hasOutstandingItems();
@@ -119,7 +99,7 @@ bool GPUSMProcessor::advance_clock() {
     return false;
   }
 
-  fetch(hid);
+  fetch();
 
   return advance_clock_drain();
 }

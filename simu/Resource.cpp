@@ -386,11 +386,9 @@ void FULoad::executed(Dinst *dinst) {
 }
 /* }}} */
 
-bool FULoad::preretire(Dinst *dinst, bool flushing)
+bool FULoad::preretire(Dinst *dinst, [[maybe_unused]] bool flushing)
 /* retire {{{1 */
 {
-  (void)flushing;
-
   bool done = dinst->isDispatched();
   if (!done) {
     return false;
@@ -406,10 +404,9 @@ bool FULoad::preretire(Dinst *dinst, bool flushing)
 }
 /* }}} */
 
-bool FULoad::retire(Dinst *dinst, bool flushing)
+bool FULoad::retire(Dinst *dinst, [[maybe_unused]] bool flushing)
 /* retire {{{1 */
 {
-  (void)flushing;
   if (!dinst->isPerformed()) {
     return false;
   }
@@ -771,7 +768,7 @@ bool FUBranch::preretire(Dinst *dinst, bool flushing)
 }
 /* }}} */
 
-bool FUBranch::retire(Dinst *dinst, bool flushing)
+bool FUBranch::retire(Dinst *dinst, [[maybe_unused]] bool flushing)
 /* retire {{{1 */
 {
   setStats(dinst);
@@ -791,8 +788,8 @@ void FUBranch::performed(Dinst *dinst) {
 FURALU::FURALU(uint8_t type, Cluster *cls, PortGeneric *aGen, TimeDelta_t l, int32_t id)
     /* constructor {{{1 */
     : Resource(type, cls, aGen, l, id)
-    , dmemoryBarrier("P(%d)_%s_dmemoryBarrier", id, cls->getName())
-    , imemoryBarrier("P(%d)_%s_imemoryBarrier", id, cls->getName()) {
+    , dmemoryBarrier(fmt::format("P({})_{}_dmemoryBarrier", id, cls->getName()))
+    , imemoryBarrier(fmt::format("P({})_{}_imemoryBarrier", id, cls->getName())) {
   blockUntil = 0;
 }
 /* }}} */
@@ -852,14 +849,14 @@ void FURALU::executed(Dinst *dinst)
 }
 /* }}} */
 
-bool FURALU::preretire(Dinst *dinst, bool flushing)
+bool FURALU::preretire(Dinst *dinst, [[maybe_unused]] bool flushing)
 /* preretire {{{1 */
 {
   return dinst->isExecuted();
 }
 /* }}} */
 
-bool FURALU::retire(Dinst *dinst, bool flushing)
+bool FURALU::retire(Dinst *dinst, [[maybe_unused]] bool flushing)
 /* retire {{{1 */
 {
   setStats(dinst);

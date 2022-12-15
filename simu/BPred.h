@@ -595,7 +595,7 @@ protected:
   PredType predict3(Dinst *dinst);
 
 public:
-  BPredictor(int32_t i, MemObj *il1, MemObj *DL1, BPredictor *bpred = 0);
+  BPredictor(int32_t i, MemObj *il1, MemObj *DL1, std::shared_ptr<BPredictor> bpred = nullptr);
   ~BPredictor();
 
   static BPred *getBPred(int32_t id, const std::string &sname, const std::string &sec, MemObj *dl1 = 0);

@@ -195,4 +195,6 @@ public:
 
   void clearMissInst(Dinst *dinst, Time_t missFetchTime);
   void setMissInst(Dinst *dinst);
+
+  std::shared_ptr<BPredictor> ref_bpred() { return bpred; }
 };

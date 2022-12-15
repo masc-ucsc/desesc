@@ -48,6 +48,7 @@ public:
 
   static void add_emul(std::shared_ptr<Emul_base> eint, Hartid_t hid);
 
+  static bool is_active(Hartid_t hid);
   static Hartid_t getNumActiveCores();
   static Hartid_t getNumCores() { return allmaps.size(); }
 

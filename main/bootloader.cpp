@@ -4,8 +4,7 @@
 #include <signal.h>
 #include <stdlib.h>
 
-#include "BootLoader.h"
-#include "MemorySystem.h"
+//#include "MemorySystem.h"
 #include "AccProcessor.h"
 #include "GMemorySystem.h"
 #include "GPUSMProcessor.h"
@@ -14,6 +13,8 @@
 #include "OoOProcessor.h"
 #include "DrawArch.h"
 
+#include "bootloader.hpp"
+#include "taskhandler.hpp"
 #include "report.hpp"
 #include "config.hpp"
 
@@ -23,7 +24,7 @@ extern "C" void signalCatcher(int32_t sig);
 
 extern "C" void signalCatcherUSR1(int32_t sig) {
 
-  MSG("WARNING: signal %d received. Dumping partial statistics\n", sig);
+  fmt::print("WARNING: signal {} received. Dumping partial statistics\n", sig);
 
   BootLoader::reportOnTheFly();
 
@@ -32,18 +33,18 @@ extern "C" void signalCatcherUSR1(int32_t sig) {
 
 extern "C" void signalCatcher(int32_t sig) {
 
-  MSG("Stopping simulation early");
+  fmt::print("Stopping simulation early!!\n");
 
   static bool sigFaulting = false;
   if(sigFaulting) {
     TaskHandler::unplug();
-    MSG("WARNING. Not a nice stop. It may leave pids");
+    fmt::print("WARNING. Not a nice stop. It may leave pids\n");
     kill(-getpid(), SIGKILL);
     abort();
   }
   sigFaulting = true;
 
-  MSG("WARNING: unexpected signal %d received. Dumping partial statistics\n", sig);
+  fmt::print("WARNING: unexpected signal %d received. Dumping partial statistics\n", sig);
   signal(SIGUSR1, signalCatcher); // Even sigusr1 should go here
 
   BootLoader::reportOnTheFly();
@@ -102,37 +103,26 @@ void BootLoader::reportSample() {
 
 void BootLoader::plugEmulInterfaces() {
 
-  FlowID nemul = SescConf->getRecordSize("", "cpuemul");
+  auto ncores = Config::get_array_size("soc", "core");
+  auto nemuls = Config::get_array_size("soc", "emul");
 
-  // nemul will give me the total number of flows (cpuemuls)  in the system.
-  // out of these, some can be CPU, some can be GPU. (interleaved as well)
-  I(nemul > 0);
+  if (ncores != nemuls) {
+    Config::add_error("soc number of cores should match the numbers of emuls ({} vs {})", ncores, nemuls);
+    return;
+  }
+  if (ncores==0) {
+    Config::add_error("soc should have at least one core in [soc] core");
+    return;
+  }
 
-  LOG("I: cpuemul size [%d]", nemul);
+  for(auto i = 0u; i < nemuls; i++) {
+    auto type = Config::get_string("soc","emul", i, "type", {"dromajo", "accel", "trace"});
+    if (type == "dromajo") {
+      auto dromajo = std::make_shred<Emul_dromajo>();
+      HERE!! add_emul
 
-  // For now, we will assume the simplistic case where there is one QEMU and one GPU.
-  // (So one object each of classes QEMUEmulInterface and GPUEmulInterface)
-  const char *QEMUCPUSection = NULL;
-  for(FlowID i = 0; i < nemul; i++) {
-    const char *section = SescConf->getCharPtr("", "cpuemul", i);
-    const char *type    = SescConf->getCharPtr(section, "type");
+    }else if (type == "accel") {
 
-    if(strcasecmp(type, "QEMU") == 0) {
-      if(QEMUCPUSection == NULL) {
-        QEMUCPUSection = section;
-      } else if(strcasecmp(QEMUCPUSection, section)) {
-        MSG("ERROR: eSESC supports only a single instance of QEMU");
-        MSG("cpuemul[%d] specifies a different section %s", i, section);
-        SescConf->notCorrect();
-        return;
-      }
-      createEmulInterface(QEMUCPUSection, i); // each CPU has it's own Emul/Sampler
-    } else if(strcasecmp(type, "accel") == 0) {
-      MSG("cpuemul[%d] specifies a different section %s", i, section);
-    } else {
-      MSG("ERROR: Unknown type %s of section %s, cpuemul [%d]", type, section, i);
-      SescConf->notCorrect();
-      return;
     }
   }
 }

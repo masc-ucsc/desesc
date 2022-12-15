@@ -1,6 +1,5 @@
 // See LICENSE for details.
 
-#include "OoOProcessor.h"
 
 #include <math.h>
 
@@ -9,18 +8,20 @@
 #include <iterator>
 #include <numeric>
 
+#include "fmt/format.h"
+
+#include "OoOProcessor.h"
 #include "FastQueue.h"
 #include "FetchEngine.h"
 #include "GMemorySystem.h"
 #include "MemRequest.h"
-#include "TaskHandler.h"
+
+#include "taskhandler.hpp"
 #include "config.hpp"
-#include "fmt/format.h"
 
-// #define ESESC_TRACE
-
-// #define ESESC_CODEPROFILE
-#define ESESC_BRANCHPROFILE
+//#define ESESC_TRACE
+//#define ESESC_CODEPROFILE
+//#define ESESC_BRANCHPROFILE
 
 // FIXME: to avoid deadlock, prealloc n to the n oldest instructions
 // #define LATE_ALLOC_REGISTER

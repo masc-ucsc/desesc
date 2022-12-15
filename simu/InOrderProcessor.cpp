@@ -5,7 +5,6 @@
 #include "ClusterManager.h"
 #include "FetchEngine.h"
 #include "GMemorySystem.h"
-#include "TaskHandler.h"
 #include "config.hpp"
 
 InOrderProcessor::InOrderProcessor(GMemorySystem *gm, CPU_t i)

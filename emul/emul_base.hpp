@@ -11,16 +11,11 @@
 
 class Emul_base {
 protected:
-  Config      config;
   std::string section;
   std::string type;  // dromajo, trace,...
-  int         num;
-  int         rabbit;
-  int         detail;
-  int         time;
 
 public:
-  Emul_base(Config conf);
+  Emul_base();
   virtual ~Emul_base();
 
   virtual Dinst *peek(Hartid_t fid)    = 0;

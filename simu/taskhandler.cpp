@@ -1,11 +1,10 @@
 // See LICENSE for details.
 
-#include "TaskHandler.h"
-
 #include <string.h>
 
 #include <iostream>
 
+#include "taskhandler.hpp"
 #include "GProcessor.h"
 #include "config.hpp"
 #include "emul_base.hpp"

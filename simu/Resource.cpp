@@ -14,7 +14,6 @@
 #include "MemRequest.h"
 #include "OoOProcessor.h"
 #include "Resource.h"
-#include "TaskHandler.h"
 #include "dinst.hpp"
 #include "port.hpp"
 

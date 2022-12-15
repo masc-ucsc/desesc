@@ -5,7 +5,6 @@
 
 #include "nanassert.h"
 
-#include "../libsampler/BootLoader.h"
 #include "CCache.h"
 #include "GProcessor.h"
 #include "MSHR.h"
@@ -13,7 +12,6 @@
 #include "MemorySystem.h"
 #include "PortManager.h"
 #include "SescConf.h"
-#include "TaskHandler.h"
 
 extern "C" uint64_t esesc_mem_read(uint64_t addr);
 

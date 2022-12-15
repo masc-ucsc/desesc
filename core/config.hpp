@@ -20,6 +20,8 @@ private:
 
 protected:
 public:
+  Config() = delete; // No object instance. All methods are static
+
   static void init(const std::string f = "desesc.conf");
 
   static std::string get_string(const std::string &block, const std::string &name,

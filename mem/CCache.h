@@ -47,7 +47,6 @@
 #include "MemorySystem.h"
 #include "SCTable.h"
 #include "Snippets.h"
-#include "TaskHandler.h"
 #include "estl.h"
 //#include "Prefetcher.h"
 //#define ENABLE_LDBP

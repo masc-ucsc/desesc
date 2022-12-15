@@ -6,7 +6,7 @@
 #include "GProcessor.h"
 #include "LSQ.h"
 #include "Pipeline.h"
-#include "nanassert.h"
+#include "iassert.hpp"
 
 class GPUSMProcessor : public GProcessor {
 private:

@@ -5,7 +5,6 @@
 #include "GMemorySystem.h"
 #include "GProcessor.h"
 #include "Resource.h"
-#include "TaskHandler.h"
 #include "config.hpp"
 #include "estl.h"
 #include "port.hpp"

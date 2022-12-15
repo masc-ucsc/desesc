@@ -5,11 +5,34 @@
 #include <assert.h>
 #include <stdio.h>
 
-Emul_dromajo::Emul_dromajo(Config conf) : Emul_base(conf) {}
+Emul_dromajo::Emul_dromajo() : Emul_base() {
+  num = 0;
 
-Emul_dromajo::~Emul_dromajo()
-/* Emul_dromajo destructor */
-{}
+  auto nemuls = Config::get_array_size("soc", "emul");
+  for (auto i=0u;i<nemuls;++i) {
+    auto tp = Config::get_string("soc","emul",i,"type");
+    if (tp != "dromajo")
+      continue;
+
+    if (num==0) {
+      section = Config::get_string("soc","emul", i);
+
+      rabbit = Config::get_integer("soc","emul", i, "rabbit");
+      detail = Config::get_integer("soc","emul", i, "detail");
+      time   = Config::get_integer("soc","emul", i, "time");
+      bench  = Config::get_integer("soc","emul", i, "bench");
+    }
+    ++num;
+  }
+  type   = "dromajo";
+  if (num) {
+    init_dromajo_machine();
+  }
+}
+
+Emul_dromajo::~Emul_dromajo() {
+
+}
 
 void Emul_dromajo::destroy_machine() {
   if (machine != NULL) {
@@ -195,6 +218,50 @@ Hartid_t Emul_dromajo::get_num() const { return num; }
 bool Emul_dromajo::is_sleeping(Hartid_t fid) const {
   fmt::print("called is_sleeping on hartid {}\n", fid);
   return true;
+}
+
+void Emul_dromajo::init_dromajo_machine() {
+  assert(type == "dromajo");
+
+  std::vector<const char *> dromajo_args;
+  dromajo_args.push_back("desesc_drom");
+  dromajo_args.push_back(bench.c_str());
+
+  std::vector<std::string> list_args = {"cmdline",
+    "ncpus",
+    "load",
+    "simpoint",
+    "save",
+    "maxinsns",
+    "terminate-event",
+    "trace",
+    "ignore_sbi_shutdown",
+    "dump_memories",
+    "memory_size",
+    "memory_addr",
+    "bootrom",
+    "dtb, compact_bootrom",
+    "reset_vector",
+    "plic",
+    "clint",
+    "custom_extension",
+    "gdbinit",
+    "clear_ids"};
+
+  dromajo_args.reserve(list_args.size());
+
+  for (auto &&item : list_args) {
+    if (Config::has_entry(section, item)) {
+      std::string arg = "--" + item + "=" + Config::get_string(section, item);
+      dromajo_args.push_back(arg.c_str());
+    }
+  }
+  char *argv[dromajo_args.size()];
+  for (auto i=0u;i<dromajo_args.size();++i) {
+    argv[i] = const_cast<char *>(dromajo_args[i]);
+  }
+
+  machine = virt_machine_main(dromajo_args.size(), argv);
 }
 
 // TO-DO: Config::init(dromajo.cfg) ... as started below:

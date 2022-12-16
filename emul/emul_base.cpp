@@ -8,17 +8,15 @@ Emul_base::Emul_base(Config conf)
     : config(conf)
 /* Base class Emul_base constructor  */
 {
-  num  = 0;
-  type = "INVALID";
-  const std::vector<std::string> emu_list = {"drom_emu"};
-  fmt::print("get string = {} \n", Config::get_string("soc", "emul", (size_t)0, emu_list));
-  if (Config::get_string("soc", "emul") == "drom_emul") {
-    num    = Config::get_integer("drom_emu", "num");
-    type   = Config::get_string("drom_emu", "type", {"dromajo", "trace"});
-    rabbit = Config::get_integer("drom_emu", "rabbit");
-    detail = Config::get_integer("drom_emu", "detail");
-    time   = Config::get_integer("drom_emu", "time");
-  }
+  /* add possible drivers to this list */
+  const std::vector<std::string> emu_list = {"dromajo", "trace"};
+
+  type   = Config::get_string("soc", "emul", 0, "type", emu_list);
+  num    = Config::get_integer("soc", "emul", 0, "num");
+  rabbit = Config::get_integer("soc", "emul", 0, "rabbit");
+  detail = Config::get_integer("soc", "emul", 0, "detail");
+  time   = Config::get_integer("soc", "emul", 0, "time");
+
   fmt::print("num={} type={} rabbit={} detail={} time={}\n", num, type, rabbit, detail, time);
 }
 

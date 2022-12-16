@@ -5,7 +5,9 @@
 #include <assert.h>
 #include <stdio.h>
 
-Emul_dromajo::Emul_dromajo(Config conf) : Emul_base(conf) {}
+Emul_dromajo::Emul_dromajo(Config conf) : Emul_base(conf) {
+  assert(type == "dromajo");
+}
 
 Emul_dromajo::~Emul_dromajo()
 /* Emul_dromajo destructor */
@@ -65,7 +67,7 @@ Dinst *Emul_dromajo::peek(Hartid_t fid) {
   switch (insn_raw & 0x3) {  // compressed
     case 0x0:                // C0
       break;
-    case 0x1: break;
+    case 0x1: break;        // XXX - this should prob be its own function
     case 0x2:
       rs1 = (insn_raw >> 7) & 0x1F;
       if (!(insn_raw & 0x7C) && rs1) {
@@ -85,6 +87,13 @@ Dinst *Emul_dromajo::peek(Hartid_t fid) {
           if (funct3 < 6) {
             opcode  = iLALU_LD;
             src2    = LREG_InvalidOutput;
+            address = I_type_addr_decode(insn_raw) + virt_machine_get_reg(machine, fid, rs1);
+          }
+          break;
+        case 0x07: //   FP Load
+          if (funct3 == 3 || funct3 == 4) {
+            opcode  = iLALU_LD;
+            //dst1   += LREG_FP0;
             address = I_type_addr_decode(insn_raw) + virt_machine_get_reg(machine, fid, rs1);
           }
           break;
@@ -123,11 +132,20 @@ Dinst *Emul_dromajo::peek(Hartid_t fid) {
             }
           }
           break;
-        case 0x53:
-          if (funct7 == 8 || funct7 == 9 || ) {
+        case 0x53: // XXX - this should prob be its own function
+          opcode = iCALU_FPALU;
+          //src1  += LREG_FP0;
+          //src2  += LREG_FP0;
+          //dst1   += LREG_FP0;
+          if (funct7 == 8 || funct7 == 9) {
               opcode = iCALU_FPMULT;
-          } else if (funct7 == 0xC || funct7 == 0x2C) {
+          } else if (funct7 == 0xC) {
               opcode = iCALU_FPDIV;
+          } else if (funct7 == 0x2C) {
+              opcode = iCALU_FPDIV;
+              src2   = LREG_InvalidOutput;
+          } else if (funct7 & 0x20) {
+              src2   = LREG_InvalidOutput;
           }
           break;
         case 0x63:

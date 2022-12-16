@@ -78,6 +78,51 @@ std::string Config::get_string(const std::string &block, const std::string &name
   return val;
 }
 
+std::string Config::get_string(const std::string &block, const std::string &name, size_t pos, const std::vector<std::string> allowed) {
+  if (!check(block, name)) {
+    return "INVALID";
+  }
+
+  auto ent = toml::find(data, block, name);
+  if (!ent.is_array()) {
+    errors.emplace_back(
+        fmt::format("conf:{} section:{} field:{} is not a array\n", filename, block, name));
+    return "INVALID";
+  }
+
+  auto ent_array = ent.as_array();
+
+  if (ent_array.size() <= pos) {
+    errors.emplace_back(fmt::format("conf:{} section:{} field:{} out-of-bounds array access {}\n", filename, block, name, pos));
+    return "INVALID";
+  }
+
+  auto ent2 = ent_array[pos];
+  if (!ent2.is_string()) {
+    errors.emplace_back(fmt::format("conf:{} section:{} field:{} pos:{} is not a string\n", filename, block, name, pos));
+    return "INVALID";
+  }
+
+  std::string val{ent2.as_string()};
+  if (!allowed.empty()) {
+    for (auto e : allowed) {
+      auto same = std::equal(e.cbegin(), e.cend(), val.cbegin(), val.cend(), [](auto c1, auto c2) {
+        return std::toupper(c1) == std::toupper(c2);
+      });
+      if (same) {
+        std::transform(e.begin(), e.end(), e.begin(), [](unsigned char c) { return std::tolower(c); });
+        return e;
+      }
+    }
+
+    errors.emplace_back(fmt::format("conf:{} section:{} field:{} value:{} is not allowed\n", filename, block, name, val));
+    return "INVALID";
+  }
+
+  std::transform(val.begin(), val.end(), val.begin(), [](unsigned char c) { return std::tolower(c); });
+  return val;
+}
+
 int Config::get_integer(const std::string &block, const std::string &name, int from, int to) {
   if (!check(block, name)) {
     return 0;

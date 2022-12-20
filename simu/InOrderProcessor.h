@@ -17,8 +17,6 @@ private:
 
   Dinst **RAT;
 
-  void fetch();
-
 protected:
   ClusterManager clusterManager;
 
@@ -32,7 +30,7 @@ protected:
   // END VIRTUAL FUNCTIONS of GProcessor
 
 public:
-  InOrderProcessor(GMemorySystem *gm, CPU_t i);
+  InOrderProcessor(std::shared_ptr<GMemorySystem> gm, CPU_t i);
   virtual ~InOrderProcessor();
 
   void executing(Dinst *dinst) override final;

@@ -19,8 +19,6 @@
 #include "fmt/format.h"
 #include "report.hpp"
 
-extern "C" uint64_t esesc_mem_read(uint64_t addr);
-
 // #define CLOSE_TARGET_OPTIMIZATION 1
 
 /*****************************************
@@ -397,8 +395,9 @@ PredType BPLdbp::predict(Dinst *dinst, bool doUpdate, bool doStats) {
   return ptaken ? btb.predict(dinst, doUpdate, doStats) : CorrectPrediction;
 }
 
+#if 0
 BrOpType BPLdbp::branch_type(Addr_t br_pc) {
-  uint64_t raw_op      = esesc_mem_read(br_pc);
+  uint64_t raw_op      = 0xdeadcafe; // esesc_mem_read(br_pc);
   uint8_t  br_opcode   = raw_op & 3;
   uint8_t  get_br_bits = (raw_op >> 12) & 7;  // extract bits 12 to 14 to get Br Type
   if (br_opcode == 3) {
@@ -420,6 +419,7 @@ BrOpType BPLdbp::branch_type(Addr_t br_pc) {
   }
   return ILLEGAL_BR;
 }
+#endif
 
 bool BPLdbp::outcome_calculator(BrOpType br_op, Data_t br_data1, Data_t br_data2) {
   if (br_op == BEQ) {

@@ -24,7 +24,7 @@ public:
   Stats(const std::string n) : name(n){};
   virtual ~Stats();
 
-  static void report(const std::string &str);
+  static void report_all();
   static void reset_all();
 
   virtual void report() const = 0;

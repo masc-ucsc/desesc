@@ -17,7 +17,7 @@ class GMemorySystem;
 
 class Cluster {
 private:
-  void buildUnit(const std::string &clusterName, uint32_t pos, GMemorySystem *ms, Cluster *cluster, Opcode type, GProcessor *gproc);
+  void buildUnit(const std::string &clusterName, uint32_t pos, std::shared_ptr<GMemorySystem> ms, Cluster *cluster, Opcode type, GProcessor *gproc);
 
 protected:
   DepWindow window;
@@ -61,7 +61,7 @@ public:
   virtual void executed(Dinst *dinst)            = 0;
   virtual bool retire(Dinst *dinst, bool replay) = 0;
 
-  static Cluster *create(const std::string &clusterName, uint32_t pos, GMemorySystem *ms, uint32_t cpuid, GProcessor *gproc);
+  static Cluster *create(const std::string &clusterName, uint32_t pos, std::shared_ptr<GMemorySystem> ms, uint32_t cpuid, GProcessor *gproc);
 
   Resource *getResource(Opcode type) const {
     I(type < iMAX);

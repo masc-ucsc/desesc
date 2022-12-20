@@ -3,11 +3,12 @@
 #pragma once
 
 #include "callback.hpp"
-#include "execute_engine.hpp"
+#include "simu_base.hpp"
 #include "iassert.hpp"
 #include "stats.hpp"
+#include "GMemorySystem.h"
 
-class AccProcessor : public Execute_engine {
+class AccProcessor : public Simu_base {
 private:
 protected:
   Addr_t myAddr;
@@ -28,7 +29,7 @@ protected:
   typedef CallbackMember2<AccProcessor, uint32_t, Time_t, &AccProcessor::write_performed> write_performedCB;
 
 public:
-  AccProcessor(GMemorySystem *gm, Hartid_t i);
+  AccProcessor(std::shared_ptr<GMemorySystem> gm, Hartid_t i);
   virtual ~AccProcessor();
 
   // API for Execute_egine

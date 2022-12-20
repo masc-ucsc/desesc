@@ -29,14 +29,14 @@ void Stats::unsubscribe() {
   }
 }
 
-void Stats::report(const std::string &str) {
-  Report::field(fmt::format("#BEGIN Stats::report {}", str));
+void Stats::report_all() {
+  Report::field(fmt::format("#BEGIN Stats"));
 
   for (const auto &e : store) {
     e.second->report();
   }
 
-  Report::field(fmt::format("#END Stats::report {}", str));
+  Report::field(fmt::format("#END Stats"));
 }
 
 void Stats::reset_all() {

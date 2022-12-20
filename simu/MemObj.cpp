@@ -12,8 +12,6 @@
 #include "config.hpp"
 #include "fmt/format.h"
 
-extern "C" uint64_t esesc_mem_read(uint64_t addr);
-
 uint16_t MemObj::id_counter = 0;
 
 MemObj::MemObj(const std::string &sSection, const std::string &sName)

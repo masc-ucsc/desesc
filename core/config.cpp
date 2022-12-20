@@ -1,5 +1,7 @@
 // This file is distributed under the BSD 3-Clause License. See LICENSE for details.
 
+#include <unistd.h>
+
 #include "config.hpp"
 
 #include "fmt/format.h"
@@ -12,7 +14,23 @@ void Config::init(const std::string f) {
     filename = e;
   }
 
+  if (access(filename.c_str(), F_OK) == -1) {
+    errors.emplace_back(fmt::format("could not open configuration file named {}", filename));
+    exit_on_error();
+  }
+
   data = toml::parse(filename);
+}
+
+void Config::exit_on_error() {
+  if (errors.empty())
+    return;
+
+  for(const auto &e:errors) {
+    fmt::print("ERROR:{}\n",e);
+  }
+
+  exit(-1);
 }
 
 bool Config::check(const std::string &block, const std::string &name) {
@@ -75,6 +93,80 @@ std::string Config::get_string(const std::string &block, const std::string &name
   }
 
   std::transform(val.begin(), val.end(), val.begin(), [](unsigned char c) { return std::tolower(c); });
+
+  add_used(block, name, 0, val);
+
+  return val;
+}
+
+std::string Config::get_string(const std::string &block, const std::string &name, size_t pos,
+                               const std::vector<std::string> allowed) {
+  auto val = get_block2(block, name, pos);
+
+  if (!allowed.empty()) {
+    for (auto e : allowed) {
+      auto same = std::equal(e.cbegin(), e.cend(), val.cbegin(), val.cend(), [](auto c1, auto c2) {
+        return std::toupper(c1) == std::toupper(c2);
+      });
+      if (same) {
+        std::transform(e.begin(), e.end(), e.begin(), [](unsigned char c) { return std::tolower(c); });
+        return e;
+      }
+    }
+
+    errors.emplace_back(fmt::format("conf:{} section:{} field:{} value:{} is not allowed\n", filename, block, name, val));
+    return "INVALID";
+  }
+
+  std::transform(val.begin(), val.end(), val.begin(), [](unsigned char c) { return std::tolower(c); });
+
+  add_used(block, name, pos, val);
+
+  return val;
+}
+
+std::string Config::get_string(const std::string &block, const std::string &name, size_t pos, const std::string &name2,
+                               const std::vector<std::string> allowed) {
+  auto block2 = get_block2(block, name, pos);
+
+  {
+    std::string env_var = fmt::format("DESESC_{}_{}", block2, name2);
+
+    const char *e = getenv(env_var.c_str());
+    if (e) {
+      std::string v{e};
+
+      std::transform(v.begin(), v.end(), v.begin(), [](unsigned char c) { return std::tolower(c); });
+      return v;
+    }
+  }
+
+  auto ent = toml::find(data, block2, name2);
+  if (!ent.is_string()) {
+    errors.emplace_back(fmt::format("conf:{} section:{} field:{} is not a string\n", filename, block, name));
+    return "INVALID";
+  }
+
+  std::string val{ent.as_string()};
+  if (!allowed.empty()) {
+    for (auto e : allowed) {
+      auto same = std::equal(e.cbegin(), e.cend(), val.cbegin(), val.cend(), [](auto c1, auto c2) {
+        return std::toupper(c1) == std::toupper(c2);
+      });
+      if (same) {
+        std::transform(e.begin(), e.end(), e.begin(), [](unsigned char c) { return std::tolower(c); });
+        return e;
+      }
+    }
+
+    errors.emplace_back(fmt::format("conf:{} section:{} field:{} value:{} is not allowed\n", filename, block, name, val));
+    return "INVALID";
+  }
+
+  std::transform(val.begin(), val.end(), val.begin(), [](unsigned char c) { return std::tolower(c); });
+
+  add_used(block2, name2, pos, val);
+
   return val;
 }
 
@@ -113,35 +205,16 @@ int Config::get_integer(const std::string &block, const std::string &name, int f
     return 0;
   }
 
+  add_used(block, name, 0, fmt::format("{}", val));
+
   return val;
 }
 
 int Config::get_integer(const std::string &block, const std::string &name, size_t pos, const std::string &name2, int from, int to) {
-  if (!check(block, name)) {
+
+  auto block2 = get_block2(block, name, pos);
+  if (block2.empty())
     return 0;
-  }
-
-  auto ent = toml::find(data, block, name);
-  if (!ent.is_array()) {
-    errors.emplace_back(
-        fmt::format("conf:{} section:{} field:{} is not a array needed to chain to {}\n", filename, block, name, name2));
-    return 0;
-  }
-
-  auto ent_array = ent.as_array();
-
-  if (ent_array.size() <= pos) {
-    errors.emplace_back(fmt::format("conf:{} section:{} field:{} out-of-bounds array access {}\n", filename, block, name, pos));
-    return 0;
-  }
-
-  const auto t_block2 = ent_array[pos];
-  if (!t_block2.is_string()) {
-    errors.emplace_back(fmt::format("conf:{} section:{} field:{} should point to a section\n", filename, block, name));
-    return 0;
-  }
-
-  std::string block2{t_block2.as_string()};
 
   int val = 0;
   {
@@ -171,6 +244,8 @@ int Config::get_integer(const std::string &block, const std::string &name, size_
                                     to));
     return 0;
   }
+
+  add_used(block2, name2, pos, fmt::format("{}", val));
 
   return val;
 }
@@ -219,7 +294,9 @@ int Config::get_array_integer(const std::string &block, const std::string &name,
     return 0;
   }
 
-  return arr[pos].as_integer();
+  auto val = arr[pos].as_integer();
+  add_used(block, name, pos, fmt::format("{}", val));
+  return val;
 }
 
 std::string Config::get_array_string(const std::string &block, const std::string &name, size_t pos) {
@@ -246,9 +323,12 @@ std::string Config::get_array_string(const std::string &block, const std::string
     return "INVALID";
   }
 
-  std::string e = arr[pos].as_string();
-  std::transform(e.begin(), e.end(), e.begin(), [](unsigned char c) { return std::tolower(c); });
-  return e;
+  std::string val = arr[pos].as_string();
+  std::transform(val.begin(), val.end(), val.begin(), [](unsigned char c) { return std::tolower(c); });
+
+  add_used(block, name, pos, val);
+
+  return val;
 }
 
 void Config::add_error(const std::string &err) { errors.emplace_back(err); }
@@ -311,7 +391,11 @@ bool Config::get_bool(const std::string &block, const std::string &name) {
     return false;
   }
 
-  return ent.as_boolean();
+  auto val = ent.as_boolean();
+
+  add_used(block, name, 0, val?"true":"false");
+
+  return val;
 }
 
 bool Config::get_bool(const std::string &block, const std::string &name, size_t pos, const std::string &name2) {
@@ -355,7 +439,11 @@ bool Config::get_bool(const std::string &block, const std::string &name, size_t 
     return false;
   }
 
-  return ent2.as_boolean();
+  auto val =  ent2.as_boolean();
+
+  add_used(block2, name2, pos, val?"true":"false");
+
+  return val;
 }
 
 int Config::check_power2(const std::string &block, const std::string &name, int v) {
@@ -373,6 +461,71 @@ int Config::check_power2(const std::string &block, const std::string &name, int 
   }
 
   return v;
+}
+
+std::string Config::get_block2(const std::string &block, const std::string &name, size_t pos) {
+  if (!check(block, name)) {
+    return "";
+  }
+
+  auto ent = toml::find(data, block, name);
+  if (!ent.is_array()) {
+    errors.emplace_back(
+        fmt::format("conf:{} section:{} field:{} is not a array needed to chain\n", filename, block, name));
+    return "";
+  }
+
+  auto ent_array = ent.as_array();
+
+  if (ent_array.size() <= pos) {
+    errors.emplace_back(fmt::format("conf:{} section:{} field:{} out-of-bounds array access {}\n", filename, block, name, pos));
+    return "";
+  }
+
+  const auto t_block2 = ent_array[pos];
+  if (!t_block2.is_string()) {
+    errors.emplace_back(fmt::format("conf:{} section:{} field:{} should point to a section\n", filename, block, name));
+    return "";
+  }
+
+  auto val = t_block2.as_string();
+
+  add_used(block, name, pos, val);
+
+  return val;
+}
+
+void Config::add_used(const std::string &block, const std::string &name, size_t pos, const std::string &val) {
+  if (used[block].second.size()<=pos) {
+    used[block].second.resize(pos+1);
+    used[block].first = name;
+  }
+  used[block].second[pos] = val;
+}
+
+void Config::dump(int fd) {
+
+  for(const auto &u:used) {
+    auto str = fmt::format("[{}]\n", u.first);
+    auto sz = ::write(fd,str.c_str(),str.size());
+    (void)sz;
+
+    if (u.second.second.size() == 1) {
+      str = fmt::format("{} = {}\n", u.second.first, u.second.second[0]);
+    }else{
+      str = fmt::format("{} = { ", u.second.first);
+      bool first = true;
+      for(const auto &e:u.second.second) {
+        if (first)
+          str += fmt::format("{}", e);
+        else
+          str += fmt::format(", {}", e);
+      }
+      str += fmt::format(" }\n");
+    }
+    sz = ::write(fd,str.c_str(),str.size());
+    (void)sz;
+  }
 }
 
 int Config::get_power2(const std::string &block, const std::string &name, int from, int to) {

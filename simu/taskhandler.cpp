@@ -5,7 +5,6 @@
 #include <iostream>
 
 #include "taskhandler.hpp"
-#include "GProcessor.h"
 #include "config.hpp"
 #include "emul_base.hpp"
 #include "report.hpp"
@@ -34,27 +33,27 @@ void TaskHandler::add_emul(std::shared_ptr<Emul_base> eint, Hartid_t hid) {
   emuls[hid] = eint;
 }
 
-void TaskHandler::core_create(std::shared_ptr<GProcessor> gproc) {
+void TaskHandler::simu_create(std::shared_ptr<Simu_base> simu) {
   I(plugging);  // It can be called only during booting
 
-  I(simus.size() == static_cast<size_t>(gproc->get_hid()));
+  I(simus.size() == static_cast<size_t>(simu->get_hid()));
 
-  for (auto i = 0u; i < gproc->get_smt_size(); ++i) {
-    simus.push_back(gproc);
+  for (auto i = 0u; i < simu->get_smt_size(); ++i) {
+    simus.push_back(simu);
 
     EmulSimuMapping map;
 
-    map.fid          = gproc->get_hid();
+    map.fid          = simu->get_hid();
     map.emul         = nullptr;
-    map.active       = gproc->is_power_up();
-    map.simu         = gproc;
+    map.active       = simu->is_power_up();
+    map.simu         = simu;
     map.deactivating = false;
 
     allmaps.push_back(map);
   }
 }
 
-void TaskHandler::core_resume(Hartid_t fid) {
+void TaskHandler::simu_resume(Hartid_t fid) {
   I(fid < 65535);  // No more than 65K flows for the moment
 
   if (running.contains(fid)) {
@@ -76,7 +75,7 @@ void TaskHandler::core_resume(Hartid_t fid) {
 }
 /* }}} */
 
-void TaskHandler::core_pause(Hartid_t fid) {
+void TaskHandler::simu_pause(Hartid_t fid) {
   /* deactivae an fid {{{1 */
 
   fprintf(stderr, "P");
@@ -93,7 +92,7 @@ void TaskHandler::core_pause(Hartid_t fid) {
 }
 /* }}} */
 
-void TaskHandler::core_terminate_all()
+void TaskHandler::simu_terminate_all()
 /* deactivae an fid {{{1 */
 {
   terminate_all = true;
@@ -110,7 +109,7 @@ void TaskHandler::core_terminate_all()
 }
 /* }}} */
 
-void TaskHandler::core_freeze(Hartid_t fid, Time_t nCycles) {
+void TaskHandler::simu_freeze(Hartid_t fid, Time_t nCycles) {
   I(allmaps[fid].active);
   I(fid < 65535);  // No more than 65K threads for the moment
   allmaps[fid].simu->freeze(nCycles);
@@ -135,17 +134,6 @@ void TaskHandler::boot() {
       }
     }
 
-#ifndef NDEBUG
-    for (size_t i = 0; i < allmaps.size(); i++) {
-      if (allmaps[i].active) {
-        continue;
-      }
-      if (allmaps[i].deactivating) {
-        continue;
-      }
-      I(allmaps[i].simu->isROBEmpty());
-    }
-#endif
     EventScheduler::advanceClock();
   }
 }

@@ -22,7 +22,7 @@ extern bool MIMDmode;
 // #define SBPT_JUSTLAST 1
 // #define SBPT_JUSTDELTA0 1
 
-FetchEngine::FetchEngine(Hartid_t id, GMemorySystem *gms_, std::shared_ptr<BPredictor> shared_bpred)
+FetchEngine::FetchEngine(Hartid_t id, std::shared_ptr<GMemorySystem> gms_, std::shared_ptr<BPredictor> shared_bpred)
     : gms(gms_)
     , avgFetchLost(fmt::format("({})_FetchEngine_avgFetchLost", id))
     , avgBranchTime(fmt::format("({})_FetchEngine_avgBranchTime", id))

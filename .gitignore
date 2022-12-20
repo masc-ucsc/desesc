@@ -46,3 +46,6 @@ cscope*
 # No bazel
 bazel-*
 
+# No zip
+*.zip
+

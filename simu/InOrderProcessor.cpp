@@ -7,7 +7,7 @@
 #include "GMemorySystem.h"
 #include "config.hpp"
 
-InOrderProcessor::InOrderProcessor(GMemorySystem *gm, CPU_t i)
+InOrderProcessor::InOrderProcessor(std::shared_ptr<GMemorySystem> gm, CPU_t i)
     : GProcessor(gm, i)
     , RetireDelay(Config::get_integer("soc", "core", i, "retire_delay"))
     , lsq(i, 32768)

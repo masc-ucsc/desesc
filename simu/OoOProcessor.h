@@ -180,7 +180,7 @@ protected:
 
   // END VIRTUAL FUNCTIONS of GProcessor
 public:
-  OoOProcessor(GMemorySystem *gm, CPU_t i);
+  OoOProcessor(std::shared_ptr<GMemorySystem> gm, CPU_t i);
   virtual ~OoOProcessor();
 
 #ifdef ENABLE_LDBP

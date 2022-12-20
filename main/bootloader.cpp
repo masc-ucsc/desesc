@@ -17,6 +17,7 @@
 #include "taskhandler.hpp"
 #include "report.hpp"
 #include "config.hpp"
+#include "emul_dromajo.hpp"
 
 extern DrawArch arch;
 
@@ -57,16 +58,7 @@ extern "C" void signalCatcher(int32_t sig) {
   abort();
 }
 
-char *      BootLoader::reportFile;
 timeval     BootLoader::stTime;
-PowerModel *BootLoader::pwrmodel;
-bool        BootLoader::doPower;
-
-void BootLoader::check() {
-  if(Config::has_errors()) {
-    exit(-1);
-  }
-}
 
 void BootLoader::reportOnTheFly() {
 
@@ -75,167 +67,129 @@ void BootLoader::reportOnTheFly() {
   Report::reinit();
   Config::dump(Report::raw_file_descriptor());
 
-  pwrmodel->startDump();
-  pwrmodel->stopDump();
+  //pwrmodel->startDump();
+  //pwrmodel->stopDump();
 }
 
-void BootLoader::report(const char *str) {
+void BootLoader::report(const std::string &str) {
   timeval endTime;
   gettimeofday(&endTime, 0);
 
-  Report::field("OSSim:reportName=%s", str);
-  Report::field("OSSim:beginTime=%s", ctime(&stTime.tv_sec));
-  Report::field("OSSim:endTime=%s", ctime(&endTime.tv_sec));
+  Report::field(fmt::format("#BEGIN:report {}", str));
+  Report::field(fmt::format("OSSim:reportName={}", str));
+  Report::field(fmt::format("OSSim:beginTime={}", ctime(&stTime.tv_sec)));
+  Report::field(fmt::format("OSSim:endTime={}", ctime(&endTime.tv_sec)));
 
   double msecs = (endTime.tv_sec - stTime.tv_sec) * 1000 + (endTime.tv_usec - stTime.tv_usec) / 1000;
 
-  TaskHandler::report(str);
+  TaskHandler::report();
 
-  Report::field("OSSim:msecs=%8.2f", (double)msecs / 1000);
+  Report::field(fmt::format("OSSim:msecs={}", (double)msecs / 1000));
 
-  GStats::report(str);
+  Stats::report_all();
 
+  Report::field(fmt::format("#END:report {}", str));
   Report::close();
 }
 
-void BootLoader::reportSample() {
-}
+void BootLoader::plug_emuls() {
 
-void BootLoader::plugEmulInterfaces() {
-
-  auto ncores = Config::get_array_size("soc", "core");
   auto nemuls = Config::get_array_size("soc", "emul");
 
-  if (ncores != nemuls) {
-    Config::add_error("soc number of cores should match the numbers of emuls ({} vs {})", ncores, nemuls);
-    return;
-  }
-  if (ncores==0) {
-    Config::add_error("soc should have at least one core in [soc] core");
-    return;
-  }
+  std::shared_ptr<Emul_dromajo> dromajo;
 
   for(auto i = 0u; i < nemuls; i++) {
     auto type = Config::get_string("soc","emul", i, "type", {"dromajo", "accel", "trace"});
     if (type == "dromajo") {
-      auto dromajo = std::make_shred<Emul_dromajo>();
-      HERE!! add_emul
-
+      if (dromajo==nullptr) {
+        dromajo = std::make_shared<Emul_dromajo>();
+      }
+      if (dromajo) // Invalid dromahor otherwise
+        TaskHandler::add_emul(dromajo, i);
     }else if (type == "accel") {
-
+      Config::add_error("accel still not implemented");
+    }else if (type == "trace") {
+      Config::add_error("trace still not implemented");
     }
   }
 }
 
-void BootLoader::plugSimuInterfaces() {
+void BootLoader::plug_simus() {
 
-  FlowID nsimu = SescConf->getRecordSize("", "cpusimu");
+  auto ncores = Config::get_array_size("soc", "core");
 
-  LOG("I: cpusimu size [%d]", nsimu);
+  for(auto i = 0u; i < ncores; i++) {
+    std::shared_ptr<GMemorySystem> gm;
 
-  for(FlowID i = 0; i < nsimu; i++) {
-    const char *section = SescConf->getCharPtr("", "cpusimu", i);
-    createSimuInterface(section, i);
+    auto caches = Config::get_bool("soc","core",i,"caches");
+    if (caches) {
+      #if 0
+      gm = std::make_shared<MemorySystem>(i)
+      #else
+I(false); // FIXME: cleanup the mem
+      #endif
+    }else{
+      gm = std::make_shared<DummyMemorySystem>(i);
+    }
+
+    auto type = Config::get_string("soc","core", i, "type", {"ooo", "inorder", "accel"});
+    std::shared_ptr<Simu_base> simu;
+    if (type == "ooo") {
+      simu = std::make_shared<OoOProcessor>(gm, i);
+    }else if (type == "inorder") {
+      simu = std::make_shared<InOrderProcessor>(gm, i);
+    }else if (type == "accel") {
+      simu = std::make_shared<AccProcessor>(gm, i);
+    }
+    TaskHandler::simu_create(simu);
   }
-}
-
-EmuSampler *BootLoader::getSampler(const char *section, const char *keyword, EmulInterface *eint, FlowID fid) {
-  const char *sampler_sec  = SescConf->getCharPtr(section, keyword);
-  const char *sampler_type = SescConf->getCharPtr(sampler_sec, "type");
-
-  static EmuSampler *sampler = 0;
-
-  if(sampler)
-    return sampler;
-
-  if(strcasecmp(sampler_type, "inst") == 0) {
-    sampler = new SamplerSMARTS("TASS", sampler_sec, eint, fid);
-  } else if(strcasecmp(sampler_type, "sync") == 0) {
-    sampler = new SamplerSync("SYNC", sampler_sec, eint, fid);
-  } else if(strcasecmp(sampler_type, "time") == 0) {
-    sampler = new SamplerPeriodic("TBS", sampler_sec, eint, fid);
-  } else {
-    MSG("ERROR: unknown sampler [%s] type [%s]", sampler_sec, sampler_type);
-    SescConf->notCorrect();
-  }
-
-  return sampler;
-}
-
-void BootLoader::createEmulInterface(const char *section, FlowID fid) {
-#ifndef ENABLE_NOEMU
-  const char *type = SescConf->getCharPtr(section, "type");
-
-  if(type == 0) {
-    MSG("ERROR: type field should be defined in section [%s]", section);
-    SescConf->notCorrect();
-    return;
-  }
-
-  EmulInterface *eint = 0;
-  if(strcasecmp(type, "QEMU") == 0) {
-    eint = new QEMUEmulInterface(section);
-    TaskHandler::addEmul(eint, fid);
-  } else {
-    MSG("ERROR: unknown cpusim [%s] type [%s]", section, type);
-    SescConf->notCorrect();
-    return;
-  }
-  I(eint);
-
-  EmuSampler *sampler = getSampler(section, "sampler", eint, fid);
-  I(sampler);
-  eint->setSampler(sampler, fid);
-#endif
-}
-
-void BootLoader::createSimuInterface(const char *section, FlowID i) {
-
-  GMemorySystem *gms = 0;
-  if(SescConf->checkInt(section, "noMemory")) {
-    gms = new DummyMemorySystem(i);
-  } else {
-    gms = new MemorySystem(i);
-  }
-  gms->buildMemorySystem();
-
-  CPU_t cpuid = static_cast<CPU_t>(i);
-
-
-  auto type = Config::get_string("soc", "core", cpuid, "type", {"inorder", "ooo", "accel"});
-  if (type.empty())
-    return;
-
-  GProcessor *gproc = 0;
-  if(type == "inorder")    { gproc = new InOrderProcessor(gms, cpuid); }
-  else if(type == "accel") { gproc = new AccProcessor(gms, cpuid); }
-  else if(type == "ooo")   { gproc = new OoOProcessor(gms, cpuid); }
-  else {
-    I(false);
-  }
-
-  I(gproc);
-  TaskHandler::addSimu(gproc);
 }
 
 void BootLoader::plug(int argc, const char **argv) {
   // Before boot
 
-  Config::init();  // FIXME: -c desesc2.conf
+  std::string conf_file = "desesc.conf";
+  bool just_check = false;
 
-  TaskHandler::plugBegin();
-  plugSimuInterfaces();
+  for(auto i=1;i<argc;++i) {
+    if (strcmp(argv[i],"-c")==0) {
+      ++i;
+      if (i>=argc) {
+        fmt::print("after -c, there should be a config file name\n");
+        exit(-3);
+      }
+      conf_file = argv[i];
+    }else if (strcasecmp(argv[i],"check")==0) {
+      just_check = true;
+    }else{
+      fmt::print("unknown {} command line option\n", argv[i]);
+      exit(-3);
+    }
+  }
+  Config::init(conf_file);
 
-  check();
+  auto ncores = Config::get_array_size("soc", "core");
+  auto nemuls = Config::get_array_size("soc", "emul");
 
-  if(argc > 1 && strcmp(argv[1], "check") == 0) {
-    printf("success\n");
+  if (ncores != nemuls) {
+    Config::add_error(fmt::format("soc number of cores should match the numbers of emuls ({} vs {})", ncores, nemuls));
+  }else if (ncores==0) {
+    Config::add_error("soc should have at least one core in [soc] core");
+  }else{
+    TaskHandler::plugBegin();
+    plug_simus();
+
+    Config::exit_on_error();
+  }
+
+  if(just_check) {
+    fmt::print("check success\n");
     exit(0);
   }
 
+  plug_emuls();
 
-  plugEmulInterfaces();
-  check();
+  Config::exit_on_error();
 
   arch.drawArchDot("memory-arch.dot");
 
@@ -253,8 +207,7 @@ void BootLoader::plug(int argc, const char **argv) {
 void BootLoader::boot() {
   gettimeofday(&stTime, 0);
 
-  if(!Config::has_errors())
-    exit(-1);
+  Config::exit_on_error();
 
   Report::init();
   Config::dump(Report::raw_file_descriptor());
@@ -263,8 +216,6 @@ void BootLoader::boot() {
 }
 
 void BootLoader::unboot() {
-
-  MSG("BootLoader::unboot called... Finishing the work");
 
 #ifdef ESESC_THERM
   ReportTherm::stopCB();

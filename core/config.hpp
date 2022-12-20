@@ -5,6 +5,8 @@
 #include <limits>
 #include <vector>
 
+#include "absl/container/flat_hash_map.h"
+
 #include "toml.hpp"
 
 class Config {
@@ -13,14 +15,21 @@ private:
   static inline toml::value data;
 
   static inline std::vector<std::string> errors;
+  static inline absl::flat_hash_map<std::string, std::pair<std::string,std::vector<std::string>> > used;
 
   static bool check(const std::string &block, const std::string &name);
 
   static int check_power2(const std::string &block, const std::string &name, int power2);
 
+  static void add_used(const std::string &block, const std::string &name, size_t pos, const std::string &val);
+
+  static std::string get_block2(const std::string &block, const std::string &name, size_t pos);
+
 protected:
 public:
   Config() = delete; // No object instance. All methods are static
+
+  static void exit_on_error();
 
   static void init(const std::string f = "desesc.conf");
 

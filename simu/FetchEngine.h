@@ -15,7 +15,7 @@ class IBucket;
 
 class FetchEngine {
 private:
-  GMemorySystem *const gms;
+  std::shared_ptr<GMemorySystem> const gms;
 
   std::shared_ptr<BPredictor> bpred;
 
@@ -141,7 +141,7 @@ protected:
   // *******************
 
 public:
-  FetchEngine(Hartid_t i, GMemorySystem *gms, std::shared_ptr<BPredictor> shared_bpred = nullptr);
+  FetchEngine(Hartid_t i, std::shared_ptr<GMemorySystem> gms, std::shared_ptr<BPredictor> shared_bpred = nullptr);
 
   ~FetchEngine();
 

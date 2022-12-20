@@ -11,9 +11,9 @@
 #include "config.hpp"
 
 
-AccProcessor::AccProcessor(GMemorySystem *gm, Hartid_t i)
+AccProcessor::AccProcessor(std::shared_ptr<GMemorySystem> gm, Hartid_t i)
     /* constructor {{{1 */
-    : Execute_engine(gm, i)
+    : Simu_base(gm, i)
     , myAddr((i + 1) * 128 * 1024)
     , addrIncr(Config::get_integer("soc", "core", i, "addr_incr"))
     , reqid(0)

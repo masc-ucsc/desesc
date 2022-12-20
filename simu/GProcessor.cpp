@@ -63,8 +63,8 @@ void GProcessor::fetch() {
   }
 }
 
-GProcessor::GProcessor(GMemorySystem *gm, Hartid_t i)
-    : Execute_engine(gm, i)
+GProcessor::GProcessor(std::shared_ptr<GMemorySystem> gm, Hartid_t i)
+    : Simu_base(gm, i)
     , FetchWidth(Config::get_integer("soc", "core", i, "fetch_width"))
     , IssueWidth(Config::get_integer("soc", "core", i, "issue_width"))
     , RetireWidth(Config::get_integer("soc", "core", i, "retire_width"))

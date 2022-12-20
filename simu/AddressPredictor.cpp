@@ -812,7 +812,9 @@ void Indirect_address_predictor::performed(MemObj *DL1, Addr_t pc, Addr_t ld1_ad
     return;
   }
 
-  uint64_t ld1_data = esesc_mem_read(ld1_addr);
+  uint64_t ld1_data = 0; 
+  I(false); // FIXME: query to Emul_base->mem_read(ld1_addr); esesc_mem_read(ld1_addr);
+  I(ld1_addr);
   if (adhist[pc].factor != 1) {
     ld1_data = (uint32_t)ld1_data;  // No long
   }

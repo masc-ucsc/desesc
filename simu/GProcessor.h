@@ -21,7 +21,7 @@
 #include "Resource.h"
 #include "callback.hpp"
 #include "estl.h"
-#include "execute_engine.hpp"
+#include "simu_base.hpp"
 #include "iassert.hpp"
 #include "instruction.hpp"
 #include "snippets.hpp"
@@ -50,7 +50,7 @@ struct SMT_fetch {
   void update();
 };
 
-class GProcessor : public Execute_engine {
+class GProcessor : public Simu_base {
 private:
 protected:
   const int32_t FetchWidth;
@@ -61,7 +61,7 @@ protected:
   const size_t  MaxROBSize;
 
   size_t         smt_size;
-  GMemorySystem *memorySystem;
+  std::shared_ptr<GMemorySystem> memorySystem;
 
   std::shared_ptr<StoreSet>     storeset;
   std::shared_ptr<Prefetcher>   prefetcher;
@@ -94,9 +94,9 @@ protected:
 
   // Construction
   void buildInstStats(const std::string &txt);
-  void buildUnit(const std::string &clusterName, GMemorySystem *ms, Cluster *cluster, Opcode type);
+  void buildUnit(const std::string &clusterName, std::shared_ptr<GMemorySystem> ms, Cluster *cluster, Opcode type);
 
-  GProcessor(GMemorySystem *gm, Hartid_t i);
+  GProcessor(std::shared_ptr<GMemorySystem> gm, Hartid_t i);
 
   int32_t    issue();
   void       fetch();
@@ -139,7 +139,7 @@ public:
   Dinst   *getData(uint32_t position) const { return ROB.getData(position); }
 
   // Returns the maximum number of flows this processor can support
-  size_t get_smt_size() const { return smt_size; }
+  size_t get_smt_size() const override { return smt_size; }
 
   void report(const std::string &str);
 

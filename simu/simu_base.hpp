@@ -9,7 +9,7 @@
 #include "snippets.hpp"
 #include "stats.hpp"
 
-class Execute_engine {
+class Simu_base {
 private:
   static inline Time_t lastWallClock{0};
 
@@ -31,12 +31,12 @@ private:
 protected:
   const Hartid_t hid;
 
-  std::shared_ptr<Emul_base> eint;
-  GMemorySystem             *memorySystem;
+  std::shared_ptr<Emul_base>     eint;
+  std::shared_ptr<GMemorySystem> memorySystem;
 
   bool adjust_clock(bool en);
 
-  Execute_engine(GMemorySystem *gm, Hartid_t i);
+  Simu_base(std::shared_ptr<GMemorySystem> gm, Hartid_t i);
 
 public:
   void set_emul(std::shared_ptr<Emul_base> e) { eint = e; }
@@ -55,10 +55,12 @@ public:
 
   static Time_t getWallClock() { return lastWallClock; }
 
-  GMemorySystem *ref_memory_system() const { return memorySystem; }
+  std::shared_ptr<GMemorySystem> ref_memory_system() const { return memorySystem; }
 
-  // API for Execute_engine
+  // API for Simu_base
   virtual bool        advance_clock_drain() = 0;
   virtual bool        advance_clock()       = 0;
   virtual std::string get_type() const      = 0;
+
+  virtual size_t get_smt_size() const { return 1; }
 };

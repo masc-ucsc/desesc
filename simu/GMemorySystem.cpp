@@ -64,10 +64,11 @@ GMemorySystem::GMemorySystem(int32_t processorId) : coreId(processorId) {
 
   DL1  = 0;
   IL1  = 0;
-  vpc  = 0;
   pref = 0;
 
   priv_counter = 0;
+
+  buildMemorySystem();
 }
 
 GMemorySystem::~GMemorySystem() {
@@ -77,10 +78,6 @@ GMemorySystem::~GMemorySystem() {
 
   if (IL1 && DL1 != IL1) {
     delete IL1;
-  }
-
-  if (vpc) {
-    delete vpc;
   }
 
   if (pref) {

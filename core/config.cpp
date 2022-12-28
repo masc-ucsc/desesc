@@ -319,7 +319,7 @@ std::string Config::get_array_string(const std::string &block, const std::string
 
   auto arr = ent.as_array();
 
-  if (!ent.is_string()) {
+  if (!arr[pos].is_string()) {
     errors.emplace_back(fmt::format("conf:{} section:{} array entry is not string\n", filename, block, name));
     return "INVALID";
   }

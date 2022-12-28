@@ -30,7 +30,7 @@ public:
 
   static void exit_on_error();
 
-  static void init(const std::string f = "desesc.conf");
+  static void init(const std::string f = "desesc.toml");
 
   static std::string get_string(const std::string &block, const std::string &name,
                                 const std::vector<std::string> allowed = std::vector<std::string>());

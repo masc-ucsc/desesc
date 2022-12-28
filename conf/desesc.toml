@@ -117,6 +117,7 @@ stq_late_alloc = false
 storeset_size = 8192
 il1           = "il1_cache"
 dl1           = "dl1_cache"
+scoore_serialize = true
 
 decode_delay = 4
 rename_delay = 2
@@ -130,6 +131,7 @@ rob_size     = 320
 
 # Exe Parameters
 cluster = ["aunit", "bunit", "cunit"]
+num_regs   = 256
 inter_cluster_lat    = 1
 cluster_scheduler    = "RoundRobin"
 max_branches         = 30
@@ -142,17 +144,72 @@ scoore_serialze      = true
 num = 4
 lat = 1
 
+[balu]
+num = 2
+lat = 1
+
+[calu2]
+num = 2
+lat = 1
+
+[lsu]
+num = 2
+lat = 1
+
 [aunit]
 win_size   = 16
 sched_num  = 4
 sched_occ  = 1
 sched_lat  = 1
-recyle_at  = "executed"
+recycle_at  = "executed"
 num_regs   = 64
 late_alloc = false
 iAALU      = "alu0"
 iRALU      = "alu0"
 
+[bunit]
+win_size   = 16
+sched_num  = 4
+sched_occ  = 1
+sched_lat  = 1
+recycle_at  = "executed"
+num_regs   = 64
+late_alloc = false
+iBALU_LBRANCH = "balu"
+iBALU_LJUMP   = "balu"
+iBALU_LCALL   = "balu"
+iBALU_RBRANCH = "balu"
+iBALU_RJUMP   = "balu"
+iBALU_RCALL   = "balu"
+iBALU_RET     = "balu"
+
+[cunit]
+win_size   = 16
+sched_num  = 4
+sched_occ  = 1
+sched_lat  = 1
+recycle_at  = "executed"
+num_regs   = 64
+late_alloc = false
+iCALU_FPMULT  = "calu2"
+iCALU_FPDIV   = "calu2"
+iCALU_FPALU   = "calu2"
+iCALU_MULT    = "calu2"
+iCALU_DIV     = "calu2"
+
+[munit]
+win_size   = 16
+sched_num  = 4
+sched_occ  = 1
+sched_lat  = 1
+recycle_at  = "executed"
+num_regs   = 64
+late_alloc = false
+iLALU_LD      = "lsu"
+iSALU_ST      = "lsu"
+iSALU_LL      = "lsu"
+iSALU_SC      = "lsu"
+iSALU_ADDR    = "lsu"
 
 [il1_cache]
 type       = "cache"   # or nice

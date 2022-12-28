@@ -182,7 +182,7 @@ Cluster *Cluster::create(const std::string &clusterName, uint32_t pos, std::shar
                          GProcessor *gproc) {
   // Constraints
 
-  auto recycleAt = Config::get_string("soc", "core", cpuid, "recycle_at", {"executing", "executed", "retired"});
+  auto recycleAt = Config::get_string(clusterName, "recycle_at", {"executing", "executed", "retired"});
 
   int smt     = Config::get_integer("soc", "core", cpuid, "smt");
   int smt_ctx = cpuid - (cpuid % smt);
@@ -199,7 +199,7 @@ Cluster *Cluster::create(const std::string &clusterName, uint32_t pos, std::shar
     } else if (recycleAt == "executing") {
       cluster = new ExecutingCluster(clusterName, pos, cpuid);
     } else {
-      I(recycleAt == "execute");
+      I(recycleAt == "executed");
       cluster = new ExecutedCluster(clusterName, pos, cpuid);
     }
 

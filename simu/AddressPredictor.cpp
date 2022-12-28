@@ -13,7 +13,7 @@
 #include "dinst.hpp"
 
 BimodalStride::BimodalStride(int _size, size_t _width) : size(_size), max_conf(1 << _width) {
-  I((size & (size - 1)) != 0);
+  I((size & (size - 1)) == 0);
 
   table.resize(size);
 }

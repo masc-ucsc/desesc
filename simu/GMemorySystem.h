@@ -52,7 +52,6 @@ private:
   MemObj *DL1;   // Data L1 cache
   MemObj *IL1;   // Instruction L1 cache
   MemObj *pref;  // Prefetcher
-  MemObj *vpc;   // Speculative virtual predictor cache
 
 protected:
   const uint32_t coreId;
@@ -87,7 +86,6 @@ public:
   uint32_t getCoreId() const { return coreId; };
   MemObj  *getDL1() const { return DL1; };
   MemObj  *getIL1() const { return IL1; };
-  MemObj  *getvpc() const { return vpc; };
   MemObj  *getPrefetcher() const { return pref; };
 };
 

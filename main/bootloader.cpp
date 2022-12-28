@@ -115,7 +115,6 @@ void BootLoader::plug_simus() {
 
   for (auto i = 0u; i < ncores; i++) {
     std::shared_ptr<GMemorySystem> gm;
-
     auto caches = Config::get_bool("soc", "core", i, "caches");
     if (caches) {
 #if 0
@@ -123,7 +122,7 @@ void BootLoader::plug_simus() {
 #else
       I(false);  // FIXME: cleanup the mem
 #endif
-    } else {
+    }else {
       gm = std::make_shared<DummyMemorySystem>(i);
     }
 
@@ -143,7 +142,7 @@ void BootLoader::plug_simus() {
 void BootLoader::plug(int argc, const char **argv) {
   // Before boot
 
-  std::string conf_file  = "desesc.conf";
+  std::string conf_file  = "desesc.toml";
   bool        just_check = false;
 
   for (auto i = 1; i < argc; ++i) {

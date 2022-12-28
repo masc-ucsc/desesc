@@ -112,8 +112,8 @@ MemResource::MemResource(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *_ls
 
 /* }}} */
 
-MemReplay::MemReplay(uint8_t type, Cluster *cls, PortGeneric *gen, std::shared_ptr<StoreSet> ss, TimeDelta_t l, uint32_t cpuid)
-    : Resource(type, cls, gen, l, cpuid), lfSize(8), storeset(ss) {
+MemReplay::MemReplay(uint8_t type, Cluster *cls, PortGeneric *_gen, std::shared_ptr<StoreSet> ss, TimeDelta_t l, uint32_t cpuid)
+    : Resource(type, cls, _gen, l, cpuid), lfSize(8), storeset(ss) {
   lf = (struct FailType *)malloc(sizeof(struct FailType) * lfSize);
   for (uint32_t i = 0; i < lfSize; i++) {
     lf[i].ssid = -1;

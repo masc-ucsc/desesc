@@ -87,7 +87,7 @@ class ExecutingCluster : public Cluster {
 public:
   virtual ~ExecutingCluster() {}
 
-  ExecutingCluster(const std::string &clusterName, uint32_t pos, uint32_t cpuid) : Cluster(clusterName, pos, cpuid) {}
+  ExecutingCluster(const std::string &clusterName, uint32_t pos, uint32_t _cpuid) : Cluster(clusterName, pos, _cpuid) {}
 
   void executing(Dinst *dinst);
   void executed(Dinst *dinst);
@@ -98,7 +98,7 @@ class ExecutedCluster : public Cluster {
 public:
   virtual ~ExecutedCluster() {}
 
-  ExecutedCluster(const std::string &clusterName, uint32_t pos, uint32_t cpuid) : Cluster(clusterName, pos, cpuid) {}
+  ExecutedCluster(const std::string &clusterName, uint32_t pos, uint32_t _cpuid) : Cluster(clusterName, pos, _cpuid) {}
 
   void executing(Dinst *dinst);
   void executed(Dinst *dinst);
@@ -108,7 +108,7 @@ public:
 class RetiredCluster : public Cluster {
 public:
   virtual ~RetiredCluster() {}
-  RetiredCluster(const std::string &clusterName, uint32_t pos, uint32_t cpuid) : Cluster(clusterName, pos, cpuid) {}
+  RetiredCluster(const std::string &clusterName, uint32_t pos, uint32_t _cpuid) : Cluster(clusterName, pos, _cpuid) {}
 
   void executing(Dinst *dinst);
   void executed(Dinst *dinst);

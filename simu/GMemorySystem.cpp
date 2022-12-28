@@ -247,7 +247,7 @@ MemObj *GMemorySystem::finishDeclareMemoryObj(const std::vector<std::string> &vP
   return newMem;
 }
 
-DummyMemorySystem::DummyMemorySystem(int32_t coreId) : GMemorySystem(coreId) {
+DummyMemorySystem::DummyMemorySystem(int32_t _coreId) : GMemorySystem(_coreId) {
   // Do nothing
 }
 

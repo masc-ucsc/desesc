@@ -43,8 +43,10 @@ void Report::reinit() {
 void Report::close() { ::close(fd); }
 
 void Report::field(const std::string &msg) {
-  write(fd, msg.data(), msg.size());
+  auto sz = write(fd, msg.data(), msg.size());
+  I(sz == msg.size());
   if (msg.back() != '\n') {
-    write(fd, "\n", 1);
+    auto sz2 = write(fd, "\n", 1);
+    I(sz2==1);
   }
 }

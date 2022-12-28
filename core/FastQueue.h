@@ -2,6 +2,9 @@
 
 #pragma once
 
+#include <stdlib.h>
+
+#include <cstdint>
 #include <deque>
 
 #include "iassert.hpp"
@@ -22,7 +25,7 @@ public:
 
   Data top() { return dq.front(); };
 
-  size_t size() const { return dq.size(); }
+  std::size_t size() const { return dq.size(); }
   bool   empty() const { return dq.empty(); }
 };
 #else
@@ -38,7 +41,7 @@ private:
 
 protected:
 public:
-  FastQueue(size_t size) {
+  FastQueue(std::size_t size) {
     // Find the closest power of two
     I(size);
     pipeMask = size;
@@ -94,7 +97,7 @@ public:
 
   Data topNext() const { return getData(getIDFromTop(1)); }
 
-  size_t size() const { return nElems; }
+  std::size_t size() const { return nElems; }
   bool   empty() const { return nElems == 0; }
 };
 #endif  // FASTQUEUE_USE_QUEUE

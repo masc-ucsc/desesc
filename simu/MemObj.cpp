@@ -108,9 +108,9 @@ DummyMemObj::DummyMemObj()
     : MemObj("dummySection", "dummyMem") {}
 /* }}} */
 
-DummyMemObj::DummyMemObj(const std::string &section, const std::string &sName)
+DummyMemObj::DummyMemObj(const std::string &_section, const std::string &sName)
     /* dummy constructor {{{1 */
-    : MemObj(section, sName) {}
+    : MemObj(_section, sName) {}
 /* }}} */
 
 #ifdef ENABLE_LDBP

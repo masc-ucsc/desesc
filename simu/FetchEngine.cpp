@@ -910,13 +910,14 @@ void FetchEngine::unBlockFetch(Dinst *dinst, Time_t missFetchTime) {
 }
 
 void FetchEngine::clearMissInst(Dinst *dinst, Time_t missFetchTime) {
+  (void)dinst;
   (void)missFetchTime;
 
   I(missInst);
   missInst = false;
 
-  I(dinst == missDinst);
 #ifndef NDEBUG
+  I(dinst == missDinst);
   missDinst = 0;
 #endif
 
@@ -924,6 +925,7 @@ void FetchEngine::clearMissInst(Dinst *dinst, Time_t missFetchTime) {
 }
 
 void FetchEngine::setMissInst(Dinst *dinst) {
+  (void)dinst;
   I(!missInst);
 
   missInst = true;

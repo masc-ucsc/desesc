@@ -1,21 +1,19 @@
 
+#include "ProtocolBase.h"
+
 #include <typeinfo>
 
 #include "InterConn.h"
 #include "PMessage.h"
-#include "ProtocolBase.h"
 
 ProtocolBase::NetDevType ProtocolBase::netDev;
 
-ProtocolBase::ProtocolBase(InterConnection *net, RouterID_t rID, PortID_t pID)
-    : network(net)
-    , routerID(rID)
-    , portID(pID) {
+ProtocolBase::ProtocolBase(InterConnection *net, RouterID_t rID, PortID_t pID) : network(net), routerID(rID), portID(pID) {
   I(network);
 
   NetDevType::iterator netDevEntry = netDev.find(network);
 
-  if(netDevEntry == netDev.end()) {
+  if (netDevEntry == netDev.end()) {
     // create a new device vector for network
 
     netDev[network] = new DevList;

@@ -35,6 +35,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "UnMemXBar.h"
+
 #include "MemorySystem.h"
 #include "SescConf.h"
 /* }}} */
@@ -43,7 +44,7 @@ UnMemXBar::UnMemXBar(MemorySystem *current, const char *section, const char *nam
     /* constructor {{{1 */
     : GXBar(section, name) {
   MSG("building an UnMemXbar named:%s\n", name);
-  Xbar_unXbar_balance--; // decrement balance of XBars
+  Xbar_unXbar_balance--;  // decrement balance of XBars
   lower_level = NULL;
 
   SescConf->isInt(section, "lowerLevelBanks");
@@ -56,8 +57,10 @@ UnMemXBar::UnMemXBar(MemorySystem *current, const char *section, const char *nam
   LineSize           = SescConf->getInt(section, "LineSize");
   Modfactor          = SescConf->getInt(section, "Modfactor");
 
-  if(Modfactor < numLowerLevelBanks) {
-    printf("ERROR: UNXBAR: %s does not have a Modfactor(%d) bigger than the number of structures(%d) below it!\n", name, Modfactor,
+  if (Modfactor < numLowerLevelBanks) {
+    printf("ERROR: UNXBAR: %s does not have a Modfactor(%d) bigger than the number of structures(%d) below it!\n",
+           name,
+           Modfactor,
            numLowerLevelBanks);
     exit(1);
   }
@@ -65,7 +68,7 @@ UnMemXBar::UnMemXBar(MemorySystem *current, const char *section, const char *nam
 #ifdef OLD_CODE_TO_BE_PHASED_OUT
   std::vector<char *> vPars = SescConf->getSplitCharPtr(section, "lowerLevel");
   size_t              size  = strlen(vPars[0]);
-  char *              tmp   = (char *)malloc(size + 6);
+  char               *tmp   = (char *)malloc(size + 6);
   sprintf(tmp, "%s", vPars[1]);
   lower_level = current->declareMemoryObj_uniqueName(tmp, vPars[0]);
 #else

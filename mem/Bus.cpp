@@ -35,13 +35,13 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "Bus.h"
+
 #include "SescConf.h"
 /* }}} */
 
 Bus::Bus(MemorySystem *current, const char *section, const char *name)
     /* constructor {{{1 */
-    : MemObj(section, name)
-    , delay(SescConf->getInt(section, "delay")) {
+    : MemObj(section, name), delay(SescConf->getInt(section, "delay")) {
   // busyUpto = 0;
 
   SescConf->isInt(section, "numPorts");
@@ -59,7 +59,7 @@ Bus::Bus(MemorySystem *current, const char *section, const char *name)
 
   I(current);
   MemObj *lower_level = current->declareMemoryObj(section, "lowerLevel");
-  if(lower_level) {
+  if (lower_level) {
     addLowerLevel(lower_level);
   }
 }
@@ -87,7 +87,7 @@ void Bus::doReqAck(MemRequest *mreq)
 {
   TimeDelta_t when = dataPort->nextSlotDelta(mreq->getStatsFlag()) + delay;
 
-  if(mreq->isHomeNode()) {
+  if (mreq->isHomeNode()) {
     mreq->ack(when);
     return;
   }
@@ -99,8 +99,8 @@ void Bus::doReqAck(MemRequest *mreq)
 void Bus::doSetState(MemRequest *mreq)
 /* forward set state to all the upper nodes {{{1 */
 {
-  if(router->isTopLevel()) {
-    mreq->convert2SetStateAck(ma_setInvalid, false); // same as a miss (not sharing here)
+  if (router->isTopLevel()) {
+    mreq->convert2SetStateAck(ma_setInvalid, false);  // same as a miss (not sharing here)
     router->scheduleSetStateAck(mreq, 1);
     return;
   }
@@ -111,7 +111,7 @@ void Bus::doSetState(MemRequest *mreq)
 void Bus::doSetStateAck(MemRequest *mreq)
 /* forward set state to all the lower nodes {{{1 */
 {
-  if(mreq->isHomeNode()) {
+  if (mreq->isHomeNode()) {
     mreq->ack();
     return;
   }

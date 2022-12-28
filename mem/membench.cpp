@@ -26,8 +26,6 @@ Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  * This launches the ESESC simulator environment with an ideal memory
  */
 
-#include "nanassert.h"
-
 #include "ARMCrack.h"
 #include "BootLoader.h"
 #include "CrackBase.h"
@@ -47,13 +45,12 @@ Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 static int rd_pending = 0;
 static int wr_pending = 0;
 
-DInst *  ld;
-DInst *  st;
+DInst   *ld;
+DInst   *st;
 ARMCrack crackInstARM;
 
 RAWDInst rinst;
 void     rdDone(DInst *dinst) {
-
   printf("rddone @%lld\n", (long long)globalClock);
 
   rd_pending--;
@@ -61,15 +58,15 @@ void     rdDone(DInst *dinst) {
 }
 
 void wrDone(DInst *dinst) {
-
   printf("wrdone @%lld\n", (long long)globalClock);
   wr_pending--;
   dinst->recycle();
 }
 
 static void waitAllMemOpsDone() {
-  while(rd_pending || wr_pending)
+  while (rd_pending || wr_pending) {
     EventScheduler::advanceClock();
+  }
 }
 
 typedef CallbackFunction1<DInst *, &rdDone> rdDoneCB;
@@ -82,8 +79,9 @@ static void doread(MemObj *cache, AddrType addr) {
   DInst *ldClone = ld->clone();
   ldClone->setAddr(addr);
 
-  while(cache->isBusy(addr))
+  while (cache->isBusy(addr)) {
     EventScheduler::advanceClock();
+  }
 
   rdDoneCB *cb = rdDoneCB::create(ldClone);
   printf("rd %x @%lld\n", (unsigned int)addr, (long long)globalClock);
@@ -99,8 +97,9 @@ static void dowrite(MemObj *cache, AddrType addr) {
   DInst *stClone = st->clone();
   stClone->setAddr(addr);
 
-  while(cache->isBusy(addr))
+  while (cache->isBusy(addr)) {
     EventScheduler::advanceClock();
+  }
 
   wrDoneCB *cb = wrDoneCB::create(stClone);
   printf("wr %x @%lld\n", (unsigned int)addr, (long long)globalClock);
@@ -160,7 +159,7 @@ void isca_demo() {
 }
 
 void multi() {
-  if(TaskHandler::getNumCPUS() < 2) {
+  if (TaskHandler::getNumCPUS() < 2) {
     MSG("The esesc.conf should have 2 or more CPUs to run this test\n");
     exit(-2);
   }
@@ -178,29 +177,29 @@ void multi() {
   I(P1DL1);
 
   printf("Multicore trivial test\n");
-  doread(P0DL1, 1203); // miss
+  doread(P0DL1, 1203);  // miss
 
   waitAllMemOpsDone();
 
-  doread(P1DL1, 1203); // miss L1, hit L2
+  doread(P1DL1, 1203);  // miss L1, hit L2
 
   waitAllMemOpsDone();
 
-  doread(P0DL1, 1203); // hit L1
+  doread(P0DL1, 1203);  // hit L1
 
   waitAllMemOpsDone();
 
-  dowrite(P1DL1, 1203); // hit L1, trigger invalidate in P0L1
+  dowrite(P1DL1, 1203);  // hit L1, trigger invalidate in P0L1
 
   waitAllMemOpsDone();
 
-  doread(P0DL1, 1203); // miss L1
+  doread(P0DL1, 1203);  // miss L1
 
   waitAllMemOpsDone();
 }
 
 void memcpy() {
-  if(TaskHandler::getNumCPUS() < 2) {
+  if (TaskHandler::getNumCPUS() < 2) {
     MSG("The esesc.conf should have 2 or more CPUs to run this test\n");
     exit(-2);
   }
@@ -236,7 +235,7 @@ void memcpy() {
 #endif
   start = globalClock;
   printf("starting memcpy saturating...\n");
-  for(int i = 0; i < cp_size; i += 4) {
+  for (int i = 0; i < cp_size; i += 4) {
     doread(P0DL1, rd_addr);
     dowrite(P0DL1, wr_addr);
     rd_addr += 4;
@@ -244,7 +243,8 @@ void memcpy() {
     EventScheduler::advanceClock();
   }
   waitAllMemOpsDone();
-  printf("Saturating memcpy took %lld cycles (%fB/s)\n", (long long)(globalClock - start),
+  printf("Saturating memcpy took %lld cycles (%fB/s)\n",
+         (long long)(globalClock - start),
          ((double)cp_size) / (globalClock - start));
 }
 
@@ -253,7 +253,6 @@ void memcpy() {
 // Test that when there are 4 cores, if core 0 loads an address, and then core 2 loads the
 // same address it will come from cache L3 and not from memory.
 void test2() {
-
   // fix scenario read read write read
 
   GProcessor *gproc0 = TaskHandler::getSimu(0);
@@ -308,7 +307,6 @@ void test2() {
 // Test 3 - Core 0 writes to address 0x400, then core 1 writes to the same address, core 0's L1 data at addr 0x400 should be
 // invalidated.
 void test3() {
-
   GProcessor *gproc0 = TaskHandler::getSimu(0);
   I(gproc0);
 
@@ -342,50 +340,50 @@ void test3() {
   printf("Core 0\n");
 
   AddrType addr1 = 0;
-  for(int i = 0; i < 2; i++) {
+  for (int i = 0; i < 2; i++) {
     addr1 += 1;
     doread(P0DL1, 0x400 + i);
     waitAllMemOpsDone();
   }
   printf("Core 2\n");
-  for(int i = 0; i < 2; i++) {
+  for (int i = 0; i < 2; i++) {
     addr1 += 1;
     dowrite(P2DL1, 0x400 + i);
     waitAllMemOpsDone();
   }
   printf("Core 0\n");
 
-  for(int i = 0; i < 2; i++) {
+  for (int i = 0; i < 2; i++) {
     addr1 += 1;
     doread(P0DL1, 0x400 + i);
     waitAllMemOpsDone();
   }
   printf("Core 1\n");
-  for(int i = 0; i < 2; i++) {
+  for (int i = 0; i < 2; i++) {
     addr1 += 1;
     doread(P1DL1, 0x400 + i);
     waitAllMemOpsDone();
   }
-  for(int i = 0; i < 2; i++) {
+  for (int i = 0; i < 2; i++) {
     addr1 += 1;
     doread(P1DL1, 0x400 + i);
     waitAllMemOpsDone();
   }
   printf("Core 2\n");
-  for(int i = 0; i < 2; i++) {
+  for (int i = 0; i < 2; i++) {
     addr1 += 1;
     dowrite(P2DL1, 0x400 + i);
     waitAllMemOpsDone();
   }
   printf("Core 0\n");
 
-  for(int i = 0; i < 2; i++) {
+  for (int i = 0; i < 2; i++) {
     addr1 += 1;
     doread(P0DL1, 0x400 + i);
     waitAllMemOpsDone();
   }
   printf("Core 1\n");
-  for(int i = 0; i < 2; i++) {
+  for (int i = 0; i < 2; i++) {
     addr1 += 1;
     doread(P1DL1, 0x400 + i);
     waitAllMemOpsDone();
@@ -395,7 +393,6 @@ void test3() {
 // Test 4 - Test that if colisions happen in L1 (changed it to be direct mapped), the data is still available in cache L2 and L3 and
 // that the data  is replaced in L1 Note: It seems like the cache does not take in account the associativity or colisions
 void test4() {
-
   GProcessor *gproc = TaskHandler::getSimu(0);
   I(gproc);
 
@@ -405,7 +402,7 @@ void test4() {
   I(cache2);
 
   printf("Test 4\n");
-  for(int i = 0; i < 64 * 1024; i += 32) {
+  for (int i = 0; i < 64 * 1024; i += 32) {
     doread(cache1, 0x400 + i);
     waitAllMemOpsDone();
   }
@@ -633,7 +630,6 @@ void test7()
 #endif
 
 int main(int argc, const char **argv) {
-
   BootLoader::plug(argc, argv);
 
   // Create a LD (e5d33000) with PC = 0xfeeffeef and address 1203

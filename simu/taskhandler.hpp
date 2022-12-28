@@ -6,8 +6,8 @@
 
 #include "absl/container/flat_hash_set.h"
 #include "emul_base.hpp"
-#include "simu_base.hpp"
 #include "iassert.hpp"
+#include "simu_base.hpp"
 
 class TaskHandler {
 private:
@@ -47,7 +47,7 @@ public:
 
   static void add_emul(std::shared_ptr<Emul_base> eint, Hartid_t hid);
 
-  static bool is_active(Hartid_t hid);
+  static bool     is_active(Hartid_t hid);
   static Hartid_t getNumActiveCores();
   static Hartid_t getNumCores() { return allmaps.size(); }
 

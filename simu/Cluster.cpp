@@ -45,8 +45,8 @@ Cluster::Cluster(const std::string &clusterName, uint32_t pos, uint32_t _cpuid)
   nready = 0;
 }
 
-void Cluster::buildUnit(const std::string &clusterName, uint32_t pos, std::shared_ptr<GMemorySystem> ms, Cluster *cluster, Opcode type,
-                        GProcessor *gproc) {
+void Cluster::buildUnit(const std::string &clusterName, uint32_t pos, std::shared_ptr<GMemorySystem> ms, Cluster *cluster,
+                        Opcode type, GProcessor *gproc) {
   auto unitType = Instruction::opcode2Name(type);
 
   if (!Config::has_entry(clusterName, unitType)) {
@@ -178,7 +178,8 @@ void Cluster::buildUnit(const std::string &clusterName, uint32_t pos, std::share
   res[type] = r;
 }
 
-Cluster *Cluster::create(const std::string &clusterName, uint32_t pos, std::shared_ptr<GMemorySystem> ms, uint32_t cpuid, GProcessor *gproc) {
+Cluster *Cluster::create(const std::string &clusterName, uint32_t pos, std::shared_ptr<GMemorySystem> ms, uint32_t cpuid,
+                         GProcessor *gproc) {
   // Constraints
 
   auto recycleAt = Config::get_string("soc", "core", cpuid, "recycle_at", {"executing", "executed", "retired"});

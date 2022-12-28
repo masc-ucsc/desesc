@@ -36,13 +36,15 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "MemController.h"
-#include "MemorySystem.h"
-#include "SescConf.h"
-#include "stdlib.h"
+
 #include <cmath>
 #include <iostream>
 #include <queue>
 #include <vector>
+
+#include "MemorySystem.h"
+#include "SescConf.h"
+#include "stdlib.h"
 /* }}} */
 
 MemController::MemController(MemorySystem *current, const char *section, const char *name)
@@ -74,7 +76,7 @@ MemController::MemController(MemorySystem *current, const char *section, const c
   SescConf->isPower2(section, "numRows", 0);
   SescConf->isPower2(section, "numColumns", 0);
   SescConf->isPower2(section, "numBanks", 0);
-  SescConf->isGT(section, "ColumnAccessLatency", 4); // 1 cycle is not supported
+  SescConf->isGT(section, "ColumnAccessLatency", 4);  // 1 cycle is not supported
 
   numBanks                = SescConf->getInt(section, "NumBanks");
   unsigned int numRows    = SescConf->getInt(section, "NumRows");
@@ -83,26 +85,27 @@ MemController::MemController(MemorySystem *current, const char *section, const c
 
   columnOffset = log2(ColumnSize);
   columnMask   = numColumns - 1;
-  columnMask   = columnMask << columnOffset; // FIXME: Use AddrType
+  columnMask   = columnMask << columnOffset;  // FIXME: Use AddrType
 
   rowOffset = columnOffset + log2(numColumns);
   rowMask   = numRows - 1;
-  rowMask   = rowMask << rowOffset; // FIXME: use AddrType
+  rowMask   = rowMask << rowOffset;  // FIXME: use AddrType
 
   bankOffset = rowOffset + log2(numRows);
   bankMask   = numBanks - 1;
   bankMask   = bankMask << bankOffset;
 
   bankState = new BankStatus[numBanks];
-  for(uint32_t curBank = 0; curBank < numBanks; curBank++) {
+  for (uint32_t curBank = 0; curBank < numBanks; curBank++) {
     bankState[curBank].activeRow = 0;
-    bankState[curBank].state     = INIT; // Changed from ACTIVE (LNB)
-    bankState[curBank].bankTime  = 0;    // added (LNB)
+    bankState[curBank].state     = INIT;  // Changed from ACTIVE (LNB)
+    bankState[curBank].bankTime  = 0;     // added (LNB)
   }
   I(current);
   lower_level = current->declareMemoryObj(section, "lowerLevel");
-  if(lower_level)
+  if (lower_level) {
     addLowerLevel(lower_level);
+  }
 }
 /* }}} */
 
@@ -153,8 +156,9 @@ bool MemController::isBusy(AddrType addr) const
 void MemController::tryPrefetch(AddrType addr, bool doStats, int degree, AddrType pref_sign, AddrType pc, CallbackBase *cb)
 /* try to prefetch to openpage {{{1 */
 {
-  if(cb)
+  if (cb) {
     cb->destroy();
+  }
   // FIXME:
 }
 /* }}} */
@@ -189,44 +193,39 @@ void MemController::addMemRequest(MemRequest *mreq) {
 
 // This function implements the FR-FCFS memory scheduling algorithm
 void MemController::manageRam(void) {
-
   // First, we need to determine if any actions (precharging, activating, or accessing) have been completed
-  for(uint32_t curBank = 0; curBank < numBanks; curBank++) {
-    if((bankState[curBank].state == PRECHARGE) && (globalClock - bankState[curBank].bankTime >= PreChargeLatency)) {
-
+  for (uint32_t curBank = 0; curBank < numBanks; curBank++) {
+    if ((bankState[curBank].state == PRECHARGE) && (globalClock - bankState[curBank].bankTime >= PreChargeLatency)) {
       bankState[curBank].state = IDLE;
 
-    } else if((bankState[curBank].state == ACTIVATING) && (globalClock - bankState[curBank].bankTime >= RowAccessLatency)) {
-
+    } else if ((bankState[curBank].state == ACTIVATING) && (globalClock - bankState[curBank].bankTime >= RowAccessLatency)) {
       bankState[curBank].state = ACTIVE;
 
-    } else if((bankState[curBank].state == ACCESSING) && (globalClock - bankState[curBank].bankTime >= ColumnAccessLatency)) {
-
+    } else if ((bankState[curBank].state == ACCESSING) && (globalClock - bankState[curBank].bankTime >= ColumnAccessLatency)) {
       bankState[curBank].state = ACTIVE;
 
-      for(FCFSList::iterator it = curMemRequests.begin(); it != curMemRequests.end(); it++) {
-
+      for (FCFSList::iterator it = curMemRequests.begin(); it != curMemRequests.end(); it++) {
         FCFSField *tempMem = *it;
 
         // If current memory request has completed, finish processing the request by sending the proper ACK
-        if((curBank == tempMem->Bank) && (bankState[curBank].activeRow == tempMem->Row)) {
-
+        if ((curBank == tempMem->Bank) && (bankState[curBank].activeRow == tempMem->Row)) {
           I(tempMem->mreq);
 
-          if(tempMem->mreq->isDisp())
-            tempMem->mreq->ack(); // Fixed doDisp Acknowledge -- LNB 5/28/2014
-          else {
+          if (tempMem->mreq->isDisp()) {
+            tempMem->mreq->ack();  // Fixed doDisp Acknowledge -- LNB 5/28/2014
+          } else {
             MemRequest *mreq = tempMem->mreq;
             I(mreq->isReq());
 
-            if(mreq->getAction() == ma_setValid || mreq->getAction() == ma_setExclusive)
+            if (mreq->getAction() == ma_setValid || mreq->getAction() == ma_setExclusive) {
               mreq->convert2ReqAck(ma_setExclusive);
-            else
+            } else {
               mreq->convert2ReqAck(ma_setDirty);
+            }
 
             Time_t delta = globalClock - tempMem->TimeEntered;
 
-            router->scheduleReqAck(mreq, 1); //  Fixed doReq acknowledge -- LNB 5/28/2014
+            router->scheduleReqAck(mreq, 1);  //  Fixed doReq acknowledge -- LNB 5/28/2014
             avgMemLat.sample(delta, mreq->getStatsFlag());
           }
           IS(tempMem->mreq = 0);
@@ -247,7 +246,7 @@ void MemController::manageRam(void) {
 
 // This function adds any pending references in the queue to the buffer if there is space available
 void MemController::transferOverflowMemory(void) {
-  while((curMemRequests.size() <= memRequestBufferSize) && (!OverflowMemoryRequests.empty())) {
+  while ((curMemRequests.size() <= memRequestBufferSize) && (!OverflowMemoryRequests.empty())) {
     curMemRequests.push_back(OverflowMemoryRequests.front());
     OverflowMemoryRequests.pop();
   }
@@ -266,11 +265,11 @@ void MemController::scheduleNextAction(void) {
   bool oldestBankFound   = false;
 
   // Go through memory references in buffer to determine what actions are ready to begin
-  for(uint32_t curReference = 0; curReference < curMemRequests.size(); curReference++) {
+  for (uint32_t curReference = 0; curReference < curMemRequests.size(); curReference++) {
     curBank = curMemRequests[curReference]->Bank;
     curRow  = curMemRequests[curReference]->Row;
-    if(!oldestColumnFound) {
-      if((bankState[curBank].state == ACTIVE) && (bankState[curBank].activeRow == curRow)) {
+    if (!oldestColumnFound) {
+      if ((bankState[curBank].state == ACTIVE) && (bankState[curBank].activeRow == curRow)) {
         bankState[curBank].cpend = true;
         oldestColumnFound        = true;
         //   if(bankState[oldestReadyColsBank].bankTime > bankState[curBank].bankTime){
@@ -278,11 +277,11 @@ void MemController::scheduleNextAction(void) {
         //   }
       }
     }
-    if((bankState[curBank].state == ACTIVE) && (bankState[curBank].activeRow != curRow)) {
+    if ((bankState[curBank].state == ACTIVE) && (bankState[curBank].activeRow != curRow)) {
       bankState[curBank].bpend = true;
     }
-    if(!oldestRowFound) {
-      if(bankState[curBank].state == IDLE) {
+    if (!oldestRowFound) {
+      if (bankState[curBank].state == IDLE) {
         oldestRowFound = true;
         //    if(bankState[oldestReadyRowsBank].bankTime > bankState[curBank].bankTime){
         oldestReadyRow      = curMemRequests[curReference]->Row;
@@ -290,17 +289,17 @@ void MemController::scheduleNextAction(void) {
         //    }
       }
     }
-    if(bankState[curBank].state == INIT) {
+    if (bankState[curBank].state == INIT) {
       oldestBankFound = true;
       oldestbank      = curBank;
     }
   }
 
   //... and determine if a bank has no pending column references
-  for(uint32_t curBank = 0; curBank < numBanks; curBank++) {
-    if((bankState[curBank].bpend) && (!bankState[curBank].cpend)) {
+  for (uint32_t curBank = 0; curBank < numBanks; curBank++) {
+    if ((bankState[curBank].bpend) && (!bankState[curBank].cpend)) {
       oldestBankFound = true;
-      if(bankState[oldestbank].bankTime > bankState[curBank].bankTime) {
+      if (bankState[oldestbank].bankTime > bankState[curBank].bankTime) {
         oldestbank = curBank;
       }
     }
@@ -309,21 +308,21 @@ void MemController::scheduleNextAction(void) {
   }
 
   // Now determine which of the ready actions should be start and when the callback should occur
-  if(oldestBankFound) {
+  if (oldestBankFound) {
     bankState[oldestbank].state    = PRECHARGE;
     bankState[oldestbank].bankTime = globalClock;
 
     nPrecharge.inc();
 
     ManageRamCB::schedule(PreChargeLatency, this);
-  } else if(oldestColumnFound) {
+  } else if (oldestColumnFound) {
     bankState[oldestReadyColsBank].state    = ACCESSING;
     bankState[oldestReadyColsBank].bankTime = globalClock;
 
     nColumnAccess.inc();
 
     ManageRamCB::schedule(ColumnAccessLatency, this);
-  } else if(oldestRowFound) {
+  } else if (oldestRowFound) {
     bankState[oldestReadyRowsBank].state     = ACTIVATING;
     bankState[oldestReadyRowsBank].bankTime  = globalClock;
     bankState[oldestReadyRowsBank].activeRow = oldestReadyRow;

@@ -47,6 +47,6 @@ void Report::field(const std::string &msg) {
   I(sz == msg.size());
   if (msg.back() != '\n') {
     auto sz2 = write(fd, "\n", 1);
-    I(sz2==1);
+    I(sz2 == 1);
   }
 }

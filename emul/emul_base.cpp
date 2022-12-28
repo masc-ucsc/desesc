@@ -4,9 +4,6 @@
 
 // #include "config.hpp"
 
-Emul_base::Emul_base() {
-}
+Emul_base::Emul_base() {}
 
-Emul_base::~Emul_base() {
-
-}
+Emul_base::~Emul_base() {}

@@ -1,8 +1,8 @@
 // This file is distributed under the BSD 3-Clause License. See LICENSE for details.
 
-#include <unistd.h>
-
 #include "config.hpp"
+
+#include <unistd.h>
 
 #include "fmt/format.h"
 
@@ -23,11 +23,12 @@ void Config::init(const std::string f) {
 }
 
 void Config::exit_on_error() {
-  if (errors.empty())
+  if (errors.empty()) {
     return;
+  }
 
-  for(const auto &e:errors) {
-    fmt::print("ERROR:{}\n",e);
+  for (const auto &e : errors) {
+    fmt::print("ERROR:{}\n", e);
   }
 
   exit(-1);
@@ -211,10 +212,10 @@ int Config::get_integer(const std::string &block, const std::string &name, int f
 }
 
 int Config::get_integer(const std::string &block, const std::string &name, size_t pos, const std::string &name2, int from, int to) {
-
   auto block2 = get_block2(block, name, pos);
-  if (block2.empty())
+  if (block2.empty()) {
     return 0;
+  }
 
   int val = 0;
   {
@@ -393,7 +394,7 @@ bool Config::get_bool(const std::string &block, const std::string &name) {
 
   auto val = ent.as_boolean();
 
-  add_used(block, name, 0, val?"true":"false");
+  add_used(block, name, 0, val ? "true" : "false");
 
   return val;
 }
@@ -439,9 +440,9 @@ bool Config::get_bool(const std::string &block, const std::string &name, size_t 
     return false;
   }
 
-  auto val =  ent2.as_boolean();
+  auto val = ent2.as_boolean();
 
-  add_used(block2, name2, pos, val?"true":"false");
+  add_used(block2, name2, pos, val ? "true" : "false");
 
   return val;
 }
@@ -470,8 +471,7 @@ std::string Config::get_block2(const std::string &block, const std::string &name
 
   auto ent = toml::find(data, block, name);
   if (!ent.is_array()) {
-    errors.emplace_back(
-        fmt::format("conf:{} section:{} field:{} is not a array needed to chain\n", filename, block, name));
+    errors.emplace_back(fmt::format("conf:{} section:{} field:{} is not a array needed to chain\n", filename, block, name));
     return "";
   }
 
@@ -496,34 +496,34 @@ std::string Config::get_block2(const std::string &block, const std::string &name
 }
 
 void Config::add_used(const std::string &block, const std::string &name, size_t pos, const std::string &val) {
-  if (used[block].second.size()<=pos) {
-    used[block].second.resize(pos+1);
+  if (used[block].second.size() <= pos) {
+    used[block].second.resize(pos + 1);
     used[block].first = name;
   }
   used[block].second[pos] = val;
 }
 
 void Config::dump(int fd) {
-
-  for(const auto &u:used) {
+  for (const auto &u : used) {
     auto str = fmt::format("[{}]\n", u.first);
-    auto sz = ::write(fd,str.c_str(),str.size());
+    auto sz  = ::write(fd, str.c_str(), str.size());
     (void)sz;
 
     if (u.second.second.size() == 1) {
       str = fmt::format("{} = {}\n", u.second.first, u.second.second[0]);
-    }else{
-      str = fmt::format("{} = { ", u.second.first);
+    } else {
+      str        = fmt::format("{} = { ", u.second.first);
       bool first = true;
-      for(const auto &e:u.second.second) {
-        if (first)
+      for (const auto &e : u.second.second) {
+        if (first) {
           str += fmt::format("{}", e);
-        else
+        } else {
           str += fmt::format(", {}", e);
+        }
       }
       str += fmt::format(" }\n");
     }
-    sz = ::write(fd,str.c_str(),str.size());
+    sz = ::write(fd, str.c_str(), str.size());
     (void)sz;
   }
 }

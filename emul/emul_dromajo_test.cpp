@@ -59,7 +59,7 @@ protected:
 };
 
 TEST_F(Emul_Dromajo_test, dhrystone_test) {
-  EXPECT_NE(dromajo_ptr,nullptr);
+  EXPECT_NE(dromajo_ptr, nullptr);
 
   dromajo_ptr->skip_rabbit(0, 664);
   Dinst *dinst = dromajo_ptr->peek(0);  // csrr

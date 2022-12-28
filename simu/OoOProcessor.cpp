@@ -1,5 +1,6 @@
 // See LICENSE for details.
 
+#include "OoOProcessor.h"
 
 #include <math.h>
 
@@ -8,20 +9,17 @@
 #include <iterator>
 #include <numeric>
 
-#include "fmt/format.h"
-
-#include "OoOProcessor.h"
 #include "FastQueue.h"
 #include "FetchEngine.h"
 #include "GMemorySystem.h"
 #include "MemRequest.h"
-
-#include "taskhandler.hpp"
 #include "config.hpp"
+#include "fmt/format.h"
+#include "taskhandler.hpp"
 
-//#define ESESC_TRACE
-//#define ESESC_CODEPROFILE
-//#define ESESC_BRANCHPROFILE
+// #define ESESC_TRACE
+// #define ESESC_CODEPROFILE
+// #define ESESC_BRANCHPROFILE
 
 // FIXME: to avoid deadlock, prealloc n to the n oldest instructions
 // #define LATE_ALLOC_REGISTER
@@ -1391,7 +1389,6 @@ int OoOProcessor::btt_pointer_check(Dinst *dinst, int btt_id) {
 #endif
 
 void OoOProcessor::retire() {
-
 #ifdef ENABLE_LDBP
   int64_t gclock = int64_t(clockTicks.getDouble());
   if (gclock != power_clock) {
@@ -1705,7 +1702,6 @@ void OoOProcessor::retire() {
       dinst->destroy();
     }
   }
-
 
   rROB.pop();
 }

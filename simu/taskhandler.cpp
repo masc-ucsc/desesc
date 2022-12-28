@@ -1,10 +1,11 @@
 // See LICENSE for details.
 
+#include "taskhandler.hpp"
+
 #include <string.h>
 
 #include <iostream>
 
-#include "taskhandler.hpp"
 #include "config.hpp"
 #include "emul_base.hpp"
 #include "report.hpp"
@@ -219,8 +220,9 @@ void TaskHandler::unplug()
 /* }}} */
 
 bool TaskHandler::is_active(Hartid_t hid) {
-  if (hid>=allmaps.size())
+  if (hid >= allmaps.size()) {
     return false;
+  }
 
   return allmaps[hid].active;
 }

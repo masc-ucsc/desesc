@@ -34,6 +34,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "GXBar.h"
+
 #include "MemorySystem.h"
 #include "SescConf.h"
 /* }}} */
@@ -42,5 +43,4 @@ uint32_t GXBar::Xbar_unXbar_balance = 0;
 
 GXBar::GXBar(const char *section, const char *name)
     /* constructor {{{1 */
-    : MemObj(section, name) {
-}
+    : MemObj(section, name) {}

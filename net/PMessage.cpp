@@ -1,7 +1,8 @@
 
+#include "PMessage.h"
+
 #include <string.h>
 
-#include "PMessage.h"
 #include "ProtocolBase.h"
 
 unsigned short PMessage::maxMsgSize;
@@ -21,11 +22,11 @@ static SizeNameInfo MessageType2SizeName[] = {{4, "Default Message"},
                                               {10, "Test"},
                                               {3, "TestAck"},
                                               {8, "CCRd"},
-                                              {35, "CCRdXAck"}, // (3+linesize)
-                                              {35, "CCRdAck"},  // (3+linesize)
+                                              {35, "CCRdXAck"},  // (3+linesize)
+                                              {35, "CCRdAck"},   // (3+linesize)
                                               {8, "CCWr"},
-                                              {35, "CCWrAck"},  // (3+linesize)
-                                              {36, "CCWrBack"}, // (4+linesize)
+                                              {35, "CCWrAck"},   // (3+linesize)
+                                              {36, "CCWrBack"},  // (4+linesize)
                                               {4, "CCWrBackAck"},
                                               {7, "CCInv"},
                                               {3, "CCInvAck"},
@@ -42,7 +43,7 @@ static SizeNameInfo MessageType2SizeName[] = {{4, "Default Message"},
                                               {7, "CCRmLineAck"},
 
                                               {8, "OCRd"},
-                                              {35, "OCRdAck"}, // (3+linesize)
+                                              {35, "OCRdAck"},  // (3+linesize)
                                               {38, "OCWr"},
 
                                               {8, "TSLaunch"},
@@ -64,12 +65,9 @@ static SizeNameInfo MessageType2SizeName[] = {{4, "Default Message"},
                                               {0, "DSM"},
                                               {0, "MaxReadAck"}};
 
-PMessage::PMessage() {
-  setType(DefaultMessage);
-}
+PMessage::PMessage() { setType(DefaultMessage); }
 
 PMessage *PMessage::createMsg(MessageType msgType, ProtocolBase *srcPB, ProtocolBase *dstPB, MemRequest *memReq) {
-
   PMessage *msg = msgPool.out();
 
   msg->setupMessage(srcPB, dstPB, msgType);
@@ -78,9 +76,7 @@ PMessage *PMessage::createMsg(MessageType msgType, ProtocolBase *srcPB, Protocol
   return msg;
 }
 
-int32_t PMessage::getUniqueProtID() const {
-  return getUniqueProtID(msgType, dstPB->getNetDeviceID());
-}
+int32_t PMessage::getUniqueProtID() const { return getUniqueProtID(msgType, dstPB->getNetDeviceID()); }
 
 void PMessage::forwardMessage(ProtocolBase *newDstPB) {
   srcPB = dstPB;
@@ -107,8 +103,9 @@ void PMessage::setupMessage(ProtocolBase *src, ProtocolBase *dst, MessageType t)
 #ifdef DEBUG
   setType(t);
 #else
-  if(t != msgType) // speed hack for non-debug
+  if (t != msgType) {  // speed hack for non-debug
     setType(t);
+  }
 #endif
 }
 
@@ -139,13 +136,9 @@ void PMessage::trace(const char *format, ...) {
   va_end(ap);
 }
 
-const char *PMessage::getName() const {
-  return MessageType2SizeName[msgType].name;
-}
+const char *PMessage::getName() const { return MessageType2SizeName[msgType].name; }
 
-const char *PMessage::getName(MessageType t) {
-  return MessageType2SizeName[t].name;
-}
+const char *PMessage::getName(MessageType t) { return MessageType2SizeName[t].name; }
 
 void PMessage::setType(MessageType t) {
   msgType = t;

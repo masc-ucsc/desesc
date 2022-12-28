@@ -9,14 +9,15 @@ class Emul_dromajo : public Emul_base {
 protected:
   RISCVMachine *machine = nullptr;
 
-  uint64_t    num;
-  uint64_t    rabbit;
-  uint64_t    detail;
-  uint64_t    time;
+  uint64_t num;
+  uint64_t rabbit;
+  uint64_t detail;
+  uint64_t time;
 
   std::string bench;
 
   void init_dromajo_machine();
+
 public:
   Emul_dromajo();
   virtual ~Emul_dromajo();

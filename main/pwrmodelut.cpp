@@ -1,10 +1,9 @@
 // see LICENSE.txt for details
 
 #if 0
-#include "stats.hpp"
-#include "config.hpp"
-
 #include "PowerModel.h"
+#include "config.hpp"
+#include "stats.hpp"
 
 int main(int argc, const char **argv) {
 

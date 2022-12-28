@@ -4,7 +4,7 @@
 #include <sys/time.h>
 
 #include "Report.h"
-//#include "ReportGen.h" This file doesn't exist. Replaced it with Report.h
+// #include "ReportGen.h" This file doesn't exist. Replaced it with Report.h
 #include "InterConn.h"
 #include "ProtocolBase.h"
 #include "SescConf.h"
@@ -27,9 +27,7 @@ public:
     return msg;
   };
 
-  void garbageCollect() {
-    msgPool.in(this);
-  };
+  void garbageCollect() { msgPool.in(this); };
 };
 
 // What does this do? Send some kind of ACK message
@@ -45,9 +43,7 @@ public:
     // edited by Ehsan (added typecast of srcPB and dstPB to( ProtocolBase *))
     return msg;
   };
-  void garbageCollect() {
-    msgPool.in(this);
-  };
+  void garbageCollect() { msgPool.in(this); };
 };
 
 // This is just some integer floating around in here
@@ -60,9 +56,7 @@ int32_t nMessages;
 // Based on the indents, it looks like it.
 class ProtocolA : public ProtocolBase {
 public:
-  ProtocolA(InterConnection *net, RouterID_t rID)
-      : ProtocolBase(net, rID) {
-
+  ProtocolA(InterConnection *net, RouterID_t rID) : ProtocolBase(net, rID) {
     ProtocolCBBase *pcb = new ProtocolCB<ProtocolA, &ProtocolA::TestHandler>(this);
     registerHandler(pcb, TestMsg);
 
@@ -81,14 +75,14 @@ public:
 
   void TestHandler(Message *m) {
     nMessages++;
-    PBTestMsg *    msg   = static_cast<PBTestMsg *>(m);
+    PBTestMsg     *msg   = static_cast<PBTestMsg *>(m);
     static uint8_t conta = 0;
     conta++;
 
     I(this == msg->getDstPB());
-    if(conta & 1) {
+    if (conta & 1) {
       sendMsg(2, PBTestAckMsg::create(this, msg->getSrcPB()));
-    } else if(conta & 2) {
+    } else if (conta & 2) {
       sendMsg(PBTestAckMsg::create(this, msg->getSrcPB()));
     }
     msg->garbageCollect();
@@ -105,7 +99,7 @@ public:
 pool<PBTestMsg>    PBTestMsg::msgPool(1024);
 pool<PBTestAckMsg> PBTestAckMsg::msgPool(1024);
 
-#define NMSG 100000
+#define NMSG        100000
 #define TIME_BUBBLE 128
 
 std::vector<ProtocolA *> pa;
@@ -128,26 +122,29 @@ void endBench(const char *str) {
 
   double msecs = (endTime.tv_sec - stTime.tv_sec) * 1000 + (endTime.tv_usec - stTime.tv_usec) / 1000;
 
-  fprintf(stderr, "%s: %8.2f KPackets/s or %8.2f Kclks/s\n", str, (double)nMessages / msecs,
+  fprintf(stderr,
+          "%s: %8.2f KPackets/s or %8.2f Kclks/s\n",
+          str,
+          (double)nMessages / msecs,
           (double)(globalClock - stClock) / msecs);
 };
 
 void bench1() {
   // Two neighbours messages
 
-  for(int32_t i = 0; i < NMSG; i++) {
+  for (int32_t i = 0; i < NMSG; i++) {
     Message *msg = PBTestMsg::create(pa[nRouters / 2], pa[nRouters / 2 + 1]);
     //   Message *msg = PBTestMsg::create(pa[1],pa[2]);
     net->sendMsg(msg);
     EventScheduler::advanceClock();
-    if((i % 128) == 0) {
-      for(int32_t k = 0; k < TIME_BUBBLE; k++) {
+    if ((i % 128) == 0) {
+      for (int32_t k = 0; k < TIME_BUBBLE; k++) {
         EventScheduler::advanceClock();
       }
     }
   }
 
-  for(int32_t k = 0; k < TIME_BUBBLE; k++) {
+  for (int32_t k = 0; k < TIME_BUBBLE; k++) {
     EventScheduler::advanceClock();
   }
 };
@@ -155,8 +152,8 @@ void bench1() {
 void bench2() {
   // Lots of simultaneous messages
 
-  for(size_t i = 0; i < NMSG / nRouters; i++) {
-    for(size_t k = 0; k < nRouters; k++) {
+  for (size_t i = 0; i < NMSG / nRouters; i++) {
+    for (size_t k = 0; k < nRouters; k++) {
       //  Message *msg = PBTestMsg::create(pa[(k*7) % nRouters]
                ,pa[(k*3)% nRouters]);
                Message *msg = PBTestMsg::create(pa[(k * 5) % nRouters], pa[(k * 3) % nRouters]);
@@ -164,14 +161,14 @@ void bench2() {
                net->sendMsg(msg);
     }
     EventScheduler::advanceClock();
-    if((i % 32) == 0) {
-      for(int32_t k = 0; k < TIME_BUBBLE; k++) {
-        EventScheduler::advanceClock();
-      }
+    if ((i % 32) == 0) {
+               for (int32_t k = 0; k < TIME_BUBBLE; k++) {
+                 EventScheduler::advanceClock();
+               }
     }
   }
 
-  for(int32_t k = 0; k < 4 * TIME_BUBBLE; k++) {
+  for (int32_t k = 0; k < 4 * TIME_BUBBLE; k++) {
     EventScheduler::advanceClock();
   }
 };
@@ -192,7 +189,7 @@ int32_t main(int32_t argc, char **argv, char **envp)
 
 // Version 3 from Ehsan
 int32_t main(int32_t argc, char **argv, char **envp) {
-  if(argc < 2) {
+  if (argc < 2) {
     fprintf(stderr, "Usage:\n\t%s <router.conf>\n", argv[0]);
     exit(0);
   }
@@ -206,7 +203,7 @@ int32_t main(int32_t argc, char **argv, char **envp) {
 
   nRouters = net->getnRouters();
 
-  for(size_t i = 0; i < nRouters; i++) {
+  for (size_t i = 0; i < nRouters; i++) {
     ProtocolA *p = new ProtocolA(net, i);
     pa.push_back(p);
   }
@@ -237,7 +234,7 @@ int32_t main(int32_t argc, char **argv, char **envp) {
   fprintf(stderr, "done\n");
   endBench("bench3");
 
-  for(int32_t k = 0; k < TIME_BUBBLE * 100; k++) {
+  for (int32_t k = 0; k < TIME_BUBBLE * 100; k++) {
     EventScheduler::advanceClock();
   }
 

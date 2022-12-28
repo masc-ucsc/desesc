@@ -33,27 +33,25 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "InterConn.h"
+
 #include <sys/types.h>
 #include <time.h>
 
+#include "RoutingPolicy.h"
 #include "SescConf.h"
 
-#include "InterConn.h"
-#include "RoutingPolicy.h"
-
 InterConnection::InterConnection(const char *section)
-    : descrSection(strdup(section))
-    , msgLatency("%s_msgLatency", section)
-    , netType(strdup(SescConf->getCharPtr(section, "type"))) {
-  if(strcasecmp(netType, "mesh") == 0) {
+    : descrSection(strdup(section)), msgLatency("%s_msgLatency", section), netType(strdup(SescConf->getCharPtr(section, "type"))) {
+  if (strcasecmp(netType, "mesh") == 0) {
     rPolicy = new MeshMultiPathRoutingPolicy(section);
-  } else if(strcasecmp(netType, "hypercube") == 0) {
+  } else if (strcasecmp(netType, "hypercube") == 0) {
     rPolicy = new HypercubeRoutingPolicy(section);
-  } else if(strcasecmp(netType, "uniring") == 0) {
+  } else if (strcasecmp(netType, "uniring") == 0) {
     rPolicy = new UniRingRoutingPolicy(section);
-  } else if(strcasecmp(netType, "biring") == 0) {
+  } else if (strcasecmp(netType, "biring") == 0) {
     rPolicy = new BiRingRoutingPolicy(section);
-  } else if(strcasecmp(netType, "full") == 0) {
+  } else if (strcasecmp(netType, "full") == 0) {
     rPolicy = new FullyConnectedRoutingPolicy(section);
   } else {
     MSG("Unknown network Type <%s>", netType);
@@ -69,21 +67,21 @@ InterConnection::InterConnection(const char *section)
   linkBytes = (float)linkBits / 8;
 }
 
-InterConnection::~InterConnection() {
-  destroyRouters();
-}
+InterConnection::~InterConnection() { destroyRouters(); }
 
 void InterConnection::createRouters() {
   routers.resize(rPolicy->getnRouters());
 
   // new Router objects
-  for(RouterID_t i = 0; i < routers.size(); i++)
+  for (RouterID_t i = 0; i < routers.size(); i++) {
     routers[i] = new Router(descrSection, i, this, rPolicy->getRoutingTable(i));
+  }
 }
 
 void InterConnection::destroyRouters() {
-  for(RouterID_t i = 0; i < routers.size(); i++)
+  for (RouterID_t i = 0; i < routers.size(); i++) {
     delete routers[i];
+  }
 }
 
 void InterConnection::registerProtocol(ProtocolCBBase *pcb, MessageType msgType, RouterID_t rID, PortID_t pID, NetDevice_t netID) {
@@ -93,23 +91,23 @@ void InterConnection::registerProtocol(ProtocolCBBase *pcb, MessageType msgType,
 uint32_t InterConnection::getNextFreeRouter(const char *section) {
   ValHash::iterator it = routersCtr.find(section);
 
-  if(it == routersCtr.end())
+  if (it == routersCtr.end()) {
     routersCtr[section] = 0;
-  else
+  } else {
     routersCtr[section]++;
+  }
 
   return routersCtr[section];
 }
 
 PortID_t InterConnection::getPort(const char *section) {
-
   PortHash::iterator it = portsCtr.find(section);
 
-  if(it == portsCtr.end()) {
+  if (it == portsCtr.end()) {
     portsCtr[section] = portCtr;
     portCtr++;
 
-    if(portCtr >= MAX_PORTS) {
+    if (portCtr >= MAX_PORTS) {
       // this can't be write, you cannot use more ports than available
       MSG("Too many ports being used, aborting simulation");
       abort();
@@ -120,13 +118,12 @@ PortID_t InterConnection::getPort(const char *section) {
 }
 
 void InterConnection::dumpRouters() {
-  for(RouterID_t i = 0; i < routers.size(); i++)
+  for (RouterID_t i = 0; i < routers.size(); i++) {
     routers[i]->dump();
+  }
 }
 
-PortID_t InterConnection::getnRemotePorts() const {
-  return rPolicy->getnRemotePorts();
-}
+PortID_t InterConnection::getnRemotePorts() const { return rPolicy->getnRemotePorts(); }
 
 void InterConnection::dump() {
   //   for (RouterID_t i = 0; i < routers.size(); i++) {
@@ -142,4 +139,3 @@ void InterConnection::updateAvgMsgLatency(Time_t launchTime) {
   // FIXME: add getstatsflag
   // msgLatency.sample(globalClock - launchTime);
 }
-

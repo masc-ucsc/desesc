@@ -33,11 +33,11 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "NICECache.h"
+
 #include "MemRequest.h"
 #include "MemorySystem.h"
 #include "SescConf.h"
-
-#include "NICECache.h"
 /* }}} */
 NICECache::NICECache(MemorySystem *gms, const char *section, const char *sName)
     /* dummy constructor {{{1 */
@@ -56,7 +56,6 @@ NICECache::NICECache(MemorySystem *gms, const char *section, const char *sName)
     , writeExclusive("%s:writeExclusive", sName)
     , writeBack("%s:writeBack", sName)
     , avgMemLat("%s_avgMemLat", sName) {
-
   // FIXME: the hitdelay should be converted to dyn_hitDelay to support DVFS
 
   warmupStepStart = 256 / 4;
@@ -71,23 +70,24 @@ void NICECache::doReq(MemRequest *mreq)
 {
   TimeDelta_t hdelay = hitDelay;
 
-  if(mreq->isWarmup())
+  if (mreq->isWarmup()) {
     hdelay = 1;
+  }
 
   readHit.inc(mreq->getStatsFlag());
 
-  if(mreq->isHomeNode()) {
-    if(coldWarmup && warmup.find(mreq->getAddr() >> bsizeLog2) == warmup.end()) {
-
+  if (mreq->isHomeNode()) {
+    if (coldWarmup && warmup.find(mreq->getAddr() >> bsizeLog2) == warmup.end()) {
       TimeDelta_t lat;
       warmupNext--;
-      if(warmupNext <= 0) {
+      if (warmupNext <= 0) {
         warmupNext = warmupSlowEvery;
         warmupStep--;
-        if(warmupStep <= 0) {
+        if (warmupStep <= 0) {
           warmupSlowEvery = warmupSlowEvery >> 1;
-          if(warmupSlowEvery <= 0)
+          if (warmupSlowEvery <= 0) {
             coldWarmup = false;
+          }
           warmupStepStart = warmupStepStart << 1;
           warmupStep      = warmupStepStart;
         }
@@ -99,7 +99,7 @@ void NICECache::doReq(MemRequest *mreq)
     mreq->ack(hdelay);
     return;
   }
-  if(mreq->getAction() == ma_setValid || mreq->getAction() == ma_setExclusive) {
+  if (mreq->getAction() == ma_setValid || mreq->getAction() == ma_setExclusive) {
     mreq->convert2ReqAck(ma_setExclusive);
     // MSG("rdnice %x",mreq->getAddr());
   } else {
@@ -107,17 +107,18 @@ void NICECache::doReq(MemRequest *mreq)
     // MSG("wrnice %x",mreq->getAddr());
   }
 
-  if(coldWarmup && warmup.find(mreq->getAddr() >> bsizeLog2) == warmup.end()) {
+  if (coldWarmup && warmup.find(mreq->getAddr() >> bsizeLog2) == warmup.end()) {
     warmup.insert(mreq->getAddr() >> bsizeLog2);
     TimeDelta_t lat;
     warmupNext--;
-    if(warmupNext <= 0) {
+    if (warmupNext <= 0) {
       warmupNext = warmupSlowEvery;
       warmupStep--;
-      if(warmupStep <= 0) {
+      if (warmupStep <= 0) {
         warmupSlowEvery = warmupSlowEvery >> 1;
-        if(warmupSlowEvery <= 0)
+        if (warmupSlowEvery <= 0) {
           coldWarmup = false;
+        }
         warmupStepStart = warmupStepStart << 1;
         warmupStep      = warmupStepStart;
       }
@@ -170,8 +171,9 @@ bool NICECache::isBusy(AddrType addr) const
 void NICECache::tryPrefetch(AddrType addr, bool doStats, int degree, AddrType pref_sign, AddrType pc, CallbackBase *cb)
 /* drop prefetch {{{1 */
 {
-  if(cb)
+  if (cb) {
     cb->destroy();
+  }
 }
 /* }}} */
 

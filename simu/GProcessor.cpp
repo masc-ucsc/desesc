@@ -82,7 +82,6 @@ GProcessor::GProcessor(std::shared_ptr<GMemorySystem> gm, Hartid_t i)
     , noFetch(fmt::format("({}):noFetch", i))
     , noFetch2(fmt::format("({}):noFetch2", i))
     , pipeQ(i) {
-
   smt_size = Config::get_integer("soc", "core", i, "smt", 1, 32);
 
   lastReplay = 0;

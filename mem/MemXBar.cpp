@@ -35,13 +35,13 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "MemXBar.h"
+
 #include "MemorySystem.h"
 #include "SescConf.h"
 
 /* }}} */
 
-MemXBar::MemXBar(const char *section, const char *name)
-    : GXBar(section, name) { /*{{{*/
+MemXBar::MemXBar(const char *section, const char *name) : GXBar(section, name) { /*{{{*/
 
   setParam(section, name);
 
@@ -50,7 +50,6 @@ MemXBar::MemXBar(const char *section, const char *name)
 MemXBar::MemXBar(MemorySystem *current, const char *section, const char *name)
     /* {{{ constructor */
     : GXBar(section, name) {
-
   I(current);
   lower_level_banks = NULL;
 
@@ -60,16 +59,18 @@ MemXBar::MemXBar(MemorySystem *current, const char *section, const char *name)
   XBar_rw_req       = new GStatsCntr *[numLowerLevelBanks];
 
   std::vector<char *> vPars      = SescConf->getSplitCharPtr(section, "lowerLevel");
-  const char *        lower_name = "";
-  if(vPars.size() > 1)
+  const char         *lower_name = "";
+  if (vPars.size() > 1) {
     lower_name = vPars[1];
+  }
 
-  for(size_t i = 0; i < numLowerLevelBanks; i++) {
+  for (size_t i = 0; i < numLowerLevelBanks; i++) {
     char *tmp = (char *)malloc(255);
-    if(numLowerLevelBanks > 1)
+    if (numLowerLevelBanks > 1) {
       sprintf(tmp, "%s%s(%lu)", name, lower_name, i);
-    else
+    } else {
       sprintf(tmp, "%s%s", name, lower_name);
+    }
     lower_level_banks[i] = current->declareMemoryObj_uniqueName(tmp, vPars[0]);
     addLowerLevel(lower_level_banks[i]);
 
@@ -98,7 +99,7 @@ uint32_t MemXBar::addrHash(AddrType addr) const
 void MemXBar::doReq(MemRequest *mreq)
 /* read if splitter above L1 (down) {{{1 */
 {
-  if(mreq->getAddr() == 0) {
+  if (mreq->getAddr() == 0) {
     mreq->ack();
     return;
   }
@@ -118,7 +119,7 @@ void MemXBar::doReqAck(MemRequest *mreq)
 {
   I(0);
 
-  if(mreq->isHomeNode()) {
+  if (mreq->isHomeNode()) {
     mreq->ack();
     return;
   }
@@ -130,7 +131,7 @@ void MemXBar::doSetState(MemRequest *mreq)
 /* setState (up) {{{1 */
 {
   // FIXME
-  I(0); // You should check the L1 as incoherent, so that it does not send invalidated to higher levels
+  I(0);  // You should check the L1 as incoherent, so that it does not send invalidated to higher levels
   router->sendSetStateAll(mreq, mreq->getAction());
 }
 /* }}} */

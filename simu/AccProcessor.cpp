@@ -1,15 +1,13 @@
 // See LICENSE for details.
 
+#include "AccProcessor.h"
 
 #include <math.h>
 
-#include "fmt/format.h"
-
-#include "AccProcessor.h"
 #include "GMemorySystem.h"
 #include "MemRequest.h"
 #include "config.hpp"
-
+#include "fmt/format.h"
 
 AccProcessor::AccProcessor(std::shared_ptr<GMemorySystem> gm, Hartid_t i)
     /* constructor {{{1 */

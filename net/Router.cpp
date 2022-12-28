@@ -1,8 +1,9 @@
 
+#include "Router.h"
+
 #include <limits.h>
 
 #include "InterConn.h"
-#include "Router.h"
 #include "SescConf.h"
 
 Router::Router(const char *section, RouterID_t id, InterConnection *n, RoutingTable *rt)
@@ -26,7 +27,7 @@ Router::Router(const char *section, RouterID_t id, InterConnection *n, RoutingTa
   SescConf->isBetween(section, "localPort", 0, 32700);
 
   SescConf->isInt(section, "addFixDelay");
-  SescConf->isBetween(section, "addFixDelay", 0, 32768); // TimeDelta_t
+  SescConf->isBetween(section, "addFixDelay", 0, 32768);  // TimeDelta_t
 
   SescConf->isBool(section, "congestionFree");
 
@@ -40,7 +41,7 @@ Router::Router(const char *section, RouterID_t id, InterConnection *n, RoutingTa
   r2lPort.resize(MAX_PORTS);
   r2rPort.resize(MAX_PORTS);
 
-  for(PortID_t i = LOCAL_PORT1; i < maxLocalPort; i++) {
+  for (PortID_t i = LOCAL_PORT1; i < maxLocalPort; i++) {
     char    name[256];
     int32_t ret = snprintf(name, 127, "l2rPort(%d-%d)", myID, i);
     I(ret > 0);
@@ -50,7 +51,7 @@ Router::Router(const char *section, RouterID_t id, InterConnection *n, RoutingTa
     I(ret > 0);
     r2lPort[i] = PortGeneric::create(name, localPort, localOcc);
   }
-  for(PortID_t i = DISABLED_PORT; i < rTable->getnPorts(); i++) {
+  for (PortID_t i = DISABLED_PORT; i < rTable->getnPorts(); i++) {
     char    name[256];
     int32_t ret = snprintf(name, 127, "r2rPort(%d-%d)", myID, i + 1);
     I(ret > 0);
@@ -60,7 +61,7 @@ Router::Router(const char *section, RouterID_t id, InterConnection *n, RoutingTa
 
 #ifdef DEBUG
   // Make sure that if other ports are used a segfault is generated
-  for(PortID_t i = DISABLED_PORT; i < LOCAL_PORT1; i++) {
+  for (PortID_t i = DISABLED_PORT; i < LOCAL_PORT1; i++) {
     l2rPort[i] = 0;
     r2lPort[i] = 0;
   }
@@ -72,7 +73,6 @@ Router::~Router() {
 }
 
 void Router::launchMsg(Message *msg) {
-
 #ifdef DEBUG
 #if 0
   MSG("router(%d)::launchMsg [%d:%d] to [%d:%d]",
@@ -93,15 +93,15 @@ void Router::launchMsg(Message *msg) {
   PortID_t portid = msg->getSrcPortID();
   I(l2rPort[portid]);
 
-  if(msg->getDelivery() == Message::RCV)
+  if (msg->getDelivery() == Message::RCV) {
     msg->setDstRouterID(rTable->getNextWire()->rID);
-  else if(msg->getDelivery() == Message::RCV_AND_PASS)
+  } else if (msg->getDelivery() == Message::RCV_AND_PASS) {
     msg->setDstRouterID(myID);
+  }
 
   Router *dstRouter = net->getRouter(msg->getDstRouterID());
 
-  if(msg->getDstRouterID() == myID && msg->getDstPortID() == portid && msg->getDelivery() == Message::PT_TO_PT) {
-
+  if (msg->getDstRouterID() == myID && msg->getDstPortID() == portid && msg->getDelivery() == Message::PT_TO_PT) {
     I(msg->getDstPortID() == portid);
 
     // If same router and port, do not model contention for input
@@ -109,22 +109,22 @@ void Router::launchMsg(Message *msg) {
     dstRouter->receiveMsg(msg);
 
   } else {
-
     // JUDITH commented this out because
     // occupySlots not defined anywhere in esesc
     //    Time_t when = l2rPort[portid]->occupySlots(calcNumFlits(msg)); //original code
     Time_t when = l2rPort[portid]->nextSlot(true);
-    for(int i = 0; i < calcNumFlits(msg); i++) {
+    for (int i = 0; i < calcNumFlits(msg); i++) {
       l2rPort[portid]->nextSlot(true);
     }
     //   printf("%d\n", when);
 
     when += addFixDelay;
 
-    if(congestionFree)
+    if (congestionFree) {
       msg->receiveMsgAbs(when, dstRouter);
-    else
+    } else {
       msg->forwardMsgAbs(when, this);
+    }
   }
 }
 
@@ -136,7 +136,7 @@ void Router::forwardMsg(Message *msg) {
 
   // receive message if either this is the destination or it is a finished
   // RCV_AND_PASS message
-  if(msg->getDstRouterID() == myID && ((msg->getDelivery() != Message::RCV_AND_PASS) || msg->isFinished())) {
+  if (msg->getDstRouterID() == myID && ((msg->getDelivery() != Message::RCV_AND_PASS) || msg->isFinished())) {
     receiveMsg(msg);
     return;
   }
@@ -145,33 +145,32 @@ void Router::forwardMsg(Message *msg) {
 
   const RoutingTable::Wire *wire;
 
-  switch(msg->getDelivery()) {
-  case Message::RCV_AND_PASS:
-    if(msg->getDstRouterID() != myID) { /* don't receive message now;
-             wait until it makes a loop
-             then receive above */
-      msg->duplicate();
-      receiveMsg(msg);
-    }
-    wire = rTable->getNextWire();
-    if(msg->getDstRouterID() == wire->rID) /* finished loop */
-      msg->setFinished();
-    break;
-  case Message::RCV: /* RCV messages: dest set in launchMsg() */
-  case Message::PT_TO_PT:
-    wire = rTable->getWire(msg->getDstRouterID());
-    break;
-  default:
-    LOG("Message delivery = %d", msg->getDelivery());
-    I(0);
-    wire = 0;
+  switch (msg->getDelivery()) {
+    case Message::RCV_AND_PASS:
+      if (msg->getDstRouterID() != myID) { /* don't receive message now;
+                wait until it makes a loop
+                then receive above */
+        msg->duplicate();
+        receiveMsg(msg);
+      }
+      wire = rTable->getNextWire();
+      if (msg->getDstRouterID() == wire->rID) { /* finished loop */
+        msg->setFinished();
+      }
+      break;
+    case Message::RCV: /* RCV messages: dest set in launchMsg() */
+    case Message::PT_TO_PT: wire = rTable->getWire(msg->getDstRouterID()); break;
+    default:
+      LOG("Message delivery = %d", msg->getDelivery());
+      I(0);
+      wire = 0;
   }
 
   //  JUDITH commented this out because
   //  occupySlots not defined anywhere in esesc
   //  Time_t when = r2rPort[wire->port]->occupySlots(calcNumFlits(msg));
   Time_t when = r2rPort[wire->port]->nextSlot(true);
-  for(int i = 0; i < calcNumFlits(msg); i++) {
+  for (int i = 0; i < calcNumFlits(msg); i++) {
     r2rPort[wire->port]->nextSlot(true);
   }
 
@@ -193,7 +192,7 @@ void Router::receiveMsg(Message *msg) {
   //
   //  Time_t when = r2lPort[portid]->occupySlots(calcNumFlits(msg));
   Time_t when = r2lPort[portid]->nextSlot(true);
-  for(int i = 0; i < calcNumFlits(msg); i++) {
+  for (int i = 0; i < calcNumFlits(msg); i++) {
     r2lPort[portid]->nextSlot(true);
   }
 
@@ -206,8 +205,10 @@ void Router::notifyMsg(Message *msg) {
 
   // Karin: remove the following if block to enable processing
   // of RCV_AND_PASS & RCV messages
-  if(msg->getDelivery() != Message::PT_TO_PT) {
-    LOG("[%d] received %s message from %d", myID, (msg->getDelivery() == Message::RCV_AND_PASS) ? "RCV_AND_PASS" : "RCV",
+  if (msg->getDelivery() != Message::PT_TO_PT) {
+    LOG("[%d] received %s message from %d",
+        myID,
+        (msg->getDelivery() == Message::RCV_AND_PASS) ? "RCV_AND_PASS" : "RCV",
         msg->getSrcRouterID());
     msg->garbageCollect();
     return;
@@ -219,23 +220,23 @@ void Router::notifyMsg(Message *msg) {
   // freaking details, sorry)
 
   ProtHandlersType::iterator it = localPortProtocol.find(msg->getUniqueProtID());
-  GLOG(it == localPortProtocol.end(), "Router[%d]::receiveMsg no one accepts packet in router[%d:%d] (uniqueID=%d)\n", myID,
-       msg->getDstRouterID(), msg->getDstPortID(), msg->getUniqueProtID());
+  GLOG(it == localPortProtocol.end(),
+       "Router[%d]::receiveMsg no one accepts packet in router[%d:%d] (uniqueID=%d)\n",
+       myID,
+       msg->getDstRouterID(),
+       msg->getDstPortID(),
+       msg->getUniqueProtID());
 
   it->second->call(msg);
 
   // TODO: decrease destroy. (GC destroy)
 }
 
-void Router::dump() {
-  fprintf(stderr, "Router #%d\n", myID);
-}
+void Router::dump() { fprintf(stderr, "Router #%d\n", myID); }
 
 void Router::registerProtocol(ProtocolCBBase *pcb, PortID_t pID, int32_t id) {
   I(localPortProtocol.find(id) == localPortProtocol.end());
   localPortProtocol[id] = pcb;
 }
 
-unsigned short Router::calcNumFlits(Message *msg) const {
-  return (unsigned short)ceil(msg->getSize() / net->getLinkBytes());
-}
+unsigned short Router::calcNumFlits(Message *msg) const { return (unsigned short)ceil(msg->getSize() / net->getLinkBytes()); }

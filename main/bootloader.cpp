@@ -4,27 +4,25 @@
 #include <signal.h>
 #include <stdlib.h>
 
-//#include "MemorySystem.h"
+// #include "MemorySystem.h"
 #include "AccProcessor.h"
+#include "DrawArch.h"
 #include "GMemorySystem.h"
 #include "GPUSMProcessor.h"
 #include "GProcessor.h"
 #include "InOrderProcessor.h"
 #include "OoOProcessor.h"
-#include "DrawArch.h"
-
 #include "bootloader.hpp"
-#include "taskhandler.hpp"
-#include "report.hpp"
 #include "config.hpp"
 #include "emul_dromajo.hpp"
+#include "report.hpp"
+#include "taskhandler.hpp"
 
 extern DrawArch arch;
 
 extern "C" void signalCatcher(int32_t sig);
 
 extern "C" void signalCatcherUSR1(int32_t sig) {
-
   fmt::print("WARNING: signal {} received. Dumping partial statistics\n", sig);
 
   BootLoader::reportOnTheFly();
@@ -33,11 +31,10 @@ extern "C" void signalCatcherUSR1(int32_t sig) {
 }
 
 extern "C" void signalCatcher(int32_t sig) {
-
   fmt::print("Stopping simulation early!!\n");
 
   static bool sigFaulting = false;
-  if(sigFaulting) {
+  if (sigFaulting) {
     TaskHandler::unplug();
     fmt::print("WARNING. Not a nice stop. It may leave pids\n");
     kill(-getpid(), SIGKILL);
@@ -46,7 +43,7 @@ extern "C" void signalCatcher(int32_t sig) {
   sigFaulting = true;
 
   fmt::print("WARNING: unexpected signal %d received. Dumping partial statistics\n", sig);
-  signal(SIGUSR1, signalCatcher); // Even sigusr1 should go here
+  signal(SIGUSR1, signalCatcher);  // Even sigusr1 should go here
 
   BootLoader::reportOnTheFly();
 
@@ -58,17 +55,16 @@ extern "C" void signalCatcher(int32_t sig) {
   abort();
 }
 
-timeval     BootLoader::stTime;
+timeval BootLoader::stTime;
 
 void BootLoader::reportOnTheFly() {
-
   Report::field("partial=true");
 
   Report::reinit();
   Config::dump(Report::raw_file_descriptor());
 
-  //pwrmodel->startDump();
-  //pwrmodel->stopDump();
+  // pwrmodel->startDump();
+  // pwrmodel->stopDump();
 }
 
 void BootLoader::report(const std::string &str) {
@@ -93,52 +89,51 @@ void BootLoader::report(const std::string &str) {
 }
 
 void BootLoader::plug_emuls() {
-
   auto nemuls = Config::get_array_size("soc", "emul");
 
   std::shared_ptr<Emul_dromajo> dromajo;
 
-  for(auto i = 0u; i < nemuls; i++) {
-    auto type = Config::get_string("soc","emul", i, "type", {"dromajo", "accel", "trace"});
+  for (auto i = 0u; i < nemuls; i++) {
+    auto type = Config::get_string("soc", "emul", i, "type", {"dromajo", "accel", "trace"});
     if (type == "dromajo") {
-      if (dromajo==nullptr) {
+      if (dromajo == nullptr) {
         dromajo = std::make_shared<Emul_dromajo>();
       }
-      if (dromajo) // Invalid dromahor otherwise
+      if (dromajo) {  // Invalid dromahor otherwise
         TaskHandler::add_emul(dromajo, i);
-    }else if (type == "accel") {
+      }
+    } else if (type == "accel") {
       Config::add_error("accel still not implemented");
-    }else if (type == "trace") {
+    } else if (type == "trace") {
       Config::add_error("trace still not implemented");
     }
   }
 }
 
 void BootLoader::plug_simus() {
-
   auto ncores = Config::get_array_size("soc", "core");
 
-  for(auto i = 0u; i < ncores; i++) {
+  for (auto i = 0u; i < ncores; i++) {
     std::shared_ptr<GMemorySystem> gm;
 
-    auto caches = Config::get_bool("soc","core",i,"caches");
+    auto caches = Config::get_bool("soc", "core", i, "caches");
     if (caches) {
-      #if 0
+#if 0
       gm = std::make_shared<MemorySystem>(i)
-      #else
-I(false); // FIXME: cleanup the mem
-      #endif
-    }else{
+#else
+      I(false);  // FIXME: cleanup the mem
+#endif
+    } else {
       gm = std::make_shared<DummyMemorySystem>(i);
     }
 
-    auto type = Config::get_string("soc","core", i, "type", {"ooo", "inorder", "accel"});
+    auto                       type = Config::get_string("soc", "core", i, "type", {"ooo", "inorder", "accel"});
     std::shared_ptr<Simu_base> simu;
     if (type == "ooo") {
       simu = std::make_shared<OoOProcessor>(gm, i);
-    }else if (type == "inorder") {
+    } else if (type == "inorder") {
       simu = std::make_shared<InOrderProcessor>(gm, i);
-    }else if (type == "accel") {
+    } else if (type == "accel") {
       simu = std::make_shared<AccProcessor>(gm, i);
     }
     TaskHandler::simu_create(simu);
@@ -148,20 +143,20 @@ I(false); // FIXME: cleanup the mem
 void BootLoader::plug(int argc, const char **argv) {
   // Before boot
 
-  std::string conf_file = "desesc.conf";
-  bool just_check = false;
+  std::string conf_file  = "desesc.conf";
+  bool        just_check = false;
 
-  for(auto i=1;i<argc;++i) {
-    if (strcmp(argv[i],"-c")==0) {
+  for (auto i = 1; i < argc; ++i) {
+    if (strcmp(argv[i], "-c") == 0) {
       ++i;
-      if (i>=argc) {
+      if (i >= argc) {
         fmt::print("after -c, there should be a config file name\n");
         exit(-3);
       }
       conf_file = argv[i];
-    }else if (strcasecmp(argv[i],"check")==0) {
+    } else if (strcasecmp(argv[i], "check") == 0) {
       just_check = true;
-    }else{
+    } else {
       fmt::print("unknown {} command line option\n", argv[i]);
       exit(-3);
     }
@@ -173,16 +168,16 @@ void BootLoader::plug(int argc, const char **argv) {
 
   if (ncores != nemuls) {
     Config::add_error(fmt::format("soc number of cores should match the numbers of emuls ({} vs {})", ncores, nemuls));
-  }else if (ncores==0) {
+  } else if (ncores == 0) {
     Config::add_error("soc should have at least one core in [soc] core");
-  }else{
+  } else {
     TaskHandler::plugBegin();
     plug_simus();
 
     Config::exit_on_error();
   }
 
-  if(just_check) {
+  if (just_check) {
     fmt::print("check success\n");
     exit(0);
   }
@@ -216,7 +211,6 @@ void BootLoader::boot() {
 }
 
 void BootLoader::unboot() {
-
 #ifdef ESESC_THERM
   ReportTherm::stopCB();
 #endif
@@ -233,8 +227,9 @@ void BootLoader::unplug() {
 #endif
 
 #ifdef ESESC_POWERMODEL
-  if(doPower)
+  if (doPower) {
     pwrmodel->unplug();
+  }
 #endif
 
   TaskHandler::unplug();

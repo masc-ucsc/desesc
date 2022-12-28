@@ -3,12 +3,10 @@
 #include <signal.h>
 #include <sys/types.h>
 
+#include "bootloader.hpp"
 #include "iassert.hpp"
 
-#include "bootloader.hpp"
-
 int main(int argc, const char **argv) {
-
   BootLoader::plug(argc, argv);
   BootLoader::boot();
   BootLoader::report("done");

@@ -1,12 +1,13 @@
 
 #include "PortManager.h"
+
 #include "SescConf.h"
 
 PortManager *PortManager::create(const char *section, MemObj *mobj) {
-  if(SescConf->checkCharPtr(section, "port")) {
+  if (SescConf->checkCharPtr(section, "port")) {
     const char *sub  = SescConf->getCharPtr(section, "port");
     const char *type = SescConf->getCharPtr(sub, "type");
-    if(strcasecmp(type, "banked") == 0) {
+    if (strcasecmp(type, "banked") == 0) {
       return new PortManagerBanked(sub, mobj);
     } else {
       MSG("ERROR: %s PortManager %s type %s is unknown", section, sub, type);
@@ -17,8 +18,7 @@ PortManager *PortManager::create(const char *section, MemObj *mobj) {
   return new PortManagerBanked(section, mobj);
 }
 
-PortManagerBanked::PortManagerBanked(const char *section, MemObj *_mobj)
-    : PortManager(_mobj) {
+PortManagerBanked::PortManagerBanked(const char *section, MemObj *_mobj) : PortManager(_mobj) {
   int numPorts = SescConf->getInt(section, "bkNumPorts");
   int portOccp = SescConf->getInt(section, "bkPortOccp");
 
@@ -29,13 +29,13 @@ PortManagerBanked::PortManagerBanked(const char *section, MemObj *_mobj)
   missDelay = SescConf->getInt(section, "missDelay");
   // SescConf->isBetween(section,"missDelay",0,hitDelay);
 
-  if(SescConf->checkInt(section, "ncDelay")) {
+  if (SescConf->checkInt(section, "ncDelay")) {
     ncDelay = SescConf->getInt(section, "ncDelay");
   } else {
     ncDelay = missDelay;
   }
 
-  if(SescConf->checkInt(section, "ncDelay")) {
+  if (SescConf->checkInt(section, "ncDelay")) {
     ncDelay = SescConf->getInt(section, "ncDelay");
   } else {
     ncDelay = missDelay;
@@ -45,16 +45,17 @@ PortManagerBanked::PortManagerBanked(const char *section, MemObj *_mobj)
   tagDelay  = hitDelay - dataDelay;
 
   numBanks = SescConf->getInt(section, "numBanks");
-  SescConf->isBetween(section, "numBanks", 1, 1024); // More than 1024???? (more likely a bug in the conf)
+  SescConf->isBetween(section, "numBanks", 1, 1024);  // More than 1024???? (more likely a bug in the conf)
   SescConf->isPower2(section, "numBanks");
   int32_t log2numBanks = log2i(numBanks);
-  if(numBanks > 1)
+  if (numBanks > 1) {
     numBanksMask = (1 << log2numBanks) - 1;
-  else
+  } else {
     numBanksMask = 0;
+  }
 
   bkPort = new PortGeneric *[numBanks];
-  for(uint32_t i = 0; i < numBanks; i++) {
+  for (uint32_t i = 0; i < numBanks; i++) {
     sprintf(tmpName, "%s_bk(%d)", name, i);
     bkPort[i] = PortGeneric::create(tmpName, numPorts, portOccp);
     I(bkPort[i]);
@@ -62,7 +63,7 @@ PortManagerBanked::PortManagerBanked(const char *section, MemObj *_mobj)
   I(bkPort[0]);
   int fillPorts = 1;
   int fillOccp  = 1;
-  if(SescConf->checkInt(section, "sendFillPortOccp")) {
+  if (SescConf->checkInt(section, "sendFillPortOccp")) {
     fillPorts = SescConf->getInt(section, "sendFillNumPorts");
     fillOccp  = SescConf->getInt(section, "sendFillPortOccp");
   }
@@ -70,19 +71,20 @@ PortManagerBanked::PortManagerBanked(const char *section, MemObj *_mobj)
   sendFillPort = PortGeneric::create(tmpName, fillPorts, fillOccp);
 
   maxRequests = SescConf->getInt(section, "maxRequests");
-  if(maxRequests == 0)
-    maxRequests = 32768; // It should be enough
+  if (maxRequests == 0) {
+    maxRequests = 32768;  // It should be enough
+  }
 
-  maxPrefetch = 32; // by default share with normal prefetch
-  if(SescConf->checkInt(section, "maxPrefetch")) {
+  maxPrefetch = 32;  // by default share with normal prefetch
+  if (SescConf->checkInt(section, "maxPrefetch")) {
     maxPrefetch = SescConf->getInt(section, "maxPrefetch");
   }
   dupPrefetchTag = true;
-  if(SescConf->checkBool(section, "dupPrefetchTag")) {
+  if (SescConf->checkBool(section, "dupPrefetchTag")) {
     dupPrefetchTag = SescConf->getBool(section, "dupPrefetchTag");
   }
   dropPrefetchFill = true;
-  if(SescConf->checkBool(section, "dropPrefetchFill")) {
+  if (SescConf->checkBool(section, "dropPrefetchFill")) {
     dropPrefetchFill = SescConf->getBool(section, "dropPrefetchFill");
   }
 
@@ -90,14 +92,14 @@ PortManagerBanked::PortManagerBanked(const char *section, MemObj *_mobj)
   curPrefetch = 0;
 
   lineSize = SescConf->getInt(section, "bsize");
-  if(SescConf->checkInt(section, "bankShift")) {
+  if (SescConf->checkInt(section, "bankShift")) {
     bankShift = SescConf->getInt(section, "bankShift");
     bankSize  = 1 << bankShift;
   } else {
     bankShift = log2i(lineSize);
     bankSize  = lineSize;
   }
-  if(SescConf->checkInt(section, "recvFillWidth")) {
+  if (SescConf->checkInt(section, "recvFillWidth")) {
     recvFillWidth = SescConf->getInt(section, "recvFillWidth");
     SescConf->isPower2(section, "recvFillWidth");
     SescConf->isBetween(section, "recvFillWidth", 1, lineSize);
@@ -127,19 +129,20 @@ void PortManagerBanked::nextBankSlotUntil(AddrType addr, Time_t until, bool en) 
 }
 
 Time_t PortManagerBanked::reqDone(MemRequest *mreq, bool retrying) {
-
-  if(mreq->isWarmup() || mreq->isDropped())
+  if (mreq->isWarmup() || mreq->isDropped()) {
     return globalClock + 1;
+  }
 
-  if(dropPrefetchFill && mreq->isPrefetch() && sendFillPort->calcNextSlot() > (globalClock + 8)) {
+  if (dropPrefetchFill && mreq->isPrefetch() && sendFillPort->calcNextSlot() > (globalClock + 8)) {
     mreq->setDropped();
     return globalClock + 1;
   }
 
   Time_t when = sendFillPort->nextSlot(mreq->getStatsFlag());
 
-  if(!retrying && !mreq->isNonCacheable())
+  if (!retrying && !mreq->isNonCacheable()) {
     when += dataDelay;
+  }
 
   // TRACE
   //  if (strcmp(mobj->getName(),"L2(0)")==0)
@@ -149,15 +152,16 @@ Time_t PortManagerBanked::reqDone(MemRequest *mreq, bool retrying) {
 }
 
 Time_t PortManagerBanked::reqAckDone(MemRequest *mreq) {
-  if(mreq->isWarmup() || mreq->isDropped())
+  if (mreq->isWarmup() || mreq->isDropped()) {
     return globalClock + 1;
+  }
 
-  if(dropPrefetchFill && mreq->isPrefetch() && sendFillPort->calcNextSlot() > (globalClock + 8)) {
+  if (dropPrefetchFill && mreq->isPrefetch() && sendFillPort->calcNextSlot() > (globalClock + 8)) {
     mreq->setDropped();
     return globalClock + 1;
   }
 
-  Time_t when = sendFillPort->nextSlot(mreq->getStatsFlag()); // tag access simultaneously, no charge here
+  Time_t when = sendFillPort->nextSlot(mreq->getStatsFlag());  // tag access simultaneously, no charge here
 
   // TRACE
   //  if (strcmp(mobj->getName(),"L2(0)")==0)
@@ -167,8 +171,9 @@ Time_t PortManagerBanked::reqAckDone(MemRequest *mreq) {
 }
 
 bool PortManagerBanked::isBusy(AddrType addr) const {
-  if(curRequests >= (maxRequests / 2)) // Reserve half for reads which do not check isBusy
+  if (curRequests >= (maxRequests / 2)) {  // Reserve half for reads which do not check isBusy
     return true;
+  }
 
   return false;
 }
@@ -177,7 +182,7 @@ void PortManagerBanked::startPrefetch(MemRequest *mreq) {
   I(mreq->isPrefetch());
   I(!mreq->isDropped());
 
-  if(maxPrefetch) {
+  if (maxPrefetch) {
     curPrefetch++;
   } else {
     curRequests++;
@@ -185,8 +190,7 @@ void PortManagerBanked::startPrefetch(MemRequest *mreq) {
 }
 
 void PortManagerBanked::reqRetire(MemRequest *mreq) {
-
-  if(mreq->isPrefetch() && maxPrefetch) {
+  if (mreq->isPrefetch() && maxPrefetch) {
     curPrefetch--;
     // MSG("--%d %s",mreq->getID(), mobj->getName());
   } else {
@@ -195,16 +199,18 @@ void PortManagerBanked::reqRetire(MemRequest *mreq) {
   I(curRequests >= 0);
   I(curPrefetch >= 0);
 
-  GI(curPrefetch, maxPrefetch); // curPrefech == 0 unless maxPrefetch
+  GI(curPrefetch, maxPrefetch);  // curPrefech == 0 unless maxPrefetch
 
-  while(!overflow.empty()) {
+  while (!overflow.empty()) {
     MemRequest *oreq = overflow.back();
     overflow.pop_back();
     req2(oreq);
-    if(curRequests >= maxRequests)
+    if (curRequests >= maxRequests) {
       break;
-    if(curPrefetch > maxPrefetch)
+    }
+    if (curPrefetch > maxPrefetch) {
       break;
+    }
   }
 }
 
@@ -213,8 +219,8 @@ void PortManagerBanked::req2(MemRequest *mreq) {
 
   I(!mreq->isDropped());
 
-  if(!mreq->isRetrying()) {
-    if(mreq->isPrefetch() && maxPrefetch) {
+  if (!mreq->isRetrying()) {
+    if (mreq->isPrefetch() && maxPrefetch) {
       curPrefetch++;
     } else {
       curRequests++;
@@ -225,33 +231,36 @@ void PortManagerBanked::req2(MemRequest *mreq) {
   //  if (strcmp(mobj->getName(),"L2(0)")==0)
   // MSG("%5lld @%lld %-8s req   %12llx curReq=%d",mreq->getID(),globalClock,mobj->getName(),mreq->getAddr(),curRequests);
 
-  if(mreq->isWarmup())
+  if (mreq->isWarmup()) {
     mreq->redoReq();
-  else if(mreq->isNonCacheable())
+  } else if (mreq->isNonCacheable()) {
     mreq->redoReqAbs(globalClock + ncDelay);
-  else if(dupPrefetchTag && mreq->isPrefetch())
+  } else if (dupPrefetchTag && mreq->isPrefetch()) {
     mreq->redoReqAbs(globalClock + tagDelay);
-  else
+  } else {
     mreq->redoReqAbs(nextBankSlot(mreq->getAddr(), mreq->getStatsFlag()) + tagDelay);
+  }
 }
 void PortManagerBanked::req(MemRequest *mreq)
 /* main processor read entry point {{{1 */
 {
-  if(!mreq->isRetrying() && !mreq->isPrefetch()) {
-    if(curRequests >= maxRequests) {
+  if (!mreq->isRetrying() && !mreq->isPrefetch()) {
+    if (curRequests >= maxRequests) {
       overflow.push_front(mreq);
       return;
     }
-    while(!overflow.empty()) {
+    while (!overflow.empty()) {
       MemRequest *oreq = overflow.back();
       overflow.pop_back();
       req2(oreq);
-      if(curRequests >= maxRequests)
+      if (curRequests >= maxRequests) {
         break;
-      if(curPrefetch > maxPrefetch)
+      }
+      if (curPrefetch > maxPrefetch) {
         break;
+      }
     }
-    if(!overflow.empty()) {
+    if (!overflow.empty()) {
       overflow.push_front(mreq);
       return;
     }
@@ -262,20 +271,22 @@ void PortManagerBanked::req(MemRequest *mreq)
 // }}}
 
 Time_t PortManagerBanked::snoopFillBankUse(MemRequest *mreq) {
-
-  if(mreq->isNonCacheable())
+  if (mreq->isNonCacheable()) {
     return globalClock;
+  }
 
-  if(mreq->isPrefetch() && mreq->isDropped())
+  if (mreq->isPrefetch() && mreq->isDropped()) {
     return globalClock;
+  }
 
   Time_t max    = globalClock;
   Time_t max_fc = 0;
-  for(int fc = 0; fc < lineSize; fc += recvFillWidth) {
-    for(int i = 0; i < recvFillWidth; i += bankSize) {
+  for (int fc = 0; fc < lineSize; fc += recvFillWidth) {
+    for (int i = 0; i < recvFillWidth; i += bankSize) {
       Time_t t = nextBankSlot(mreq->getAddr() + fc + i, mreq->getStatsFlag());
-      if((t + max_fc) > max)
+      if ((t + max_fc) > max) {
         max = t + max_fc;
+      }
     }
     max_fc++;
   }
@@ -297,10 +308,11 @@ Time_t PortManagerBanked::snoopFillBankUse(MemRequest *mreq) {
 void PortManagerBanked::blockFill(MemRequest *mreq)
 // Block the cache ports for fill requests {{{1
 {
-  if(mreq->isDropped())
+  if (mreq->isDropped()) {
     return;
+  }
 
-  if(dropPrefetchFill && mreq->isPrefetch() && blockTime > (globalClock + 8)) {
+  if (dropPrefetchFill && mreq->isPrefetch() && blockTime > (globalClock + 8)) {
     mreq->setDropped();
     return;
   }
@@ -312,12 +324,11 @@ void PortManagerBanked::blockFill(MemRequest *mreq)
 void PortManagerBanked::reqAck(MemRequest *mreq)
 /* request Ack {{{1 */
 {
-
   Time_t until;
-  if(dropPrefetchFill && mreq->isPrefetch() && blockTime > (globalClock + 8)) {
+  if (dropPrefetchFill && mreq->isPrefetch() && blockTime > (globalClock + 8)) {
     mreq->setDropped();
     until = globalClock + 1;
-  } else if(mreq->isWarmup() || mreq->isDropped()) {
+  } else if (mreq->isWarmup() || mreq->isDropped()) {
     until = globalClock + 1;
   } else {
     until = snoopFillBankUse(mreq);

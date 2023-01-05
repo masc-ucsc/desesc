@@ -1,26 +1,33 @@
 
 desesc: Dromajo Based ESESC
 
--Remove most (all?) the const char *str, and use std::string or std::string_view
+-------------------------
+1-Code Cleanup towards C++17 style
 
--Remove most mallocs (string related. any else?)
+=Create unit tests
 
--Get code style compliant with LiveHD
+ Major blocks should have unit tests
 
+ E.g: FetchEngine or ExecuteEngine....
+
+ but also some simpler tests for smaller blocks covering corner cases
+
+=Modernize memory management:
+
+ -Remove most (all?) the const char *str, and use std::string or std::string_view
+ -Remove malloc/new/delete (use string, vector, std::shared_ptr, std::unique_ptr)
+
+ -Deprecate the pool: Use new/delete, then valgrind can be used to detect
+ memory leaks (no need for in-class check for leaks)
 
 =Cleanup callback
 
  The code is based on esesc (C++ from 2000 without lambdas/std::function). Use
  something closer to LiveHD tasks queue syntax.
 
-=Deprecase the pool
-
- Use new/delete, then valgrind can be used to detect memory leaks (no need for
- in-class check for leaks)
-
 =remove estl.h
 
- Use abseil flat_hash_map or flat_hash_set 
+ Use abseil flat_hash_map or flat_hash_set
 
  btree_map if needed
 
@@ -28,8 +35,6 @@ desesc: Dromajo Based ESESC
 
  Rename class name to avoid CamelCase to Non_camel_case
  Rename file name from CamelCase.h to Non_camel_case.hpp and Non_camel_case.cpp
-
-=Remove VPC left-overs
 
 =Make Config and name match with a "cfg_" starting
 
@@ -40,24 +45,6 @@ E.g:
 Should become (and rename any variable use/declaration)
 
    cfg_btb_history_size = Config::get_integer(section,"btb_history_size");
-
-=remove strcasecmp (and strcmp)
-
-Config always returns a lower_case, no need to do strcasecmp
-
-=Create unit tests
-
- Major blocks should have unit tests
-
- E.g: FetchEngine or ExecuteEngine....
-
- but also some simpler tests for smaller blocks covering corner cases
-
-=Add a Config::dump
-
- Each parameter read/used should be kept and dumped with Config::dump
-
- The dump includes the getenv parameter value used. It allows to cut&paste and reproduce the simulation results.
 
 =Remove typedef
 
@@ -70,4 +57,15 @@ Config always returns a lower_case, no need to do strcasecmp
 =Create like PortGeneric/MemObj
 
  should return a std::uniqe_ptr not a raw pointer.
+
+-------------------------
+2-Performance reporting
+
+=Modern report.pl (report.py? or report.rb?)
+
+ Read the toml and the generated desesc.?????? to summarize performace line report.pl used to
+
+=pipeview
+
+ https://www.gem5.org/documentation/general_docs/cpu_models/visualization/
 

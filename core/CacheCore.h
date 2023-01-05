@@ -275,7 +275,7 @@ public:
   typedef typename CacheGeneric<State, Addr_t>::CacheLine Line;
 
 protected:
-  Line             *mem;
+  std::vector<Line>  mem;
   Line            **content;
   uint16_t          irand;
   ReplacementPolicy policy;
@@ -315,7 +315,6 @@ protected:
 public:
   virtual ~HawkCache() {
     delete[] content;
-    delete[] mem;
   }
 
   // TODO: do an iterator. not this junk!!
@@ -355,7 +354,7 @@ public:
   typedef typename CacheGeneric<State, Addr_t>::CacheLine Line;
 
 protected:
-  Line             *mem;
+  std::vector<Line>  mem;
   Line            **content;
   uint16_t          irand;
   ReplacementPolicy policy;
@@ -423,7 +422,6 @@ protected:
 public:
   virtual ~CacheAssoc() {
     delete[] content;
-    delete[] mem;
   }
 
   // TODO: do an iterator. not this junk!!
@@ -446,7 +444,7 @@ public:
   typedef typename CacheGeneric<State, Addr_t>::CacheLine Line;
 
 protected:
-  Line  *mem;
+  std::vector<Line>  mem;
   Line **content;
 
   friend class CacheGeneric<State, Addr_t>;
@@ -458,7 +456,6 @@ protected:
 public:
   virtual ~CacheDM() {
     delete[] content;
-    delete[] mem;
   };
 
   // TODO: do an iterator. not this junk!!
@@ -481,7 +478,7 @@ public:
   typedef typename CacheGeneric<State, Addr_t>::CacheLine Line;
 
 protected:
-  Line  *mem;
+  std::vector<Line>  mem;
   Line **content;
 
   friend class CacheGeneric<State, Addr_t>;
@@ -493,7 +490,6 @@ protected:
 public:
   virtual ~CacheDMSkew() {
     delete[] content;
-    delete[] mem;
   };
 
   // TODO: do an iterator. not this junk!!
@@ -518,7 +514,7 @@ public:
   typedef typename CacheGeneric<State, Addr_t>::CacheLine Line;
 
 protected:
-  Line             *mem;
+  std::vector<Line>  mem;
   Line            **content;
   uint16_t          irand;
   ReplacementPolicy policy;
@@ -538,7 +534,6 @@ protected:
 public:
   virtual ~CacheSHIP() {
     delete[] content;
-    delete[] mem;
     delete[] SHCT;
   }
 
@@ -863,17 +858,15 @@ CacheAssoc<State, Addr_t>::CacheAssoc(int32_t size, int32_t assoc, int32_t blksi
     Config::add_error(fmt::format("Invalid cache policy [{}]", pStr_lc));
   }
 
-  mem = (Line *)malloc(sizeof(Line) * (numLines + 1));
-  ////read
-  for (uint32_t i = 0; i < numLines; i++) {
-    new (&mem[i]) Line(blksize);
-  }
+  Line zero_line(blksize);
+  zero_line.initialize(this);
+  zero_line.invalidate();
+  zero_line.rrip = 0;
+
+  mem.resize(numLines+1, zero_line);
   content = new Line *[numLines + 1];
 
   for (uint32_t i = 0; i < numLines; i++) {
-    mem[i].initialize(this);
-    mem[i].invalidate();
-    mem[i].rrip = 0;
     content[i]  = &mem[i];
   }
 
@@ -1209,17 +1202,15 @@ HawkCache<State, Addr_t>::HawkCache(int32_t size, int32_t assoc, int32_t blksize
     Config::add_error(fmt::format("Invalid cache policy. Cache should be used [{}]", pStr_lc));
   }
 
-  mem = (Line *)malloc(sizeof(Line) * (numLines + 1));
-  ////read
-  for (uint32_t i = 0; i < numLines; i++) {
-    new (&mem[i]) Line(blksize);
-  }
+  Line zero_line(blksize);
+  zero_line.initialize(this);
+  zero_line.invalidate();
+
+  mem.resize(numLines+1, zero_line);
   content = new Line *[numLines + 1];
 
   for (uint32_t i = 0; i < numLines; i++) {
-    mem[i].initialize(this);
-    mem[i].invalidate();
-    content[i] = &mem[i];
+    content[i]  = &mem[i];
   }
 
   irand = 0;
@@ -1495,16 +1486,15 @@ CacheDM<State, Addr_t>::CacheDM(int32_t size, int32_t blksize, int32_t addrUnit,
     : CacheGeneric<State, Addr_t>(size, 1, blksize, addrUnit, xr) {
   I(numLines > 0);
 
-  mem = (Line *)malloc(sizeof(Line) * (numLines + 1));
-  for (uint32_t i = 0; i < numLines; i++) {
-    new (&mem[i]) Line(blksize);
-  }
+  Line zero_line(blksize);
+  zero_line.initialize(this);
+  zero_line.invalidate();
+
+  mem.resize(numLines+1, zero_line);
   content = new Line *[numLines + 1];
 
   for (uint32_t i = 0; i < numLines; i++) {
-    mem[i].initialize(this);
-    mem[i].invalidate();
-    content[i] = &mem[i];
+    content[i]  = &mem[i];
   }
 }
 
@@ -1545,16 +1535,15 @@ CacheDMSkew<State, Addr_t>::CacheDMSkew(int32_t size, int32_t blksize, int32_t a
     : CacheGeneric<State, Addr_t>(size, 1, blksize, addrUnit, false) {
   I(numLines > 0);
 
-  mem = (Line *)malloc(sizeof(Line) * (numLines + 1));
-  for (uint32_t i = 0; i < numLines; i++) {
-    new (&mem[i]) Line(blksize);
-  }
+  Line zero_line(blksize);
+  zero_line.initialize(this);
+  zero_line.invalidate();
+
+  mem.resize(numLines+1, zero_line);
   content = new Line *[numLines + 1];
 
   for (uint32_t i = 0; i < numLines; i++) {
-    mem[i].initialize(this);
-    mem[i].invalidate();
-    content[i] = &mem[i];
+    content[i]  = &mem[i];
   }
 }
 
@@ -1714,16 +1703,15 @@ CacheSHIP<State, Addr_t>::CacheSHIP(int32_t size, int32_t assoc, int32_t blksize
     Config::add_error(fmt::format("Invalid cache policy [{}]", pStr));
   }
 
-  mem = (Line *)malloc(sizeof(Line) * (numLines + 1));
-  for (uint32_t i = 0; i < numLines; i++) {
-    new (&mem[i]) Line(blksize);
-  }
+  Line zero_line(blksize);
+  zero_line.initialize(this);
+  zero_line.invalidate();
+
+  mem.resize(numLines+1, zero_line);
   content = new Line *[numLines + 1];
 
   for (uint32_t i = 0; i < numLines; i++) {
-    mem[i].initialize(this);
-    mem[i].invalidate();
-    content[i] = &mem[i];
+    content[i]  = &mem[i];
   }
 
   for (uint32_t j = 0; j < (2 ^ log2shct); j++) {

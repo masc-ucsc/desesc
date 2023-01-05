@@ -1,12 +1,10 @@
 // See LICENSE for details.
 
-#include "emul_dromajo.hpp"
+#include <filesystem>
 
 #include "absl/strings/str_split.h"
 
-#include <unistd.h>
-#include <assert.h>
-#include <stdio.h>
+#include "emul_dromajo.hpp"
 
 Emul_dromajo::Emul_dromajo() : Emul_base() {
   num = 0;
@@ -29,12 +27,10 @@ Emul_dromajo::Emul_dromajo() : Emul_base() {
     ++num;
   }
   std::vector<std::string> bench_split = absl::StrSplit(bench, ' ');
-  if (bench_split.empty() || access(bench_split[0].c_str(), F_OK) == -1) {
+  if (bench_split.empty() || !std::filesystem::exists(bench_split[0])) {
     Config::add_error(fmt::format("could not open dromajo bench={}\n", bench));
-    if (access(bench_split[0].c_str(), F_OK) == -1) {
-      char cwd[1024];
-      getcwd(cwd, 1024);
-      Config::add_error(fmt::format("file {} not accessible from {} path\n", bench, cwd));
+    if (!std::filesystem::exists(bench_split[0])) {
+      Config::add_error(fmt::format("file {} not accessible from {} path\n", bench, std::filesystem::current_path().u8string()));
     }
   }
   Config::exit_on_error();

@@ -32,7 +32,9 @@ Emul_dromajo::Emul_dromajo() : Emul_base() {
   if (bench_split.empty() || access(bench_split[0].c_str(), F_OK) == -1) {
     Config::add_error(fmt::format("could not open dromajo bench={}\n", bench));
     if (access(bench_split[0].c_str(), F_OK) == -1) {
-      Config::add_error(fmt::format("file {} not accessible from {} path\n", bench, get_current_dir_name()));
+      char cwd[1024];
+      getcwd(cwd, 1024);
+      Config::add_error(fmt::format("file {} not accessible from {} path\n", bench, cwd));
     }
   }
   Config::exit_on_error();

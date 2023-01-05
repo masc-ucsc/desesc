@@ -20,11 +20,3 @@ To run the default simulation (dhrystone):
 ```
 ./bazel-bin/main/desesc -c ./conf/desesc.toml
 ```
-
-To run clang-tidy (must install it before):
-```
-bazel build //core:all \
-  --aspects @bazel_clang_tidy//clang_tidy:clang_tidy.bzl%clang_tidy_aspect \
-  --output_groups=report \
-  --@bazel_clang_tidy//:clang_tidy_config=//:clang_tidy_config
-```

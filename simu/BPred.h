@@ -30,13 +30,14 @@
 #define RAP_T_NT_ONLY 1
 // #define ENABLE_LDBP
 // #define DOC_SIZE 512 //128
-enum PredType { CorrectPrediction = 0, NoPrediction, NoBTBPrediction, MissPrediction };
 enum BrOpType { BEQ = 0, BNE = 1, BLT = 4, BGE = 5, BLTU = 6, BGEU = 7, ILLEGAL_BR = 8 };
+enum class Outcome {Correct, None, NoBTB, Miss};
 
 class MemObj;
 
 class BPred {
 public:
+
   typedef int64_t HistoryType;
   class Hash4HistoryType {
   public:
@@ -67,13 +68,13 @@ public:
   BPred(int32_t i, const std::string &section, const std::string &sname, const std::string &name);
   virtual ~BPred();
 
-  virtual PredType predict(Dinst *dinst, bool doUpdate, bool doStats) = 0;
+  virtual Outcome predict(Dinst *dinst, bool doUpdate, bool doStats) = 0;
   virtual void     fetchBoundaryBegin(Dinst *dinst);  // If the branch predictor support fetch boundary model, do it
   virtual void     fetchBoundaryEnd();                // If the branch predictor support fetch boundary model, do it
 
-  PredType doPredict(Dinst *dinst, bool doStats = true) {
-    PredType pred = predict(dinst, true, doStats);
-    if (pred == NoPrediction) {
+  Outcome doPredict(Dinst *dinst, bool doStats = true) {
+    Outcome pred = predict(dinst, true, doStats);
+    if (pred == Outcome::None) {
       return pred;
     }
 
@@ -81,8 +82,8 @@ public:
       return pred;
     }
 
-    nHit.inc(pred == CorrectPrediction && dinst->has_stats() && doStats);
-    nMiss.inc(pred == MissPrediction && dinst->has_stats() && doStats);
+    nHit.inc(pred == Outcome::Correct && dinst->has_stats() && doStats);
+    nMiss.inc(pred == Outcome::Miss && dinst->has_stats() && doStats);
 
     return pred;
   }
@@ -102,7 +103,7 @@ protected:
 public:
   BPRas(int32_t i, const std::string &section, const std::string &sname);
   ~BPRas();
-  PredType predict(Dinst *dinst, bool doUpdate, bool doStats);
+  Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
 
   void tryPrefetch(MemObj *il1, bool doStats, int degree);
 };
@@ -135,7 +136,7 @@ public:
   BPBTB(int32_t i, const std::string &section, const std::string &sname, const std::string &name = "btb");
   ~BPBTB();
 
-  PredType predict(Dinst *dinst, bool doUpdate, bool doStats);
+  Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
   void     updateOnly(Dinst *dinst);
 };
 
@@ -148,7 +149,7 @@ public:
   BPOracle(int32_t i, const std::string &section, const std::string &sname)
       : BPred(i, section, sname, "Oracle"), btb(i, section, sname) {}
 
-  PredType predict(Dinst *dinst, bool doUpdate, bool doStats);
+  Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
 };
 
 class BPNotTaken : public BPred {
@@ -162,7 +163,7 @@ public:
     // Done
   }
 
-  PredType predict(Dinst *dinst, bool doUpdate, bool doStats);
+  Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
 };
 
 class BPMiss : public BPred {
@@ -173,7 +174,7 @@ public:
     // Done
   }
 
-  PredType predict(Dinst *dinst, bool doUpdate, bool doStats);
+  Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
 };
 
 class BPNotTakenEnhanced : public BPred {
@@ -187,7 +188,7 @@ public:
     // Done
   }
 
-  PredType predict(Dinst *dinst, bool doUpdate, bool doStats);
+  Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
 };
 
 class BPTaken : public BPred {
@@ -201,7 +202,7 @@ public:
     // Done
   }
 
-  PredType predict(Dinst *dinst, bool doUpdate, bool doStats);
+  Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
 };
 
 class BP2bit : public BPred {
@@ -214,7 +215,7 @@ protected:
 public:
   BP2bit(int32_t i, const std::string &section, const std::string &sname);
 
-  PredType predict(Dinst *dinst, bool doUpdate, bool doStats);
+  Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
 };
 
 class IMLIBest;
@@ -233,7 +234,7 @@ public:
 
   void     fetchBoundaryBegin(Dinst *dinst);
   void     fetchBoundaryEnd();
-  PredType predict(Dinst *dinst, bool doUpdate, bool doStats);
+  Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
 };
 
 class BP2level : public BPred {
@@ -257,7 +258,7 @@ public:
   BP2level(int32_t i, const std::string &section, const std::string &sname);
   ~BP2level();
 
-  PredType predict(Dinst *dinst, bool doUpdate, bool doStats);
+  Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
 };
 
 class BPHybrid : public BPred {
@@ -279,7 +280,7 @@ public:
   BPHybrid(int32_t i, const std::string &section, const std::string &sname);
   ~BPHybrid();
 
-  PredType predict(Dinst *dinst, bool doUpdate, bool doStats);
+  Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
 };
 
 class BP2BcgSkew : public BPred {
@@ -307,7 +308,7 @@ public:
   BP2BcgSkew(int32_t i, const std::string &section, const std::string &sname);
   ~BP2BcgSkew();
 
-  PredType predict(Dinst *dinst, bool doUpdate, bool doStats);
+  Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
 };
 
 class BPyags : public BPred {
@@ -336,7 +337,7 @@ public:
   BPyags(int32_t i, const std::string &section, const std::string &sname);
   ~BPyags();
 
-  PredType predict(Dinst *dinst, bool doUpdate, bool doStats);
+  Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
 };
 
 class BPOgehl : public BPred {
@@ -378,7 +379,7 @@ public:
   BPOgehl(int32_t i, const std::string &section, const std::string &sname);
   ~BPOgehl();
 
-  PredType predict(Dinst *dinst, bool doUpdate, bool doStats);
+  Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
 };
 
 class LoopPredictor {
@@ -433,7 +434,7 @@ public:
   BPTData(int32_t i, const std::string &section, const std::string &sname);
   ~BPTData() {}
 
-  PredType predict(Dinst *dinst, bool doUpdate, bool doStats);
+  Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
 };
 
 /*LOAD BRANCH PREDICTOR (LDBP)*/
@@ -462,7 +463,7 @@ public:
   BPLdbp(int32_t i, const std::string &section, const std::string &sname, MemObj *dl1 = 0);
   ~BPLdbp() {}
 
-  PredType predict(Dinst *dinst, bool doUpdate, bool doStats);
+  Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
   bool     outcome_calculator(BrOpType br_op, Data_t br_data1, Data_t br_data2);
   BrOpType branch_type(Addr_t brpc);
 
@@ -577,7 +578,6 @@ private:
 
   Stats_cntr nBranches3;
   Stats_cntr nNoPredict3;
-  Stats_cntr nNoPredict_miss3;  // NoPred by bpred 3 and no correct pred by other bpreds
   Stats_cntr nHit3_miss2;       // Mispred of Level 2 which are fixed by level 3 BPred
   Stats_cntr nTaken3;
   Stats_cntr nMiss3;  // hits == nBranches - nMiss
@@ -589,9 +589,9 @@ private:
   Stats_cntr nAgree3;
 
 protected:
-  PredType predict1(Dinst *dinst);
-  PredType predict2(Dinst *dinst);
-  PredType predict3(Dinst *dinst);
+  Outcome predict1(Dinst *dinst);
+  Outcome predict2(Dinst *dinst);
+  Outcome predict3(Dinst *dinst);
 
 public:
   BPredictor(int32_t i, MemObj *il1, MemObj *DL1, std::shared_ptr<BPredictor> bpred = nullptr);

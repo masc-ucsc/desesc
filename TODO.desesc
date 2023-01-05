@@ -61,6 +61,8 @@ Should become (and rename any variable use/declaration)
 -------------------------
 2-Performance reporting
 
+=FIX the configuration dump (currently it is not right)
+
 =Modern report.pl (report.py? or report.rb?)
 
  Read the toml and the generated desesc.?????? to summarize performace line report.pl used to

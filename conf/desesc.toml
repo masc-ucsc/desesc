@@ -15,8 +15,8 @@ type      = "dromajo"
 bench      = "conf/dhrystone.riscv"
 start_roi = false
 rabbit    = 1024
-detail    = 1024
-time      = 1024
+detail    = 5 # 1024
+time      = 5 # 1024
 
 [rand_emu]
 type = "random"  # Generate random instructions (coverage testing?)

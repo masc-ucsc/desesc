@@ -14,9 +14,9 @@ type      = "dromajo"
 #load      = "linux_checkpoint_1"
 bench      = "conf/dhrystone.riscv"
 start_roi = false
-rabbit    = 1e6
-detail    = 1e6
-time      = 2e6
+rabbit    = 1024
+detail    = 1024
+time      = 1024
 
 [rand_emu]
 type = "random"  # Generate random instructions (coverage testing?)

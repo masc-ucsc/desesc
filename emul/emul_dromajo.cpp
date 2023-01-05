@@ -215,7 +215,16 @@ Dinst *Emul_dromajo::peek(Hartid_t fid) {
   // assert(dst1 != LREG_R0);
 
   esesc_insn.set(opcode, src1, src2, dst1, dst2);
-  return Dinst::create(&esesc_insn, last_pc, address, fid, time);
+  if (detail>0) {
+    --detail;
+    return Dinst::create(&esesc_insn, last_pc, address, fid, false);
+  }
+  if (time>0) {
+    --time;
+    return Dinst::create(&esesc_insn, last_pc, address, fid, true);
+  }
+
+  return nullptr;
 }
 
 void Emul_dromajo::execute(Hartid_t fid) {

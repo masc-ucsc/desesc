@@ -19,7 +19,7 @@ const uint16_t   MaxDeltaTime = (65535 - 1024);  // -1024 is to give a little bi
 #define CEILDiv(x, y) ((x)-1) / (y) + 1
 
 uint32_t roundUpPower2(uint32_t x);
-short    log2i(uint32_t n);
+int16_t  log2i(uint32_t n);
 
 #define ISPOWER2(x) (((x) & (x - 1)) == 0)
 

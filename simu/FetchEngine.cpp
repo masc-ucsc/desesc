@@ -1,17 +1,19 @@
 // See LICENSE for details.
 
-#include "FetchEngine.h"
-
 #include <climits>
 
+#include "absl/strings/str_split.h"
+#include "fmt/format.h"
+
+#include "FetchEngine.h"
 #include "GMemorySystem.h"
 #include "MemObj.h"
 #include "MemRequest.h"
 #include "Pipeline.h"
-#include "absl/strings/str_split.h"
 #include "alloca.h"
+#include "taskhandler.hpp"
 #include "config.hpp"
-#include "fmt/format.h"
+
 
 extern bool MIMDmode;
 
@@ -198,7 +200,10 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
 
   do {
     Dinst *dinst = eint->peek(fid);
-    I(dinst != nullptr);
+    if (dinst == nullptr) { // end of trace
+      TaskHandler::simu_pause(fid);
+      break;
+    }
     eint->execute(fid);
 
 #ifdef ESESC_TRACE_DATA

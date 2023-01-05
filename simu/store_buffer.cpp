@@ -29,12 +29,13 @@ void Store_buffer::remove_clean() {
 
   // FIXME: instead of removing all, randomly remove one
   for (auto it = lines.begin(); it != lines.end(); ++it) {
-    if (it->second.is_clean()) {
-      I(scb_clean_lines);
-      --scb_clean_lines;
+    if (!it->second.is_clean())
+      continue;
 
-      lines.erase(it++);
-    }
+    I(scb_clean_lines);
+    --scb_clean_lines;
+
+    lines.erase(it++);
   }
 }
 
@@ -52,7 +53,7 @@ void Store_buffer::add_st(Dinst *dinst) {
 
     Store_buffer_line line;
 
-    line.init(line_size);
+    line.init(line_size, st_addr_line);
     line.add_st(calc_offset(st_addr));
     I(line.state == Store_buffer_line::State::Uncoherent);
 
@@ -76,6 +77,7 @@ void Store_buffer::add_st(Dinst *dinst) {
   }
 
   it->second.set_waiting_wb();
+  --scb_clean_lines;
   if (dl1) {
     MemRequest::sendReqWrite(dl1, dinst->has_stats(), st_addr, dinst->getPC(), ownership_doneCB::create(this, st_addr));
   }else{
@@ -88,9 +90,7 @@ void Store_buffer::ownership_done(Addr_t st_addr) {
 
   auto it = lines.find(st_addr_line);
   I(it != lines.end());
-
-  if (it->second.is_clean())
-    return;
+  I(it->second.is_waiting_wb());
 
   ++scb_clean_lines;
   it->second.set_clean();

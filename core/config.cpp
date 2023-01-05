@@ -419,20 +419,20 @@ bool Config::get_bool(const std::string &block, const std::string &name, size_t 
   if (!ent.is_array()) {
     errors.emplace_back(
         fmt::format("conf:{} section:{} field:{} is not a array needed to chain to {}\n", filename, block, name, name2));
-    return 0;
+    return false;
   }
 
   auto ent_array = ent.as_array();
 
   if (ent_array.size() <= pos) {
     errors.emplace_back(fmt::format("conf:{} section:{} field:{} out-of-bounds array access {}\n", filename, block, name, pos));
-    return 0;
+    return false;
   }
 
   const auto t_block2 = ent_array[pos];
   if (!t_block2.is_string()) {
     errors.emplace_back(fmt::format("conf:{} section:{} field:{} should point to a section\n", filename, block, name));
-    return 0;
+    return false;
   }
 
   std::string block2{t_block2.as_string()};

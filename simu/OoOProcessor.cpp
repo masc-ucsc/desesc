@@ -204,7 +204,6 @@ bool OoOProcessor::advance_clock_drain() {
 
   if (!pipeQ.instQueue.empty()) {
     auto n =  issue();
-    fmt::print("pop:{} total:{}\n", n, spaceInInstQueue);
     spaceInInstQueue += n;
   } else if (ROB.empty() && rROB.empty() && !pipeQ.pipeLine.hasOutstandingItems()) {
     return false;

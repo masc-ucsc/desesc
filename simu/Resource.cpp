@@ -260,6 +260,8 @@ FULoad::FULoad(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *_lsq, std::sh
   }else{
     enableDcache      = false;
   }
+
+  LSQlateAlloc = Config::get_bool("soc", "core", id, "ldq_late_alloc");
 }
 /* }}} */
 
@@ -455,7 +457,7 @@ FUStore::FUStore(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *_lsq, std::
     enableDcache      = false;
   }
 
-  LSQlateAlloc = Config::get_bool("soc", "core", id, "ldq_late_alloc");
+  LSQlateAlloc = Config::get_bool("soc", "core", id, "stq_late_alloc");
 }
 /* }}} */
 

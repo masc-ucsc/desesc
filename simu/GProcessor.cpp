@@ -184,7 +184,6 @@ bool GProcessor::decode_stage() {
     IBucket *bucket = pipeQ.pipeLine.nextItem();
     if (bucket) {
       I(!bucket->empty());
-      fmt::print("push:{} total:{}\n", bucket->size(), spaceInInstQueue);
       spaceInInstQueue -= bucket->size();
       pipeQ.instQueue.push(bucket);
     } else {

@@ -1,14 +1,12 @@
 // See LICENSE for details.
 
-#include "snippets.hpp"
-
 #include <typeinfo>
 
+#include "snippets.hpp"
 #include "iassert.hpp"
 
-short log2i(uint32_t n) {
+int16_t log2i(uint32_t n) {
   uint32_t m = 1;
-  uint32_t i = 0;
 
   if (n == 1) {
     return 0;
@@ -18,6 +16,7 @@ short log2i(uint32_t n) {
   // assume integer power of 2
   I((n & (n - 1)) == 0);
 
+  int16_t i = 0;
   while (m < n) {
     i++;
     m <<= 1;
@@ -38,5 +37,6 @@ uint32_t roundUpPower2(uint32_t x) {
   x = x | (x >> 4);
   x = x | (x >> 8);
   x = x | (x >> 16);
+
   return x + 1;
 }

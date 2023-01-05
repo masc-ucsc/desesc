@@ -1357,7 +1357,6 @@ BPredictor::BPredictor(int32_t i, MemObj *iobj, MemObj *dobj, std::shared_ptr<BP
     pred1      = bpred->pred1;
     pred2      = bpred->pred2;
     pred3      = bpred->pred3;
-    meta       = bpred->meta;
     return;
   }
 
@@ -1366,7 +1365,6 @@ BPredictor::BPredictor(int32_t i, MemObj *iobj, MemObj *dobj, std::shared_ptr<BP
   pred1 = nullptr;
   pred2 = nullptr;
   pred3 = nullptr;
-  meta  = nullptr;
 
   int         last_bpred_delay = 0;
   std::string last_bpred_section;
@@ -1375,16 +1373,17 @@ BPredictor::BPredictor(int32_t i, MemObj *iobj, MemObj *dobj, std::shared_ptr<BP
 
   for (auto n = 0u; n < n_bpred; ++n) {
     auto bpred_section = Config::get_array_string(cpu_section, "bpred", n);
-    auto bpred_delay   = Config::get_integer(bpred_section, "delay", last_bpred_delay);
+    auto bpred_delay   = Config::get_integer(bpred_section, "delay", last_bpred_delay+1);
 
     if (n == 0) {
       pred1 = getBPred(id, bpred_section, "0");
+      bpredDelay1 = bpred_delay;
     } else if (n == 1) {
       pred2 = getBPred(id, bpred_section, "1");
+      bpredDelay2 = bpred_delay;
     } else if (n == 2) {
       pred3 = getBPred(id, bpred_section, "2");
-    } else if (n == 3) {
-      meta = getBPred(id, bpred_section, "3");
+      bpredDelay3 = bpred_delay;
     } else {
       I(0);
     }
@@ -1406,13 +1405,9 @@ BPredictor::~BPredictor() {
   if (pred3) {
     delete pred3;
   }
-  if (meta) {
-    delete meta;
-  }
   pred1 = 0;
   pred2 = 0;
   pred3 = 0;
-  meta  = 0;
 }
 
 void BPredictor::fetchBoundaryBegin(Dinst *dinst) {
@@ -1425,9 +1420,6 @@ void BPredictor::fetchBoundaryBegin(Dinst *dinst) {
   }
 
   pred3->fetchBoundaryBegin(dinst);
-  if (meta) {
-    meta->fetchBoundaryBegin(dinst);
-  }
 }
 
 void BPredictor::fetchBoundaryEnd() {
@@ -1439,9 +1431,6 @@ void BPredictor::fetchBoundaryEnd() {
     return;
   }
   pred3->fetchBoundaryEnd();
-  if (meta) {
-    meta->fetchBoundaryEnd();
-  }
 }
 
 PredType BPredictor::predict1(Dinst *dinst) {
@@ -1604,7 +1593,6 @@ TimeDelta_t BPredictor::predict(Dinst *dinst, bool *fastfix) {
 #if 1
   if (outcome1 == CorrectPrediction && (outcome2 == CorrectPrediction || outcome2 == NoPrediction || outcome2 == NoBTBPrediction)
       && (outcome3 == CorrectPrediction || outcome3 == NoPrediction || outcome3 == NoBTBPrediction)) {
-    I(bpredDelay1 <= bpredDelay3);
     nFixes1.inc(dinst->has_stats());
     bpred_total_delay = bpredDelay1 - 1;
 
@@ -1632,6 +1620,8 @@ TimeDelta_t BPredictor::predict(Dinst *dinst, bool *fastfix) {
     bpred_total_delay = 2;  // Anything but zero
   }
 #endif
+
+  I(bpred_total_delay <= (bpredDelay1 + bpredDelay2 + bpredDelay3));
 
   return bpred_total_delay;
 }

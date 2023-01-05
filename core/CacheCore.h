@@ -783,7 +783,7 @@ CacheGeneric<State, Addr_t> *CacheGeneric<State, Addr_t>::create(const std::stri
   auto line_size_sec   = fmt::format("{}_line_size", append);
   auto addrUnit_sec    = fmt::format("{}_addrUnit", append);
   auto assoc_sec       = fmt::format("{}_assoc", append);
-  auto repl_policy_sec = fmt::format("{}_replPolicy", append);
+  auto repl_policy_sec = fmt::format("{}_repl_policy", append);
   auto skew_sec        = fmt::format("{}_skew", append);
   auto xor_sec         = fmt::format("{}_xor", append);
   auto ship_sec        = fmt::format("{}_ship_sign_bits", append);

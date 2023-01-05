@@ -28,7 +28,7 @@ public:
   void init(size_t line_size) {
     I(state == State::Invalid);
     word_present.assign(line_size >> 2, false);
-    state = State::Invalid;
+    state = State::Uncoherent;
   }
   void set_waiting_wb() { state = State::Uncoherent; }
 
@@ -52,8 +52,8 @@ protected:
   // FA structure, so a map is fine
   absl::flat_hash_map<Addr_t, Store_buffer_line> lines;
 
-  size_t scb_size;
-  size_t scb_clean_lines;
+  int    scb_size;
+  int    scb_clean_lines;
   size_t line_size;
   size_t line_size_addr_bits;
   size_t line_size_mask;

@@ -75,10 +75,10 @@ protected:
 
   CacheType *cacheBank;
 
-  int32_t  lineSize;
-  int32_t  lineSizeBits;
-  uint64_t lineCount;
-  uint64_t maxOrder;
+  const int32_t  lineSize;
+  const int32_t  lineSizeBits;
+  const uint64_t lineCount;
+  const uint64_t maxOrder;
 
   void mergeSort(Line **arr, uint64_t len);
 

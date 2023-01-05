@@ -27,7 +27,7 @@ void TaskHandler::report() {
 void TaskHandler::add_emul(std::shared_ptr<Emul_base> eint, Hartid_t hid) {
   I(hid < 65535);  // Too many cores
 
-  if (hid > emuls.size()) {
+  if (hid >= emuls.size()) {
     emuls.resize(hid + 1, nullptr);
   }
 

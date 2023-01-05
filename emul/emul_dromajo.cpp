@@ -2,6 +2,9 @@
 
 #include "emul_dromajo.hpp"
 
+#include "absl/strings/str_split.h"
+
+#include <unistd.h>
 #include <assert.h>
 #include <stdio.h>
 
@@ -18,13 +21,21 @@ Emul_dromajo::Emul_dromajo() : Emul_base() {
     if (num == 0) {
       section = Config::get_string("soc", "emul", i);
 
-      rabbit = Config::get_integer("soc", "emul", i, "rabbit");
-      detail = Config::get_integer("soc", "emul", i, "detail");
-      time   = Config::get_integer("soc", "emul", i, "time");
-      bench  = Config::get_integer("soc", "emul", i, "bench");
+      rabbit = Config::get_integer(section, "rabbit");
+      detail = Config::get_integer(section, "detail");
+      time   = Config::get_integer(section, "time");
+      bench  = Config::get_string(section, "bench");
     }
     ++num;
   }
+  std::vector<std::string> bench_split = absl::StrSplit(bench, ' ');
+  if (bench_split.empty() || access(bench_split[0].c_str(), F_OK) == -1) {
+    Config::add_error(fmt::format("could not open dromajo bench={}\n", bench));
+    if (access(bench_split[0].c_str(), F_OK) == -1) {
+      Config::add_error(fmt::format("file {} not accessible from {} path\n", bench, get_current_dir_name()));
+    }
+  }
+  Config::exit_on_error();
   type = "dromajo";
   if (num) {
     init_dromajo_machine();

@@ -12,11 +12,11 @@ Store_buffer::Store_buffer(Hartid_t hid) {
   scb_clean_lines     = 0;
   line_size_addr_bits = log2i(line_size);
   line_size_mask      = line_size - 1;
-  scb_size            = Config::get_integer(l1_sec, "scb_size", 1, 2048);
+  scb_size            = Config::get_integer("soc", "core", hid, "scb_size", 1, 2048);
 }
 
 bool Store_buffer::can_accept_st(Addr_t st_addr) const {
-  if ((lines.size() - scb_clean_lines) < scb_size) {
+  if ((static_cast<int>(lines.size()) - scb_clean_lines) < scb_size) {
     return true;
   }
 
@@ -46,7 +46,7 @@ void Store_buffer::add_st(Dinst *dinst) {
 
   auto it = lines.find(st_addr_line);
   if (it == lines.end()) {
-    if ((lines.size() + scb_clean_lines) >= scb_size) {
+    if ((static_cast<int>(lines.size()) + scb_clean_lines) >= scb_size) {
       remove_clean();
     }
 
@@ -61,7 +61,12 @@ void Store_buffer::add_st(Dinst *dinst) {
     line.set_waiting_wb();
 
     CallbackBase *cb = ownership_doneCB::create(this, st_addr);
-    MemRequest::sendReqWrite(dl1, dinst->has_stats(), st_addr, dinst->getPC(), cb);
+    if (dl1) {
+      MemRequest::sendReqWrite(dl1, dinst->has_stats(), st_addr, dinst->getPC(), cb);
+    }else{
+      cb->schedule(1);
+    }
+
     return;
   }
 
@@ -71,7 +76,11 @@ void Store_buffer::add_st(Dinst *dinst) {
   }
 
   it->second.set_waiting_wb();
-  MemRequest::sendReqWrite(dl1, dinst->has_stats(), st_addr, dinst->getPC(), ownership_doneCB::create(this, st_addr));
+  if (dl1) {
+    MemRequest::sendReqWrite(dl1, dinst->has_stats(), st_addr, dinst->getPC(), ownership_doneCB::create(this, st_addr));
+  }else{
+    ownership_doneCB::schedule(1, this, st_addr);
+  }
 }
 
 void Store_buffer::ownership_done(Addr_t st_addr) {
@@ -79,6 +88,9 @@ void Store_buffer::ownership_done(Addr_t st_addr) {
 
   auto it = lines.find(st_addr_line);
   I(it != lines.end());
+
+  if (it->second.is_clean())
+    return;
 
   ++scb_clean_lines;
   it->second.set_clean();

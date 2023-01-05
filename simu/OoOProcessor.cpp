@@ -17,7 +17,7 @@
 #include "fmt/format.h"
 #include "taskhandler.hpp"
 
-// #define ESESC_TRACE
+#define ESESC_TRACE
 // #define ESESC_CODEPROFILE
 // #define ESESC_BRANCHPROFILE
 
@@ -203,7 +203,9 @@ bool OoOProcessor::advance_clock_drain() {
   }
 
   if (!pipeQ.instQueue.empty()) {
-    spaceInInstQueue += issue();
+    auto n =  issue();
+    fmt::print("pop:{} total:{}\n", n, spaceInInstQueue);
+    spaceInInstQueue += n;
   } else if (ROB.empty() && rROB.empty() && !pipeQ.pipeLine.hasOutstandingItems()) {
     return false;
   }
@@ -1639,7 +1641,7 @@ void OoOProcessor::retire() {
         globalClock);
 #endif
 #ifdef ESESC_TRACE
-    MSG("TR %8lld %8llx R%-2d,R%-2d=R%-2d op=%-2d R%-2d   %lld %lld %lld %lld %lld",
+    fmt::print("TR {:<8} {:<8x} r{:<2},r{:<2}= r{:<2} op={} r{:<2} ft:{} rt:{} it:{} et:{} @{}\n",
         dinst->getID(),
         dinst->getPC(),
         dinst->getInst()->getDst1(),
@@ -1647,11 +1649,11 @@ void OoOProcessor::retire() {
         dinst->getInst()->getSrc1(),
         dinst->getInst()->getOpcode(),
         dinst->getInst()->getSrc2(),
-        dinst->getFetchedTime() - globalClock,
-        dinst->getRenamedTime() - globalClock,
-        dinst->getIssuedTime() - globalClock,
-        dinst->getExecutedTime() - globalClock,
-        globalClock - globalClock);
+        globalClock - dinst->getFetchedTime(),
+        globalClock - dinst->getRenamedTime(),
+        globalClock - dinst->getIssuedTime(),
+        globalClock - dinst->getExecutedTime(),
+        globalClock);
 #endif
 
 #ifdef ESESC_TRACE3
@@ -1701,9 +1703,9 @@ void OoOProcessor::retire() {
     if (dinst->isPerformed()) {  // Stores can perform after retirement
       dinst->destroy();
     }
-  }
 
-  rROB.pop();
+    rROB.pop();
+  }
 }
 
 void OoOProcessor::replay(Dinst *target)

@@ -31,7 +31,7 @@ void Config::exit_on_error() {
     fmt::print("ERROR:{}\n", e);
   }
 
-  exit(-1);
+  abort(); // Abort no exit to avoid the likely seg-faults of a bad configuration
 }
 
 bool Config::check(const std::string &block, const std::string &name) {
@@ -188,12 +188,15 @@ int Config::get_integer(const std::string &block, const std::string &name, int f
   }
 
   auto ent = toml::find(data, block, name);
-  if (!ent.is_integer()) {
+  if (!ent.is_integer() && !ent.is_floating()) {
     errors.emplace_back(fmt::format("conf:{} section:{} field:{} is not a integer\n", filename, block, name));
     return 0;
   }
 
-  val = ent.as_integer();
+  if (ent.is_integer())
+    val = ent.as_integer();
+  else
+    val = ent.as_floating();
 
   if (val < from || val > to) {
     errors.emplace_back(fmt::format("conf:{} section:{} field:{} value:{} is not allowed range ({}..<={})\n",
@@ -228,12 +231,15 @@ int Config::get_integer(const std::string &block, const std::string &name, size_
   }
 
   auto ent2 = toml::find(data, block2, name2);
-  if (!ent2.is_integer()) {
+  if (!ent2.is_integer() && !ent2.is_floating()) {
     errors.emplace_back(fmt::format("conf:{} section:{} field:{} is not a integer\n", filename, block2, name2));
     return 0;
   }
 
-  val = ent2.as_integer();
+  if (ent2.is_integer())
+    val = ent2.as_integer();
+  else
+    val = ent2.as_floating();
 
   if (val < from || val > to) {
     errors.emplace_back(fmt::format("conf:{} section:{} field:{} value:{} is not allowed range ({}..<={})\n",
@@ -290,12 +296,17 @@ int Config::get_array_integer(const std::string &block, const std::string &name,
 
   auto arr = ent.as_array();
 
-  if (!ent.is_integer()) {
+  if (!arr[pos].is_integer() && !arr[pos].is_floating()) {
     errors.emplace_back(fmt::format("conf:{} section:{} array entry is not integer\n", filename, block, name));
     return 0;
   }
 
-  auto val = arr[pos].as_integer();
+  int val;
+  if (arr[pos].is_integer())
+    val = arr[pos].as_integer();
+  else
+    val = arr[pos].as_floating();
+
   add_used(block, name, pos, fmt::format("{}", val));
   return val;
 }
@@ -512,7 +523,7 @@ void Config::dump(int fd) {
     if (u.second.second.size() == 1) {
       str = fmt::format("{} = {}\n", u.second.first, u.second.second[0]);
     } else {
-      str        = fmt::format("{} = { ", u.second.first);
+      str        = fmt::format("{} = {{ ", u.second.first);
       bool first = true;
       for (const auto &e : u.second.second) {
         if (first) {
@@ -521,7 +532,7 @@ void Config::dump(int fd) {
           str += fmt::format(", {}", e);
         }
       }
-      str += fmt::format(" }\n");
+      str += fmt::format(" }}\n");
     }
     sz = ::write(fd, str.c_str(), str.size());
     (void)sz;

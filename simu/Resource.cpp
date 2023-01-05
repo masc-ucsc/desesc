@@ -253,9 +253,13 @@ FULoad::FULoad(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *_lsq, std::sh
     , freeEntries(size) {
   I(ms);
 
-  auto dl1_sec      = Config::get_string("soc", "core", id, "dl1");
-  auto dl1_sec_type = Config::get_string(dl1_sec, "type", {"cache", "nice", "bus"});
-  enableDcache      = dl1_sec_type != "nice";
+  if (Config::get_bool("soc", "core", id, "caches")) {
+    auto dl1_sec      = Config::get_string("soc", "core", id, "dl1");
+    auto dl1_sec_type = Config::get_string(dl1_sec, "type", {"cache", "nice", "bus"});
+    enableDcache      = dl1_sec_type != "nice";
+  }else{
+    enableDcache      = false;
+  }
 }
 /* }}} */
 
@@ -263,9 +267,7 @@ StallCause FULoad::canIssue(Dinst *dinst) {
   /* canIssue {{{1 */
 
   if (freeEntries <= 0) {
-#ifndef LSQ_LATE_EXECUTED
     I(freeEntries == 0);  // Can't be negative
-#endif
     return OutsLoadsStall;
   }
   if (!lsq->hasFreeEntries()) {
@@ -297,11 +299,9 @@ StallCause FULoad::canIssue(Dinst *dinst) {
 void FULoad::executing(Dinst *dinst) {
   /* executing {{{1 */
 
-#ifndef LSQ_LATE_EXECUTED
   if (LSQlateAlloc) {
     freeEntries--;
   }
-#endif
 
   cluster->executing(dinst);
   Time_t when = gen->nextSlot(dinst->has_stats()) + lat;
@@ -360,12 +360,6 @@ void FULoad::cacheDispatched(Dinst *dinst) {
 
 void FULoad::executed(Dinst *dinst) {
   /* executed {{{1 */
-
-#ifdef LSQ_LATE_EXECUTED
-  if (LSQlateAlloc) {
-    freeEntries--;
-  }
-#endif
 
   if (dinst->getChained()) {
     I(dinst->getFetchEngine());
@@ -453,9 +447,13 @@ FUStore::FUStore(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *_lsq, std::
                  std::shared_ptr<GMemorySystem> ms, int32_t size, int32_t id, const char *cad)
     /* constructor {{{1 */
     : MemResource(type, cls, aGen, _lsq, ss, _pref, _scb, l, ms, id, cad), freeEntries(size) {
-  auto dl1_sec      = Config::get_string("soc", "core", id, "dl1");
-  auto dl1_sec_type = Config::get_string(dl1_sec, "type", {"cache", "nice", "bus"});
-  enableDcache      = dl1_sec_type != "nice";
+  if (Config::get_bool("soc", "core", id, "caches")) {
+    auto dl1_sec      = Config::get_string("soc", "core", id, "dl1");
+    auto dl1_sec_type = Config::get_string(dl1_sec, "type", {"cache", "nice", "bus"});
+    enableDcache      = dl1_sec_type != "nice";
+  }else{
+    enableDcache      = false;
+  }
 
   LSQlateAlloc = Config::get_bool("soc", "core", id, "ldq_late_alloc");
 }
@@ -491,42 +489,6 @@ StallCause FUStore::canIssue(Dinst *dinst) {
   lsq->decFreeEntries();
   freeEntries--;
 
-#if 0
-    //update load data buffer if there is any older store for the same address
-    if(dinst->getInst()->getOpcode() == iSALU_ST) {
-      Addr_t st_addr = dinst->getAddr();
-      for(int i = 0; i < DL1->getLdBuffSize(); i++) {
-        Addr_t saddr = DL1->load_data_buffer[i].start_addr;
-        Addr_t eaddr = DL1->load_data_buffer[i].end_addr;
-        int64_t del    = DL1->load_data_buffer[i].delta;
-        if(st_addr >= saddr && st_addr <= eaddr) {
-          int idx        = 0;
-          if(del != 0) {
-            idx = abs((int)(st_addr - saddr) / del);
-          }
-          if(st_addr == (idx * del + saddr)) { //check if st_addr exactly matches this entry in buff
-            DL1->load_data_buffer[i].req_data[idx] = dinst->getData2();
-            DL1->load_data_buffer[i].valid[idx] = true;
-            DL1->load_data_buffer[i].marked[idx] = true;
-          }
-        }
-        Addr_t saddr2 = DL1->load_data_buffer[i].start_addr2;
-        Addr_t eaddr2 = DL1->load_data_buffer[i].end_addr2;
-        int64_t del2   = DL1->load_data_buffer[i].delta2;
-        if(st_addr >= saddr2 && st_addr <= eaddr2) {
-          int idx2        = 0;
-          if(del2 != 0) {
-            idx2 = abs((int)(st_addr - saddr2) / del2);
-          }
-          if(st_addr == (idx2 * del2 + saddr2)) { //check if st_addr exactly matches this entry in buff
-            DL1->load_data_buffer[i].req_data2[idx2] = dinst->getData2();
-            DL1->load_data_buffer[i].valid2[idx2] = true;
-            DL1->load_data_buffer[i].marked2[idx2] = true;
-          }
-        }
-      }
-    }
-#endif
   return NoStall;
 }
 /* }}} */
@@ -606,6 +568,8 @@ bool FUStore::preretire(Dinst *dinst, bool flushing) {
     performed(dinst);
   }
 
+  freeEntries++;
+
   return true;
 }
 /* }}} */
@@ -638,7 +602,6 @@ bool FUStore::retire(Dinst *dinst, bool flushing) {
 
   lsq->remove(dinst);
   lsq->incFreeEntries();
-  // freeEntries++;
 
   return true;
 }

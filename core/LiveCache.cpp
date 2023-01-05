@@ -36,12 +36,12 @@
 
 #include "LiveCache.h"
 
-#include <limits.h>
-#include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
+
+#include <climits>
+#include <cstdint>
+#include <cstdlib>
 
 #include <iostream>
 
@@ -49,25 +49,22 @@
 //  int)mreq->getAddr()); fprintf(stderr,##a); fprintf(stderr,"\n"); }while(0)
 #define MTRACE(a...)
 
-LiveCache::LiveCache() {
-  cacheBank    = CacheType::create("LiveCache", "", "LL");
-  lineSize     = cacheBank->getLineSize();
-  lineSizeBits = log2i(lineSize);
+LiveCache::LiveCache()
+  : cacheBank   (CacheType::create("LiveCache", "", "LL"))
+  , lineSize    (cacheBank->getLineSize())
+  , lineSizeBits(log2i(lineSize))
+  , lineCount   (cacheBank->getNumLines())
+  , maxOrder    (0) {
 
   I(getLineSize() < 4096);  // To avoid bank selection conflict (insane LiveCache line)
-
-  lineCount = (uint64_t)cacheBank->getNumLines();
-  maxOrder  = 0;
 }
 
 LiveCache::~LiveCache() { cacheBank->destroy(); }
 
 void LiveCache::read(uint64_t addr) {
-  uint64_t tmp;
+  uint64_t tmp=0;
   if (cacheBank->findLine(addr)) {
     tmp = cacheBank->findLine(addr)->getTag();
-  } else {
-    tmp = 0;
   }
   Line *l = cacheBank->fillLine(addr);
   if (l->getTag() != tmp) {

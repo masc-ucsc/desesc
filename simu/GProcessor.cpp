@@ -16,7 +16,7 @@ void SMT_fetch::update() {
     smt_active   = smt_cnt;
     smt_cnt      = 1;
   } else {
-    smt_cnt++;
+    smt_turn++;
   }
   I(smt_active > 0);
 
@@ -25,7 +25,7 @@ void SMT_fetch::update() {
     if (smt_cnt == smt_active) {
       smt_turn = 0;
     } else {
-      smt_turn = smt_active;
+      smt_turn = smt_active-1;
     }
   }
 }
@@ -49,6 +49,7 @@ void GProcessor::fetch() {
 
   auto ifid = smt_fetch.fetch_next();
   if (ifid->isBlocked()) {
+    //fmt::print("fetch on {}\n", ifid->getMissDinst()->getID());
     return;
   }
 
@@ -183,6 +184,7 @@ bool GProcessor::decode_stage() {
     IBucket *bucket = pipeQ.pipeLine.nextItem();
     if (bucket) {
       I(!bucket->empty());
+      fmt::print("push:{} total:{}\n", bucket->size(), spaceInInstQueue);
       spaceInInstQueue -= bucket->size();
       pipeQ.instQueue.push(bucket);
     } else {

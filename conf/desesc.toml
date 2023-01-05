@@ -3,12 +3,16 @@
 # and field names
 
 [soc]
-core = ["c0", "c0"]
-emul = ["drom_emu", "drom_emu"]
+# FIXME: multicore dromajo/desesc
+#core = ["c0", "c0"]
+#emul = ["drom_emu", "drom_emu"]
+core = ["c0"]
+emul = ["drom_emu"]
 
 [drom_emu]
 type      = "dromajo"
-load      = "linux_checkpoint_1"
+#load      = "linux_checkpoint_1"
+bench      = "conf/dhrystone.riscv"
 start_roi = false
 rabbit    = 1e6
 detail    = 1e6
@@ -18,6 +22,12 @@ time      = 2e6
 type = "random"  # Generate random instructions (coverage testing?)
 
 [bp0]
+type              = "imli"
+
+bp_addr_shift = 0      # bits shifted by branch predictor PC
+ras_size      = 32
+ras_prefetch  = false
+
 delay             = 1
 fetch_predict     = true   # Not a prediction per instruction
 
@@ -74,14 +84,26 @@ table_width = 3
 
 
 [bp1]
+type = "imli"
+
+bp_addr_shift = 0      # bits shifted by branch predictor PC
+ras_size      = 32
+ras_prefetch  = false
+
 delay             = 2
 fetch_predict     = true   # Not a prediction per instruction
+
 btb_history_size  = 0
 btb_split_il1     = false  # do not cache entries that can be computed by IL1
 btb_size          = 8192
 btb_line_size     = 1
 btb_assoc         = 4
 btb_repl_policy   = "LRU"
+
+nhist             = 8
+statcorrector     = false
+bimodal_size = 1024
+bimodal_width = 8
 
 [accel_entry]
 caches        = false  # set true to enable caches...
@@ -91,10 +113,6 @@ frequency_mhz = 200
 [c0]
 type  = "ooo"  # ooo or inorder or accel
 frequency_mhz = 1000
-# Branch Predictor[s] parameters
-bp_addr_shift = 0      # bits shifted by branch predictor PC
-ras_size      = 32
-ras_prefetch  = false
 bpred         = ["bp0", "bp1"]
 
 # Fetch parameters
@@ -114,6 +132,7 @@ st_fwd_delay  = 2
 ldq_size      = 96
 stq_size      = 64
 stq_late_alloc = false
+ldq_late_alloc = false
 storeset_size = 8192
 il1           = "il1_cache"
 dl1           = "dl1_cache"
@@ -130,7 +149,7 @@ retire_width = 8
 rob_size     = 320
 
 # Exe Parameters
-cluster = ["aunit", "bunit", "cunit"]
+cluster = ["aunit", "bunit", "cunit", "munit"]
 num_regs   = 256
 inter_cluster_lat    = 1
 cluster_scheduler    = "RoundRobin"
@@ -143,18 +162,22 @@ scoore_serialze      = true
 [alu0]
 num = 4
 lat = 1
+occ = 1
 
 [balu]
 num = 2
 lat = 1
+occ = 1
 
 [calu2]
 num = 2
 lat = 1
+occ = 1
 
 [lsu]
 num = 2
 lat = 1
+occ = 1
 
 [aunit]
 win_size   = 16
@@ -211,6 +234,15 @@ iSALU_LL      = "lsu"
 iSALU_SC      = "lsu"
 iSALU_ADDR    = "lsu"
 
+[dl1_cache]
+type       = "cache"   # or nice
+size       = 32768
+line_size  = 64
+delay      = 2         # hit delay
+miss_delay = 8
+assoc      = 4
+lower_level = "privl2 L2 sharedby 2"
+
 [il1_cache]
 type       = "cache"   # or nice
 size       = 32768
@@ -218,7 +250,16 @@ line_size  = 64
 delay      = 2         # hit delay
 miss_delay = 8
 assoc      = 4
-lower_level = "PrivL2 L2 sharedby 2"
+lower_level = "privl2 L2 sharedby 2"
+
+[privl2]
+type       = "nice"   # or nice
+size       = 32768
+line_size  = 64
+delay      = 2         # hit delay
+miss_delay = 8
+assoc      = 4
+lower_level = ""
 
 [pref_opt]
 type       = "stride"

@@ -91,3 +91,14 @@ http_archive(
         "https://github.com/masc-ucsc/libelf/archive/ba3c81450b91d1935fff01bae191a59d7653d2a5.zip",
     ],
 )
+
+# clang-tidy
+http_archive(
+    name = "bazel_clang_tidy",
+    sha256 = "aafe6907cc422d7619a25ee93e63321eebf95248bef7ba981404a3b70ee10c34",
+    strip_prefix = "bazel_clang_tidy-31d62bf825a94468b3d35c5ffd4e014e1c0ff566",
+    urls = [
+        "https://github.com/erenon/bazel_clang_tidy/archive/31d62bf825a94468b3d35c5ffd4e014e1c0ff566.zip"
+    ],
+)
+

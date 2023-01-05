@@ -557,7 +557,6 @@ private:
   BPred *pred1;
   BPred *pred2;
   BPred *pred3;
-  BPred *meta;
 
   int32_t FetchWidth;
   int32_t bpredDelay1;

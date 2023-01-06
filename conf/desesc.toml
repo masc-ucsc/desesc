@@ -15,8 +15,8 @@ type      = "dromajo"
 bench      = "conf/dhrystone.riscv"
 start_roi = false
 rabbit    = 1024
-detail    = 5 # 1024
-time      = 5 # 1024
+detail    = 1024
+time      = 1024
 
 [rand_emu]
 type = "random"  # Generate random instructions (coverage testing?)
@@ -270,4 +270,50 @@ distance   = 0
 bimodal_size = 1024
 bimodal_width = 8
 ntables      = 4
+
+[SRAM_Small1]
+dynamic ="exp(-4.982+2.196* ln(tech)+0.4961* ln(ports)-0.00986* sqrt(size)+0.5464* ln(size)-0.016961* width+0.4027* sqrt(width))* (10^(-9))"
+
+[SRAM_Large1]
+dynamic = "exp(-5.446+2.094* ln(tech)+0.886* ln(ports)+0.000458* sqrt(size)+0.5296* ln(size)-0.011965* width+0.31001* sqrt(width))* (10^(-9))"
+
+[SRAM_Small2]
+dynamic = "exp(-5.003+1.934* ln(tech)+0.519* ln(ports)+0.009336* sqrt(size)+0.435* ln(size)-0.002029* width+0.17867* sqrt(width))* (10^(-9))"
+
+[SRAM_Large2]
+dynamic = "exp(-6.267+1.776* ln(tech)+0.537* ln(ports)+0.00119* sqrt(size)+0.6389* ln(size)+0.00503* width+0.04* sqrt(width))* (10^(-9))"
+
+[CacheEq_Small]
+dynamic ="exp(25.7681+7.805* ln(tech)-51.032* sqrt(tech)+0.198*ln(assoc)-0.533* (assoc/line_size)+0.4692* ln(size)+0.00395* sqrt(size/(assoc * line_size)))* (10^(-9))"
+
+[CacheEq_Large]
+dynamic = "exp( 32.95+8.997* ln(tech)-63.01* sqrt(tech)+0.456 *ln(assoc)-0.8081* (assoc/line_size)+0.338* ln(size)+0.0062* sqrt(size/(assoc * line_size)))* 10^(-9)"
+
+
+[network1]
+############################################
+# Overall parameters
+fixMessagePath = false   # Packets from A to B always follow the same path
+congestionFree = false   # Do not model the routers, a fix time for each packet (addFixTime)
+addFixDelay    = 1       # Fix delay added to all the packets sent
+type           = 'mesh'  # mesh, hypercube...
+############################################
+# Router parameters
+crossLat       = 1       # Crossing Latency  : Time for a message to go through the router
+############################################
+# Local port parameters
+localNum       = 2       # Number of addressable local ports
+localPort      = 1       # Number of ports for each addressable local port
+localLat       = 1       # Local port Latency
+localOcc       = 1       # Local port Occupancy (0 means unlimited)
+############################################
+# Mesh parameters
+width          = 4       # the width of network (totalNum = width * width)
+linkBits       = 96      # Port width in bits (12=96bits)
+lWireLat       = 1       # Long Wire Latency : Slow port latency (far neighbours)
+sWireLat       = 1       # Short Wire Latency: Fast port latency (close neighbours)
+############################################
+#Hypercube parameters
+hyperNumProcs  = 64	 # the number of processors in the hypercube
+WireLat	       = 1	 # Port latency for hypercube neighbours
 

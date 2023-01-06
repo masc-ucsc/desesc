@@ -3,7 +3,7 @@
 #pragma once
 
 #include "dinst.hpp"
-#include "estl.h"
+#include "estl.hpp"
 #include "iassert.hpp"
 #include "stats.hpp"
 

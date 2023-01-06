@@ -30,7 +30,7 @@ Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #include <sys/time.h>
 #include <sys/types.h>
 
-#include "Dinst.h"
+#include "dinst.hpp"
 #include "Instruction.h"
 #include "nanassert.h"
 
@@ -42,7 +42,7 @@ public:
   void replay(Dinst *dinst) { nReplays++; }
 };
 //*********** END CREATE FAKE PROCESSOR CLASS
-#include "LSQ.h"
+#include "lsq.hpp"
 #include "config.hpp"
 
 long long instTotal = 0;

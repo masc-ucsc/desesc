@@ -4,7 +4,7 @@
 
 #include <string>
 
-#include "GMemorySystem.h"
+#include "gmemorysystem.hpp"
 #include "emul_base.hpp"
 #include "snippets.hpp"
 #include "stats.hpp"

@@ -38,11 +38,11 @@
 
 #ifdef ENABLE_CUDA
 
-#include "GPUSMProcessor.h"
+#include "gpusmprocessor.hpp"
 
-#include "ClusterManager.h"
-#include "FetchEngine.h"
-#include "GMemorySystem.h"
+#include "clustermanager.hpp"
+#include "fetchengine.hpp"
+#include "gmemorysystem.hpp"
 #include "config.hpp"
 
 GPUSMProcessor::GPUSMProcessor(GMemorySystem *gm, CPU_t i)

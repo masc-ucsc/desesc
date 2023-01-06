@@ -6,7 +6,7 @@
 #include "simu_base.hpp"
 #include "iassert.hpp"
 #include "stats.hpp"
-#include "GMemorySystem.h"
+#include "gmemorysystem.hpp"
 
 class AccProcessor : public Simu_base {
 private:

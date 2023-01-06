@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "AddressPredictor.h"
-#include "CacheCore.h"
+#include "addresspredictor.hpp"
+#include "cachecore.hpp"
 #include "callback.hpp"
 #include "port.hpp"
 #include "stats.hpp"

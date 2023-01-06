@@ -1,17 +1,15 @@
 // See LICENSE for details.
 
-#include "MemRequest.h"
-
-#include <string.h>
 
 #include <set>
 
-#include "Cluster.h"
-#include "GMemorySystem.h"
-#include "MemObj.h"
-#include "MemStruct.h"
-#include "Pipeline.h"
-#include "Resource.h"
+#include "memrequest.hpp"
+#include "cluster.hpp"
+#include "gmemorysystem.hpp"
+#include "memobj.hpp"
+#include "memstruct.hpp"
+#include "pipeline.hpp"
+#include "resource.hpp"
 #include "config.hpp"
 
 pool<MemRequest> MemRequest::actPool(2048, "MemRequest");

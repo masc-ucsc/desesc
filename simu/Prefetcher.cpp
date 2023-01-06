@@ -1,14 +1,14 @@
 // See LICENSE for details.
 
-#include "Prefetcher.h"
+#include "prefetcher.hpp"
 
 #include <math.h>
 #include <stdlib.h>
 
 #include <iostream>
 
-#include "FetchEngine.h"
-#include "MemObj.h"
+#include "fetchengine.hpp"
+#include "memobj.hpp"
 #include "config.hpp"
 
 // #define PREFETCH_HIST 1

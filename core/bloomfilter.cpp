@@ -1,6 +1,6 @@
 // See LICENSE for details.
 
-#include "BloomFilter.h"
+#include "bloomfilter.hpp"
 
 #include <stdarg.h>
 #include <string.h>

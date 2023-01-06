@@ -2,15 +2,15 @@
 
 #pragma once
 
-#include "BloomFilter.h"
-#include "FastQueue.h"
-#include "Prefetcher.h"
-#include "StoreSet.h"
+#include "bloomfilter.hpp"
+#include "fastqueue.hpp"
+#include "prefetcher.hpp"
+#include "storeset.hpp"
 #include "callback.hpp"
 #include "iassert.hpp"
 #include "stats.hpp"
 #include "store_buffer.hpp"
-#include "GMemorySystem.h"
+#include "gmemorysystem.hpp"
 
 class PortGeneric;
 class Dinst;

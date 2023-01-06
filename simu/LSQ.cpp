@@ -1,8 +1,8 @@
 // See LICENSE for details.
 
-#include "LSQ.h"
+#include "lsq.hpp"
 
-#include "GProcessor.h"
+#include "gprocessor.hpp"
 #include "config.hpp"
 #include "fmt/format.h"
 

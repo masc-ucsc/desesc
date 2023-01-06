@@ -10,7 +10,7 @@
 
 #include <vector>
 
-#include "ThreadSafeFIFO.h"
+#include "threadsafefifo.hpp"
 #include "iassert.hpp"
 #include "pool.hpp"
 #include "snippets.hpp"

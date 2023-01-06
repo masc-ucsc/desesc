@@ -19,11 +19,11 @@
 #include <map>
 #include <vector>
 
-#include "CacheCore.h"
-#include "DOLC.h"
-#include "SCTable.h"
+#include "cachecore.hpp"
+#include "dolc.hpp"
+#include "sctable.hpp"
 #include "dinst.hpp"
-#include "estl.h"
+#include "estl.hpp"
 #include "iassert.hpp"
 #include "stats.hpp"
 

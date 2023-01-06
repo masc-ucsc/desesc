@@ -12,15 +12,15 @@
 // design for Traditional and SMT processors in mind. That's the
 // reason why it manages the execution engine (RDEX).
 
-#include "Cluster.h"
-#include "ClusterManager.h"
-#include "FastQueue.h"
-#include "LSQ.h"
-#include "Pipeline.h"
-#include "Prefetcher.h"
-#include "Resource.h"
+#include "cluster.hpp"
+#include "clustermanager.hpp"
+#include "fastqueue.hpp"
+#include "lsq.hpp"
+#include "pipeline.hpp"
+#include "prefetcher.hpp"
+#include "resource.hpp"
 #include "callback.hpp"
-#include "estl.h"
+#include "estl.hpp"
 #include "simu_base.hpp"
 #include "iassert.hpp"
 #include "instruction.hpp"

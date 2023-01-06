@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-#include "MRouter.h"
+#include "mrouter.hpp"
 #include "callback.hpp"
 #include "dinst.hpp"
 #include "iassert.hpp"

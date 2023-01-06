@@ -6,14 +6,14 @@
 
 // #define MEM_TSO 1
 // #define MEM_TSO2 1
-#include "Cluster.h"
-#include "FetchEngine.h"
-#include "GMemorySystem.h"
-#include "GProcessor.h"
-#include "LSQ.h"
-#include "MemRequest.h"
-#include "OoOProcessor.h"
-#include "Resource.h"
+#include "cluster.hpp"
+#include "fetchengine.hpp"
+#include "gmemorysystem.hpp"
+#include "gprocessor.hpp"
+#include "lsq.hpp"
+#include "memrequest.hpp"
+#include "oooprocessor.hpp"
+#include "resource.hpp"
 #include "dinst.hpp"
 #include "port.hpp"
 

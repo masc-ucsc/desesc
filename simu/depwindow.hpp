@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "Resource.h"
+#include "resource.hpp"
 #include "iassert.hpp"
 #include "port.hpp"
 #include "stats.hpp"

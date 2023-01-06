@@ -1,12 +1,12 @@
 // See LICENSE for details.
 
-#include "GProcessor.h"
+#include "gprocessor.hpp"
 
 #include <sys/time.h>
 #include <unistd.h>
 
-#include "FetchEngine.h"
-#include "GMemorySystem.h"
+#include "fetchengine.hpp"
+#include "gmemorysystem.hpp"
 #include "fmt/format.h"
 #include "report.hpp"
 

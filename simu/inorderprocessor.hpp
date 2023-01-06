@@ -2,10 +2,10 @@
 
 #pragma once
 
-#include "FetchEngine.h"
-#include "GProcessor.h"
-#include "LSQ.h"
-#include "Pipeline.h"
+#include "fetchengine.hpp"
+#include "gprocessor.hpp"
+#include "lsq.hpp"
+#include "pipeline.hpp"
 #include "absl/container/flat_hash_map.h"
 #include "iassert.hpp"
 

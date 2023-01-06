@@ -1,9 +1,9 @@
 // See LICENSE for details.
 
-#include "ClusterScheduler.h"
+#include "clusterscheduler.hpp"
 
-#include "Cluster.h"
-#include "Resource.h"
+#include "cluster.hpp"
+#include "resource.hpp"
 #include "config.hpp"
 
 // #define DUMP_TRACE 1

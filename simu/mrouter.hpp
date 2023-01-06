@@ -4,8 +4,8 @@
 
 #include <vector>
 
-#include "Resource.h"
-#include "estl.h"
+#include "resource.hpp"
+#include "estl.hpp"
 #include "iassert.hpp"
 #include "snippets.hpp"
 

@@ -1,11 +1,11 @@
 // See LICENSE for details.
 
-#include "AccProcessor.h"
+#include "accprocessor.hpp"
 
 #include <math.h>
 
-#include "GMemorySystem.h"
-#include "MemRequest.h"
+#include "gmemorysystem.hpp"
+#include "memrequest.hpp"
 #include "config.hpp"
 #include "fmt/format.h"
 

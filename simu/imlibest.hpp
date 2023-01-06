@@ -36,7 +36,7 @@
 
 #include <vector>
 
-#include "DOLC.h"
+#include "dolc.hpp"
 #include "dinst.hpp"  // AddrType and Opcode
 
 // #define MEDIUM_TAGE 1

@@ -1,9 +1,9 @@
 // See LICENSE for details.
 
-#include "DepWindow.h"
+#include "depwindow.hpp"
 
-#include "GProcessor.h"
-#include "Resource.h"
+#include "gprocessor.hpp"
+#include "resource.hpp"
 #include "config.hpp"
 #include "dinst.hpp"
 #include "fmt/format.h"

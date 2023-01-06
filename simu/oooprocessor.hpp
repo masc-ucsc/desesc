@@ -5,10 +5,10 @@
 #include <algorithm>
 #include <vector>
 
-#include "FastQueue.h"
-#include "FetchEngine.h"
-#include "GProcessor.h"
-#include "Pipeline.h"
+#include "fastqueue.hpp"
+#include "fetchengine.hpp"
+#include "gprocessor.hpp"
+#include "pipeline.hpp"
 #include "callback.hpp"
 #include "iassert.hpp"
 #include "stats.hpp"

@@ -1,10 +1,10 @@
 // See LICENSE for details.
 
-#include "InOrderProcessor.h"
+#include "inorderprocessor.hpp"
 
-#include "ClusterManager.h"
-#include "FetchEngine.h"
-#include "GMemorySystem.h"
+#include "clustermanager.hpp"
+#include "fetchengine.hpp"
+#include "gmemorysystem.hpp"
 #include "config.hpp"
 
 InOrderProcessor::InOrderProcessor(std::shared_ptr<GMemorySystem> gm, CPU_t i)

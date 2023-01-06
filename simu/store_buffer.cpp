@@ -2,7 +2,7 @@
 
 #include "store_buffer.hpp"
 
-#include "MemRequest.h"
+#include "memrequest.hpp"
 #include "config.hpp"
 
 Store_buffer::Store_buffer(Hartid_t hid) {

@@ -9,7 +9,7 @@
 #include "config.hpp"
 #include "emul_base.hpp"
 #include "report.hpp"
-#include "Cluster.h"
+#include "cluster.hpp"
 
 void TaskHandler::report() {
   /* dump statistics to report file {{{1 */

@@ -6,7 +6,7 @@
 
 #include "callback.hpp"
 #include "dinst.hpp"
-#include "estl.h"
+#include "estl.hpp"
 
 #define STORESET_MERGING  1
 #define STORESET_CLEARING 1

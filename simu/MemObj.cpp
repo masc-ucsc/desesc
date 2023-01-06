@@ -1,13 +1,13 @@
 // See LICENSE for details.
 
-#include "MemObj.h"
+#include "memobj.hpp"
 
 #include <string.h>
 
 #include <set>
 
-#include "GMemorySystem.h"
-#include "MemRequest.h"
+#include "gmemorysystem.hpp"
+#include "memrequest.hpp"
 #include "absl/strings/str_split.h"
 #include "config.hpp"
 #include "fmt/format.h"

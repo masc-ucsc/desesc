@@ -2,11 +2,11 @@
 
 #pragma once
 
-#include "ClusterScheduler.h"
-#include "DepWindow.h"
+#include "clusterscheduler.hpp"
+#include "depwindow.hpp"
 #include "dinst.hpp"
 #include "iassert.hpp"
-#include "GMemorySystem.h"
+#include "gmemorysystem.hpp"
 
 class Resource;
 class GProcessor;

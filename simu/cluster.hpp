@@ -8,8 +8,8 @@
 #include <vector>
 #include <array>
 
-#include "DepWindow.h"
-#include "estl.h"
+#include "depwindow.hpp"
+#include "estl.hpp"
 #include "iassert.hpp"
 #include "instruction.hpp"
 #include "stats.hpp"

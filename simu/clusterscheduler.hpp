@@ -4,7 +4,7 @@
 
 #include <vector>
 
-#include "Resource.h"
+#include "resource.hpp"
 #include "dinst.hpp"
 
 using ResourcesPoolType = std::array<std::vector<std::shared_ptr<Resource>>, iMAX>;

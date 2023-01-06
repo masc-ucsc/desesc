@@ -1,7 +1,7 @@
 
 #include <sys/time.h>
 
-#include "CacheCore.h"
+#include "cachecore.hpp"
 #include "config.hpp"
 #include "report.hpp"
 

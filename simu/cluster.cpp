@@ -1,12 +1,12 @@
 // See LICENSE for details.
 
-#include "Cluster.h"
+#include "cluster.hpp"
 
-#include "GMemorySystem.h"
-#include "GProcessor.h"
-#include "Resource.h"
+#include "gmemorysystem.hpp"
+#include "gprocessor.hpp"
+#include "resource.hpp"
 #include "config.hpp"
-#include "estl.h"
+#include "estl.hpp"
 #include "port.hpp"
 #include "store_buffer.hpp"
 

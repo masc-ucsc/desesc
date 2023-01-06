@@ -1,6 +1,6 @@
 // See LICENSE for details.
 
-#include "Pipeline.h"
+#include "pipeline.hpp"
 
 #include "config.hpp"
 

@@ -8,7 +8,7 @@
 #include <vector>
 
 #include "dinst.hpp"
-#include "estl.h"
+#include "estl.hpp"
 #include "stats.hpp"
 
 class LSQ {

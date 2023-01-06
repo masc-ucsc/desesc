@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "AddressPredictor.h"
-#include "BPred.h"
+#include "addresspredictor.hpp"
+#include "bpred.hpp"
 #include "emul_base.hpp"
 #include "iassert.hpp"
 #include "stats.hpp"

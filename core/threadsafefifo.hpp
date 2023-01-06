@@ -8,7 +8,7 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "Snippets.h"
+#include "snippets.hpp"
 
 template <class Type>
 class ThreadSafeFIFO {

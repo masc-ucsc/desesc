@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "MRouter.h"
-#include "MemObj.h"
+#include "mrouter.hpp"
+#include "memobj.hpp"
 #include "iassert.hpp"
 
 #ifndef NDEBUG

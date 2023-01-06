@@ -6,7 +6,7 @@
 #include <set>
 #include <vector>
 
-#include "FastQueue.h"
+#include "fastqueue.hpp"
 #include "dinst.hpp"
 #include "iassert.hpp"
 

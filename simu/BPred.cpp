@@ -1,6 +1,6 @@
 // See LICENSE for details.
 
-#include "BPred.h"
+#include "bpred.hpp"
 
 #include <alloca.h>
 #include <assert.h>
@@ -13,8 +13,8 @@
 #include <ios>
 #include <iostream>
 
-#include "IMLIBest.h"
-#include "MemObj.h"
+#include "imlibest.hpp"
+#include "memobj.hpp"
 #include "config.hpp"
 #include "fmt/format.h"
 #include "report.hpp"

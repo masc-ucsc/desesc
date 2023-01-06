@@ -1,6 +1,6 @@
 // See LICENSE for details.
 
-#include "OoOProcessor.h"
+#include "oooprocessor.hpp"
 
 #include <math.h>
 
@@ -9,10 +9,10 @@
 #include <iterator>
 #include <numeric>
 
-#include "FastQueue.h"
-#include "FetchEngine.h"
-#include "GMemorySystem.h"
-#include "MemRequest.h"
+#include "fastqueue.hpp"
+#include "fetchengine.hpp"
+#include "gmemorysystem.hpp"
+#include "memrequest.hpp"
 #include "config.hpp"
 #include "fmt/format.h"
 #include "taskhandler.hpp"
@@ -1619,26 +1619,7 @@ void OoOProcessor::retire() {
                          dinst->get_trig_ld_status());
     }
 #endif
-#ifdef ESESC_TRACE1
-    if (dinst->getPC() == 0x1100c || dinst->getPC() == 0x11008) {
-      MSG("TR %8llx %lld\n", dinst->getPC(), dinst->getAddr());
-    }
-#endif
-#ifdef ESESC_TRACE2
-    MSG("TR %8lld %8llx R%-2d,R%-2d=R%-2d op=%-2d R%-2d   %lld %lld %lld %lld %lld",
-        dinst->getID(),
-        dinst->getPC(),
-        dinst->getInst()->getDst1(),
-        dinst->getInst()->getDst2(),
-        dinst->getInst()->getSrc1(),
-        dinst->getInst()->getOpcode(),
-        dinst->getInst()->getSrc2(),
-        dinst->getFetchedTime(),
-        dinst->getRenamedTime(),
-        dinst->getIssuedTime(),
-        dinst->getExecutedTime(),
-        globalClock);
-#endif
+
 #ifdef ESESC_TRACE
     fmt::print("TR {:<8} {:<8x} r{:<2},r{:<2}= r{:<2} op={} r{:<2} ft:{} rt:{} it:{} et:{} @{}\n",
         dinst->getID(),
@@ -1653,22 +1634,6 @@ void OoOProcessor::retire() {
         globalClock - dinst->getIssuedTime(),
         globalClock - dinst->getExecutedTime(),
         globalClock);
-#endif
-
-#ifdef ESESC_TRACE3
-    if (dinst->getPC() == 0x10c96 || dinst->getPC() == 0x10c9a || dinst->getPC() == 0x10c9e) {
-      MSG("TR %8lld %8llx R%-2d,R%-2d=R%-2d op=%-2d R%-2d  %lld %lld %lld",
-          dinst->getID(),
-          dinst->getPC(),
-          dinst->getInst()->getDst1(),
-          dinst->getInst()->getDst2(),
-          dinst->getInst()->getSrc1(),
-          dinst->getInst()->getOpcode(),
-          dinst->getInst()->getSrc2(),
-          dinst->getData(),
-          dinst->getData2(),
-          dinst->getAddr());
-    }
 #endif
 
 #ifdef WAVESNAP_EN

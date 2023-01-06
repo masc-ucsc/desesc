@@ -1,11 +1,11 @@
 // See LICENSE for details.
 
-#include "ClusterManager.h"
+#include "clustermanager.hpp"
 
-#include "Cluster.h"
-#include "ClusterScheduler.h"
-#include "GMemorySystem.h"
-#include "Resource.h"
+#include "cluster.hpp"
+#include "clusterscheduler.hpp"
+#include "gmemorysystem.hpp"
+#include "resource.hpp"
 #include "config.hpp"
 
 ClusterManager::ClusterManager(std::shared_ptr<GMemorySystem> ms, uint32_t cpuid, GProcessor *gproc) {

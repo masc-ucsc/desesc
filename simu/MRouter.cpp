@@ -33,10 +33,10 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "MRouter.h"
+#include "mrouter.hpp"
 
-#include "DrawArch.h"
-#include "MemRequest.h"
+#include "drawarch.hpp"
+#include "memrequest.hpp"
 extern DrawArch arch;
 
 /* }}} */

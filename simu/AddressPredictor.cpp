@@ -1,14 +1,14 @@
 // See LICENSE for details.
 
-#include "AddressPredictor.h"
+#include "addresspredictor.hpp"
 
 #include <math.h>
 #include <stdlib.h>
 
 #include <iostream>
 
-#include "MemObj.h"
-#include "MemRequest.h"
+#include "memobj.hpp"
+#include "memrequest.hpp"
 #include "config.hpp"
 #include "dinst.hpp"
 

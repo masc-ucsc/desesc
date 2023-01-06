@@ -1,12 +1,12 @@
 // See LICENSE for details.
 
-#include "GMemorySystem.h"
+#include "gmemorysystem.hpp"
 
 #include <cstdlib>
 #include <string>
 
-#include "DrawArch.h"
-#include "MemObj.h"
+#include "drawarch.hpp"
+#include "memobj.hpp"
 #include "absl/strings/str_split.h"
 #include "config.hpp"
 

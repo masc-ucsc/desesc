@@ -5,7 +5,7 @@
 #include <algorithm>  // std::find()..
 #include <vector>     // std::vector<>
 
-#include "TQueue.h"
+#include "tqueue.hpp"
 #include "fmt/format.h"
 #include "iassert.hpp"
 #include "pool.hpp"

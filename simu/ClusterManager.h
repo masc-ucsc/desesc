@@ -13,11 +13,11 @@ class GProcessor;
 
 class ClusterManager {
 private:
-  ClusterScheduler *scheduler;
+  std::unique_ptr<ClusterScheduler> scheduler;
 
 protected:
 public:
   ClusterManager(std::shared_ptr<GMemorySystem> gms, uint32_t cpuid, GProcessor *gproc);
 
-  Resource *getResource(Dinst *dinst) const { return scheduler->getResource(dinst); }
+  std::shared_ptr<Resource> getResource(Dinst *dinst) const { return scheduler->getResource(dinst); }
 };

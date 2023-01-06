@@ -18,7 +18,7 @@ private:
   Stats_avg  avgPrefetchConf;
   Stats_hist histPrefetchDelta;
 
-  AddressPredictor *apred;
+  std::unique_ptr<AddressPredictor> apred;
 
   int32_t degree;
   int32_t distance;

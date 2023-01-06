@@ -300,11 +300,11 @@ StallCause OoOProcessor::add_inst(Dinst *dinst) {
     return SmallREGStall;
   }
 
-  Cluster *cluster = dinst->getCluster();
+  auto cluster = dinst->getCluster();
   if (!cluster) {
-    Resource *res = clusterManager.getResource(dinst);
-    cluster       = res->getCluster();
-    dinst->setCluster(cluster, res);
+    auto res = clusterManager.getResource(dinst);
+    cluster  = res->getCluster();
+    dinst->set(cluster, res);
   }
 
   StallCause sc = cluster->canIssue(dinst);

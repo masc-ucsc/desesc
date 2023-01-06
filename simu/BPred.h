@@ -224,7 +224,7 @@ class BPIMLI : public BPred {
 private:
   BPBTB btb;
 
-  IMLIBest *imli;
+  std::unique_ptr<IMLIBest> imli;
 
   const bool FetchPredict;
 
@@ -554,10 +554,10 @@ private:
   MemObj       *il1;  // For prefetch
   MemObj       *dl1;  //
 
-  BPRas *ras;
-  BPred *pred1;
-  BPred *pred2;
-  BPred *pred3;
+  std::unique_ptr<BPRas> ras;
+  std::shared_ptr<BPred> pred1;
+  std::shared_ptr<BPred> pred2;
+  std::shared_ptr<BPred> pred3;
 
   int32_t FetchWidth;
   int32_t bpredDelay1;
@@ -595,9 +595,8 @@ protected:
 
 public:
   BPredictor(int32_t i, MemObj *il1, MemObj *DL1, std::shared_ptr<BPredictor> bpred = nullptr);
-  ~BPredictor();
 
-  static BPred *getBPred(int32_t id, const std::string &sname, const std::string &sec, MemObj *dl1 = 0);
+  static std::unique_ptr<BPred> getBPred(int32_t id, const std::string &sname, const std::string &sec, MemObj *dl1 = 0);
 
   void        fetchBoundaryBegin(Dinst *dinst);
   void        fetchBoundaryEnd();

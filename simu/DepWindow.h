@@ -12,7 +12,7 @@ class Cluster;
 
 class DepWindow {
 private:
-  Cluster *srcCluster;
+  int src_cluster_id;
 
   TimeDelta_t inter_cluster_lat;
   TimeDelta_t sched_lat;
@@ -26,7 +26,7 @@ protected:
 
 public:
   ~DepWindow();
-  DepWindow(uint32_t cpuid, Cluster *aCluster, const std::string &clusterName, uint32_t pos);
+  DepWindow(uint32_t cpuid, int _src_cluster_id, const std::string &clusterName, uint32_t pos);
 
   void select(Dinst *dinst);
 

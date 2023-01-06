@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <memory>
+
 #include "callback.hpp"
 #include "iassert.hpp"
 #include "instruction.hpp"
@@ -184,8 +186,8 @@ private:
   bool     br_ld_chain;
 #endif
 
-  Cluster     *cluster;
-  Resource    *resource;
+  std::shared_ptr<Cluster>     cluster;
+  std::shared_ptr<Resource>    resource;
   Dinst      **RAT1Entry;
   Dinst      **RAT2Entry;
   Dinst      **serializeEntry;
@@ -206,12 +208,12 @@ private:
 #endif
     first = 0;
 
-    cluster             = 0;
-    resource            = 0;
     RAT1Entry           = 0;
     RAT2Entry           = 0;
     serializeEntry      = 0;
     fetch               = 0;
+    cluster             = nullptr;
+    resource            = nullptr;
     branchMiss          = false;
     use_level3          = false;
     trig_ld1_pred       = false;
@@ -441,17 +443,12 @@ public:
   void destroy();
   void recycle();
 
-  void clearCluster() {
-    cluster  = 0;
-    resource = 0;
-  }
-
-  void setCluster(Cluster *cls, Resource *res) {
-    cluster  = cls;
+  void set(std::shared_ptr<Cluster> cls, std::shared_ptr<Resource> res) {
+    cluster = cls;
     resource = res;
   }
-  Cluster  *getCluster() const { return cluster; }
-  Resource *getClusterResource() const { return resource; }
+  std::shared_ptr<Cluster> getCluster() const { return cluster; }
+  std::shared_ptr<Resource> getClusterResource() const { return resource; }
 
   void clearRATEntry();
   void setRAT1Entry(Dinst **rentry) {

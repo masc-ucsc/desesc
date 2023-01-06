@@ -8,8 +8,8 @@
 #include "dinst.hpp"
 #include "fmt/format.h"
 
-DepWindow::DepWindow(uint32_t cpuid, Cluster *aCluster, const std::string &clusterName, uint32_t pos)
-    : srcCluster(aCluster), inter_cluster_fwd(fmt::format("P({})_{}{}_inter_cluster_fwd", cpuid, clusterName, pos)) {
+DepWindow::DepWindow(uint32_t cpuid, int src_id, const std::string &clusterName, uint32_t pos)
+    : src_cluster_id(src_id), inter_cluster_fwd(fmt::format("P({})_{}{}_inter_cluster_fwd", cpuid, clusterName, pos)) {
   auto cadena    = fmt::format("P(P{}_{}{}_sched", cpuid, clusterName, pos);
   auto sched_num = Config::get_integer(clusterName, "sched_num");
   auto sched_occ = Config::get_integer(clusterName, "sched_occ");
@@ -52,9 +52,9 @@ void DepWindow::select(Dinst *dinst) {
     schedTime += sched_lat;
   }
 
-  I(srcCluster == dinst->getCluster());
+  I(src_cluster_id == dinst->getCluster()->get_id());
 
-  Resource::executingCB::scheduleAbs(schedTime, dinst->getClusterResource(), dinst);
+  Resource::executingCB::scheduleAbs(schedTime, dinst->getClusterResource().get(), dinst); // NASTY to avoid callback ptr
 }
 
 // Called when dinst finished execution. Look for dependent to wakeUp
@@ -73,7 +73,7 @@ void DepWindow::executed(Dinst *dinst) {
   // NEVER HERE FOR in-order cores
 
   I(dinst->getCluster());
-  I(srcCluster == dinst->getCluster());
+  I(src_cluster_id == dinst->getCluster()->get_id());
 
   I(dinst->isIssued());
   while (dinst->hasPending()) {
@@ -85,10 +85,10 @@ void DepWindow::executed(Dinst *dinst) {
     if (!dstReady->hasDeps()) {
       // Check dstRes because dstReady may not be issued
       I(dstReady->getCluster());
-      const Cluster *dstCluster = dstReady->getCluster();
-      I(dstCluster);
+      auto dst_cluster_id = dstReady->getCluster()->get_id();
+      I(dst_cluster_id);
 
-      if (dstCluster != srcCluster) {
+      if (dst_cluster_id != src_cluster_id) {
         inter_cluster_fwd.inc(dstReady->has_stats());
         dstReady->markInterCluster();
       }

@@ -120,11 +120,11 @@ if ((ROB.size() + rROB.size()) >= (MaxROBSize - 1)) {
   return SmallROBStall;
 }
 
-Cluster *cluster = dinst->getCluster();
+auto cluster = dinst->getCluster();
 if (!cluster) {
-  Resource *res = clusterManager.getResource(dinst);
+  auto res = clusterManager.getResource(dinst);
   cluster       = res->getCluster();
-  dinst->setCluster(cluster, res);
+  dinst->set(cluster, res);
 }
 
 I(dinst->getFlowId() == hid);

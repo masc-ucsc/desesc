@@ -56,16 +56,6 @@ public:
     return simus.size();
   }
 
-  static std::shared_ptr<Emul_base> ref_emul(Hartid_t fid) {
-    I(fid < emuls.size());
-    return emuls[fid];
-  };
-
-  static std::shared_ptr<Simu_base> ref_simu(Hartid_t fid) {
-    I(fid < simus.size());
-    return simus[fid];
-  };
-
   static void plugBegin();
   static void plugEnd();
   static void boot();

@@ -36,7 +36,7 @@ class LSQ;
 
 class Resource {
 protected:
-  Cluster *const     cluster;
+  const std::shared_ptr<Cluster> cluster;
   PortGeneric *const gen;
 
   Stats_avg  avgRenameTime;
@@ -53,15 +53,15 @@ protected:
   Time_t usedTime;
   bool   inorder;
 
-  Resource(uint8_t type, Cluster *cls, PortGeneric *gen, TimeDelta_t l, uint32_t cpuid);
+  Resource(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *gen, TimeDelta_t l, uint32_t cpuid);
 
   void setStats(const Dinst *dinst);
 
 public:
   virtual ~Resource();
 
-  const Cluster *getCluster() const { return cluster; }
-  Cluster       *getCluster() { return cluster; }
+  const std::shared_ptr<Cluster> getCluster() const { return cluster; }
+  std::shared_ptr<Cluster>       getCluster() { return cluster; }
 
   // Sequence:
   //
@@ -99,6 +99,9 @@ protected:
   std::shared_ptr<StoreSet> storeset;
   void                      replayManage(Dinst *dinst);
   struct FailType {
+    FailType() {
+      ssid = -1;
+    }
     SSID_t ssid;
     Time_t id;
     Addr_t pc;
@@ -106,10 +109,10 @@ protected:
     Addr_t data;
     Opcode op;
   };
-  FailType *lf;
+  std::vector<FailType> lf;
 
 public:
-  MemReplay(uint8_t type, Cluster *cls, PortGeneric *gen, std::shared_ptr<StoreSet> ss, TimeDelta_t l, uint32_t cpuid);
+  MemReplay(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *gen, std::shared_ptr<StoreSet> ss, TimeDelta_t l, uint32_t cpuid);
 };
 
 class MemResource : public MemReplay {
@@ -117,7 +120,6 @@ private:
 protected:
   MemObj                       *firstLevelMemObj;
   MemObj                       *DL1;
-  std::shared_ptr<GMemorySystem> memorySystem;
   LSQ                          *lsq;
   std::shared_ptr<Prefetcher>   pref;
   std::shared_ptr<Store_buffer> scb;
@@ -125,7 +127,7 @@ protected:
 
   bool LSQlateAlloc;
 
-  MemResource(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *lsq, std::shared_ptr<StoreSet> ss,
+  MemResource(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, LSQ *lsq, std::shared_ptr<StoreSet> ss,
               std::shared_ptr<Prefetcher> pref, std::shared_ptr<Store_buffer> scb, TimeDelta_t l, std::shared_ptr<GMemorySystem> ms, int32_t id,
               const char *cad);
 
@@ -147,7 +149,7 @@ protected:
   typedef CallbackMember1<FULoad, Dinst *, &FULoad::cacheDispatched> cacheDispatchedCB;
 
 public:
-  FULoad(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *lsq, std::shared_ptr<StoreSet> ss, std::shared_ptr<Prefetcher> pref,
+  FULoad(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, LSQ *lsq, std::shared_ptr<StoreSet> ss, std::shared_ptr<Prefetcher> pref,
          std::shared_ptr<Store_buffer> scb, TimeDelta_t lsdelay, TimeDelta_t l, std::shared_ptr<GMemorySystem> ms, int32_t size, int32_t id,
          const char *cad);
 
@@ -165,7 +167,7 @@ private:
   bool    enableDcache;
 
 public:
-  FUStore(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *lsq, std::shared_ptr<StoreSet> ss, std::shared_ptr<Prefetcher> pref,
+  FUStore(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, LSQ *lsq, std::shared_ptr<StoreSet> ss, std::shared_ptr<Prefetcher> pref,
           std::shared_ptr<Store_buffer> scb, TimeDelta_t l, std::shared_ptr<GMemorySystem> ms, int32_t size, int32_t id, const char *cad);
 
   StallCause canIssue(Dinst *dinst);
@@ -180,7 +182,7 @@ class FUGeneric : public Resource {
 private:
 protected:
 public:
-  FUGeneric(uint8_t type, Cluster *cls, PortGeneric *aGen, TimeDelta_t l, uint32_t cpuid);
+  FUGeneric(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, TimeDelta_t l, uint32_t cpuid);
 
   StallCause canIssue(Dinst *dinst);
   void       executing(Dinst *dinst);
@@ -197,7 +199,7 @@ private:
 
 protected:
 public:
-  FUBranch(uint8_t type, Cluster *cls, PortGeneric *aGen, TimeDelta_t l, uint32_t cpuid, int32_t mb, bool dom);
+  FUBranch(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, TimeDelta_t l, uint32_t cpuid, int32_t mb, bool dom);
 
   StallCause canIssue(Dinst *dinst);
   void       executing(Dinst *dinst);
@@ -215,7 +217,7 @@ private:
 
 protected:
 public:
-  FURALU(uint8_t type, Cluster *cls, PortGeneric *aGen, TimeDelta_t l, int32_t id);
+  FURALU(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, TimeDelta_t l, int32_t id);
 
   StallCause canIssue(Dinst *dinst);
   void       executing(Dinst *dinst);

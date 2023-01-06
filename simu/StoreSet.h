@@ -59,7 +59,7 @@ private:
 #endif
 public:
   StoreSet(const int32_t hid);
-  ~StoreSet() {}
+  ~StoreSet();
 
   bool insert(Dinst *dinst);
   void remove(Dinst *dinst);

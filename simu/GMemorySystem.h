@@ -14,7 +14,6 @@ class MemObj;
 
 class MemoryObjContainer {
 private:
-  std::vector<MemObj *>                   mem_node;
   typedef std::map<std::string, MemObj *> StrToMemoryObjMapper;
   StrToMemoryObjMapper                    intlMemoryObjContainer;
 
@@ -47,8 +46,6 @@ private:
     return mo;
   }
 
-  static std::vector<std::string> MemObjNames;
-
   MemObj *DL1;   // Data L1 cache
   MemObj *IL1;   // Instruction L1 cache
   MemObj *pref;  // Prefetcher
@@ -78,10 +75,6 @@ public:
   MemObj *declareMemoryObj_uniqueName(const std::string &name, const std::string &device_descr_section);
   MemObj *declareMemoryObj(const std::string &block, const std::string &field);
   MemObj *finishDeclareMemoryObj(const std::vector<std::string> &vPars, const std::string &name_suffix = "");
-
-  uint32_t    getNumMemObjs() { return MemObjNames.size(); }
-  void        addMemObjName(const std::string &name) { MemObjNames.push_back(name); }
-  std::string getMemObjName(uint32_t i) { return MemObjNames[i]; }
 
   uint32_t getCoreId() const { return coreId; };
   MemObj  *getDL1() const { return DL1; };

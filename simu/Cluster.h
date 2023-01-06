@@ -4,7 +4,9 @@
 
 #include <limits.h>
 
+#include <memory>
 #include <vector>
+#include <array>
 
 #include "DepWindow.h"
 #include "estl.h"
@@ -17,7 +19,7 @@ class GMemorySystem;
 
 class Cluster {
 private:
-  void buildUnit(const std::string &clusterName, uint32_t pos, std::shared_ptr<GMemorySystem> ms, Cluster *cluster, Opcode type, GProcessor *gproc);
+  std::shared_ptr<Resource> buildUnit(const std::string &clusterName, uint32_t pos, std::shared_ptr<GMemorySystem> ms, std::shared_ptr<Cluster> cluster, Opcode type, GProcessor *gproc);
 
 protected:
   DepWindow window;
@@ -31,7 +33,6 @@ protected:
   Stats_cntr rdRegPool;
   Stats_cntr wrRegPool;
 
-  Resource *res[iMAX];
 
   int32_t nRegs;
   int32_t regPool;
@@ -41,7 +42,22 @@ protected:
 
   std::string name;
 
-protected:
+  static inline int cluster_id_counter=1;
+  int cluster_id;
+
+  struct UnitEntry {
+    PortGeneric *gen;
+    int32_t      num;
+    int32_t      occ;
+  };
+
+  static inline std::map<std::string, UnitEntry>  unitMap;
+  static inline std::map<std::string, std::shared_ptr<Resource>> resourceMap;
+  static inline std::map<std::string, std::pair<
+    std::shared_ptr<Cluster>
+    ,std::array<std::shared_ptr<Resource>, iMAX>
+    >>  clusterMap;
+
   void delEntry() {
     windowSize++;
     I(windowSize <= MaxWinSize);
@@ -51,24 +67,31 @@ protected:
     I(windowSize >= 0);
   }
 
-  virtual ~Cluster();
   Cluster(const std::string &clusterName, uint32_t pos, uint32_t cpuid);
 
 public:
+  virtual ~Cluster();
+
+  static void unplug() {
+    unitMap.clear();
+    resourceMap.clear();
+    clusterMap.clear();
+  }
+
   void select(Dinst *dinst);
 
   virtual void executing(Dinst *dinst)           = 0;
   virtual void executed(Dinst *dinst)            = 0;
   virtual bool retire(Dinst *dinst, bool replay) = 0;
 
-  static Cluster *create(const std::string &clusterName, uint32_t pos, std::shared_ptr<GMemorySystem> ms, uint32_t cpuid, GProcessor *gproc);
-
-  Resource *getResource(Opcode type) const {
-    I(type < iMAX);
-    return res[type];
-  }
+  static std::pair<
+     std::shared_ptr<Cluster>
+    ,std::array<std::shared_ptr<Resource>, iMAX>
+    >
+    create(const std::string &clusterName, uint32_t pos, std::shared_ptr<GMemorySystem> ms, uint32_t cpuid, GProcessor *gproc);
 
   const std::string &getName() const { return name; }
+  int get_id() const { return cluster_id; }
 
   StallCause canIssue(Dinst *dinst) const;
   void       add_inst(Dinst *dinst);

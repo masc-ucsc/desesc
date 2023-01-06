@@ -23,7 +23,7 @@
 
 /* }}} */
 
-Resource::Resource(uint8_t type, Cluster *cls, PortGeneric *aGen, TimeDelta_t l, uint32_t cpuid)
+Resource::Resource(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, TimeDelta_t l, uint32_t cpuid)
     /* constructor {{{1 */
     : cluster(cls)
     , gen(aGen)
@@ -72,7 +72,7 @@ void Resource::setStats(const Dinst *dinst) {
 Resource::~Resource()
 /* destructor {{{1 */
 {
-  if (!EventScheduler::empty()) {
+  if (EventScheduler::size()>10) {
     fmt::print("Resources destroyed with {} pending instructions (small is OK)\n", EventScheduler::size());
   }
 
@@ -84,13 +84,12 @@ Resource::~Resource()
 
 /***********************************************/
 
-MemResource::MemResource(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *_lsq, std::shared_ptr<StoreSet> ss,
+MemResource::MemResource(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, LSQ *_lsq, std::shared_ptr<StoreSet> ss,
                          std::shared_ptr<Prefetcher> _pref, std::shared_ptr<Store_buffer> _scb, TimeDelta_t l,
                          std::shared_ptr<GMemorySystem> ms, int32_t id, const char *cad)
     /* constructor {{{1 */
     : MemReplay(type, cls, aGen, ss, l, id)
     , firstLevelMemObj(ms->getDL1())
-    , memorySystem(ms)
     , lsq(_lsq)
     , pref(_pref)
     , scb(_scb)
@@ -112,12 +111,9 @@ MemResource::MemResource(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *_ls
 
 /* }}} */
 
-MemReplay::MemReplay(uint8_t type, Cluster *cls, PortGeneric *_gen, std::shared_ptr<StoreSet> ss, TimeDelta_t l, uint32_t cpuid)
+MemReplay::MemReplay(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *_gen, std::shared_ptr<StoreSet> ss, TimeDelta_t l, uint32_t cpuid)
     : Resource(type, cls, _gen, l, cpuid), lfSize(8), storeset(ss) {
-  lf = (struct FailType *)malloc(sizeof(struct FailType) * lfSize);
-  for (uint32_t i = 0; i < lfSize; i++) {
-    lf[i].ssid = -1;
-  }
+  lf.resize(lfSize);
 }
 
 void MemReplay::replayManage(Dinst *dinst) {
@@ -241,7 +237,7 @@ void MemReplay::replayManage(Dinst *dinst) {
 
 /***********************************************/
 
-FULoad::FULoad(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *_lsq, std::shared_ptr<StoreSet> ss,
+FULoad::FULoad(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, LSQ *_lsq, std::shared_ptr<StoreSet> ss,
                std::shared_ptr<Prefetcher> _pref, std::shared_ptr<Store_buffer> _scb, TimeDelta_t lsdelay, TimeDelta_t l,
                std::shared_ptr<GMemorySystem> ms, int32_t size, int32_t id, const char *cad)
     /* Constructor {{{1 */
@@ -444,7 +440,7 @@ void FULoad::performed(Dinst *dinst) {
 
 /***********************************************/
 
-FUStore::FUStore(uint8_t type, Cluster *cls, PortGeneric *aGen, LSQ *_lsq, std::shared_ptr<StoreSet> ss,
+FUStore::FUStore(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, LSQ *_lsq, std::shared_ptr<StoreSet> ss,
                  std::shared_ptr<Prefetcher> _pref, std::shared_ptr<Store_buffer> _scb, TimeDelta_t l,
                  std::shared_ptr<GMemorySystem> ms, int32_t size, int32_t id, const char *cad)
     /* constructor {{{1 */
@@ -610,7 +606,7 @@ bool FUStore::retire(Dinst *dinst, bool flushing) {
 
 /***********************************************/
 
-FUGeneric::FUGeneric(uint8_t type, Cluster *cls, PortGeneric *aGen, TimeDelta_t l, uint32_t cpuid)
+FUGeneric::FUGeneric(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, TimeDelta_t l, uint32_t cpuid)
     /* constructor {{{1 */
     : Resource(type, cls, aGen, l, cpuid) {}
 /* }}} */
@@ -679,7 +675,7 @@ void FUGeneric::performed(Dinst *dinst) {
 
 /***********************************************/
 
-FUBranch::FUBranch(uint8_t type, Cluster *cls, PortGeneric *aGen, TimeDelta_t l, uint32_t cpuid, int32_t mb, bool dom)
+FUBranch::FUBranch(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, TimeDelta_t l, uint32_t cpuid, int32_t mb, bool dom)
     /* constructor {{{1 */
     : Resource(type, cls, aGen, l, cpuid), freeBranches(mb), drainOnMiss(dom) {
   I(freeBranches > 0);
@@ -749,7 +745,7 @@ void FUBranch::performed(Dinst *dinst) {
 
 /***********************************************/
 
-FURALU::FURALU(uint8_t type, Cluster *cls, PortGeneric *aGen, TimeDelta_t l, int32_t id)
+FURALU::FURALU(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, TimeDelta_t l, int32_t id)
     /* constructor {{{1 */
     : Resource(type, cls, aGen, l, id)
     , dmemoryBarrier(fmt::format("P({})_{}_dmemoryBarrier", id, cls->getName()))

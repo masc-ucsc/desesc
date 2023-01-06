@@ -13,7 +13,7 @@ StoreSet::StoreSet(const int32_t id)
 {
 
   SSIT.resize(StoreSetSize);
-  LFST.resize(StoreSetSize);
+  LFST.resize(StoreSetSize, nullptr);
   clear_SSIT();
   clear_LFST();
 
@@ -27,6 +27,9 @@ StoreSet::StoreSet(const int32_t id)
 #endif
 }
 /* }}} */
+
+StoreSet::~StoreSet() {
+}
 
 SSID_t StoreSet::create_id() {
   static SSID_t rnd = 0;
@@ -87,18 +90,14 @@ void StoreSet::merge_sets(Dinst *m_dinst, Dinst *d_dinst)
 void StoreSet::clear_SSIT()
 /* Clear all the SSIT entries {{{1 */
 {
-  for (int i = 0; i < StoreSetSize; i++) {
-    SSIT[i] = -1;
-  }
+  std::fill(SSIT.begin(), SSIT.end(), -1);
 }
 /* }}} */
 
 void StoreSet::clear_LFST(void)
 /* clear all the LFST entries {{{1 */
 {
-  for (size_t i = 0; i < LFST.size(); i++) {
-    LFST[i] = nullptr;
-  }
+  std::fill(LFST.begin(), LFST.end(), nullptr);
 }
 /* }}} */
 

@@ -9,6 +9,7 @@
 #include "config.hpp"
 #include "emul_base.hpp"
 #include "report.hpp"
+#include "Cluster.h"
 
 void TaskHandler::report() {
   /* dump statistics to report file {{{1 */
@@ -122,16 +123,16 @@ void TaskHandler::boot() {
     for (auto hid : running) {
       if (likely(!allmaps[hid].deactivating)) {
         allmaps[hid].simu->advance_clock();
-      } else {
-        auto work_done = allmaps[hid].simu->advance_clock_drain();
-        if (!work_done) {
-          allmaps[hid].active       = false;
-          allmaps[hid].deactivating = false;  // already deactivated
-          allmaps[hid].simu->set_power_down();
+        continue;
+      } 
+      auto work_done = allmaps[hid].simu->advance_clock_drain();
+      if (!work_done) {
+        allmaps[hid].active       = false;
+        allmaps[hid].deactivating = false;  // already deactivated
+        allmaps[hid].simu->set_power_down();
 
-          running.erase(hid);
-          break;  // core_pause can break the iterator
-        }
+        running.erase(hid);
+        break;  // core_pause can break the iterator
       }
     }
 
@@ -141,7 +142,8 @@ void TaskHandler::boot() {
 
 void TaskHandler::unboot()
 /* nothing to do {{{1 */
-{}
+{
+}
 /* }}} */
 
 void TaskHandler::plugBegin()
@@ -216,6 +218,11 @@ void TaskHandler::unplug()
     }
   }
 #endif
+  allmaps.clear();
+  emuls.clear();
+  simus.clear();
+
+  Cluster::unplug();
 }
 /* }}} */
 

@@ -516,7 +516,7 @@ BPIMLI::BPIMLI(int32_t i, const std::string &section, const std::string &sname)
 
   bool statcorrector = Config::get_bool(section, "statcorrector");
 
-  imli = new IMLIBest(log2fetchwidth, blogb, bwidth, nhist, statcorrector);
+  imli = std::make_unique<IMLIBest>(log2fetchwidth, blogb, bwidth, nhist, statcorrector);
 }
 
 void BPIMLI::fetchBoundaryBegin(Dinst *dinst) {
@@ -1282,39 +1282,39 @@ uint32_t LoopPredictor::getLoopIter(uint64_t key, uint64_t tag) const {
  * BPredictor
  */
 
-BPred *BPredictor::getBPred(int32_t id, const std::string &sec, const std::string &sname, MemObj *DL1) {
-  BPred *pred = 0;
+std::unique_ptr<BPred> BPredictor::getBPred(int32_t id, const std::string &sec, const std::string &sname, MemObj *DL1) {
+  std::unique_ptr<BPred> pred;
 
   auto type = Config::get_string(sec, "type");
   std::transform(type.begin(), type.end(), type.begin(), [](unsigned char c) { return std::tolower(c); });
 
   // Normal Predictor
   if (type == "oracle") {
-    pred = new BPOracle(id, sec, sname);
+    pred = std::make_unique<BPOracle>(id, sec, sname);
   } else if (type == "miss") {
-    pred = new BPMiss(id, sec, sname);
+    pred = std::make_unique<BPMiss>(id, sec, sname);
   } else if (type == "not_taken") {
-    pred = new BPNotTaken(id, sec, sname);
+    pred = std::make_unique<BPNotTaken>(id, sec, sname);
   } else if (type == "not_taken_enhanced") {
-    pred = new BPNotTakenEnhanced(id, sec, sname);
+    pred = std::make_unique<BPNotTakenEnhanced>(id, sec, sname);
   } else if (type == "taken") {
-    pred = new BPTaken(id, sec, sname);
+    pred = std::make_unique<BPTaken>(id, sec, sname);
   } else if (type == "2bit") {
-    pred = new BP2bit(id, sec, sname);
+    pred = std::make_unique<BP2bit>(id, sec, sname);
   } else if (type == "2level") {
-    pred = new BP2level(id, sec, sname);
+    pred = std::make_unique<BP2level>(id, sec, sname);
   } else if (type == "2bcgskew") {
-    pred = new BP2BcgSkew(id, sec, sname);
+    pred = std::make_unique<BP2BcgSkew>(id, sec, sname);
   } else if (type == "hybrid") {
-    pred = new BPHybrid(id, sec, sname);
+    pred = std::make_unique<BPHybrid>(id, sec, sname);
   } else if (type == "yags") {
-    pred = new BPyags(id, sec, sname);
+    pred = std::make_unique<BPyags>(id, sec, sname);
   } else if (type == "imli") {
-    pred = new BPIMLI(id, sec, sname);
+    pred = std::make_unique<BPIMLI>(id, sec, sname);
   } else if (type == "tdata") {
-    pred = new BPTData(id, sec, sname);
+    pred = std::make_unique<BPTData>(id, sec, sname);
   } else if (type == "ldbp") {
-    pred = new BPLdbp(id, sec, sname, DL1);
+    pred = std::make_unique<BPLdbp>(id, sec, sname, DL1);
   } else {
     Config::add_error(fmt::format("Invalid branch predictor type [{}] in section [{}]", type, sec));
     return nullptr;
@@ -1349,7 +1349,7 @@ BPredictor::BPredictor(int32_t i, MemObj *iobj, MemObj *dobj, std::shared_ptr<BP
     , nAgree3(fmt::format("P({})_BPred:nAgree3", id)) {
   auto cpu_section = Config::get_string("soc", "core", id);
   auto ras_section = Config::get_array_string(cpu_section, "bpred", 0);
-  ras              = new BPRas(id, ras_section, "");
+  ras              = std::make_unique<BPRas>(id, ras_section, "");
 
   if (bpred) {  // SMT
     FetchWidth = bpred->FetchWidth;
@@ -1407,23 +1407,6 @@ BPredictor::BPredictor(int32_t i, MemObj *iobj, MemObj *dobj, std::shared_ptr<BP
   I(bpredDelay1 < bpredDelay3);
   I(bpredDelay2 < bpredDelay3);
   I(bpredDelay1 < bpredDelay2);
-}
-
-BPredictor::~BPredictor() {
-  if (SMTcopy) {
-    return;
-  }
-
-  delete pred1;
-  if (pred2) {
-    delete pred2;
-  }
-  if (pred3) {
-    delete pred3;
-  }
-  pred1 = 0;
-  pred2 = 0;
-  pred3 = 0;
 }
 
 void BPredictor::fetchBoundaryBegin(Dinst *dinst) {

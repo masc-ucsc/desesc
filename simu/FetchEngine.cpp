@@ -77,11 +77,6 @@ FetchEngine::FetchEngine(Hartid_t id, std::shared_ptr<GMemorySystem> gms_, std::
   // Move to libmem/Prefetcher.cpp ; it can be stride or DVTAGE
   // FIXME: use AddressPredictor::create()
 
-#ifdef ESESC_TRACE_DATA
-  ideal_apred = new StrideAddressPredictor();
-  // ideal_apred = new vtage(9, 4, 1, 3);
-#endif
-
   std::vector<std::string> v        = absl::StrSplit(Config::get_string("soc", "core", id, "il1"), ' ');
   auto                     isection = v[0];
 

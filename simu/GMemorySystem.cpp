@@ -12,7 +12,6 @@
 
 MemoryObjContainer            GMemorySystem::sharedMemoryObjContainer;
 GMemorySystem::StrCounterType GMemorySystem::usedNames;
-std::vector<std::string>      GMemorySystem::MemObjNames;
 DrawArch                      arch;
 
 //////////////////////////////////////////////
@@ -20,7 +19,6 @@ DrawArch                      arch;
 
 void MemoryObjContainer::addMemoryObj(const std::string &device_name, MemObj *obj) {
   intlMemoryObjContainer[device_name] = obj;
-  mem_node.push_back(obj);
 }
 
 MemObj *MemoryObjContainer::searchMemoryObj(const std::string &descr_section, const std::string &device_name) const {

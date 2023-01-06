@@ -122,7 +122,8 @@ GProcessor::GProcessor(std::shared_ptr<GMemorySystem> gm, Hartid_t i)
   busy = false;
 }
 
-GProcessor::~GProcessor() {}
+GProcessor::~GProcessor() {
+}
 
 void GProcessor::buildInstStats(const std::string &txt) {
   for (int32_t t = 0; t < iMAX; t++) {

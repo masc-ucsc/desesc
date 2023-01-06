@@ -345,19 +345,15 @@ private:
 
   int pos_p;
 
-  int8_t *pred;
+  std::vector<int8_t> pred;
 
   uint32_t getIndex(uint32_t pc) const { return (pc & indexMask); }
 
 public:
   Bimodal(int ls, int lfw, int bw) : bwidth(bw), Log2Size(ls), Log2FetchWidth(lfw), indexMask((1 << (Log2Size + lfw)) - 1) {
-    pred = (int8_t *)malloc(1 << (Log2Size + Log2FetchWidth));
+    pred.resize(1 << (Log2Size + Log2FetchWidth), 0);
 
     pos_p = 0;
-
-    for (int i = 0; i < (1 << (Log2Size + Log2FetchWidth)); i++) {
-      pred[i] = 0;
-    }
   }
 
   int getsize() const { return (1 << (Log2Size + Log2FetchWidth)) * bwidth; }
@@ -406,9 +402,9 @@ public:
 class gentry {
 private:
   int       nsub;
-  int8_t   *ctr;
-  int8_t   *u;
-  uint16_t *boff;  // Signature per branch in the entry
+  std::vector<int8_t> ctr;
+  std::vector<int8_t> u;
+  std::vector<uint16_t> boff;  // Signature per branch in the entry
 
 public:
   uint32_t tag;
@@ -424,14 +420,9 @@ public:
     n = 1;
 #endif
     nsub = n;
-    ctr  = new int8_t[n + 1];  // +1, last means unused
-    u    = new int8_t[n + 1];
-    boff = new uint16_t[n + 1];
-    for (int i = 0; i <= n; i++) {
-      ctr[i]  = 0;
-      u[i]    = 0;
-      boff[i] = 0xFFFF;
-    }
+    ctr.resize(n+1, 0); // +1, last means unused
+    u.resize(n+1, 0);
+    boff.resize(n+1, 0xFFFF);
     tag = 0;
   }
 
@@ -779,16 +770,16 @@ public:
 
   uint8_t         ghist[HISTBUFFERLENGTH];
   int             ptghist;
-  folded_history *ch_i;     // [NHIST + 1];	//utility for computing TAGE indices
-  folded_history *ch_t[2];  // [NHIST + 1];	//utility for computing TAGE tags
+  std::vector<folded_history> ch_i;     // [NHIST + 1];	//utility for computing TAGE indices
+  std::vector<folded_history> ch_t[2];  // [NHIST + 1];	//utility for computing TAGE tags
 
-  gentry **gtable;  // [NHIST + 1];	// tagged TAGE tables
+  std::vector<std::vector<gentry>> gtable;  // [NHIST + 1];	// tagged TAGE tables
 
-  int     *m;           // [NHIST + 1];	// history lengths
-  int     *TB;          //[NHIST + 1]; 	// tag width for the different tagged tables
-  int     *logg;        // [NHIST + 1];	// log of number entries of the different tagged tables
-  int     *GI;          //[NHIST + 1];		// indexes to the different tables are computed only once
-  uint    *GTAG;        //[NHIST + 1];		// tags for the different tables are computed only once
+  std::vector<int>    m;           // [NHIST + 1];	// history lengths
+  std::vector<int>    TB;          //[NHIST + 1]; 	// tag width for the different tagged tables
+  std::vector<int>    logg;        // [NHIST + 1];	// log of number entries of the different tagged tables
+  std::vector<int>    GI;          //[NHIST + 1];		// indexes to the different tables are computed only once
+  std::vector<uint>   GTAG;        //[NHIST + 1];		// tags for the different tables are computed only once
   bool     pred_taken;  // prediction
   bool     alttaken;    // alternate  TAGEprediction
   bool     tage_pred;   // TAGE prediction
@@ -803,7 +794,7 @@ public:
   bool pred_inter;
 
 #ifdef LOOPPREDICTOR
-  lentry *ltable;  // loop predictor table
+  std::vector<lentry> ltable;  // loop predictor table
   // variables for the loop predictor
   bool   predloop;  // loop predictor prediction
   int    LIB;
@@ -821,16 +812,16 @@ public:
       , bwidth(_bwidth)
       , nhist(_nhist >= MAXHIST ? MAXHIST : _nhist)
       , sc(_sc) {
-    ch_i    = new folded_history[nhist + 1];
-    ch_t[0] = new folded_history[nhist + 1];
-    ch_t[1] = new folded_history[nhist + 1];
+    ch_i.resize(nhist+1);
+    ch_t[0].resize(nhist+1);
+    ch_t[1].resize(nhist+1);
 
-    gtable = new gentry *[nhist + 1];
-    m      = new int[nhist + 1];
-    TB     = new int[nhist + 1];
-    logg   = new int[nhist + 1];
-    GI     = new int[nhist + 1];
-    GTAG   = new uint[nhist + 1];
+    gtable.resize(nhist + 1);
+    m     .resize(nhist + 1);
+    TB    .resize(nhist + 1);
+    logg  .resize(nhist + 1);
+    GI    .resize(nhist + 1);
+    GTAG  .resize(nhist + 1);
 
     reinit();
     predictorsize();
@@ -961,7 +952,7 @@ public:
     }
 
 #ifdef LOOPPREDICTOR
-    ltable = new lentry[1 << (LOGL)];
+    ltable.resize(1 << (LOGL));
 #endif
 
     // int galloc[]= {0, 6, 6, 5, 5, 4, 4, 3, 3, 2, 2};
@@ -970,7 +961,7 @@ public:
     int ngalloc  = 3;
 
     for (int i = 1; i <= nhist; i++) {
-      gtable[i] = new gentry[1 << (logg[i])];
+      gtable[i].resize(1 << (logg[i]));
       for (int j = 0; j < (1 << logg[i]); j++) {
         int s;
         if (i >= ngalloc) {
@@ -1553,8 +1544,8 @@ public:
     return pred_taken;
   }
 
-  void HistoryUpdate(Addr_t PC, Opcode brtype, bool taken, Addr_t target, long long &X, int &Y, folded_history *H,
-                     folded_history *G, folded_history *J, long long &LH, long long &GBRHIST) {
+  void HistoryUpdate(Addr_t PC, Opcode brtype, bool taken, Addr_t target, long long &X, int &Y, std::vector<folded_history> &H,
+                     std::vector<folded_history> &G, std::vector<folded_history> &J, long long &LH, long long &GBRHIST) {
     // special treatment for unconditional branchs;
     int maxt;
     if (brtype == iBALU_LBRANCH) {

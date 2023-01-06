@@ -104,13 +104,7 @@ MemObj *MemorySystem::buildMemoryObj(const char *device_type, const char *dev_se
     default: mystr += "\"[shape=record,sides=5,peripheries=3,color=white,style=filled]"; break;
   }
   arch.addObj(mystr);
-
   I(mdev);
-  addMemObjName(mdev->getName());
-#ifdef DEBUG
-  LOG("Added: %s", mdev->getName());
-#endif
-
   return mdev;
 }
 /* }}} */

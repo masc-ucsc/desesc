@@ -12,16 +12,16 @@ ClusterManager::ClusterManager(std::shared_ptr<GMemorySystem> ms, uint32_t cpuid
   auto coreSection = Config::get_string("soc", "core", cpuid);
   auto nClusters   = Config::get_array_size(coreSection, "cluster");
 
-  ResourcesPoolType res(iMAX);
+  ResourcesPoolType res;
   for (auto i = 0u; i < nClusters; i++) {
     auto clusterName = Config::get_array_string(coreSection, "cluster", i);
 
-    Cluster *cluster = Cluster::create(clusterName, i, ms, cpuid, gproc);
+    auto [cluster, new_res] = Cluster::create(clusterName, i, ms, cpuid, gproc);
+    I(cluster);
 
     for (int32_t t = 0; t < iMAX; t++) {
-      Resource *r = cluster->getResource(static_cast<Opcode>(t));
-      if (r) {
-        res[t].push_back(r);
+      if (new_res[t]) {
+        res[t].push_back(new_res[t]);
       }
     }
   }
@@ -30,11 +30,11 @@ ClusterManager::ClusterManager(std::shared_ptr<GMemorySystem> ms, uint32_t cpuid
   std::transform(sched.begin(), sched.end(), sched.begin(), [](unsigned char c) { return std::tolower(c); });
 
   if (sched == "roundrobin") {
-    scheduler = new RoundRobinClusterScheduler(res);
+    scheduler = std::make_unique<RoundRobinClusterScheduler>(res);
   } else if (sched == "lru") {
-    scheduler = new LRUClusterScheduler(res);
+    scheduler = std::make_unique<LRUClusterScheduler>(res);
   } else if (sched == "use") {
-    scheduler = new UseClusterScheduler(res);
+    scheduler = std::make_unique<UseClusterScheduler>(res);
   } else {
     Config::add_error(fmt::format("Invalid cluster_scheduler [{}]", sched));
     return;

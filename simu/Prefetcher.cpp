@@ -39,15 +39,15 @@ Prefetcher::Prefetcher(MemObj *_l1, int hartid)
   if (type == "stride") {
     pref_sign = PSIGN_STRIDE;
 
-    apred = new Stride_address_predictor(hartid, section);
+    apred = std::make_unique<Stride_address_predictor>(hartid, section);
   } else if (type == "indirect") {
     pref_sign = PSIGN_STRIDE;  // STRIDE, Indirect are generated inside the try_chain
 
-    apred = new Indirect_address_predictor(hartid, section);
+    apred = std::make_unique<Indirect_address_predictor>(hartid, section);
   } else if (type == "tage") {
     pref_sign = PSIGN_TAGE;
 
-    apred = new Tage_address_predictor(hartid, section);
+    apred = std::make_unique<Tage_address_predictor>(hartid, section);
   } else if (type == "void") {
     pref_sign = PSIGN_NONE;
 
@@ -59,7 +59,7 @@ Prefetcher::Prefetcher(MemObj *_l1, int hartid)
 void Prefetcher::exe(Dinst *dinst)
 /* forward bus read {{{1 */
 {
-  if (apred == 0) {
+  if (apred == nullptr) {
     return;
   }
 

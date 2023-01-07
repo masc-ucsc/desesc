@@ -30,28 +30,32 @@
 
 class Emul_Dromajo_test : public ::testing::Test {
 protected:
-  std::shared_ptr<Emul_dromajo> dromajo_ptr;
-
   void SetUp() override {
     std::ofstream file;
     file.open("emul_dromajo_test.toml");
 
     file << "[soc]\n";
-    file << "core = \"c0\"\n";
-    file << "emul = \"drom_emu\"\n";
+    file << "core = [\"c0\", \"c0\"]\n";
+    file << "emul = [\"drom_emu\", \"drom_emu\"]\n";
     file << "\n[drom_emu]\n";
-    file << "num = \"1\"\n";
-    file << "type = \"dromajo\"\n";
-    file << "rabbit = 1e6\n";
-    file << "detail = 1e6\n";
-    file << "time = 2e6\n";
-    file << "bench=\"dhrystone.riscv\"\n";
+    file << "num    = 1\n";
+    file << "type   = \"dromajo\"\n";
+    file << "rabbit = 1E+6\n";
+    file << "detail = 1E+6\n";
+    file << "time   = 2E+6\n";
     file.close();
 
-    Config::init("emul_dromajo_test.toml");
+    Config configuration;
+    configuration.init("emul_dromajo_test.toml");
 
-    dromajo_ptr = std::make_shared<Emul_dromajo>();
+    char benchmark_name[] = "dhrystone.riscv";
+
+    Emul_dromajo dromajo_emul(configuration);
+    dromajo_emul.init_dromajo_machine(benchmark_name);
+    dromajo_ptr = &dromajo_emul;
   }
+
+  Emul_dromajo *dromajo_ptr;
 
   void TearDown() override {
     // Graph_library::sync_all();
@@ -59,17 +63,18 @@ protected:
 };
 
 TEST_F(Emul_Dromajo_test, dhrystone_test) {
-  EXPECT_NE(dromajo_ptr, nullptr);
+  Emul_dromajo dromajo_emul = *dromajo_ptr;
+  EXPECT_FALSE(dromajo_ptr == NULL);
 
-  dromajo_ptr->skip_rabbit(0, 664);
-  Dinst *dinst = dromajo_ptr->peek(0);  // csrr
+  dromajo_emul.skip_rabbit(0, 664);
+  Dinst *dinst = dromajo_emul.peek(0);  // csrr
   EXPECT_EQ(0x0000000080002aaa, dinst->getPC());
   const Instruction *inst = dinst->getInst();
   EXPECT_EQ(15, inst->getDst1());
   dinst->recycle();
 
-  dromajo_ptr->skip_rabbit(0, 197);
-  dinst = dromajo_ptr->peek(0);  // bge
+  dromajo_emul.skip_rabbit(0, 197);
+  dinst = dromajo_emul.peek(0);  // bge
   EXPECT_EQ(0x0000000080002094, dinst->getPC());
   EXPECT_EQ(0x00000000800020a4, dinst->getAddr());
   inst = dinst->getInst();
@@ -79,15 +84,15 @@ TEST_F(Emul_Dromajo_test, dhrystone_test) {
   EXPECT_TRUE(inst->isBranch());
   dinst->recycle();
 
-  dromajo_ptr->skip_rabbit(0, 6);  // ret
-  dinst = dromajo_ptr->peek(0);
+  dromajo_emul.skip_rabbit(0, 6);  // ret
+  dinst = dromajo_emul.peek(0);
   EXPECT_EQ(0x00000000800020ae, dinst->getPC());
   inst = dinst->getInst();
   EXPECT_TRUE(inst->isFuncRet());
   dinst->recycle();
 
-  dromajo_ptr->skip_rabbit(0, 2);  // addi
-  dinst = dromajo_ptr->peek(0);
+  dromajo_emul.skip_rabbit(0, 2);  // addi
+  dinst = dromajo_emul.peek(0);
   EXPECT_EQ(0x0000000080002b38, dinst->getPC());
   inst = dinst->getInst();
   EXPECT_EQ(8, inst->getSrc1());
@@ -95,8 +100,8 @@ TEST_F(Emul_Dromajo_test, dhrystone_test) {
   EXPECT_TRUE(inst->isALU());
   dinst->recycle();
 
-  dromajo_ptr->skip_rabbit(0, 5);  // sw
-  dinst = dromajo_ptr->peek(0);
+  dromajo_emul.skip_rabbit(0, 5);  // sw
+  dinst = dromajo_emul.peek(0);
   EXPECT_EQ(0x0000000080002b46, dinst->getPC());
   EXPECT_EQ(0x0000000080025658, dinst->getAddr());
   inst = dinst->getInst();

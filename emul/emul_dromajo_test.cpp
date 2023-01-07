@@ -30,32 +30,28 @@
 
 class Emul_Dromajo_test : public ::testing::Test {
 protected:
+  std::shared_ptr<Emul_dromajo> dromajo_ptr;
+
   void SetUp() override {
     std::ofstream file;
     file.open("emul_dromajo_test.toml");
 
     file << "[soc]\n";
-    file << "core = [\"c0\", \"c0\"]\n";
-    file << "emul = [\"drom_emu\", \"drom_emu\"]\n";
+    file << "core = \"c0\"\n";
+    file << "emul = \"drom_emu\"\n";
     file << "\n[drom_emu]\n";
-    file << "num    = 1\n";
-    file << "type   = \"dromajo\"\n";
-    file << "rabbit = 1E+6\n";
-    file << "detail = 1E+6\n";
-    file << "time   = 2E+6\n";
+    file << "num = \"1\"\n";
+    file << "type = \"dromajo\"\n";
+    file << "rabbit = 1e6\n";
+    file << "detail = 1e6\n";
+    file << "time = 2e6\n";
+    file << "bench=\"dhrystone.riscv\"\n";
     file.close();
 
-    Config configuration;
-    configuration.init("emul_dromajo_test.toml");
+    Config::init("emul_dromajo_test.toml");
 
-    char benchmark_name[] = "dhrystone.riscv";
-
-    Emul_dromajo dromajo_emul(configuration);
-    dromajo_emul.init_dromajo_machine(benchmark_name);
-    dromajo_ptr = &dromajo_emul;
+    dromajo_ptr = std::make_shared<Emul_dromajo>();
   }
-
-  Emul_dromajo *dromajo_ptr;
 
   void TearDown() override {
     // Graph_library::sync_all();
@@ -63,8 +59,7 @@ protected:
 };
 
 TEST_F(Emul_Dromajo_test, dhrystone_test) {
-  Emul_dromajo dromajo_emul = *dromajo_ptr;
-  EXPECT_FALSE(dromajo_ptr == NULL);
+  EXPECT_NE(dromajo_ptr, nullptr);
 
   dromajo_emul.skip_rabbit(0, 664);
   Dinst *dinst = dromajo_emul.peek(0);  // csrr

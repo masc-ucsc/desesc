@@ -3,7 +3,7 @@
 #include "benchmark/benchmark.h"
 #include "emul_dromajo.hpp"
 
-Emul_dromajo* dromajo_ptr;
+std::shared_ptr<Emul_dromajo> dromajo_ptr;
 
 static void BM_InstructionExecuteAndDecode(benchmark::State& state) {
   for (auto _ : state) {
@@ -26,23 +26,16 @@ int main(int argc, char* argv[]) {
   file.open("emul_dromajo_test.toml");
 
   file << "[soc]\n";
-  file << "core = [\"c0\", \"c0\"]\n";
-  file << "emul = [\"drom_emu\", \"drom_emu\"]\n";
+  file << "core = \"c0\"\n";
+  file << "emul = \"drom_emu\"\n";
   file << "\n[drom_emu]\n";
-  file << "num    = 1\n";
-  file << "type   = \"dromajo\"\n";
-  file << "rabbit = 1E+6\n";
-  file << "detail = 1E+6\n";
-  file << "time   = 2E+6\n";
+  file << "num = \"1\"\n";
+  file << "type = \"dromajo\"\n";
+  file << "bench =\"dhrystone.riscv\"\n";
   file.close();
 
-  Config configuration;
-  configuration.init("emul_dromajo_test.toml");
+  Config::init("emul_dromajo_test.toml");
 
-  char benchmark_name[] = "dhrystone.riscv";
-
-  Emul_dromajo dromajo_emul(configuration);
-  dromajo_emul.init_dromajo_machine(benchmark_name);
-  dromajo_ptr = &dromajo_emul;
+  dromajo_ptr = std::make_shared<Emul_dromajo>();
   benchmark::RunSpecifiedBenchmarks();
 }

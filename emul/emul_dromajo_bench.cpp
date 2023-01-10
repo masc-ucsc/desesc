@@ -27,11 +27,14 @@ int main(int argc, char* argv[]) {
 
   file << "[soc]\n";
   file << "core = \"c0\"\n";
-  file << "emul = \"drom_emu\"\n";
+  file << "emul = [\"drom_emu\"]\n";
   file << "\n[drom_emu]\n";
   file << "num = \"1\"\n";
   file << "type = \"dromajo\"\n";
-  file << "bench =\"dhrystone.riscv\"\n";
+  file << "bench =\"conf/dhrystone.riscv\"\n";
+  file << "rabbit = 1e6\n";
+  file << "detail = 1e6\n";
+  file << "time = 2e6\n";
   file.close();
 
   Config::init("emul_dromajo_test.toml");

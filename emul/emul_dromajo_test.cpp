@@ -38,14 +38,14 @@ protected:
 
     file << "[soc]\n";
     file << "core = \"c0\"\n";
-    file << "emul = \"drom_emu\"\n";
+    file << "emul = [\"drom_emu\"]\n";
     file << "\n[drom_emu]\n";
     file << "num = \"1\"\n";
     file << "type = \"dromajo\"\n";
     file << "rabbit = 1e6\n";
     file << "detail = 1e6\n";
     file << "time = 2e6\n";
-    file << "bench=\"dhrystone.riscv\"\n";
+    file << "bench=\"conf/dhrystone.riscv\"\n";
     file.close();
 
     Config::init("emul_dromajo_test.toml");
@@ -61,15 +61,15 @@ protected:
 TEST_F(Emul_Dromajo_test, dhrystone_test) {
   EXPECT_NE(dromajo_ptr, nullptr);
 
-  dromajo_emul.skip_rabbit(0, 664);
-  Dinst *dinst = dromajo_emul.peek(0);  // csrr
+  dromajo_ptr->skip_rabbit(0, 664);
+  Dinst *dinst = dromajo_ptr->peek(0);  // csrr
   EXPECT_EQ(0x0000000080002aaa, dinst->getPC());
   const Instruction *inst = dinst->getInst();
   EXPECT_EQ(15, inst->getDst1());
   dinst->recycle();
 
-  dromajo_emul.skip_rabbit(0, 197);
-  dinst = dromajo_emul.peek(0);  // bge
+  dromajo_ptr->skip_rabbit(0, 197);
+  dinst = dromajo_ptr->peek(0);  // bge
   EXPECT_EQ(0x0000000080002094, dinst->getPC());
   EXPECT_EQ(0x00000000800020a4, dinst->getAddr());
   inst = dinst->getInst();
@@ -79,15 +79,15 @@ TEST_F(Emul_Dromajo_test, dhrystone_test) {
   EXPECT_TRUE(inst->isBranch());
   dinst->recycle();
 
-  dromajo_emul.skip_rabbit(0, 6);  // ret
-  dinst = dromajo_emul.peek(0);
+  dromajo_ptr->skip_rabbit(0, 6);  // ret
+  dinst = dromajo_ptr->peek(0);
   EXPECT_EQ(0x00000000800020ae, dinst->getPC());
   inst = dinst->getInst();
   EXPECT_TRUE(inst->isFuncRet());
   dinst->recycle();
 
-  dromajo_emul.skip_rabbit(0, 2);  // addi
-  dinst = dromajo_emul.peek(0);
+  dromajo_ptr->skip_rabbit(0, 2);  // addi
+  dinst = dromajo_ptr->peek(0);
   EXPECT_EQ(0x0000000080002b38, dinst->getPC());
   inst = dinst->getInst();
   EXPECT_EQ(8, inst->getSrc1());
@@ -95,8 +95,8 @@ TEST_F(Emul_Dromajo_test, dhrystone_test) {
   EXPECT_TRUE(inst->isALU());
   dinst->recycle();
 
-  dromajo_emul.skip_rabbit(0, 5);  // sw
-  dinst = dromajo_emul.peek(0);
+  dromajo_ptr->skip_rabbit(0, 5);  // sw
+  dinst = dromajo_ptr->peek(0);
   EXPECT_EQ(0x0000000080002b46, dinst->getPC());
   EXPECT_EQ(0x0000000080025658, dinst->getAddr());
   inst = dinst->getInst();

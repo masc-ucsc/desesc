@@ -1,7 +1,8 @@
 [soc]
 core = "c0"
-emul = "drom_emu"
+emul = ["drom_emu"]
 
 [drom_emu]
 num = "1"
 type = "dromajo"
+bench ="dhrystone.riscv"

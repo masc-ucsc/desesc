@@ -120,7 +120,8 @@ Dinst *Emul_dromajo::peek(Hartid_t fid) {
         case 0x07: //   FP Load
           if (funct3 == 3 || funct3 == 4) {
             opcode  = iLALU_LD;
-            //dst1   += LREG_FP0;
+            src2    = LREG_InvalidOutput;
+            dst1    = (RegType)(rd + 32);
             address = I_type_addr_decode(insn_raw) + virt_machine_get_reg(machine, fid, rs1);
           }
           break;
@@ -159,19 +160,33 @@ Dinst *Emul_dromajo::peek(Hartid_t fid) {
             }
           }
           break;
-        case 0x53: // XXX - this should prob be its own function
+        case 0x47: // FP Store
+          opcode  = iSALU_ST;
+          src2    = (RegType)(rs2 + 32);
+          dst1    = LREG_InvalidOutput;
+          address = S_type_addr_decode(funct7, rd) + virt_machine_get_reg(machine, fid, rs1);
+          break;
+        case 0x53: // XXX - this should prob be its own function FP decode
           opcode = iCALU_FPALU;
-          //src1  += LREG_FP0;
-          //src2  += LREG_FP0;
-          //dst1   += LREG_FP0;
+
+          if (funct7 & 0x20) {
+            src2   = LREG_InvalidOutput;
+          } else {
+            src2   = (RegType)(rs2 + 32);
+          }
+
+          if (funct7 != 0x60 && funct7 != 0x61 && funct7 != 0x70 && funct7 != 0x71) {
+            dst1   = (RegType)(rd + 32);
+          } else if (funct7 != 0x68 && funct7 != 0x78 && funct7 != 0x69 && funct7 != 0x79) {
+            src1   = (RegType)(rs1 + 32);
+          }
+
           if (funct7 == 8 || funct7 == 9) {
               opcode = iCALU_FPMULT;
-          } else if (funct7 == 0xC) {
+          } else if (funct7 == 0xC || funct7 == 0xD) {
               opcode = iCALU_FPDIV;
-          } else if (funct7 == 0x2C) {
+          } else if (funct7 == 0x2C || funct7 == 0x2D) {
               opcode = iCALU_FPDIV;
-              src2   = LREG_InvalidOutput;
-          } else if (funct7 & 0x20) {
               src2   = LREG_InvalidOutput;
           }
           break;

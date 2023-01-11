@@ -666,77 +666,9 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
     bias_ninst++;
 #endif
 
-#ifdef FETCH_TRACE
-    dinst->dump("FECHT");
-#endif
-
     if (dinst->getInst()->isControl()) {
       bool stall_fetch = processBranch(dinst, n2Fetch);
       if (stall_fetch) {
-#if 0
-        //reset/handle LDBP counters and queues
-        if(0 && dinst->isBranchMiss_level2() && dinst->isLevel3_NoPrediction()) {
-          int bot_idx = DL1->return_bot_index(dinst->getPC());
-          if(bot_idx != -1) {
-            //int q_idx = (DL1->bot_vec[bot_idx].outcome_ptr) % DL1->getLotQueueSize();
-            //DL1->bot_vec[bot_idx].outcome_ptr = 1;
-            for(int i = 0; i < DL1->bot_vec[bot_idx].load_ptr.size(); i++) {
-              Addr_t ldpc = DL1->bot_vec[bot_idx].load_ptr[i];
-              int lor_idx   = DL1->return_lor_index(ldpc);
-              int load_table_idx   = DL1->return_load_table_index(ldpc);
-              int64_t curr_delta = DL1->load_table_vec[load_table_idx].delta;
-              int64_t prev_delta = DL1->load_table_vec[load_table_idx].prev_delta;
-              if(curr_delta != prev_delta) { //FIXME ?? verify
-                DL1->bot_vec[bot_idx].reset_valid();
-                if(lor_idx != -1) {
-                  //reset lor.data_pos
-                  //DL1->lor_vec[lor_idx].data_pos = 1;
-                  DL1->lor_vec[lor_idx].data_pos = 0;
-                  DL1->lot_vec[lor_idx].reset_valid();
-                }
-              }
-            }
-          }
-        }
-#if 0
-        //reset/handle LDBP counters and queues
-        if(dinst->isBranchMiss_level2() && dinst->isLevel3_NoPrediction()) {
-          int bot_idx = DL1->return_bot_index(dinst->getPC());
-          if(bot_idx != -1) {
-            //int q_idx = (DL1->bot_vec[bot_idx].outcome_ptr) % DL1->getLotQueueSize();
-            DL1->bot_vec[bot_idx].reset_valid();
-            //DL1->bot_vec[bot_idx].outcome_ptr = 1;
-            for(int i = 0; i < DL1->bot_vec[bot_idx].load_ptr.size(); i++) {
-              Addr_t ldpc = DL1->bot_vec[bot_idx].load_ptr[i];
-              int lor_idx   = DL1->return_lor_index(ldpc);
-              if(lor_idx != -1) {
-                //reset lor.data_pos
-                //DL1->lor_vec[lor_idx].data_pos = 1;
-                DL1->lor_vec[lor_idx].data_pos = 0;
-                DL1->lot_vec[lor_idx].reset_valid();
-              }
-            }
-          }
-        }
-#endif
-#endif
-        Dinst *dinstn = eint->peek(fid);
-        if (dinstn == 0) {
-          zeroDinst.inc(true);
-#if 0
-          fprintf(stderr,"Z");
-#endif
-        }
-        if (dinstn && dinst->getAddr() && n2Fetch) {  // Taken branch and next inst is delay slot
-          if (dinstn->getPC() == (lastpc + 4)) {
-            eint->execute(fid);
-            bucket->push(dinstn);
-            n2Fetch--;
-          }
-        } else if (dinstn == 0) {
-          zeroDinst.inc(true);
-        }
-
 #ifdef FETCH_TRACE
         if (dinst->isBiasBranch() && dinst->getFetchEngine()) {
           // OOPS. Thought that it was bias and it is a long misspredict
@@ -933,7 +865,6 @@ void FetchEngine::setMissInst(Dinst *dinst) {
 
   missInst = true;
 #ifndef NDEBUG
-  fmt::print("setMiss ID:{} @{}\n", dinst->getID(), globalClock);
   missDinst = dinst;
 #endif
 }

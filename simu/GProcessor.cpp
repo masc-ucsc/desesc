@@ -149,7 +149,6 @@ int32_t GProcessor::issue() {
 
       Dinst *dinst = bucket->top();
 
-      dinst->setGProc(this);
       StallCause c = add_inst(dinst);
       if (c != NoStall) {
         if (i < RealisticWidth) {
@@ -157,6 +156,7 @@ int32_t GProcessor::issue() {
         }
         return i;
       }
+      dinst->setGProc(this);
       i++;
 
       bucket->pop();

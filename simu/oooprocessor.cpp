@@ -17,7 +17,7 @@
 #include "fmt/format.h"
 #include "taskhandler.hpp"
 
-#define ESESC_TRACE
+//#define ESESC_TRACE
 // #define ESESC_CODEPROFILE
 // #define ESESC_BRANCHPROFILE
 

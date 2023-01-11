@@ -2,37 +2,15 @@
 
 #pragma once
 
-#include <stdlib.h>
-
 #include <cstdint>
-#include <deque>
+#include <vector>
 
 #include "iassert.hpp"
-#include "snippets.hpp"
 
-// #define FASTQUEUE_USE_QUEUE 1
-
-#ifdef FASTQUEUE_USE_QUEUE
-template <class Data>
-class FastQueue {
-  std::deque<Data> dq;
-
-public:
-  FastQueue(int32_t size){};
-
-  void push(Data d) { dq.push_back(d); };
-  void pop() { dq.pop_front(); };
-
-  Data top() { return dq.front(); };
-
-  std::size_t size() const { return dq.size(); }
-  bool   empty() const { return dq.empty(); }
-};
-#else
 template <class Data>
 class FastQueue {
 private:
-  Data *pipe;
+  std::vector<Data> pipe;
 
   uint32_t pipeMask;
   uint32_t start;
@@ -51,15 +29,13 @@ public:
       pipeMask++;
     }
 
-    pipe = (Data *)malloc(sizeof(Data) * pipeMask);
+    pipe.resize(pipeMask);
 
     pipeMask--;
     start  = 0;
     end    = 0;
     nElems = 0;
   }
-
-  ~FastQueue() { free(pipe); }
 
   void push(Data d) {
     I(nElems <= pipeMask);
@@ -100,4 +76,3 @@ public:
   std::size_t size() const { return nElems; }
   bool   empty() const { return nElems == 0; }
 };
-#endif  // FASTQUEUE_USE_QUEUE

@@ -16,7 +16,7 @@ bench      = "conf/dhrystone.riscv"
 start_roi = false
 rabbit    = 1024
 detail    = 1024
-time      = 1024
+time      = 10000000
 
 [rand_emu]
 type = "random"  # Generate random instructions (coverage testing?)

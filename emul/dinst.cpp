@@ -239,8 +239,6 @@ void Dinst::recycle() {
   I(nDeps == 0);  // No deps src
   I(first == 0);  // no dependent instructions
 
-  resource = nullptr; // Needed to have GC
-  cluster = nullptr;
 
   dInstPool.in(this);
 }

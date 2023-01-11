@@ -10,7 +10,6 @@ protected:
   RISCVMachine *machine = nullptr;
 
   uint64_t num;
-  uint64_t rabbit;
   uint64_t detail;
   uint64_t time;
 
@@ -35,5 +34,12 @@ public:
     for (size_t i = 0; i < ninst; ++i) {
       execute(fid);
     }
-  };
+  }
+
+  void set_detail(uint64_t ninst) {
+    detail = ninst;
+  }
+  void set_time(uint64_t ninst) {
+    time = ninst;
+  }
 };

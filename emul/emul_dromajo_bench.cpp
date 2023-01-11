@@ -6,8 +6,9 @@
 std::shared_ptr<Emul_dromajo> dromajo_ptr;
 
 static void BM_InstructionExecuteAndDecode(benchmark::State& state) {
+  dromajo_ptr->set_time(1024*1024*1024);  // Lots of instructions to make sure that it runs
   for (auto _ : state) {
-    dromajo_ptr->skip_rabbit(0, 1);
+    dromajo_ptr->execute(0);
     Dinst* dinst = dromajo_ptr->peek(0);
     dinst->recycle();
   }

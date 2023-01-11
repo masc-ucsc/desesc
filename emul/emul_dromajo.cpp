@@ -7,6 +7,8 @@
 Emul_dromajo::Emul_dromajo() : Emul_base() {
   num = 0;
 
+  uint64_t rabbit = 0;
+
   auto nemuls = Config::get_array_size("soc", "emul");
   for (auto i = 0u; i < nemuls; ++i) {
     auto tp = Config::get_string("soc", "emul", i, "type");
@@ -35,6 +37,11 @@ Emul_dromajo::Emul_dromajo() : Emul_base() {
   type = "dromajo";
   if (num) {
     init_dromajo_machine();
+  }
+  if (rabbit) {
+    for(auto i=0u;i<num;++i) {
+      skip_rabbit(i, rabbit);
+    }
   }
 }
 
@@ -75,6 +82,7 @@ static inline Addr_t UJ_type_addr_decode(uint32_t funct7, uint32_t rs2, uint32_t
 }
 
 Dinst *Emul_dromajo::peek(Hartid_t fid) {
+
   uint64_t last_pc  = virt_machine_get_pc(machine, fid);
   uint32_t insn_raw = -1;
   (void)riscv_read_insn(machine->cpu_state[fid], &insn_raw, last_pc);

@@ -268,7 +268,9 @@ public:
 #endif
     Holder *h = static_cast<Holder *>(data);
 
+#ifndef NDEBUG
     I(!h->inPool);
+#endif
 
     insert(h);
   }
@@ -291,8 +293,8 @@ public:
     }
 
     Ttype *h = (Ttype *)(c_first);
-    I(c_first->inPool);
 #ifndef NDEBUG
+    I(c_first->inPool);
     c_first->inPool = false;
 #endif
     return h;
@@ -486,13 +488,12 @@ public:
       reproduce();
     }
 
-#if defined(CLEAR_ON_INSERT) && defined(DEBUG)
+#if defined(CLEAR_ON_INSERT) && !defined(NDEBUG)
     const char *ptr = (const char *)(h);
     for (size_t i = 0; i < sizeof(Ttype); i++) {
       I(ptr[i] == 0);
     }
 #endif
-
     return h;
   }
 };

@@ -37,8 +37,15 @@ static const char *opcode2NameTable[] = {
 
 const char *Instruction::opcode2Name(Opcode op) { return opcode2NameTable[op]; }
 
-void Instruction::dump(const char *str) const {
-  fmt::print("{}: reg{}, reg{} = reg{} {:>11} reg{}", str, dst1, dst2, src1, opcode2NameTable[opcode], src2);
+void Instruction::dump() const {
+  fmt::print(get_asm());
+}
+
+std::string Instruction::get_asm() const {
+  if (dst2!=0)
+    return fmt::format("r{}, r{} = r{} {:>11} r{}", dst1, dst2, src1, opcode2NameTable[opcode], src2);
+
+  return fmt::format("r{} = r{} {:>11} r{}", dst1, src1, opcode2NameTable[opcode], src2);
 }
 
 void Instruction::set(Opcode opcode_, RegType src1_, RegType src2_, RegType dst1_, RegType dst2_) {

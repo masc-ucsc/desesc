@@ -7,6 +7,7 @@
 #include "emul_base.hpp"
 #include "fmt/format.h"
 #include "iassert.hpp"
+#include "tracer.hpp"
 
 pool<Dinst> Dinst::dInstPool(32768, "Dinst");  // 4 * tsfifo size
 
@@ -235,17 +236,11 @@ Dinst *Dinst::clone() {
   return i;
 }
 
-void Dinst::recycle() {
-  I(nDeps == 0);  // No deps src
-  I(first == 0);  // no dependent instructions
-
-
-  dInstPool.in(this);
-}
-
 void Dinst::scrap() {
   I(nDeps == 0);  // No deps src
   I(first == 0);  // no dependent instructions
+
+  Tracer::flush(this);
 
   resource = nullptr; // Needed to have GC
   cluster = nullptr;
@@ -260,6 +255,8 @@ void Dinst::destroy() {
   I(executed);
 
   I(first == 0);  // no dependent instructions
+
+  Tracer::commit(this);
 
   resource = nullptr; // Needed to have GC
   cluster = nullptr;

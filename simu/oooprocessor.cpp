@@ -16,6 +16,7 @@
 #include "config.hpp"
 #include "fmt/format.h"
 #include "taskhandler.hpp"
+#include "tracer.hpp"
 
 //#define ESESC_TRACE
 // #define ESESC_CODEPROFILE
@@ -228,6 +229,7 @@ void OoOProcessor::executing(Dinst *dinst)
 // {{{1 Called when the instruction starts to execute
 {
   dinst->markExecuting();
+  Tracer::stage(dinst, "EX");
 
 #ifdef LATE_ALLOC_REGISTER
   if (dinst->getInst()->hasDstRegister()) {
@@ -439,6 +441,7 @@ StallCause OoOProcessor::add_inst(Dinst *dinst) {
   I(dinst->getCluster());
 
   dinst->markRenamed();
+  Tracer::stage(dinst,"RN");
 
 #ifdef WAVESNAP_EN
   // add instruction to wavesnap
@@ -1687,6 +1690,7 @@ void OoOProcessor::replay(Dinst *target)
     return;
   }
   target->markReplay();
+  Tracer::event(target, "replay");
 
   if (replayID < target->getID()) {
     replayID = target->getID();

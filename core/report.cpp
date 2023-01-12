@@ -10,7 +10,7 @@
 #include "iassert.hpp"
 
 void Report::init() {
-  std::string report_file = "desesc";
+  report_file = "desesc";
 
   const char *rep1 = getenv("REPORTFILE");
   if (rep1) {
@@ -30,6 +30,15 @@ void Report::init() {
     perror("Report::init could not assign file name:");
     exit(-1);
   }
+}
+
+const std::string Report::get_extension() {
+
+  auto pos = report_file.rfind('.');
+  if (pos == std::string::npos)
+    return "";
+
+  return report_file.substr(pos);
 }
 
 void Report::reinit() {

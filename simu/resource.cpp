@@ -579,7 +579,7 @@ void FUStore::performed(Dinst *dinst) {
 
   I(!dinst->isPerformed());
   if (dinst->isRetired()) {
-    dinst->recycle();
+    dinst->destroy();
   }
   dinst->markPerformed();
 }

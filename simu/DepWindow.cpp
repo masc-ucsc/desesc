@@ -7,6 +7,7 @@
 #include "config.hpp"
 #include "dinst.hpp"
 #include "fmt/format.h"
+#include "tracer.hpp"
 
 DepWindow::DepWindow(uint32_t cpuid, int src_id, const std::string &clusterName, uint32_t pos)
     : src_cluster_id(src_id), inter_cluster_fwd(fmt::format("P({})_{}{}_inter_cluster_fwd", cpuid, clusterName, pos)) {
@@ -39,6 +40,8 @@ void DepWindow::preSelect(Dinst *dinst) {
   I(!dinst->hasDeps());
 
   dinst->markIssued();
+  Tracer::stage(dinst, "WS");
+
   I(dinst->getCluster());
 
   dinst->getCluster()->select(dinst);
@@ -65,6 +68,7 @@ void DepWindow::executed(Dinst *dinst) {
 
   dinst->markExecuted();
   dinst->clearRATEntry();
+  Tracer::stage(dinst,"WB");
 
   if (!dinst->hasPending()) {
     return;

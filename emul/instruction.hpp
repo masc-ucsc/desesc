@@ -66,5 +66,6 @@ public:
 
   bool isMemory() const { return isLoad() || isStore(); }
 
-  void dump(const char *str) const;
+  void dump() const;
+  std::string get_asm() const;
 };

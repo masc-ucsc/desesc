@@ -6,6 +6,7 @@
 #include "fetchengine.hpp"
 #include "gmemorysystem.hpp"
 #include "config.hpp"
+#include "tracer.hpp"
 
 InOrderProcessor::InOrderProcessor(std::shared_ptr<GMemorySystem> gm, CPU_t i)
     : GProcessor(gm, i)
@@ -56,7 +57,7 @@ void InOrderProcessor::executing(Dinst *dinst) { (void)dinst; }
 
 void InOrderProcessor::executed(Dinst *dinst) { (void)dinst; }
 
-StallCause InOrderProcessor::add_inst(Dinst *dinst) { /*{{{*/
+StallCause InOrderProcessor::add_inst(Dinst *dinst) {
 
   const Instruction *inst = dinst->getInst();
 
@@ -66,20 +67,21 @@ StallCause InOrderProcessor::add_inst(Dinst *dinst) { /*{{{*/
 #if 0
   // Simple in-order
   if(((RAT[inst->getSrc1()+rat_off] != 0) && (inst->getSrc1() != LREG_NoDependence) && (inst->getSrc1() != LREG_InvalidOutput)) ||
-     ((RAT[inst->getSrc2()+rat_off] != 0) && (inst->getSrc2() != LREG_NoDependence) && (inst->getSrc2() != LREG_InvalidOutput))||
-     ((RAT[inst->getDst1()+rat_off] != 0) && (inst->getDst1() != LREG_InvalidOutput))||
-     ((RAT[inst->getDst2()+rat_off] != 0) && (inst->getDst2() != LREG_InvalidOutput))) {
+    ((RAT[inst->getSrc2()+rat_off] != 0) && (inst->getSrc2() != LREG_NoDependence) && (inst->getSrc2() != LREG_InvalidOutput))||
+    ((RAT[inst->getDst1()+rat_off] != 0) && (inst->getDst1() != LREG_InvalidOutput))||
+    ((RAT[inst->getDst2()+rat_off] != 0) && (inst->getDst2() != LREG_InvalidOutput))) 
 #else
 #if 1
   // Simple in-order for RAW, but not WAW or WAR
   if (((RAT[inst->getSrc1() + rat_off] != 0) && (inst->getSrc1() != LREG_NoDependence))
-      || ((RAT[inst->getSrc2() + rat_off] != 0) && (inst->getSrc2() != LREG_NoDependence))) {
+    || ((RAT[inst->getSrc2() + rat_off] != 0) && (inst->getSrc2() != LREG_NoDependence))) 
 #else
-  // scoreboard, no output dependence
+    // scoreboard, no output dependence
   if (((RAT[inst->getDst1() + rat_off] != 0) && (inst->getDst1() != LREG_InvalidOutput))
-      || ((RAT[inst->getDst2() + rat_off] != 0) && (inst->getDst2() != LREG_InvalidOutput))) {
+    || ((RAT[inst->getDst2() + rat_off] != 0) && (inst->getDst2() != LREG_InvalidOutput))) 
 #endif
 #endif
+  {
 
 #if 0
     //Useful for debug
@@ -112,68 +114,70 @@ StallCause InOrderProcessor::add_inst(Dinst *dinst) { /*{{{*/
 
     }
 #endif
-  return SmallWinStall;
-}
+    return SmallWinStall;
+  }
 #endif
 
-if ((ROB.size() + rROB.size()) >= (MaxROBSize - 1)) {
-  return SmallROBStall;
-}
-
-auto cluster = dinst->getCluster();
-if (!cluster) {
-  auto res = clusterManager.getResource(dinst);
-  cluster       = res->getCluster();
-  dinst->set(cluster, res);
-}
-
-I(dinst->getFlowId() == hid);
-
-StallCause sc = cluster->canIssue(dinst);
-if (sc != NoStall) {
-  return sc;
-}
-
-// FIXME: rafactor the rest of the function that it is the same as in OoOProcessor (share same function in GPRocessor)
-
-// BEGIN INSERTION (note that cluster already inserted in the window)
-// dinst->dump("");
-
-nInst[inst->getOpcode()]->inc(dinst->has_stats());  // FIXME: move to cluster
-
-ROB.push(dinst);
-
-if (!dinst->isSrc2Ready()) {
-  // It already has a src2 dep. It means that it is solved at
-  // retirement (Memory consistency. coherence issues)
-  if (RAT[inst->getSrc1() + rat_off]) {
-    RAT[inst->getSrc1() + rat_off]->addSrc1(dinst);
-  }
-} else {
-  if (RAT[inst->getSrc1() + rat_off]) {
-    RAT[inst->getSrc1() + rat_off]->addSrc1(dinst);
+  if ((ROB.size() + rROB.size()) >= (MaxROBSize - 1)) {
+    return SmallROBStall;
   }
 
-  if (RAT[inst->getSrc2() + rat_off]) {
-    RAT[inst->getSrc2() + rat_off]->addSrc2(dinst);
+  auto cluster = dinst->getCluster();
+  if (!cluster) {
+    auto res = clusterManager.getResource(dinst);
+    cluster       = res->getCluster();
+    dinst->set(cluster, res);
   }
+
+  I(dinst->getFlowId() == hid);
+
+  StallCause sc = cluster->canIssue(dinst);
+  if (sc != NoStall) {
+    return sc;
+  }
+
+  // FIXME: rafactor the rest of the function that it is the same as in OoOProcessor (share same function in GPRocessor)
+
+  // BEGIN INSERTION (note that cluster already inserted in the window)
+  // dinst->dump("");
+
+  nInst[inst->getOpcode()]->inc(dinst->has_stats());  // FIXME: move to cluster
+
+  ROB.push(dinst);
+
+  if (!dinst->isSrc2Ready()) {
+    // It already has a src2 dep. It means that it is solved at
+    // retirement (Memory consistency. coherence issues)
+    if (RAT[inst->getSrc1() + rat_off]) {
+      RAT[inst->getSrc1() + rat_off]->addSrc1(dinst);
+    }
+  } else {
+    if (RAT[inst->getSrc1() + rat_off]) {
+      RAT[inst->getSrc1() + rat_off]->addSrc1(dinst);
+    }
+
+    if (RAT[inst->getSrc2() + rat_off]) {
+      RAT[inst->getSrc2() + rat_off]->addSrc2(dinst);
+    }
+  }
+
+  I(!dinst->isExecuted());
+
+  dinst->setRAT1Entry(&RAT[inst->getDst1() + rat_off]);
+  dinst->setRAT2Entry(&RAT[inst->getDst2() + rat_off]);
+
+  dinst->getCluster()->add_inst(dinst);
+
+  RAT[inst->getDst1() + rat_off] = dinst;
+  RAT[inst->getDst2() + rat_off] = dinst;
+
+  I(dinst->getCluster());
+  dinst->markRenamed();
+
+  Tracer::stage(dinst,"RN");
+
+  return NoStall;
 }
-
-I(!dinst->isExecuted());
-
-dinst->setRAT1Entry(&RAT[inst->getDst1() + rat_off]);
-dinst->setRAT2Entry(&RAT[inst->getDst2() + rat_off]);
-
-dinst->getCluster()->add_inst(dinst);
-
-RAT[inst->getDst1() + rat_off] = dinst;
-RAT[inst->getDst2() + rat_off] = dinst;
-
-I(dinst->getCluster());
-dinst->markRenamed();
-
-return NoStall;
-} /*}}}*/
 
 void InOrderProcessor::retire() { /*{{{*/
 

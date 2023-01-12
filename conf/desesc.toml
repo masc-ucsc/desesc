@@ -2,6 +2,9 @@
 # TOML is case sensitive, but to avoid issues use lower-case in all the section
 # and field names
 
+[trace]
+range = [0,1024]
+
 [soc]
 # FIXME: multicore dromajo/desesc
 #core = ["c0", "c0"]
@@ -16,7 +19,7 @@ bench      = "conf/dhrystone.riscv"
 start_roi = false
 rabbit    = 1024
 detail    = 1024
-time      = 10000000
+time      = 10000
 
 [rand_emu]
 type = "random"  # Generate random instructions (coverage testing?)

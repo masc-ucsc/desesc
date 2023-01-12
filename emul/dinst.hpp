@@ -441,7 +441,6 @@ public:
 
   void scrap();  // Destroys the instruction without any other effects
   void destroy();
-  void recycle();
 
   void set(std::shared_ptr<Cluster> cls, std::shared_ptr<Resource> res) {
     cluster = cls;

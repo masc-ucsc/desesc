@@ -13,7 +13,7 @@
 #include "alloca.h"
 #include "taskhandler.hpp"
 #include "config.hpp"
-
+#include "tracer.hpp"
 
 extern bool MIMDmode;
 
@@ -200,6 +200,8 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
       break;
     }
     eint->execute(fid);
+
+    Tracer::stage(dinst,"IF");
 
 #ifdef ESESC_TRACE_DATA
     bool predictable = false;

@@ -10,6 +10,7 @@
 #include "emul_base.hpp"
 #include "report.hpp"
 #include "cluster.hpp"
+#include "tracer.hpp"
 
 void TaskHandler::report() {
   /* dump statistics to report file {{{1 */
@@ -196,6 +197,12 @@ void TaskHandler::plugEnd()
     cpuid_sub = 0;
     I(cpuid < simus.size());
     cpuid = cpuid + 1;
+  }
+
+  if (Config::has_entry("trace", "range")) {
+    auto t_start = Config::get_array_integer("trace", "range", 0);
+    auto t_end = Config::get_array_integer("trace", "range", 1);
+    Tracer::track_range(t_start, t_end);
   }
 
   plugging = false;

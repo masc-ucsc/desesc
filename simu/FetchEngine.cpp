@@ -199,9 +199,6 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
       TaskHandler::simu_pause(fid);
       break;
     }
-    eint->execute(fid);
-
-    Tracer::stage(dinst,"IF");
 
     if (dinst->getID() == 36) {
       dinst->dump("");
@@ -639,6 +636,7 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
         maxBB--;
         if (maxBB < 1) {
           nDelayInst2.add(n2Fetch, dinst->has_stats());
+          dinst->scrap();
           break;
         }
       }
@@ -646,12 +644,15 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
 
       if (fetch_one_line) {
         if ((lastpc >> il1_line_bits) != (dinst->getPC() >> il1_line_bits)) {
+          dinst->scrap();
           break;
         }
       }
     }
     lastpc = dinst->getPC();
 
+    eint->execute(fid);
+    Tracer::stage(dinst,"IF");
     dinst->setFetchTime();
     bucket->push(dinst);
 

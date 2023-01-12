@@ -154,7 +154,7 @@ rob_size     = 320
 # Exe Parameters
 cluster = ["aunit", "bunit", "cunit", "munit"]
 num_regs   = 256
-inter_cluster_lat    = 1
+inter_cluster_lat    = 0
 cluster_scheduler    = "RoundRobin"
 max_branches         = 30
 drain_on_miss        = false
@@ -164,7 +164,7 @@ scoore_serialze      = true
 
 [alu0]
 num = 4
-lat = 1
+lat = 2
 occ = 1
 
 [balu]

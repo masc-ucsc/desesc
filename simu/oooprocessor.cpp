@@ -289,16 +289,19 @@ void OoOProcessor::executed([[maybe_unused]] Dinst *dinst) {
 
 StallCause OoOProcessor::add_inst(Dinst *dinst) {
   if (replayRecovering && dinst->getID() > replayID) {
+    Tracer::stage(dinst,"Wrep");
     return ReplaysStall;
   }
 
   if ((ROB.size() + rROB.size()) >= (MaxROBSize - 1)) {
+    Tracer::stage(dinst,"Wrob");
     return SmallROBStall;
   }
 
   const Instruction *inst = dinst->getInst();
 
   if (nTotalRegs <= 0) {
+    Tracer::stage(dinst,"Wreg");
     return SmallREGStall;
   }
 
@@ -311,6 +314,7 @@ StallCause OoOProcessor::add_inst(Dinst *dinst) {
 
   StallCause sc = cluster->canIssue(dinst);
   if (sc != NoStall) {
+    Tracer::stage(dinst,"Wcls");
     return sc;
   }
 

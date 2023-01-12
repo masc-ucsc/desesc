@@ -30,6 +30,8 @@ void Report::init() {
     perror("Report::init could not assign file name:");
     exit(-1);
   }
+
+  report_file = f;
 }
 
 const std::string Report::get_extension() {
@@ -38,7 +40,7 @@ const std::string Report::get_extension() {
   if (pos == std::string::npos)
     return "";
 
-  return report_file.substr(pos);
+  return report_file.substr(pos+1);
 }
 
 void Report::reinit() {

@@ -42,7 +42,7 @@ protected:
     file << "\n[drom_emu]\n";
     file << "num = \"1\"\n";
     file << "type = \"dromajo\"\n";
-    file << "rabbit = 1e6\n";
+    file << "rabbit = 0\n";
     file << "detail = 1e6\n";
     file << "time = 2e6\n";
     file << "bench=\"conf/dhrystone.riscv\"\n";
@@ -61,12 +61,30 @@ protected:
 TEST_F(Emul_Dromajo_test, dhrystone_test) {
   EXPECT_NE(dromajo_ptr, nullptr);
 
-  dromajo_ptr->skip_rabbit(0, 664);
-  Dinst *dinst = dromajo_ptr->peek(0);  // csrr
-  EXPECT_EQ(0x0000000080002aaa, dinst->getPC());
+  dromajo_ptr->skip_rabbit(0, 606);
+  Dinst *dinst = dromajo_ptr->peek(0);  // c.j
+  EXPECT_EQ(0x0000000080002c1a, dinst->getPC());
   const Instruction *inst = dinst->getInst();
+  EXPECT_TRUE(inst->isJump());
+  EXPECT_FALSE(inst->hasSrc1Register());
+  EXPECT_FALSE(inst->hasDstRegister());
+  dinst->scrap();
+
+  dromajo_ptr->skip_rabbit(0, 55);    // c.bnez
+  dinst = dromajo_ptr->peek(0);
+  EXPECT_EQ(0x00000000800025d8, dinst->getPC());
+  inst = dinst->getInst();
+  EXPECT_EQ(10, inst->getSrc1());
+  EXPECT_EQ(0x00000000800025e8, dinst->getAddr());
+  EXPECT_TRUE(inst->isBranch());
+  dinst->scrap();
+
+  dromajo_ptr->skip_rabbit(0, 3);
+  dinst = dromajo_ptr->peek(0);  // csrr
+  EXPECT_EQ(0x0000000080002aaa, dinst->getPC());
+  inst = dinst->getInst();
   EXPECT_EQ(15, inst->getDst1());
-  dinst->recycle();
+  dinst->scrap();
 
   dromajo_ptr->skip_rabbit(0, 197);
   dinst = dromajo_ptr->peek(0);  // bge
@@ -77,14 +95,14 @@ TEST_F(Emul_Dromajo_test, dhrystone_test) {
   EXPECT_EQ(10, inst->getSrc2());
   EXPECT_FALSE(inst->hasDstRegister());
   EXPECT_TRUE(inst->isBranch());
-  dinst->recycle();
+  dinst->scrap();
 
   dromajo_ptr->skip_rabbit(0, 6);  // ret
   dinst = dromajo_ptr->peek(0);
   EXPECT_EQ(0x00000000800020ae, dinst->getPC());
   inst = dinst->getInst();
   EXPECT_TRUE(inst->isFuncRet());
-  dinst->recycle();
+  dinst->scrap();
 
   dromajo_ptr->skip_rabbit(0, 2);  // addi
   dinst = dromajo_ptr->peek(0);
@@ -93,7 +111,7 @@ TEST_F(Emul_Dromajo_test, dhrystone_test) {
   EXPECT_EQ(8, inst->getSrc1());
   EXPECT_EQ(12, inst->getDst1());
   EXPECT_TRUE(inst->isALU());
-  dinst->recycle();
+  dinst->scrap();
 
   dromajo_ptr->skip_rabbit(0, 5);  // sw
   dinst = dromajo_ptr->peek(0);
@@ -104,5 +122,27 @@ TEST_F(Emul_Dromajo_test, dhrystone_test) {
   EXPECT_EQ(15, inst->getSrc2());
   EXPECT_FALSE(inst->hasDstRegister());
   EXPECT_TRUE(inst->isStore());
-  dinst->recycle();
+  dinst->scrap();
+
+  dromajo_ptr->skip_rabbit(0, 4);  // c.sw
+  dinst = dromajo_ptr->peek(0);
+  EXPECT_EQ(0x0000000080002004, dinst->getPC());
+  EXPECT_EQ(0x0000000080025658, dinst->getAddr());
+  inst = dinst->getInst();
+  EXPECT_EQ(12, inst->getSrc1());
+  EXPECT_EQ(11, inst->getSrc2());
+  EXPECT_FALSE(inst->hasDstRegister());
+  EXPECT_TRUE(inst->isStore());
+  dinst->scrap();
+
+  dromajo_ptr->skip_rabbit(0, 41); // c.sdsp
+  dinst = dromajo_ptr->peek(0);
+  EXPECT_EQ(0x000000008000217e, dinst->getPC());
+  EXPECT_EQ(0x00000000800255b0, dinst->getAddr());
+  inst = dinst->getInst();
+  EXPECT_EQ(2, inst->getSrc1());
+  EXPECT_EQ(18, inst->getSrc2());
+  EXPECT_FALSE(inst->hasDstRegister());
+  EXPECT_TRUE(inst->isStore());
+  dinst->scrap();
 }

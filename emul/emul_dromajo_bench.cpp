@@ -10,7 +10,7 @@ static void BM_InstructionExecuteAndDecode(benchmark::State& state) {
   for (auto _ : state) {
     dromajo_ptr->execute(0);
     Dinst* dinst = dromajo_ptr->peek(0);
-    dinst->recycle();
+    dinst->scrap();
   }
 }
 BENCHMARK(BM_InstructionExecuteAndDecode);

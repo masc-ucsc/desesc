@@ -151,9 +151,9 @@ Dinst *Emul_dromajo::peek(Hartid_t fid) {
   uint32_t funct3, rs1, rs2, rd;
   uint32_t funct7 = (insn_raw >> 13) & 0xF; //  Funct7 has 4 bits
   Opcode  opcode  = iAALU;  // dromajo wont pass invalid insns, default to ALU
-  RegType src1 = LREG_INVALID;
-  RegType src2 = LREG_INVALID;
-  RegType dst1 = LREG_INVALID;
+  RegType src1 = LREG_NoDependence;
+  RegType src2 = LREG_NoDependence;
+  RegType dst1 = LREG_InvalidOutput;
   RegType dst2 = LREG_InvalidOutput;
   Addr_t  address = 0;
   switch (insn_raw & 0x3) {  // compressed
@@ -207,6 +207,7 @@ Dinst *Emul_dromajo::peek(Hartid_t fid) {
         } else {
           address = C1_br_addr_decode(insn_raw) + last_pc;
           opcode  = iBALU_LBRANCH;
+          dst1    = LREG_InvalidOutput;
         }
       }
       break;

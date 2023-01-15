@@ -1,5 +1,7 @@
 // See LICENSE for details.
 
+#include "absl/container/flat_hash_map.h"
+
 #include "store_buffer.hpp"
 
 #include "memrequest.hpp"
@@ -27,16 +29,18 @@ bool Store_buffer::can_accept_st(Addr_t st_addr) const {
 void Store_buffer::remove_clean() {
   I(scb_clean_lines);
 
-  // FIXME: instead of removing all, randomly remove one
-  for (auto it = lines.begin(); it != lines.end(); ++it) {
-    if (!it->second.is_clean())
-      continue;
+  size_t num = 0;
 
-    I(scb_clean_lines);
-    --scb_clean_lines;
+  absl::erase_if(lines, [&num](std::pair<const Addr_t, Store_buffer_line> p) { 
+      if (p.second.is_clean()) {
+        ++num;
+        return false;
+      }
+      return true;
+    }
+  );
 
-    lines.erase(it++);
-  }
+  scb_clean_lines -= num;
 }
 
 void Store_buffer::add_st(Dinst *dinst) {

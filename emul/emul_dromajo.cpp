@@ -149,10 +149,12 @@ Dinst *Emul_dromajo::peek(Hartid_t fid) {
   Instruction esesc_insn;
 
   uint32_t funct3, rs1, rs2, rd;
-  uint32_t funct7 = (insn_raw >> 13) & 0x7;
+  uint32_t funct7 = (insn_raw >> 13) & 0xF; //  Funct7 has 4 bits
   Opcode  opcode  = iAALU;  // dromajo wont pass invalid insns, default to ALU
-  RegType src1, src2, dst1;
-  RegType dst2    = LREG_InvalidOutput;
+  RegType src1 = LREG_INVALID;
+  RegType src2 = LREG_INVALID;
+  RegType dst1 = LREG_INVALID;
+  RegType dst2 = LREG_InvalidOutput;
   Addr_t  address = 0;
   switch (insn_raw & 0x3) {  // compressed
     case 0x0:                // C0
@@ -188,7 +190,8 @@ Dinst *Emul_dromajo::peek(Hartid_t fid) {
         address = C1_j_addr_decode(insn_raw) + last_pc;
       } else if (funct7 < 4) {
         rs1  = (insn_raw >> 7) & 0x1F;
-        src1 = dst1 = (RegType)(rs1);
+        src1 = (RegType)(rs1);
+        dst1 = src1;
       } else {
         rs1    = C_reg_decode((insn_raw >> 7) & 0x7);
         src1   = (RegType)(rs1);
@@ -413,7 +416,9 @@ Dinst *Emul_dromajo::peek(Hartid_t fid) {
       }
   }
 
-  // assert(dst1 != LREG_R0);
+  I(src1 != LREG_INVALID);
+  I(src2 != LREG_INVALID);
+  I(dst1 != LREG_INVALID);
 
   esesc_insn.set(opcode, src1, src2, dst1, dst2);
   if (detail>0) {

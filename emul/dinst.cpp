@@ -240,8 +240,6 @@ void Dinst::scrap() {
   I(nDeps == 0);  // No deps src
   I(first == 0);  // no dependent instructions
 
-  Tracer::flush(this);
-
   resource = nullptr; // Needed to have GC
   cluster = nullptr;
 

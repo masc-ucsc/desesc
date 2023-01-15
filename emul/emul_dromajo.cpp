@@ -347,7 +347,7 @@ Dinst *Emul_dromajo::peek(Hartid_t fid) {
           opcode = iCALU_FPALU;
 
           if (funct7 & 0x20) {
-            src2   = LREG_InvalidOutput;
+            src2   = LREG_R0;
           } else {
             src2   = (RegType)(rs2 + 32);
           }
@@ -405,7 +405,8 @@ Dinst *Emul_dromajo::peek(Hartid_t fid) {
             }
           } else {
               dst1 = LREG_InvalidOutput;
-              src1 = src2 = LREG_NoDependence;
+              src1 = LREG_NoDependence;
+              src2 = LREG_NoDependence;
           }
           break;
         default: break;

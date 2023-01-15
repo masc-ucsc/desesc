@@ -3,7 +3,7 @@
 # and field names
 
 [trace]
-range = [0,1024]
+range = [20000,22000]
 
 [soc]
 # FIXME: multicore dromajo/desesc
@@ -19,7 +19,7 @@ bench      = "conf/dhrystone.riscv"
 start_roi = false
 rabbit    = 1024
 detail    = 1024
-time      = 10000
+time      = 50000
 
 [rand_emu]
 type = "random"  # Generate random instructions (coverage testing?)

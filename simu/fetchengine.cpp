@@ -200,10 +200,6 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
       break;
     }
 
-    if (dinst->getID() == 36) {
-      dinst->dump("");
-    }
-
 #ifdef ESESC_TRACE_DATA
     bool predictable = false;
 

@@ -42,10 +42,17 @@ void Instruction::dump() const {
 }
 
 std::string Instruction::get_asm() const {
-  if (dst2!=LREG_InvalidOutput)
-    return fmt::format("r{}, r{} = r{} {} r{}", dst1, dst2, src1, opcode2NameTable[opcode], src2);
+  if (dst2!=LREG_InvalidOutput) {
+    if (src2==LREG_R0)
+      return fmt::format("r{}, r{} = {} r{}", dst1, dst2, opcode2NameTable[opcode], src1);
 
-  return fmt::format("r{} = r{} {} r{}", dst1, src1, opcode2NameTable[opcode], src2);
+    return fmt::format("r{}, r{} = {} r{} r{}", dst1, dst2, opcode2NameTable[opcode], src1, src2);
+  }
+
+  if (src2==LREG_R0)
+    return fmt::format("r{} = {} r{}", dst1, opcode2NameTable[opcode], src1);
+
+  return fmt::format("r{} = {} r{} r{}", dst1, opcode2NameTable[opcode], src1, src2);
 }
 
 void Instruction::set(Opcode opcode_, RegType src1_, RegType src2_, RegType dst1_, RegType dst2_) {

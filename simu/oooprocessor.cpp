@@ -1498,6 +1498,8 @@ void OoOProcessor::retire() {
 
 #endif
 
+    Tracer::stage(dinst, "PNR");
+
     rROB.push(dinst);
     ROB.pop();
   }

@@ -41,16 +41,17 @@ void Tracer::stage(const Dinst *dinst, const std::string ev) {
     return;
 
   adjust_clock();
+  int id = dinst->getID() - track_from;
 
-  if (!started.contains(dinst->getID())) {
-    ofs << "I\t" << std::dec << dinst->getID() << "\t" << dinst->getID() << "\t" << dinst->getFlowId() << "\n";
-    ofs << "L\t" << std::dec << dinst->getID() << "\t0\t" << std::hex << dinst->getPC() << " " << dinst->getInst()->get_asm() << "\n";
-    started.insert(dinst->getID());
+  if (!started.contains(id)) {
+    ofs << "I\t" << std::dec << id << "\t" << id << "\t" << dinst->getFlowId() << "\n";
+    ofs << "L\t" << std::dec << id << "\t0\t" << std::hex << dinst->getPC() << " " << dinst->getInst()->get_asm() << "\n";
+    started.insert(id);
   }
 
-  ofs << fmt::format("S\t{}\t0\t{}\n", dinst->getID(), ev);
-  if (ev == "WB" || ev == "RN") {
-    pending_end.emplace_back(fmt::format("E\t{}\t0\t{}\n", dinst->getID(), ev));
+  ofs << fmt::format("S\t{}\t0\t{}\n", id, ev);
+  if (ev == "WB" || ev == "RN" || ev == "PNR") {
+    pending_end.emplace_back(fmt::format("E\t{}\t0\t{}\n", id, ev));
   }
 }
 
@@ -63,10 +64,11 @@ void Tracer::event(const Dinst *dinst, const std::string ev) {
   I(started.contains(dinst->getID())); // events should be called once an instruction is already started
 
   adjust_clock();
+  int id = dinst->getID() - track_from;
 
-  ofs << fmt::format("S\t{}\t1\t{}\n", dinst->getID(), ev);
+  ofs << fmt::format("S\t{}\t1\t{}\n", id, ev);
 
-  pending_end.emplace_back(fmt::format("E\t{}\t1\t{}\n", dinst->getID(), ev));
+  pending_end.emplace_back(fmt::format("E\t{}\t1\t{}\n", id, ev));
 }
 
 void Tracer::commit(const Dinst *dinst) {
@@ -74,8 +76,11 @@ void Tracer::commit(const Dinst *dinst) {
     return;
 
   adjust_clock();
+  int id = dinst->getID() - track_from;
 
-  ofs << fmt::format("R\t{}\t{}\t0\n", dinst->getID(), dinst->getID());
+  stage(dinst, "CO");
+
+  pending_end.emplace_back(fmt::format("R\t{}\t{}\t0\n", id, id));
 }
 
 void Tracer::flush(const Dinst *dinst) {
@@ -83,15 +88,17 @@ void Tracer::flush(const Dinst *dinst) {
     return;
 
   adjust_clock();
+  int id = dinst->getID() - track_from;
 
-  ofs << fmt::format("R\t{}\t{}\t1\n", dinst->getID(), dinst->getID());
+  ofs << fmt::format("R\t{}\t{}\t1\n", id, id);
 }
 
 void Tracer::adjust_clock() {
 
   if (!main_clock_set) {
     ofs << "Kanata\t0004\n";
-    ofs << "C=\t" << std::dec << globalClock << "\n";
+    // ofs << "C=\t" << std::dec << globalClock << "\n";
+    ofs << "C=\t0\n"; // Easier to read
     main_clock_set = true;
     last_clock = globalClock;
   }else if (last_clock != globalClock) {

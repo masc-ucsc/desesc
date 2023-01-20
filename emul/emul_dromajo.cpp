@@ -147,27 +147,30 @@ Dinst *Emul_dromajo::peek(Hartid_t fid) {
   uint32_t insn_raw = -1;
   (void)riscv_read_insn(machine->cpu_state[fid], &insn_raw, last_pc);
   Instruction esesc_insn;
-
-  uint32_t funct3, rs1, rs2, rd;
-  uint32_t funct7 = (insn_raw >> 13) & 0xF; //  Funct7 has 4 bits
+  // Assume compressed, default to 32-bit insn
+  uint32_t funct7 = 0;
+  uint32_t rs1    = 0;
+  uint32_t rs2    = 0;
+  uint32_t rd     = 0;
+  uint32_t funct3 = (insn_raw >> 13) & 0x7; // funct3 has 3 bits
   Opcode  opcode  = iAALU;  // dromajo wont pass invalid insns, default to ALU
-  RegType src1 = LREG_NoDependence;
-  RegType src2 = LREG_NoDependence;
-  RegType dst1 = LREG_InvalidOutput;
-  RegType dst2 = LREG_InvalidOutput;
+  RegType src1    = LREG_INVALID;
+  RegType src2    = LREG_INVALID;
+  RegType dst1    = LREG_INVALID;
+  RegType dst2    = LREG_InvalidOutput;
   Addr_t  address = 0;
   switch (insn_raw & 0x3) {  // compressed
     case 0x0:                // C0
       rs1     = C_reg_decode((insn_raw >> 7) & 0x7);
       rd      = C_reg_decode((insn_raw >> 2) & 0x7);
       src1    = (RegType)(rs1);
-      address = C0_addr_decode(insn_raw, funct7) + virt_machine_get_reg(machine, fid, rs1);
+      address = C0_addr_decode(insn_raw, funct3) + virt_machine_get_reg(machine, fid, rs1);
 
-      if (funct7 == 1 || funct7 == 5) { // FP LD/ST
+      if (funct3 == 1 || funct3 == 5) { // FP LD/ST
         rd += 32;
       }
 
-      if (funct7 >= 5) {
+      if (funct3 >= 5) {
         opcode = iSALU_ST;
         src2   = (RegType)(rd);
         dst1   = LREG_InvalidOutput;
@@ -183,12 +186,12 @@ Dinst *Emul_dromajo::peek(Hartid_t fid) {
       if (insn_raw == 1) { // NOP
         src1 = LREG_NoDependence;
         dst1 = LREG_InvalidOutput;
-      } else if (funct7 == 5) {
+      } else if (funct3 == 5) {
         opcode  = iBALU_LJUMP;
         src1    = LREG_NoDependence;
         dst1    = LREG_InvalidOutput;
         address = C1_j_addr_decode(insn_raw) + last_pc;
-      } else if (funct7 < 4) {
+      } else if (funct3 < 4) {
         rs1  = (insn_raw >> 7) & 0x1F;
         src1 = (RegType)(rs1);
         dst1 = src1;
@@ -197,10 +200,10 @@ Dinst *Emul_dromajo::peek(Hartid_t fid) {
         src1   = (RegType)(rs1);
         funct3 = (insn_raw >> 10) & 0x3;
 
-        if (funct7 == 4) {
+        if (funct3 == 4) {
           rd = src1;
 
-          if (funct3 == 3) {
+          if (funct7 == 3) {
             rs2  = C_reg_decode((insn_raw >> 2) & 0x7);
             src2 = (RegType)(rs2);
           }
@@ -215,7 +218,7 @@ Dinst *Emul_dromajo::peek(Hartid_t fid) {
       rd  = (insn_raw >> 7) & 0x1F;
       rs2 = (insn_raw >> 2) & 0x1F;
 
-      if (funct7 == 1 || funct7 == 5) {
+      if (funct3 == 1 || funct3 == 5) {
         rd  += 32;    // FP LD/ST
         rs2 += 32;
       }
@@ -223,16 +226,16 @@ Dinst *Emul_dromajo::peek(Hartid_t fid) {
       if (insn_raw == 0x9002) {  // ebreak
         dst1 = LREG_InvalidOutput;
         src1 = src2 = LREG_NoDependence;
-      } else if (funct7 < 4) {
+      } else if (funct3 < 4) {
         dst1 = (RegType)(rd);
         src2 = LREG_NoDependence;
 
-        if (funct7 != 0) {
+        if (funct3 != 0) {
           src1    = (RegType)(2);
           opcode  = iLALU_LD;
           address = virt_machine_get_reg(machine, fid, 2);
 
-          if (funct7 == 2) {
+          if (funct3 == 2) {
             address += C2_lwsp_addr_decode(insn_raw);
           } else {
             address += C2_ldsp_addr_decode(insn_raw);
@@ -240,24 +243,24 @@ Dinst *Emul_dromajo::peek(Hartid_t fid) {
         } else {
           src1 = (RegType)(rd);
         }
-      } else if (funct7 > 4) {
+      } else if (funct3 > 4) {
         src2    = (RegType)(rs2);
         dst1    = LREG_InvalidOutput;
         src1    = (RegType)(2);
         opcode  = iSALU_ST;
         address = virt_machine_get_reg(machine, fid, 2);
 
-        if (funct7 == 6) {
+        if (funct3 == 6) {
           address += C2_swsp_addr_decode(insn_raw);
         } else {
           address += C2_sdsp_addr_decode(insn_raw);
         }
       } else {
-        funct3 = (insn_raw >> 12) & 0x1;
+        funct7 = (insn_raw >> 12) & 0x1;
         rs1    = rd;
         src1   = (RegType)(rs1);
 
-        if (funct3 == 0 && rs2 == 0) {   // C.JR
+        if (funct7 == 0 && rs2 == 0) {   // C.JR
           src2    = LREG_NoDependence;
           dst1    = (RegType)(0);
           opcode  = iBALU_RJUMP;
@@ -266,13 +269,13 @@ Dinst *Emul_dromajo::peek(Hartid_t fid) {
           if (src1 == LREG_R1) {
             opcode = iBALU_RET;
           }
-        } else if (funct3 == 1 && rs2 == 0) {  // C.JALR
+        } else if (funct7 == 1 && rs2 == 0) {  // C.JALR
           src2    = LREG_NoDependence;
           dst1    = (RegType)(1);
           opcode  = iBALU_RJUMP;
           address = virt_machine_get_reg(machine, fid, rs1);
         } else {
-          if (funct3 == 0) {
+          if (funct7 == 0) {
             src1 = (RegType)(0);
           }
           src2 = (RegType)(rs2);

@@ -3,7 +3,7 @@
 # and field names
 
 [trace]
-range = [20000,22000]
+range = [2000,2400]
 
 [soc]
 # FIXME: multicore dromajo/desesc

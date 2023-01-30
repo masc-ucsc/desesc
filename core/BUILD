@@ -48,3 +48,14 @@ cc_test(
     ],
 )
 
+cc_test(
+    name = "cachecore_bench",
+    srcs = [
+        "cachecore_bench.cpp",
+    ],
+    deps = [
+        ":core",
+        "@com_google_benchmark//:benchmark",
+    ],
+)
+

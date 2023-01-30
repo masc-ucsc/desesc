@@ -184,7 +184,7 @@ public:
     return line;
   }
 
-  CacheLine *fillLine(Addr_t addr, Addr_t pc) {
+  CacheLine *fillLine(Addr_t addr, Addr_t pc=0) {
     CacheLine *l = findLine2Replace(addr, pc, false);
     I(l);
 
@@ -287,7 +287,7 @@ protected:
   uint32_t             usageIntervalMask;
 
   std::vector<uint8_t> occupancyVector;
-  int                  trackedAddresses_ptr;
+  size_t               trackedAddresses_ptr;
   std::vector<Addr_t>  trackedAddresses;
 
   int occVectIterator;

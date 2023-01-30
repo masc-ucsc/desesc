@@ -1,5 +1,5 @@
 
-#include <sys/time.h>
+#include "benchmark/benchmark.h"
 
 #include "cachecore.hpp"
 #include "config.hpp"
@@ -43,7 +43,6 @@ double B[MSIZE][MSIZE];
 double C[MSIZE][MSIZE];
 
 void benchMatrix(const char *str) {
-  MSG("Benchmark a code like a matrix multiply: %s", str);
 
   startBench();
 
@@ -107,21 +106,31 @@ void benchMatrix(const char *str) {
   endBench(str);
 }
 
-int main(int32_t argc, const char **argv) {
-  if (argc != 2) {
-    MSG("use: CacheSample <cfg_file>");
-    exit(0);
-  }
+static void setup_config() {
+  std::ofstream file;
 
-  Report::openFile("report.log");
+  file.open("cachecore.toml");
 
-  setenv("ESESC_tradCORE_DL1", "DL1_core DL1", 1);
-  SescConf = new SConfig(argc, argv);
-  unsetenv("ESESC_tradCore_DL1");
+  file << "[dl1_cache]\n";
+  file << "type       = \"cache\"   # or nice\n";
+  file << "size       = 32768\n";
+  file << "line_size  = 64\n";
+  file << "delay      = 2         # hit delay\n";
+  file << "miss_delay = 8\n";
+  file << "assoc      = 4\n";
+  file << "\n";
 
-  cache = MyCacheType::create("DL1_core", "", "tst1");
+  file.close();
+}
 
-  int32_t assoc = SescConf->getInt("DL1_core", "assoc");
+static void BM_cachecore(benchmark::State& state) {
+
+  Report::init();
+  Config::init("cachecore.toml");
+
+  cache = MyCacheType::create("dl1_cache", "", "tst1");
+
+  int32_t assoc = Config::get_power2("dl1_core", "assoc");
   for (int32_t i = 0; i < assoc; i++) {
     ulong addr = (i << 8) + 0xfa;
 
@@ -153,24 +162,25 @@ int main(int32_t argc, const char **argv) {
     }
   }
 
-  // cache = MyCacheType::create("PerCore_TLB","","TLB");
-  // benchMatrix("PerCore_TLB");
+  cache = MyCacheType::create("dl1_cache", "", "L1");
+  for (auto _ : state) {
+    for (int j = 0; j < state.range(0); ++j) {
+      benchMatrix("dl1_core");
+    }
+  }
 
-  cache = MyCacheType::create("DL1_core", "", "L1");
-  benchMatrix("DL1_core");
+  state.counters["speed"] = benchmark::Counter(nAccess, benchmark::Counter::kIsRate);
+}
 
-#if 0
-  cache = MyCacheType::create("BTB","","BTB");
-  benchMatrix("BTB");
-
-  cache = MyCacheType::create("DM","","DM");
-  benchMatrix("DM");
+#ifndef NDEBUG
+BENCHMARK(BM_cachecore)->Arg(2);
+#else
+BENCHMARK(BM_cachecore)->Arg(4);
 #endif
 
-  Stats::report("Cache Stats");
-  Report::close();
-
-  // cache->destroy();
-
-  return 0;
+int main(int argc, char* argv[]) {
+  setup_config();
+  benchmark::Initialize(&argc, argv);
+  benchmark::RunSpecifiedBenchmarks();
 }
+

@@ -38,7 +38,7 @@
 
 #include <vector>
 
-#include "GStats.h"
+#include "stats.hpp"
 #include "PMessage.h"
 #include "Router.h"
 #include "Snippets.h"
@@ -60,7 +60,7 @@ public:
 class InterConnection {
 private:
   const char *descrSection;
-  GStatsAvg   msgLatency;
+  Stats_avg   msgLatency;
 
   unsigned short linkBits;  // link width in bits [1..32700)
   float  linkBytes; // linkBits / 8

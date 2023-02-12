@@ -1,3 +1,5 @@
+// See LICENSE for details.
+
 // cache test
 //
 // TODO:
@@ -22,7 +24,6 @@
 #include "MemStruct.h"
 #include "MemorySystem.h"
 #include "RAWDInst.h"
-#include "SescConf.h"
 #include "callback.h"
 #include "gtest/gtest.h"
 #include "nanassert.h"
@@ -57,7 +58,7 @@ enum currState {
   Invalid     // 3
 };
 
-currState getState(CCache *cache, AddrType addr) {
+currState getState(CCache *cache, Addr_t addr) {
   currState state;
 
   if (cache->Modified(addr)) {
@@ -106,7 +107,7 @@ static void waitAllMemOpsDone() {
 typedef CallbackFunction1<DInst *, &rdDone> rdDoneCB;
 typedef CallbackFunction1<DInst *, &wrDone> wrDoneCB;
 
-static void doread(MemObj *cache, AddrType addr) {
+static void doread(MemObj *cache, Addr_t addr) {
   num_operations++;
   DInst *ldClone = ld->clone();
   ldClone->setAddr(addr);
@@ -122,7 +123,7 @@ static void doread(MemObj *cache, AddrType addr) {
   rd_pending++;
 }
 
-static void doprefetch(MemObj *cache, AddrType addr) {
+static void doprefetch(MemObj *cache, Addr_t addr) {
   num_operations++;
   DInst *ldClone = ld->clone();
   ldClone->setAddr(addr);
@@ -138,7 +139,7 @@ static void doprefetch(MemObj *cache, AddrType addr) {
   rd_pending++;
 }
 
-static void dowrite(MemObj *cache, AddrType addr) {
+static void dowrite(MemObj *cache, Addr_t addr) {
   num_operations++;
   DInst *stClone = st->clone();
   stClone->setAddr(addr);
@@ -160,11 +161,7 @@ GMemorySystem *gms_p1    = 0;
 void           initialize() {
   if (!pluggedin) {
     int         arg1   = 1;
-    const char *arg2[] = {"cachetest", 0};
-    // setenv("ESESC_tradCORE_DL1","DL1_core DL1",1);
 
-    SescConf = new SConfig(arg1, arg2);
-    // unsetenv("ESESC_tradCore_DL1");
     gms_p0 = new MemorySystem(0);
     gms_p0->buildMemorySystem();
     gms_p1 = new MemorySystem(1);

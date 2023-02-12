@@ -1,49 +1,12 @@
-// Contributed by Jose Renau
-//                Luis Ceze
-//                James Tuck
-//
-// The ESESC/BSD License
-//
-// Copyright (c) 2005-2013, Regents of the University of California and
-// the ESESC Project.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-//   - Redistributions of source code must retain the above copyright notice,
-//   this list of conditions and the following disclaimer.
-//
-//   - Redistributions in binary form must reproduce the above copyright
-//   notice, this list of conditions and the following disclaimer in the
-//   documentation and/or other materials provided with the distribution.
-//
-//   - Neither the name of the University of California, Santa Cruz nor the
-//   names of its contributors may be used to endorse or promote products
-//   derived from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// See LICENSE for details.
 
-#include "MSHR.h"
+#include "mshr.hpp"
+#include "memrequest.hpp"
+#include "memory_system.hpp"
+#include "config.hpp"
+#include "snippets.hpp"
 
-#include "MemRequest.h"
-#include "MemorySystem.h"
-#include "SescConf.h"
-#include "Snippets.h"
-
-/* }}} */
-
-MSHR::MSHR(const char *n, int32_t size, int16_t lineSize, int16_t nsub)
+MSHR::MSHR(const std::string &n, int32_t size, int16_t lineSize, int16_t nsub)
     /* baseline MSHR constructor {{{1 */
     : name(strdup(n))
     , Log2LineSize(log2i(lineSize))
@@ -58,7 +21,7 @@ MSHR::MSHR(const char *n, int32_t size, int16_t lineSize, int16_t nsub)
 
   nFreeEntries = size;
 
-  I(lineSize >= 0 && Log2LineSize < (8 * sizeof(AddrType) - 1));
+  I(lineSize >= 0 && Log2LineSize < (8 * sizeof(Addr_t) - 1));
 
   entry.resize(MSHRSize);
 
@@ -69,7 +32,7 @@ MSHR::MSHR(const char *n, int32_t size, int16_t lineSize, int16_t nsub)
 }
 
 /* }}} */
-bool MSHR::canAccept(AddrType addr) const
+bool MSHR::canAccept(Addr_t addr) const
 /* check if can accept new requests {{{1 */
 {
   if (nFreeEntries <= 0) {
@@ -84,7 +47,7 @@ bool MSHR::canAccept(AddrType addr) const
   return true;
 }
 /* }}} */
-bool MSHR::canIssue(AddrType addr) const
+bool MSHR::canIssue(Addr_t addr) const
 /* check if can issue {{{1 */
 {
   uint32_t pos = calcEntry(addr);
@@ -97,7 +60,7 @@ bool MSHR::canIssue(AddrType addr) const
   return true;
 }
 /* }}} */
-void MSHR::addEntry(AddrType addr, CallbackBase *c, MemRequest *mreq)
+void MSHR::addEntry(Addr_t addr, CallbackBase *c, MemRequest *mreq)
 /* add entry to wait for an address {{{1 */
 {
   I(mreq->isRetrying());
@@ -126,7 +89,7 @@ void MSHR::addEntry(AddrType addr, CallbackBase *c, MemRequest *mreq)
 }
 /* }}} */
 
-void MSHR::blockEntry(AddrType addr, MemRequest *mreq)
+void MSHR::blockEntry(Addr_t addr, MemRequest *mreq)
 /* add entry to wait for an address {{{1 */
 {
   I(!mreq->isRetrying());
@@ -150,7 +113,7 @@ void MSHR::blockEntry(AddrType addr, MemRequest *mreq)
 }
 /* }}} */
 
-bool MSHR::retire(AddrType addr, MemRequest *mreq)
+bool MSHR::retire(Addr_t addr, MemRequest *mreq)
 /* retire, and check for deps {{{1 */
 {
   uint32_t pos = calcEntry(addr);

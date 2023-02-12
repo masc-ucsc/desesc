@@ -1,18 +1,17 @@
-#include "CCache.h"
+// See LICENSE for details.
 
-#include <limits.h>
-#include <stdlib.h>
-#include <string.h>
-
+#include <climits>
+#include <cstdlib>
+#include <cstring>
 #include <iostream>
 
-#include "GProcessor.h"
-#include "MSHR.h"
-#include "MemRequest.h"
-#include "MemorySystem.h"
-#include "PortManager.h"
-#include "SescConf.h"
-#include "nanassert.h"
+#include "ccache.hpp"
+#include "gprocessor.hpp"
+#include "mshr.hpp"
+#include "memrequest.hpp"
+#include "cache_port.hpp"
+#include "config.hpp"
+#include "iassert.hpp"
 
 extern "C" uint64_t esesc_mem_read(uint64_t addr);
 
@@ -36,7 +35,7 @@ void CCache::trackAddress(MemRequest *mreq) {
 //}while(0)
 //  1}}}
 
-CCache::CCache(MemorySystem *gms, const char *section, const char *name)
+CCache::CCache(MemorySystem *gms, const std::string &section, const std::string &name)
     // Constructor {{{1
     : MemObj(section, name)
     , nTryPrefetch("%s:nTryPrefetch", name)
@@ -66,131 +65,103 @@ CCache::CCache(MemorySystem *gms, const char *section, const char *name)
     , nPrefetchHitPending("%s:nPrefetchHitPending", name)
     , nPrefetchHitBusy("%s:nPrefetchHitBusy", name)
     , nPrefetchDropped("%s:nPrefetchDropped", name)
-    , cleanupCB(this) {
+    , cleanupCB(this)
+    , port(section, this) {
   // cleanupCB.scheduleAbs(globalClock+32768);
 
-  s_reqHit[ma_setInvalid]   = new GStatsCntr("%s:setInvalidHit", name);
-  s_reqHit[ma_setValid]     = new GStatsCntr("%s:readHit", name);
-  s_reqHit[ma_setDirty]     = new GStatsCntr("%s:writeHit", name);
-  s_reqHit[ma_setShared]    = new GStatsCntr("%s:setSharedHit", name);
-  s_reqHit[ma_setExclusive] = new GStatsCntr("%s:setExclusiveHit", name);
-  s_reqHit[ma_MMU]          = new GStatsCntr("%s:MMUHit", name);
-  s_reqHit[ma_VPCWU]        = new GStatsCntr("%s:VPCMUHit", name);
+  s_reqHit[ma_setInvalid]   = new Stats_cntr("%s:setInvalidHit", name);
+  s_reqHit[ma_setValid]     = new Stats_cntr("%s:readHit", name);
+  s_reqHit[ma_setDirty]     = new Stats_cntr("%s:writeHit", name);
+  s_reqHit[ma_setShared]    = new Stats_cntr("%s:setSharedHit", name);
+  s_reqHit[ma_setExclusive] = new Stats_cntr("%s:setExclusiveHit", name);
+  s_reqHit[ma_MMU]          = new Stats_cntr("%s:MMUHit", name);
+  s_reqHit[ma_VPCWU]        = new Stats_cntr("%s:VPCMUHit", name);
 
-  s_reqMissLine[ma_setInvalid]   = new GStatsCntr("%s:setInvalidMiss", name);
-  s_reqMissLine[ma_setValid]     = new GStatsCntr("%s:readMiss", name);
-  s_reqMissLine[ma_setDirty]     = new GStatsCntr("%s:writeMiss", name);
-  s_reqMissLine[ma_setShared]    = new GStatsCntr("%s:setSharedMiss", name);
-  s_reqMissLine[ma_setExclusive] = new GStatsCntr("%s:setExclusiveMiss", name);
-  s_reqMissLine[ma_MMU]          = new GStatsCntr("%s:MMUMiss", name);
-  s_reqMissLine[ma_VPCWU]        = new GStatsCntr("%s:VPCMUMiss", name);
+  s_reqMissLine[ma_setInvalid]   = new Stats_cntr("%s:setInvalidMiss", name);
+  s_reqMissLine[ma_setValid]     = new Stats_cntr("%s:readMiss", name);
+  s_reqMissLine[ma_setDirty]     = new Stats_cntr("%s:writeMiss", name);
+  s_reqMissLine[ma_setShared]    = new Stats_cntr("%s:setSharedMiss", name);
+  s_reqMissLine[ma_setExclusive] = new Stats_cntr("%s:setExclusiveMiss", name);
+  s_reqMissLine[ma_MMU]          = new Stats_cntr("%s:MMUMiss", name);
+  s_reqMissLine[ma_VPCWU]        = new Stats_cntr("%s:VPCMUMiss", name);
 
-  s_reqMissState[ma_setInvalid]   = new GStatsCntr("%s:setInvalidMissState", name);
-  s_reqMissState[ma_setValid]     = new GStatsCntr("%s:readMissState", name);
-  s_reqMissState[ma_setDirty]     = new GStatsCntr("%s:writeMissState", name);
-  s_reqMissState[ma_setShared]    = new GStatsCntr("%s:setSharedMissState", name);
-  s_reqMissState[ma_setExclusive] = new GStatsCntr("%s:setExclusiveMissState", name);
-  s_reqMissState[ma_MMU]          = new GStatsCntr("%s:MMUMissState", name);
-  s_reqMissState[ma_VPCWU]        = new GStatsCntr("%s:VPCMUMissState", name);
+  s_reqMissState[ma_setInvalid]   = new Stats_cntr("%s:setInvalidMissState", name);
+  s_reqMissState[ma_setValid]     = new Stats_cntr("%s:readMissState", name);
+  s_reqMissState[ma_setDirty]     = new Stats_cntr("%s:writeMissState", name);
+  s_reqMissState[ma_setShared]    = new Stats_cntr("%s:setSharedMissState", name);
+  s_reqMissState[ma_setExclusive] = new Stats_cntr("%s:setExclusiveMissState", name);
+  s_reqMissState[ma_MMU]          = new Stats_cntr("%s:MMUMissState", name);
+  s_reqMissState[ma_VPCWU]        = new Stats_cntr("%s:VPCMUMissState", name);
 
-  s_reqHalfMiss[ma_setInvalid]   = new GStatsCntr("%s:setInvalidHalfMiss", name);
-  s_reqHalfMiss[ma_setValid]     = new GStatsCntr("%s:readHalfMiss", name);
-  s_reqHalfMiss[ma_setDirty]     = new GStatsCntr("%s:writeHalfMiss", name);
-  s_reqHalfMiss[ma_setShared]    = new GStatsCntr("%s:setSharedHalfMiss", name);
-  s_reqHalfMiss[ma_setExclusive] = new GStatsCntr("%s:setExclusiveHalfMiss", name);
-  s_reqHalfMiss[ma_MMU]          = new GStatsCntr("%s:MMUHalfMiss", name);
-  s_reqHalfMiss[ma_VPCWU]        = new GStatsCntr("%s:VPCMUHalfMiss", name);
+  s_reqHalfMiss[ma_setInvalid]   = new Stats_cntr("%s:setInvalidHalfMiss", name);
+  s_reqHalfMiss[ma_setValid]     = new Stats_cntr("%s:readHalfMiss", name);
+  s_reqHalfMiss[ma_setDirty]     = new Stats_cntr("%s:writeHalfMiss", name);
+  s_reqHalfMiss[ma_setShared]    = new Stats_cntr("%s:setSharedHalfMiss", name);
+  s_reqHalfMiss[ma_setExclusive] = new Stats_cntr("%s:setExclusiveHalfMiss", name);
+  s_reqHalfMiss[ma_MMU]          = new Stats_cntr("%s:MMUHalfMiss", name);
+  s_reqHalfMiss[ma_VPCWU]        = new Stats_cntr("%s:VPCMUHalfMiss", name);
 
-  s_reqAck[ma_setInvalid]   = new GStatsCntr("%s:setInvalidAck", name);
-  s_reqAck[ma_setValid]     = new GStatsCntr("%s:setValidAck", name);
-  s_reqAck[ma_setDirty]     = new GStatsCntr("%s:setDirtyAck", name);
-  s_reqAck[ma_setShared]    = new GStatsCntr("%s:setSharedAck", name);
-  s_reqAck[ma_setExclusive] = new GStatsCntr("%s:setExclusiveAck", name);
-  s_reqAck[ma_MMU]          = new GStatsCntr("%s:MMUAck", name);
-  s_reqAck[ma_VPCWU]        = new GStatsCntr("%s:VPCMUAck", name);
+  s_reqAck[ma_setInvalid]   = new Stats_cntr("%s:setInvalidAck", name);
+  s_reqAck[ma_setValid]     = new Stats_cntr("%s:setValidAck", name);
+  s_reqAck[ma_setDirty]     = new Stats_cntr("%s:setDirtyAck", name);
+  s_reqAck[ma_setShared]    = new Stats_cntr("%s:setSharedAck", name);
+  s_reqAck[ma_setExclusive] = new Stats_cntr("%s:setExclusiveAck", name);
+  s_reqAck[ma_MMU]          = new Stats_cntr("%s:MMUAck", name);
+  s_reqAck[ma_VPCWU]        = new Stats_cntr("%s:VPCMUAck", name);
 
-  s_reqSetState[ma_setInvalid]   = new GStatsCntr("%s:setInvalidSetState", name);
-  s_reqSetState[ma_setValid]     = new GStatsCntr("%s:setValidSetState", name);
-  s_reqSetState[ma_setDirty]     = new GStatsCntr("%s:setDirtySetState", name);
-  s_reqSetState[ma_setShared]    = new GStatsCntr("%s:setSharedSetState", name);
-  s_reqSetState[ma_setExclusive] = new GStatsCntr("%s:setExclusiveSetState", name);
-  s_reqSetState[ma_MMU]          = new GStatsCntr("%s:MMUSetState", name);
-  s_reqSetState[ma_VPCWU]        = new GStatsCntr("%s:VPCMUSetState", name);
+  s_reqSetState[ma_setInvalid]   = new Stats_cntr("%s:setInvalidSetState", name);
+  s_reqSetState[ma_setValid]     = new Stats_cntr("%s:setValidSetState", name);
+  s_reqSetState[ma_setDirty]     = new Stats_cntr("%s:setDirtySetState", name);
+  s_reqSetState[ma_setShared]    = new Stats_cntr("%s:setSharedSetState", name);
+  s_reqSetState[ma_setExclusive] = new Stats_cntr("%s:setExclusiveSetState", name);
+  s_reqSetState[ma_MMU]          = new Stats_cntr("%s:MMUSetState", name);
+  s_reqSetState[ma_VPCWU]        = new Stats_cntr("%s:VPCMUSetState", name);
 
-  // TODO: add support for coreCoupledFreq as part of mreq
-  // if(SescConf->checkBool(section,"coreCoupledFreq")) {
-  // MSG("WARNING: coreCoupledFreq does not work yet");
-  //}
+  if (Config::has_entry(section, "nlp_distance")) {
+    nlp_degree   = Config::get_integer(section, "nlp_degree", 0, 16);
+    nlp_distance = Config::get_integer(section, "nlp_distance", 1, 1024);
+    nlp_stride   = Config::get_integer(section, "nlp_stride", 1, 1024);
 
-  bool nlp = false;
-  if (SescConf->checkInt(section, "nlprefetch")) {
-    nlp = SescConf->getInt(section, "nlprefetch") > 0;
-  }
-
-  if (nlp) {
-    nlprefetch         = SescConf->getInt(section, "nlprefetch");
-    nlprefetchDistance = SescConf->getInt(section, "nlprefetchDistance");
-    nlprefetchStride   = SescConf->getInt(section, "nlprefetchStride");
+    nlp_         = nlp_degree!=0;
   } else {
-    nlprefetch         = 0;
-    nlprefetchDistance = 0;
-    nlprefetchStride   = 1;
-  }
-  allocateMiss = true;
-  if (SescConf->checkBool(section, "allocateMiss")) {
-    allocateMiss = SescConf->getBool(section, "allocateMiss");
-  }
+    nlp_degree   = 0;
+    nlp_distance = 0;
+    nlp_stride   = 1;
 
-  if (SescConf->checkBool(section, "incoherent")) {
-    incoherent = SescConf->getBool(section, "incoherent");
-  } else {
-    incoherent = false;
+    nlp_         = false;
   }
-#if 1
+  allocateMiss = Config::get_bool(section, "allocate_miss");
+
+  incoherent = !Config::get_bool(section, "coherent");
   if (incoherent) {
     clearNeedsCoherence();
   }
-#endif
 
   minMissAddr = ULONG_MAX;
   maxMissAddr = 0;
 
-  if (SescConf->checkBool(section, "victim")) {
-    victim = SescConf->getBool(section, "victim");
-  } else {
-    victim = false;
-  }
+  victim = Config::get_bool(section, "victim");
 
   coreCoupledFreq = false;
   // if (coreCoupledFreq) {
   //  BootLoader::getPowerModelPtr()->addTurboCoupledMemory(this);
   //}
 
-  char tmpName[512];
-  sprintf(tmpName, "%s", name);
-
-  cacheBank            = CacheType::create(section, "", tmpName);
+  cacheBank            = CacheType::create(section, "", name);
   lineSize             = cacheBank->getLineSize();
   lineSizeBits         = log2i(lineSize);
-  uint32_t MaxRequests = SescConf->getInt(section, "maxRequests");
-  if (MaxRequests > 2000) {
-    MaxRequests = 2000;
+
+  prefetch_degree = Config::get_integer(section,"prefetch_degree",0, 32);
+
+  auto mega_lines1K = Config::get_integer(section,"mega_lines1K",0, 32); // number of lines touched in 1K to trigger mega
+  prefetch_megaratio = lineSize * mega_lines1K/1024.0;
+  if (prefetch_ration==0 || prefetch_ratio>1) {
+    prefetch_megaratio = 2.0;  // >1 means never active
   }
 
-  if (SescConf->checkInt(section, "prefetchDegree")) {
-    prefetchDegree = SescConf->getInt(section, "prefetchDegree");
-  } else {
-    prefetchDegree = 4;
-  }
-  if (SescConf->checkDouble(section, "megaRatio")) {
-    megaRatio = SescConf->getDouble(section, "megaRatio");
-  } else {
-    megaRatio = 2.0;  // >1 means never active
-  }
-
-  if (!allocateMiss && megaRatio < 1.0) {
-    MSG("ERROR: %s CCache megaRatio can be set only for allocateMiss caches", section);
-    SescConf->notCorrect();
+  if (!allocateMiss && prefetch_megaratio < 1.0) {
+    Config::add_error(fmt::print("{} CCache prefetch_megaratio can be set only for allocateMiss caches", section));
+    return;
   }
 
   {
@@ -198,53 +169,49 @@ CCache::CCache(MemorySystem *gms, const char *section, const char *name)
     if (!allocateMiss) {
       lineSize2 = 64;  // FIXME: Do not hardcode upper level line size
     }
+    uint32_t MaxRequests = Config::get_integer(section, "max_requests",1, 8192);
 
-    mshr = new MSHR(tmpName, 128 * MaxRequests, lineSize2, MaxRequests);
-    sprintf(tmpName, "%sp", name);
-    pmshr = new MSHR(tmpName, 128 * MaxRequests, lineSize2, MaxRequests);
+    mshr  = new MSHR(name       , 128 * MaxRequests, lineSize2, MaxRequests);
+    pmshr = new MSHR(name + "sp", 128 * MaxRequests, lineSize2, MaxRequests);
   }
 
   I(getLineSize() < 4096);  // To avoid bank selection conflict (insane CCache line)
   I(gms);
 
-  SescConf->checkBool(section, "inclusive");
-  SescConf->checkBool(section, "directory");
-
-  inclusive = SescConf->getBool(section, "inclusive");
-  directory = SescConf->getBool(section, "directory");
+  inclusive = Config::get_bool(section, "inclusive");
+  directory = Config::get_bool(section, "directory");
   if (directory && !inclusive) {
-    I(0);
-    MSG("ERROR: %s CCache can not have a 'directory' without being 'inclusive'", section);
-    SescConf->notCorrect();
+    Config::add_error(fmt::format("{} CCache can not have a 'directory' without being 'inclusive'", section));
+    return;
   }
-  if (SescConf->checkBool(section, "justDirectory")) {
-    justDirectory = SescConf->getBool(section, "justDirectory");
+
+  if (Config::has_label(section, "just_directory")) {
+    justDirectory = Config::get_bool(section, "just_directory");
   } else {
     justDirectory = false;
   }
   if (justDirectory && !inclusive) {
-    MSG("ERROR: justDirectory option is only possible with inclusive=true");
-    SescConf->notCorrect();
+    Config::add_error("justDirectory option is only possible with inclusive=true");
+    return;
   }
   if (justDirectory && !allocateMiss) {
-    MSG("ERROR: justDirectory option is only possible with allocateMiss=false");
-    SescConf->notCorrect();
+    Config::add_error("justDirectory option is only possible with allocateMiss=false");
+    return;
   }
   if (justDirectory && !directory) {
-    MSG("ERROR: justDirectory option is only possible with directory=true");
-    SescConf->notCorrect();
+    Config::add_error("justDirectory option is only possible with directory=true");
+    return;
   }
   if (justDirectory && victim) {
-    MSG("ERROR: justDirectory option is only possible with directory=true and no victim");
-    SescConf->notCorrect();
+    Config::add_error("justDirectory option is only possible with directory=true and no victim");
+    return;
   }
 
-  MemObj *lower_level = gms->declareMemoryObj(section, "lowerLevel");
+  MemObj *lower_level = gms->declareMemoryObj(section, "lower_level");
   if (lower_level) {
     addLowerLevel(lower_level);
   }
 
-  port = PortManager::create(section, this);
 
   lastUpMsg = 0;
 }
@@ -292,7 +259,7 @@ void CCache::dropPrefetch(MemRequest *mreq)
 }
 // 1}}}
 
-void CCache::displaceLine(AddrType naddr, MemRequest *mreq, Line *l) {
+void CCache::displaceLine(Addr_t naddr, MemRequest *mreq, Line *l) {
   /* displace a line from the CCache. writeback if necessary {{{1 */
   I(naddr != mreq->getAddr());  // naddr is the displace address, mreq is the trigger
   I(l->isValid());
@@ -360,10 +327,10 @@ void CCache::displaceLine(AddrType naddr, MemRequest *mreq, Line *l) {
 }
 // }}}
 
-CCache::Line *CCache::allocateLine(AddrType addr, MemRequest *mreq)
+CCache::Line *CCache::allocateLine(Addr_t addr, MemRequest *mreq)
 /* find a new CCacheline for addr (it can return 0) {{{1 */
 {
-  AddrType rpl_addr = 0;
+  Addr_t rpl_addr = 0;
   I(mreq->getAddr() == addr);
 
   I(cacheBank->findLineDebug(addr) == 0);
@@ -388,25 +355,25 @@ CCache::Line *CCache::allocateLine(AddrType addr, MemRequest *mreq)
   }
 
 #if 1
-  if (megaRatio < 1) {
+  if (prefetch_megaratio < 1) {
     static int conta = 0;
-    AddrType   pendAddr[32];
+    Addr_t   pendAddr[32];
     int        pendAddr_counter = 0;
     if (conta++ > 8) {  // Do not try all the time
       conta = 0;
 
-      AddrType page_addr = (addr >> 10) << 10;
+      Addr_t page_addr = (addr >> 10) << 10;
       int      nHit      = 0;
       int      nMiss     = 0;
 
       for (int i = 0; i < (1024 >> lineSizeBits); i++) {
-        if (!mshr->canIssue(page_addr + lineSize * i * nlprefetchStride)) {
+        if (!mshr->canIssue(page_addr + lineSize * i * nlp_stride)) {
           nHit++;  // Pending request == hit, line already requested
-        } else if (cacheBank->findLineNoEffect(page_addr + lineSize * i * nlprefetchStride)) {
+        } else if (cacheBank->findLineNoEffect(page_addr + lineSize * i * nlp_stride)) {
           nHit++;
         } else {
           if (pendAddr_counter < 32) {
-            pendAddr[pendAddr_counter++] = page_addr + lineSize * i * nlprefetchStride;
+            pendAddr[pendAddr_counter++] = page_addr + lineSize * i * nlp_stride;
           }
           nMiss++;
         }
@@ -415,7 +382,7 @@ CCache::Line *CCache::allocateLine(AddrType addr, MemRequest *mreq)
       double ratio = nHit;
       ratio        = ratio / (double)(nHit + nMiss);
       // MSG("ratio %f %d %d trying 0x%llx",ratio,nHit,nMiss,addr);
-      if (ratio > megaRatio && ratio < 1.0) {
+      if (ratio > prefetch_megaratio && ratio < 1.0) {
 #if 1
         for (int i = 0; i < pendAddr_counter; i++) {
           tryPrefetch(pendAddr[i], mreq->getStatsFlag(), 1, PSIGN_MEGA, mreq->getPC(), 0);
@@ -790,7 +757,7 @@ void CCache::doReq(MemRequest *mreq)
 
   trackAddress(mreq);
 
-  AddrType addr     = mreq->getAddr();
+  Addr_t addr     = mreq->getAddr();
   bool     retrying = mreq->isRetrying();
 
   // MSG("%s 0x%x %s",getName(),  mreq->getAddr(), retrying?"R":"");
@@ -834,7 +801,7 @@ void CCache::doReq(MemRequest *mreq)
   }
 
   if (!allocateMiss && l == 0) {
-    AddrType page_addr = (addr >> 10) << 10;
+    Addr_t page_addr = (addr >> 10) << 10;
     if (page_addr == addr && mreq->getSign() == PSIGN_MEGA) {
       // Time to allocate a megaLine
       MSG("Mega allocate 0x%llx", addr);
@@ -844,9 +811,9 @@ void CCache::doReq(MemRequest *mreq)
     }
   }
 
-  if (nlprefetch != 0 && !retrying && !mreq->isPrefetch()) {
-    AddrType base = addr + nlprefetchDistance * lineSize;
-    for (int i = 0; i < nlprefetch; i++) {
+  if (nlp_ && !retrying && !mreq->isPrefetch()) {
+    Addr_t base = addr + nlp_distance * lineSize;
+    for (int i = 0; i < nlp_degree; i++) {
 #if 1
       // Geometric stride
       // static int prog[] = {1,3,7,15,31,63,127,255,511};
@@ -857,10 +824,10 @@ void CCache::doReq(MemRequest *mreq)
       } else {
         delta = i * 67;
       }
-      delta = delta * nlprefetchStride;
+      delta = delta * nlp_stride;
       tryPrefetch(base + (delta * lineSize), mreq->getStatsFlag(), i, PSIGN_NLINE, mreq->getPC());
 #else
-      tryPrefetch(base + (i * nlprefetchStride * lineSize), mreq->getStatsFlag(), i, PSIGN_NLINE, mreq->getPC());
+      tryPrefetch(base + (i * nlp_stride * lineSize), mreq->getStatsFlag(), i, PSIGN_NLINE, mreq->getPC());
 #endif
     }
   }
@@ -880,7 +847,7 @@ void CCache::doReq(MemRequest *mreq)
       MSG("miss cl:%llx",mreq->getAddr());
     }
 #endif
-    // if (nlprefetch)
+    // if (nlp_)
     // MSG("%s @%lld miss req 0x%llx (%d)",getName(), globalClock, mreq->getAddr(), mreq->getID());
     MTRACE("doReq cache miss");
     mustForwardReqDown(mreq, true, 0);
@@ -916,7 +883,7 @@ void CCache::doReq(MemRequest *mreq)
   }
   if (mreq->isDropped()) {
     // NotifyHigherLevel can trigger and setDropped
-    port->reqRetire(mreq);
+    port.reqRetire(mreq);
     mshr->retire(addr, mreq);
     return;
   }
@@ -928,14 +895,14 @@ void CCache::doReq(MemRequest *mreq)
   GI(portid < 0, mreq->isTopCoherentNode());
   l->adjustState(mreq, portid);
 
-  Time_t when = port->reqDone(mreq, retrying);
+  Time_t when = port.reqDone(mreq, retrying);
   if (when == 0) {
     // I(0);
     MTRACE("doReq restartReq");
     // Must restart request
     if (mreq->isPrefetch()) {
       dropPrefetch(mreq);
-      port->reqRetire(mreq);
+      port.reqRetire(mreq);
       mshr->retire(addr, mreq);
     } else {
       mreq->setRetrying();
@@ -999,7 +966,7 @@ void CCache::doReq(MemRequest *mreq)
 
   MTRACE("doReq done %lld", when);
 
-  port->reqRetire(mreq);
+  port.reqRetire(mreq);
   mshr->retire(addr, mreq);
 }
 // }}}
@@ -1009,7 +976,7 @@ void CCache::doDisp(MemRequest *mreq)
 {
   trackAddress(mreq);
 
-  AddrType addr = mreq->getAddr();
+  Addr_t addr = mreq->getAddr();
 
   // A disp being prefetch means that the line was prefetched but never used
 
@@ -1043,7 +1010,7 @@ void CCache::doDisp(MemRequest *mreq)
 void CCache::blockFill(MemRequest *mreq)
 // Block cache line fill {{{1
 {
-  port->blockFill(mreq);
+  port.blockFill(mreq);
 }
 // }}}
 
@@ -1058,7 +1025,7 @@ void CCache::doReqAck(MemRequest *mreq)
   Time_t when = globalClock;
   if (!mreq->isDropped()) {
     if (!mreq->isNonCacheable()) {
-      AddrType addr = mreq->getAddr();
+      Addr_t addr = mreq->getAddr();
       Line    *l    = 0;
       if (mreq->isPrefetch()) {
         l = cacheBank->findLineNoEffect(addr, mreq->getPC());
@@ -1075,9 +1042,9 @@ void CCache::doReqAck(MemRequest *mreq)
           }
         }
 
-        AddrType base = (addr >> 6) << 6;
+        Addr_t base = (addr >> 6) << 6;
         for (int i = 0; i < 16; i++) {
-          AddrType data = esesc_mem_read(base + i);
+          Addr_t data = esesc_mem_read(base + i);
           if (data > minMissAddr && data < maxMissAddr) {
             tryPrefetch(data, mreq->getStatsFlag(), 1, PSIGN_CHASE, mreq->getPC(), 0);
           }
@@ -1121,14 +1088,14 @@ void CCache::doReqAck(MemRequest *mreq)
     }
   }
 
-  when             = port->reqAckDone(mreq);
+  when             = port.reqAckDone(mreq);
   Time_t when_copy = when;
   if (when == 0) {
     MTRACE("doReqAck restartReqAck");
     // Must restart request
     if (mreq->isPrefetch()) {
       dropPrefetch(mreq);
-      port->reqRetire(mreq);
+      port.reqRetire(mreq);
       mshr->retire(mreq->getAddr(), mreq);
     } else {
       mreq->setRetrying();
@@ -1140,7 +1107,7 @@ void CCache::doReqAck(MemRequest *mreq)
     when = inOrderUpMessageAbs(when);
   }
 
-  port->reqRetire(mreq);
+  port.reqRetire(mreq);
 
   if (mreq->isDemandCritical()) {
     I(!mreq->isPrefetch());
@@ -1298,7 +1265,7 @@ void CCache::req(MemRequest *mreq)
     mreq->trySetTopCoherentNode(this);
   }
 
-  port->req(mreq);
+  port.req(mreq);
 }
 // }}}
 
@@ -1315,7 +1282,7 @@ void CCache::reqAck(MemRequest *mreq)
     s_reqAck[mreq->getAction()]->inc(mreq->getStatsFlag());
   }
 
-  port->reqAck(mreq);
+  port.reqAck(mreq);
 }
 // }}}
 
@@ -1329,7 +1296,7 @@ void CCache::setState(MemRequest *mreq)
   s_reqSetState[mreq->getAction()]->inc(mreq->getStatsFlag());
 
   I(!mreq->isRetrying());
-  port->setState(mreq);
+  port.setState(mreq);
 }
 // }}}
 
@@ -1337,7 +1304,7 @@ void CCache::setStateAck(MemRequest *mreq)
 /* set state ack {{{1 */
 {
   I(!mreq->isRetrying());
-  port->setStateAck(mreq);
+  port.setStateAck(mreq);
 }
 // }}}
 
@@ -1346,11 +1313,11 @@ void CCache::disp(MemRequest *mreq)
 {
   displacedRecv.inc(mreq->getStatsFlag());
   I(!mreq->isRetrying());
-  port->disp(mreq);
+  port.disp(mreq);
 }
 // }}}
 
-void CCache::tryPrefetch(AddrType paddr, bool doStats, int degree, AddrType pref_sign, AddrType pc, CallbackBase *cb)
+void CCache::tryPrefetch(Addr_t paddr, bool doStats, int degree, Addr_t pref_sign, Addr_t pc, CallbackBase *cb)
 /* Try to prefetch this address (no guarantees) {{{1 */
 {
   if ((paddr >> 8) == 0) {
@@ -1382,7 +1349,7 @@ void CCache::tryPrefetch(AddrType paddr, bool doStats, int degree, AddrType pref
   }
 
   if (!allocateMiss) {
-    AddrType page_addr = (paddr >> 10) << 10;
+    Addr_t page_addr = (paddr >> 10) << 10;
     if (pref_sign != PSIGN_MEGA || page_addr != paddr) {
       nPrefetchHitBusy.inc(doStats);
       router->tryPrefetch(paddr, doStats, degree, pref_sign, pc, cb);
@@ -1391,10 +1358,10 @@ void CCache::tryPrefetch(AddrType paddr, bool doStats, int degree, AddrType pref
   }
 
 #ifdef DEBUG3
-  fprintf(stderr, "%s %s %s %s ", getName(), cb ? "x" : "", port->isBusy(paddr) ? "B" : "", degree > prefetchDegree ? "y" : "");
+  fprintf(stderr, "%s %s %s %s ", getName(), cb ? "x" : "", port.isBusy(paddr) ? "B" : "", degree > prefetch_degree ? "y" : "");
 #endif
 
-  if (port->isBusy(paddr) || degree > prefetchDegree || victim) {
+  if (port.isBusy(paddr) || degree > prefetch_degree || victim) {
     nPrefetchHitBusy.inc(doStats);
     router->tryPrefetch(paddr, doStats, degree, pref_sign, pc, cb);
     return;
@@ -1408,16 +1375,16 @@ void CCache::tryPrefetch(AddrType paddr, bool doStats, int degree, AddrType pref
   MemRequest *preq = MemRequest::createReqReadPrefetch(this, doStats, paddr, pref_sign, degree, pc, cb);
   preq->trySetTopCoherentNode(this);
   // MSG("%s @%lld try 0x%llx (%d)",getName(), globalClock, preq->getAddr(), preq->getID());
-  port->startPrefetch(preq);
+  port.startPrefetch(preq);
   router->scheduleReq(preq, 1);
   mshr->blockEntry(paddr, preq);
 }
 // }}}
 
-bool CCache::isBusy(AddrType addr) const
+bool CCache::isBusy(Addr_t addr) const
 /* check if CCache can accept more writes {{{1 */
 {
-  if (port->isBusy(addr)) {
+  if (port.isBusy(addr)) {
     return true;
   }
 
@@ -1432,10 +1399,10 @@ void CCache::dump() const
 }
 // }}}
 
-TimeDelta_t CCache::ffread(AddrType addr)
+TimeDelta_t CCache::ffread(Addr_t addr)
 /* can accept reads? {{{1 */
 {
-  AddrType addr_r = 0;
+  Addr_t addr_r = 0;
 
   Line *l = cacheBank->readLine(addr);
   if (l) {
@@ -1449,10 +1416,10 @@ TimeDelta_t CCache::ffread(AddrType addr)
 }
 // }}}
 
-TimeDelta_t CCache::ffwrite(AddrType addr)
+TimeDelta_t CCache::ffwrite(Addr_t addr)
 /* can accept writes? {{{1 */
 {
-  AddrType addr_r = 0;
+  Addr_t addr_r = 0;
 
   Line *l = cacheBank->writeLine(addr);
   if (l == 0) {

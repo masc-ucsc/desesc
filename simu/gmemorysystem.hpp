@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 
+#include "callback.hpp"
+#include "opcode.hpp"
 #include "estl.hpp"
 #include "iassert.hpp"
 

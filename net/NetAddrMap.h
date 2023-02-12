@@ -61,7 +61,7 @@ public:
     }
   }
 
-  static NetDevice_t getMapping(AddrType paddr) {
+  static NetDevice_t getMapping(Addr_t paddr) {
     if(type == blocked) {
       return paddr >> log2TileSize;
     } else {

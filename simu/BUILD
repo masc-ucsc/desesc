@@ -9,7 +9,7 @@ cc_library(
         ["*.cpp"],
         exclude = ["*_test*.cpp", "*_bench*.cpp"],
     ),
-    hdrs = glob(["*.hpp", "*.h"]),
+    hdrs = glob(["*.hpp"]),
     copts = COPTS,
     includes = ["."],
     visibility = ["//visibility:public"],

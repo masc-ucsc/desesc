@@ -37,7 +37,7 @@
 #include <vector>
 
 #include "dolc.hpp"
-#include "dinst.hpp"  // AddrType and Opcode
+#include "dinst.hpp"  // Addr_t and Opcode
 
 // #define MEDIUM_TAGE 1
 // #define IMLI_150K 1

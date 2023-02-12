@@ -1,29 +1,14 @@
+// See LICENSE for details.
 
-#include "PortManager.h"
+#include "cache_port.hpp"
+#include "config.hpp"
 
-#include "SescConf.h"
-
-PortManager *PortManager::create(const char *section, MemObj *mobj) {
-  if (SescConf->checkCharPtr(section, "port")) {
-    const char *sub  = SescConf->getCharPtr(section, "port");
-    const char *type = SescConf->getCharPtr(sub, "type");
-    if (strcasecmp(type, "banked") == 0) {
-      return new PortManagerBanked(sub, mobj);
-    } else {
-      MSG("ERROR: %s PortManager %s type %s is unknown", section, sub, type);
-      SescConf->notCorrect();
-    }
-  }
-
-  return new PortManagerBanked(section, mobj);
-}
-
-PortManagerBanked::PortManagerBanked(const char *section, MemObj *_mobj) : PortManager(_mobj) {
+PortManagerBanked::PortManagerBanked(const std::string &section, MemObj *_mobj) : PortManager(_mobj) {
   int numPorts = SescConf->getInt(section, "bkNumPorts");
   int portOccp = SescConf->getInt(section, "bkPortOccp");
 
   char        tmpName[512];
-  const char *name = mobj->getName();
+  auto name = mobj->getName();
 
   hitDelay  = SescConf->getInt(section, "hitDelay");
   missDelay = SescConf->getInt(section, "missDelay");
@@ -110,19 +95,19 @@ PortManagerBanked::PortManagerBanked(const char *section, MemObj *_mobj) : PortM
   blockTime = 0;
 }
 
-Time_t PortManagerBanked::nextBankSlot(AddrType addr, bool en) {
+Time_t PortManagerBanked::nextBankSlot(Addr_t addr, bool en) {
   int32_t bank = (addr >> bankShift) & numBanksMask;
 
   return bkPort[bank]->nextSlot(en);
 }
 
-Time_t PortManagerBanked::calcNextBankSlot(AddrType addr) {
+Time_t PortManagerBanked::calcNextBankSlot(Addr_t addr) {
   int32_t bank = (addr >> bankShift) & numBanksMask;
 
   return bkPort[bank]->calcNextSlot();
 }
 
-void PortManagerBanked::nextBankSlotUntil(AddrType addr, Time_t until, bool en) {
+void PortManagerBanked::nextBankSlotUntil(Addr_t addr, Time_t until, bool en) {
   uint32_t bank = (addr >> bankShift) & numBanksMask;
 
   bkPort[bank]->occupyUntil(until);
@@ -170,7 +155,7 @@ Time_t PortManagerBanked::reqAckDone(MemRequest *mreq) {
   return when + 1;
 }
 
-bool PortManagerBanked::isBusy(AddrType addr) const {
+bool PortManagerBanked::isBusy(Addr_t addr) const {
   if (curRequests >= (maxRequests / 2)) {  // Reserve half for reads which do not check isBusy
     return true;
   }

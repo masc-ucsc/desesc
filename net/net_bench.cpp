@@ -238,6 +238,5 @@ int32_t main(int32_t argc, char **argv, char **envp) {
     EventScheduler::advanceClock();
   }
 
-  GStats::report("netBench stats");
   Report::close();
 }

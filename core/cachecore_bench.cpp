@@ -13,7 +13,7 @@ public:
   bool operator==(SampleState s) const { return id == s.id; }
 };
 
-typedef CacheGeneric<SampleState, long> MyCacheType;
+using MyCacheType=CacheGeneric<SampleState, long>;
 
 MyCacheType *cache;
 
@@ -132,7 +132,7 @@ static void BM_cachecore(benchmark::State& state) {
 
   int32_t assoc = Config::get_power2("dl1_core", "assoc");
   for (int32_t i = 0; i < assoc; i++) {
-    ulong addr = (i << 8) + 0xfa;
+    uint64_t addr = (i << 8) + 0xfa;
 
     MyCacheType::CacheLine *line = cache->findLine(addr);
     if (line) {
@@ -144,7 +144,7 @@ static void BM_cachecore(benchmark::State& state) {
   }
 
   for (int32_t i = 0; i < assoc; i++) {
-    ulong addr = (i << 8) + 0xFa;
+    uint64_t addr = (i << 8) + 0xFa;
 
     MyCacheType::CacheLine *line = cache->findLine(addr);
     if (line == 0) {

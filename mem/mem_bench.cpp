@@ -1,30 +1,4 @@
-/*
-   ESESC: Super ESCalar simulator
-   Copyright (C) 2009 University of California, Santa Cruz.
-
-   Contributed by Jose Renau
-                  Basilio Fraguela
-                  Milos Prvulovic
-                  Smruti Sarangi
-
-This file is part of ESESC.
-
-ESESC is free software; you can redistribute it and/or modify it under the terms
-of the GNU General Public License as published by the Free Software Foundation;
-either version 2, or (at your option) any later version.
-
-ESESC is distributed in the  hope that it will be useful, but WITHOUT ANY
-WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-PARTICULAR PURPOSE. See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along with
-ESESC; see the file COPYING. If not, write to the Free Software Foundation, 59
-Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-*/
-
-/*
- * This launches the ESESC simulator environment with an ideal memory
- */
+// See LICENSE for details.
 
 #include "ARMCrack.h"
 #include "BootLoader.h"
@@ -37,7 +11,6 @@ Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #include "MemStruct.h"
 #include "MemorySystem.h"
 #include "RAWDInst.h"
-#include "SescConf.h"
 #include "ThumbCrack.h"
 #include "callback.h"
 #include "nanassert.h"
@@ -74,7 +47,7 @@ typedef CallbackFunction1<DInst *, &wrDone> wrDoneCB;
 
 long long num_operations = 0;
 
-static void doread(MemObj *cache, AddrType addr) {
+static void doread(MemObj *cache, Addr_t addr) {
   num_operations++;
   DInst *ldClone = ld->clone();
   ldClone->setAddr(addr);
@@ -92,7 +65,7 @@ static void doread(MemObj *cache, AddrType addr) {
   rd_pending++;
 }
 
-static void dowrite(MemObj *cache, AddrType addr) {
+static void dowrite(MemObj *cache, Addr_t addr) {
   num_operations++;
   DInst *stClone = st->clone();
   stClone->setAddr(addr);
@@ -278,7 +251,7 @@ void test2() {
   printf("Core 0\n");
   cache = P0DL1;
 
-  AddrType addr1 = 0;
+  Addr_t addr1 = 0;
   for(int i = 0; i < 132; i += 4)
   {
     addr1 += 1;
@@ -339,7 +312,7 @@ void test3() {
   printf("Test 3\n");
   printf("Core 0\n");
 
-  AddrType addr1 = 0;
+  Addr_t addr1 = 0;
   for (int i = 0; i < 2; i++) {
     addr1 += 1;
     doread(P0DL1, 0x400 + i);
@@ -588,7 +561,7 @@ void test7()
   printf("Core 0\n");
   cache = P0DL1;
 
-  AddrType addr1 = 0;
+  Addr_t addr1 = 0;
   for(int i =0; i< 2; i++)
   {
     addr1 += 1;

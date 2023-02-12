@@ -1,95 +1,48 @@
-// Contributed by Jose Renau
-//                Max Dunne
-//                Shea Ellerson
-//				        Luke Buschmann
-//
-// The ESESC/BSD License
-//
-// Copyright (c) 2005-2013, Regents of the University of California and
-// the ESESC Project.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-//   - Redistributions of source code must retain the above copyright notice,
-//   this list of conditions and the following disclaimer.
-//
-//   - Redistributions in binary form must reproduce the above copyright
-//   notice, this list of conditions and the following disclaimer in the
-//   documentation and/or other materials provided with the distribution.
-//
-//   - Neither the name of the University of California, Santa Cruz nor the
-//   names of its contributors may be used to endorse or promote products
-//   derived from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-
-#include "MemController.h"
+// See LICENSE for details
 
 #include <cmath>
 #include <iostream>
 #include <queue>
 #include <vector>
 
-#include "MemorySystem.h"
-#include "SescConf.h"
-#include "stdlib.h"
-/* }}} */
+#include "mem_controller.hpp"
+#include "memory_system.hpp"
+#include "config.hpp"
 
-MemController::MemController(MemorySystem *current, const char *section, const char *name)
+MemController::MemController(MemorySystem *current, const std::string &section, const std::string &name)
     /* constructor {{{1 */
     : MemObj(section, name)
-    , delay(SescConf->getInt(section, "delay"))
-    , PreChargeLatency(SescConf->getInt(section, "PreChargeLatency"))
-    , RowAccessLatency(SescConf->getInt(section, "RowAccessLatency"))
-    , ColumnAccessLatency(SescConf->getInt(section, "ColumnAccessLatency"))
+    , delay(Config::get_integer(section, "delay",1,1024))
+    , PreChargeLatency(Config::get_integer(section, "PreChargeLatency",1, 1024))
+    , RowAccessLatency(Config::get_integer(section, "RowAccessLatency",1, 1024))
+    , ColumnAccessLatency(Config::get_integer(section, "ColumnAccessLatency",4, 1024))
     , nPrecharge("%s:nPrecharge", name)
     , nColumnAccess("%s:nColumnAccess", name)
     , nRowAccess("%s:nRowAccess", name)
     , avgMemLat("%s_avgMemLat", name)
     , readHit("%s:readHit", name)
-    , memRequestBufferSize(SescConf->getInt(section, "memRequestBufferSize")) {
+    , memRequestBufferSize(Config::get_integer(section, "memRequestBufferSize",1, 1024)) {
   MemObj *lower_level = NULL;
-  SescConf->isInt(section, "numPorts");
-  SescConf->isInt(section, "portOccp");
-  SescConf->isInt(section, "delay");
-  SescConf->isGT(section, "delay", 0);
 
-  NumUnits_t  num = SescConf->getInt(section, "numPorts");
-  TimeDelta_t occ = SescConf->getInt(section, "portOccp");
+  NumUnits_t  num = Config::get_integer(section, "port_num");
+  TimeDelta_t occ = Config::get_integer(section, "port_occ");
 
   char cadena[100];
   sprintf(cadena, "Cmd%s", name);
   cmdPort = PortGeneric::create(cadena, num, occ);
 
-  SescConf->isPower2(section, "numRows", 0);
-  SescConf->isPower2(section, "numColumns", 0);
-  SescConf->isPower2(section, "numBanks", 0);
-  SescConf->isGT(section, "ColumnAccessLatency", 4);  // 1 cycle is not supported
-
-  numBanks                = SescConf->getInt(section, "NumBanks");
-  unsigned int numRows    = SescConf->getInt(section, "NumRows");
-  unsigned int ColumnSize = SescConf->getInt(section, "ColumnSize");
-  unsigned int numColumns = SescConf->getInt(section, "NumColumns");
+  numBanks                = Config::get_power2(section, "NumBanks");
+  unsigned int numRows    = Config::get_power2(section, "NumRows");
+  unsigned int ColumnSize = Config::get_power2(section, "ColumnSize");
+  unsigned int numColumns = Config::get_power2(section, "NumColumns");
 
   columnOffset = log2(ColumnSize);
   columnMask   = numColumns - 1;
-  columnMask   = columnMask << columnOffset;  // FIXME: Use AddrType
+  columnMask   = columnMask << columnOffset;  // FIXME: Use Addr_t
 
   rowOffset = columnOffset + log2(numColumns);
   rowMask   = numRows - 1;
-  rowMask   = rowMask << rowOffset;  // FIXME: use AddrType
+  rowMask   = rowMask << rowOffset;  // FIXME: use Addr_t
 
   bankOffset = rowOffset + log2(numRows);
   bankMask   = numBanks - 1;
@@ -102,7 +55,7 @@ MemController::MemController(MemorySystem *current, const char *section, const c
     bankState[curBank].bankTime  = 0;     // added (LNB)
   }
   I(current);
-  lower_level = current->declareMemoryObj(section, "lowerLevel");
+  lower_level = current->declareMemoryObj(section, "lower_level");
   if (lower_level) {
     addLowerLevel(lower_level);
   }
@@ -146,14 +99,14 @@ void MemController::doSetStateAck(MemRequest *mreq)
 }
 /* }}} */
 
-bool MemController::isBusy(AddrType addr) const
+bool MemController::isBusy(Addr_t addr) const
 /* always can accept writes {{{1 */
 {
   return false;
 }
 /* }}} */
 
-void MemController::tryPrefetch(AddrType addr, bool doStats, int degree, AddrType pref_sign, AddrType pc, CallbackBase *cb)
+void MemController::tryPrefetch(Addr_t addr, bool doStats, int degree, Addr_t pref_sign, Addr_t pc, CallbackBase *cb)
 /* try to prefetch to openpage {{{1 */
 {
   if (cb) {
@@ -163,14 +116,14 @@ void MemController::tryPrefetch(AddrType addr, bool doStats, int degree, AddrTyp
 }
 /* }}} */
 
-TimeDelta_t MemController::ffread(AddrType addr)
+TimeDelta_t MemController::ffread(Addr_t addr)
 /* fast forward reads {{{1 */
 {
   return delay + RowAccessLatency;
 }
 /* }}} */
 
-TimeDelta_t MemController::ffwrite(AddrType addr)
+TimeDelta_t MemController::ffwrite(Addr_t addr)
 /* fast forward writes {{{1 */
 {
   return delay + RowAccessLatency;

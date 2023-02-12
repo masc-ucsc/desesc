@@ -1,59 +1,24 @@
-// copyright and includes {{{1
-// Contributed by Luis Ceze
-//                Karin Strauss
-//                Jose Renau
-//
-// The ESESC/BSD License
-//
-// Copyright (c) 2005-2013, Regents of the University of California and
-// the ESESC Project.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-//   - Redistributions of source code must retain the above copyright notice,
-//   this list of conditions and the following disclaimer.
-//
-//   - Redistributions in binary form must reproduce the above copyright
-//   notice, this list of conditions and the following disclaimer in the
-//   documentation and/or other materials provided with the distribution.
-//
-//   - Neither the name of the University of California, Santa Cruz nor the
-//   names of its contributors may be used to endorse or promote products
-//   derived from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// See license.txt for details.
 
-#ifndef CCache_H
-#define CCache_H
+#pragma once
 
 #include <vector>
-#include "CacheCore.h"
-#include "GProcessor.h"
-#include "GStats.h"
-#include "MSHR.h"
-#include "MemObj.h"
-#include "MemorySystem.h"
-#include "SCTable.h"
-#include "Snippets.h"
-#include "estl.h"
+
+#include "cachecore.hpp"
+#include "gprocessor.hpp"
+#include "stats.hpp"
+#include "mshr.hpp"
+#include "memobj.hpp"
+#include "memory_system.hpp"
+#include "sctable.hpp"
+#include "snippets.hpp"
+#include "estl.hpp"
+#include "cache_port.hpp"
+
 //#include "Prefetcher.h"
 //#define ENABLE_LDBP
 
-class PortManager;
 class MemRequest;
-/* }}} */
 
 #define CCACHE_MAXNSHARERS 64
 
@@ -61,7 +26,7 @@ class MemRequest;
 
 class CCache : public MemObj {
 protected:
-  class CState : public StateGeneric<AddrType> { /*{{{*/
+  class CState : public StateGeneric<Addr_t> { /*{{{*/
   private:
     enum StateType { M, E, S, I };
     StateType state;
@@ -72,6 +37,7 @@ protected:
 
   public:
     CState(int32_t lineSize) {
+      (void)lineSize;
       state = I;
       clearTag();
     }
@@ -179,10 +145,9 @@ protected:
     void set(const MemRequest *mreq);
   }; /*}}}*/
 
-  typedef CacheGeneric<CState, AddrType>            CacheType;
-  typedef CacheGeneric<CState, AddrType>::CacheLine Line;
+  typedef CacheGeneric<CState, Addr_t>            CacheType;
+  typedef CacheGeneric<CState, Addr_t>::CacheLine Line;
 
-  PortManager *port;
   CacheType *  cacheBank;
   MSHR *       mshr;
   MSHR *       pmshr;
@@ -214,13 +179,16 @@ protected:
 
   int32_t lineSize;
   int32_t lineSizeBits;
-  int32_t nlprefetch; // next line prefetch degree (0 == off)
-  int32_t nlprefetchDistance;
-  int32_t nlprefetchStride;
-  int32_t prefetchDegree;
+
+  bool    nlp;
+  int32_t nlp_degree;
+  int32_t nlp_distance;
+  int32_t nlp_stride;
+
+  int32_t prefetch_degree;
+  double  prefetch_megaratio;
 
   int32_t moving_conf;
-  double  megaRatio;
 
   bool coreCoupledFreq;
   bool inclusive;
@@ -232,57 +200,57 @@ protected:
   bool justDirectory;
 
   // BEGIN Statistics
-  GStatsCntr nTryPrefetch;
-  GStatsCntr nSendPrefetch;
+  Stats_cntr nTryPrefetch;
+  Stats_cntr nSendPrefetch;
 
-  GStatsCntr displacedSend;
-  GStatsCntr displacedRecv;
+  Stats_cntr displacedSend;
+  Stats_cntr displacedRecv;
 
-  GStatsCntr invAll;
-  GStatsCntr invOne;
-  GStatsCntr invNone;
+  Stats_cntr invAll;
+  Stats_cntr invOne;
+  Stats_cntr invNone;
 
-  GStatsCntr writeBack;
+  Stats_cntr writeBack;
 
-  GStatsCntr lineFill;
+  Stats_cntr lineFill;
 
-  GStatsAvg avgMissLat;
-  GStatsAvg avgMemLat;
-  GStatsAvg avgHalfMemLat;
-  GStatsAvg avgSnoopLat;
+  Stats_avg avgMissLat;
+  Stats_avg avgMemLat;
+  Stats_avg avgHalfMemLat;
+  Stats_avg avgSnoopLat;
 
-  GStatsCntr capInvalidateHit;
-  GStatsCntr capInvalidateMiss;
-  GStatsCntr invalidateHit;
-  GStatsCntr invalidateMiss;
+  Stats_cntr capInvalidateHit;
+  Stats_cntr capInvalidateMiss;
+  Stats_cntr invalidateHit;
+  Stats_cntr invalidateMiss;
 
-  GStatsAvg  avgPrefetchLat;
-  GStatsCntr nPrefetchUseful;
-  GStatsCntr nPrefetchWasteful;
-  GStatsCntr nPrefetchLineFill;
-  GStatsCntr nPrefetchRedundant;
-  GStatsCntr nPrefetchHitLine;
-  GStatsCntr nPrefetchHitPending;
-  GStatsCntr nPrefetchHitBusy;
-  GStatsCntr nPrefetchDropped;
+  Stats_avg  avgPrefetchLat;
+  Stats_cntr nPrefetchUseful;
+  Stats_cntr nPrefetchWasteful;
+  Stats_cntr nPrefetchLineFill;
+  Stats_cntr nPrefetchRedundant;
+  Stats_cntr nPrefetchHitLine;
+  Stats_cntr nPrefetchHitPending;
+  Stats_cntr nPrefetchHitBusy;
+  Stats_cntr nPrefetchDropped;
 
-  GStatsCntr *s_reqHit[ma_MAX];
-  GStatsCntr *s_reqMissLine[ma_MAX];
-  GStatsCntr *s_reqMissState[ma_MAX];
-  GStatsCntr *s_reqHalfMiss[ma_MAX];
-  GStatsCntr *s_reqAck[ma_MAX];
-  GStatsCntr *s_reqSetState[ma_MAX];
+  Stats_cntr *s_reqHit[ma_MAX];
+  Stats_cntr *s_reqMissLine[ma_MAX];
+  Stats_cntr *s_reqMissState[ma_MAX];
+  Stats_cntr *s_reqHalfMiss[ma_MAX];
+  Stats_cntr *s_reqAck[ma_MAX];
+  Stats_cntr *s_reqSetState[ma_MAX];
 
   // Statistics currently not used.
   // Only defined here to prevent bogus warnings from the powermodel.
-  GStatsCntr writeExclusive;
+  Stats_cntr writeExclusive;
 
-  AddrType minMissAddr;
-  AddrType maxMissAddr;
+  Addr_t minMissAddr;
+  Addr_t maxMissAddr;
 
   // END Statistics
-  void  displaceLine(AddrType addr, MemRequest *mreq, Line *l);
-  Line *allocateLine(AddrType addr, MemRequest *mreq);
+  void  displaceLine(Addr_t addr, MemRequest *mreq, Line *l);
+  Line *allocateLine(Addr_t addr, MemRequest *mreq);
   void  mustForwardReqDown(MemRequest *mreq, bool miss, Line *l);
 
   bool notifyLowerLevels(Line *l, MemRequest *mreq);
@@ -293,9 +261,9 @@ protected:
   void
                                                   cleanup(); // FIXME: Expose this to MemObj and call it from core on ctx switch or syscall (move to public and remove callback)
   StaticCallbackMember0<CCache, &CCache::cleanup> cleanupCB;
-
+  Cache_port port;
 public:
-  CCache(MemorySystem *gms, const char *descr_section, const char *name = NULL);
+  CCache(MemorySystem *gms, const std::string &descr_section, const std::string name="");
   virtual ~CCache();
 
   int32_t getLineSize() const {
@@ -311,7 +279,7 @@ public:
   void setStateAck(MemRequest *req);
   void disp(MemRequest *req);
 
-  void tryPrefetch(AddrType paddr, bool doStats, int degree, AddrType pref_sign, AddrType pc, CallbackBase *cb = 0);
+  void tryPrefetch(Addr_t paddr, bool doStats, int degree, Addr_t pref_sign, Addr_t pc, CallbackBase *cb = 0);
 
   // This do the real work
   void doReq(MemRequest *req);
@@ -320,10 +288,10 @@ public:
   void doSetStateAck(MemRequest *req);
   void doDisp(MemRequest *req);
 
-  TimeDelta_t ffread(AddrType addr);
-  TimeDelta_t ffwrite(AddrType addr);
+  TimeDelta_t ffread(Addr_t addr);
+  TimeDelta_t ffwrite(Addr_t addr);
 
-  bool isBusy(AddrType addr) const;
+  bool isBusy(Addr_t addr) const;
 
   void setTurboRatio(float r);
   void dump() const;
@@ -335,7 +303,7 @@ public:
     return justDirectory;
   }
 
-  bool Modified(AddrType addr) const {
+  bool Modified(Addr_t addr) const {
     Line *cl = cacheBank->findLineNoEffect(addr);
     if(cl != 0)
       return cl->isModified();
@@ -343,7 +311,7 @@ public:
     return false;
   }
 
-  bool Exclusive(AddrType addr) const {
+  bool Exclusive(Addr_t addr) const {
     Line *cl = cacheBank->findLineNoEffect(addr);
     if(cl != 0)
       return cl->isExclusive();
@@ -351,14 +319,14 @@ public:
     return false;
   }
 
-  bool Shared(AddrType addr) const {
+  bool Shared(Addr_t addr) const {
     Line *cl = cacheBank->findLineNoEffect(addr);
     if(cl != 0)
       return cl->isShared();
     return false;
   }
 
-  bool Invalid(AddrType addr) const {
+  bool Invalid(Addr_t addr) const {
     Line *cl = cacheBank->findLineNoEffect(addr);
     if(cl == 0)
       return true;
@@ -369,8 +337,8 @@ public:
   void trackAddress(MemRequest *mreq);
 #else
   void trackAddress(MemRequest *mreq) {
+    (void)mreq;
   }
 #endif
 };
 
-#endif

@@ -1,3 +1,5 @@
+// See LICENSE for details.
+
 // cache test
 //
 // TODO:
@@ -22,9 +24,10 @@
 #include "MemStruct.h"
 #include "MemorySystem.h"
 #include "RAWDInst.h"
-#include "SescConf.h"
 #include "callback.h"
-#include "nanassert.h"
+
+#include "iassert.hpp"
+#include "config.hpp"
 
 #ifdef DEBUG_CALLPATH
 extern bool forcemsgdump;
@@ -51,7 +54,7 @@ enum currState {
   Invalid     // 3
 };
 
-currState getState(CCache *cache, AddrType addr) {
+currState getState(CCache *cache, Addr_t addr) {
   currState state;
 
   if (cache->Modified(addr)) {
@@ -105,7 +108,7 @@ static void waitAllMemOpsDone() {
 typedef CallbackFunction1<DInst *, &rdDone> rdDoneCB;
 typedef CallbackFunction1<DInst *, &wrDone> wrDoneCB;
 
-static void doread(MemObj *cache, AddrType addr) {
+static void doread(MemObj *cache, Addr_t addr) {
   num_operations++;
   DInst *ldClone = ld->clone();
   ldClone->setAddr(addr);
@@ -125,7 +128,7 @@ static void doread(MemObj *cache, AddrType addr) {
   rd_pending++;
 }
 
-static void doprefetch(MemObj *cache, AddrType addr) {
+static void doprefetch(MemObj *cache, Addr_t addr) {
   num_operations++;
   DInst *ldClone = ld->clone();
   ldClone->setAddr(addr);
@@ -141,7 +144,7 @@ static void doprefetch(MemObj *cache, AddrType addr) {
   rd_pending++;
 }
 
-static void dowrite(MemObj *cache, AddrType addr) {
+static void dowrite(MemObj *cache, Addr_t addr) {
   num_operations++;
   DInst *stClone = st->clone();
   stClone->setAddr(addr);
@@ -161,7 +164,7 @@ static void dowrite(MemObj *cache, AddrType addr) {
   wr_pending++;
 }
 
-static void dodisp(MemObj *cache, AddrType addr) {
+static void dodisp(MemObj *cache, Addr_t addr) {
   num_operations++;
   DInst *stClone = st->clone();
   stClone->setAddr(addr);
@@ -186,9 +189,7 @@ GMemorySystem *gms_p4    = 0;
 void           initialize() {
   if (!pluggedin) {
     int         arg1   = 1;
-    const char *arg2[] = {"cachetest", 0};
 
-    SescConf = new SConfig(arg1, arg2);
     gms_p0   = new MemorySystem(0);
     gms_p0->buildMemorySystem();
     gms_p1 = new MemorySystem(1);
@@ -533,7 +534,7 @@ void MemInterface::testlat(int id) {
 int main(int argc, char **argv) {
   MemInterface mi;
 
-  frequency = SescConf->getDouble("technology", "frequency");
+  frequency = Config::get_integer("soc","core", 0, "frequency_mhz") * 1.0e6;
 
   if (argc != 5) {
     fprintf(stderr, "Usage:\n\t%s <TYP|NC> <RD|DISP|INV|SNOOP|LAT> coreid wait\n", argv[0]);

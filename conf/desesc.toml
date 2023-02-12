@@ -244,6 +244,23 @@ line_size  = 64
 delay      = 2         # hit delay
 miss_delay = 8
 assoc      = 4
+
+port_occ   = 1
+port_num   = 1
+port_banks = 32
+
+max_requests  = 32
+allocate_miss = true   # allocate on cache miss
+victim        = false  # victim cache allocation style
+coherent      = true
+
+nlp_distance = 2
+nlp_degree   = 1       # 0 disabled
+nlp_stride   = 1
+
+prefetch_degree = 0    # 0 disabled
+mega_lines1K    = 8    # 8 lines touched, triggers mega/carped prefetch
+
 lower_level = "privl2 L2 sharedby 2"
 
 [il1_cache]
@@ -261,6 +278,7 @@ size       = 32768
 line_size  = 64
 delay      = 2         # hit delay
 miss_delay = 8
+cold_misses = false     # cold misses become hits
 assoc      = 4
 lower_level = ""
 

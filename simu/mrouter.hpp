@@ -4,7 +4,7 @@
 
 #include <vector>
 
-#include "resource.hpp"
+#include "gmemorysystem.hpp"
 #include "estl.hpp"
 #include "iassert.hpp"
 #include "snippets.hpp"

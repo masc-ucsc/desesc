@@ -16,20 +16,18 @@ MemController::MemController(MemorySystem *current, const std::string &section, 
     , PreChargeLatency(Config::get_integer(section, "PreChargeLatency",1, 1024))
     , RowAccessLatency(Config::get_integer(section, "RowAccessLatency",1, 1024))
     , ColumnAccessLatency(Config::get_integer(section, "ColumnAccessLatency",4, 1024))
-    , nPrecharge("%s:nPrecharge", name)
-    , nColumnAccess("%s:nColumnAccess", name)
-    , nRowAccess("%s:nRowAccess", name)
-    , avgMemLat("%s_avgMemLat", name)
-    , readHit("%s:readHit", name)
+    , nPrecharge(fmt::format("{}:nPrecharge", name))
+    , nColumnAccess(fmt::format("{}:nColumnAccess", name))
+    , nRowAccess(fmt::format("{}:nRowAccess", name))
+    , avgMemLat(fmt::format("{}_avgMemLat", name))
+    , readHit(fmt::format("{}:readHit", name))
     , memRequestBufferSize(Config::get_integer(section, "memRequestBufferSize",1, 1024)) {
   MemObj *lower_level = NULL;
 
   NumUnits_t  num = Config::get_integer(section, "port_num");
   TimeDelta_t occ = Config::get_integer(section, "port_occ");
 
-  char cadena[100];
-  sprintf(cadena, "Cmd%s", name);
-  cmdPort = PortGeneric::create(cadena, num, occ);
+  cmdPort = PortGeneric::create(name + "_cmd", num, occ);
 
   numBanks                = Config::get_power2(section, "NumBanks");
   unsigned int numRows    = Config::get_power2(section, "NumRows");
@@ -65,72 +63,59 @@ MemController::MemController(MemorySystem *current, const std::string &section, 
 void MemController::doReq(MemRequest *mreq)
 /* request reaches the memory controller {{{1 */
 {
-  readHit.inc(mreq->getStatsFlag());
+  readHit.inc(mreq->has_stats());
   addMemRequest(mreq);
 }
 /* }}} */
 
-void MemController::doReqAck(MemRequest *mreq)
-/* push up {{{1 */
-{
+void MemController::doReqAck(MemRequest *mreq) {
+  (void)mreq;
   I(0);
 }
-/* }}} */
 
-void MemController::doDisp(MemRequest *mreq)
-/* push down {{{1 */
-{
+void MemController::doDisp(MemRequest *mreq) {
   addMemRequest(mreq);
 }
-/* }}} */
 
-void MemController::doSetState(MemRequest *mreq)
-/* push up {{{1 */
-{
+void MemController::doSetState(MemRequest *mreq) {
+  (void)mreq;
   I(0);
 }
-/* }}} */
 
-void MemController::doSetStateAck(MemRequest *mreq)
-/* push up {{{1 */
-{
-  //  MSG("\nMemController SetStateAck for Addr %llx", mreq->getAddr());
-  //  I(0);
+void MemController::doSetStateAck(MemRequest *mreq) {
+  (void)mreq;
 }
-/* }}} */
 
-bool MemController::isBusy(Addr_t addr) const
-/* always can accept writes {{{1 */
-{
+bool MemController::isBusy(Addr_t addr) const {
+  (void)addr;
   return false;
 }
-/* }}} */
 
 void MemController::tryPrefetch(Addr_t addr, bool doStats, int degree, Addr_t pref_sign, Addr_t pc, CallbackBase *cb)
-/* try to prefetch to openpage {{{1 */
 {
+  (void)addr;
+  (void)doStats;
+  (void)degree;
+  (void)pref_sign;
+  (void)pc;
   if (cb) {
     cb->destroy();
   }
   // FIXME:
 }
-/* }}} */
 
-TimeDelta_t MemController::ffread(Addr_t addr)
-/* fast forward reads {{{1 */
-{
+TimeDelta_t MemController::ffread(Addr_t addr) {
+  (void)addr;
   return delay + RowAccessLatency;
 }
-/* }}} */
 
-TimeDelta_t MemController::ffwrite(Addr_t addr)
-/* fast forward writes {{{1 */
-{
+TimeDelta_t MemController::ffwrite(Addr_t addr) {
+  (void)addr;
   return delay + RowAccessLatency;
 }
-/* }}} */
 
 void MemController::addMemRequest(MemRequest *mreq) {
+  I(0); // really, a new?? FIXME:
   FCFSField *newEntry = new FCFSField;
 
   newEntry->Bank        = getBank(mreq);
@@ -179,9 +164,11 @@ void MemController::manageRam(void) {
             Time_t delta = globalClock - tempMem->TimeEntered;
 
             router->scheduleReqAck(mreq, 1);  //  Fixed doReq acknowledge -- LNB 5/28/2014
-            avgMemLat.sample(delta, mreq->getStatsFlag());
+            avgMemLat.sample(delta, mreq->has_stats());
           }
-          IS(tempMem->mreq = 0);
+          #ifndef NDEBUG
+          tempMem->mreq = 0;
+          #endif
 
           curMemRequests.erase(it);
 

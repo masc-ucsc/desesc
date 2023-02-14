@@ -9,7 +9,7 @@
 #include "drawarch.hpp"
 #include "mem_controller.hpp"
 #include "memxbar.hpp"
-#include "nicecache.hpp"
+#include "nice_cache.hpp"
 #include "config.hpp"
 #include "unmemxbar.hpp"
 

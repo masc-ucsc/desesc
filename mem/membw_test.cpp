@@ -83,7 +83,7 @@ RAWDInst rinst;
 bool one_finished;
 
 void rdDone(DInst *dinst) {
-  printf("rddone @%lld\n", (long long)globalClock);
+  fmt::print("rddone @{}\n", (long long)globalClock);
 
   one_finished = true;
 
@@ -92,7 +92,7 @@ void rdDone(DInst *dinst) {
 }
 
 void wrDone(DInst *dinst) {
-  printf("wrdone @%lld\n", (long long)globalClock);
+  fmt::print("wrdone @{}\n", (long long)globalClock);
 
   one_finished = true;
   wr_pending--;
@@ -118,12 +118,12 @@ static void doread(MemObj *cache, Addr_t addr) {
   }
 
   rdDoneCB *cb = rdDoneCB::create(ldClone);
-  printf("rd %x @%lld\n", (unsigned int)addr, (long long)globalClock);
+  fmt::print("rd {:x} @{}\n", (unsigned int)addr, (long long)globalClock);
 
   if (nc) {
-    MemRequest::sendNCReqRead(cache, ldClone->getStatsFlag(), addr, cb);
+    MemRequest::sendNCReqRead(cache, ldClone->has_stats(), addr, cb);
   } else {
-    MemRequest::sendReqRead(cache, ldClone->getStatsFlag(), addr, cb);
+    MemRequest::sendReqRead(cache, ldClone->has_stats(), addr, cb);
   }
   rd_pending++;
 }
@@ -138,9 +138,9 @@ static void doprefetch(MemObj *cache, Addr_t addr) {
   }
 
   rdDoneCB *cb = rdDoneCB::create(ldClone);
-  printf("rd %x @%lld\n", (unsigned int)addr, (long long)globalClock);
+  fmt::print("rd {:x} @{}\n", (unsigned int)addr, (long long)globalClock);
 
-  MemRequest::sendReqReadPrefetch(cache, ldClone->getStatsFlag(), addr, cb);
+  MemRequest::sendReqReadPrefetch(cache, ldClone->has_stats(), addr, cb);
   rd_pending++;
 }
 
@@ -154,12 +154,12 @@ static void dowrite(MemObj *cache, Addr_t addr) {
   }
 
   wrDoneCB *cb = wrDoneCB::create(stClone);
-  printf("wr %x @%lld\n", (unsigned int)addr, (long long)globalClock);
+  fmt::print("wr {:x} @{}\n", (unsigned int)addr, (long long)globalClock);
 
   if (nc) {
-    MemRequest::sendNCReqWrite(cache, stClone->getStatsFlag(), addr, cb);
+    MemRequest::sendNCReqWrite(cache, stClone->has_stats(), addr, cb);
   } else {
-    MemRequest::sendReqWrite(cache, stClone->getStatsFlag(), addr, cb);
+    MemRequest::sendReqWrite(cache, stClone->has_stats(), addr, cb);
   }
   wr_pending++;
 }
@@ -174,11 +174,11 @@ static void dodisp(MemObj *cache, Addr_t addr) {
   }
 
   wrDoneCB *cb = wrDoneCB::create(stClone);
-  printf("disp %x @%lld\n", (unsigned int)addr, (long long)globalClock);
+  fmt::print("disp {:x} @{}\n", (unsigned int)addr, (long long)globalClock);
 
   MRouter *router = cache->getRouter();
   MemObj  *mobj   = router->getDownNode();
-  MemRequest::sendDirtyDisp(mobj, cache, addr, stClone->getStatsFlag(), cb);
+  MemRequest::sendDirtyDisp(mobj, cache, addr, stClone->has_stats(), cb);
   wr_pending++;
 }
 
@@ -215,11 +215,11 @@ void           initialize() {
 CCache *getDL1(GMemorySystem *gms) {
   MemObj *dl1 = gms->getDL1();
   if (strcasecmp(dl1->getDeviceType(), "cache") != 0) {
-    printf("going down from %s\n", dl1->getDeviceType());
+    fmt::print("going down from {}\n", dl1->getDeviceType());
     MRouter *router = dl1->getRouter();
     dl1             = router->getDownNode();
     if (strcasecmp(dl1->getDeviceType(), "cache") != 0) {
-      printf("ERROR: Neither first or second level is a cache %s\n", dl1->getDeviceType());
+      fmt::print("ERROR: Neither first or second level is a cache {}\n", dl1->getDeviceType());
       exit(-1);
     }
   }
@@ -296,11 +296,11 @@ void MemInterface::testbw(bool rd, int id, int wait) {
   }
 
   if (cache == 0) {
-    fprintf(stderr, "ERROR: Invalid cache source selection %d\n", id);
+    fmt::print("ERROR: Invalid cache source selection {}\n", id);
     exit(-1);
   }
 
-  printf("BEGIN L2 BW test\n");
+  fmt::print("BEGIN L2 BW test\n");
 
   Time_t start;
   int    conta;
@@ -340,18 +340,13 @@ void MemInterface::testbw(bool rd, int id, int wait) {
       }
     }
     last_globalClock = globalClock;
-
-    if (!one_finished) {
-      // start = globalClock;
-      printf("HERE %lld\n", start);
-    }
   }
   waitAllMemOpsDone();
   Time_t l2filltime = globalClock - start;
   t                 = ((double)l2filltime) / conta;
   double mb         = frequency * 64.0 / t / 1e9;
 
-  printf("L2 BW miss test wait=%d %lld (%g cycles/l2_miss) %g GB/s\n", wait, l2filltime, t, mb);
+  fmt::print("L2 BW miss test wait={} {} ({} cycles/l2_miss) {} GB/s\n", wait, l2filltime, t, mb);
 }
 
 void MemInterface::testsnoop(bool rd, int id, int wait) {
@@ -370,11 +365,11 @@ void MemInterface::testsnoop(bool rd, int id, int wait) {
   }
 
   if (cache == 0) {
-    fprintf(stderr, "ERROR: Invalid cache source selection %d\n", id);
+    fmt::print("ERROR: Invalid cache source selection {}\n", id);
     exit(-1);
   }
 
-  printf("BEGIN L2 snoop test\n");
+  fmt::print("BEGIN L2 snoop test\n");
 
   Time_t start;
   int    conta;
@@ -414,7 +409,6 @@ void MemInterface::testsnoop(bool rd, int id, int wait) {
 
     if (!one_finished) {
       start = globalClock;
-      printf("HERE %lld\n", start);
     }
   }
   waitAllMemOpsDone();
@@ -422,7 +416,7 @@ void MemInterface::testsnoop(bool rd, int id, int wait) {
   t                 = ((double)l2filltime) / conta;
   double mb         = frequency * 64.0 / t / 1e9;
 
-  printf("L2 snoop test wait=%d %lld (%g cycles/l2_miss) %g GB/s\n", wait, l2filltime, t, mb);
+  fmt::print("L2 snoop test wait={} {} ({} cycles/l2_miss) {} GB/s\n", wait, l2filltime, t, mb);
 }
 
 void MemInterface::testlat(int id) {
@@ -437,11 +431,11 @@ void MemInterface::testlat(int id) {
   }
 
   if (cache == 0) {
-    fprintf(stderr, "ERROR: Invalid cache source selection %d\n", id);
+    fmt::print("ERROR: Invalid cache source selection {}\n", id);
     exit(-1);
   }
 
-  printf("BEGIN L2 latency tests\n");
+  fmt::print("BEGIN L2 latency tests\n");
 
   Time_t start;
   Time_t l2filltime;
@@ -537,7 +531,7 @@ int main(int argc, char **argv) {
   frequency = Config::get_integer("soc","core", 0, "frequency_mhz") * 1.0e6;
 
   if (argc != 5) {
-    fprintf(stderr, "Usage:\n\t%s <TYP|NC> <RD|DISP|INV|SNOOP|LAT> coreid wait\n", argv[0]);
+    fmt::print("Usage:\n\t{} <TYP|NC> <RD|DISP|INV|SNOOP|LAT> coreid wait\n", argv[0]);
     exit(-3);
   }
 
@@ -545,7 +539,7 @@ int main(int argc, char **argv) {
   int wait   = atoi(argv[4]);
 
   if (wait < 0 || wait > 64) {
-    fprintf(stderr, "ERROR: Wait out of linits [0..64] not %d\n", wait);
+    fmt::print("ERROR: Wait out of linits [0..64] not {}\n", wait);
     exit(-1);
   }
 

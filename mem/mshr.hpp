@@ -51,7 +51,7 @@ protected:
   public:
     CallbackContainer cc;
     int32_t           nUse;
-#ifdef DEBUG
+#ifndef NDEBUG
     std::deque<MemRequest *> pending_mreq;
     MemRequest *             block_mreq;
 #endif

@@ -119,7 +119,7 @@ static void doread(MemObj *cache, Addr_t addr) {
   rdDoneCB *cb = rdDoneCB::create(ldClone);
   printf("rd %x @%lld\n", (unsigned int)addr, (long long)globalClock);
 
-  MemRequest::sendReqRead(cache, ldClone->getStatsFlag(), addr, cb);
+  MemRequest::sendReqRead(cache, ldClone->has_stats(), addr, cb);
   rd_pending++;
 }
 
@@ -135,7 +135,7 @@ static void doprefetch(MemObj *cache, Addr_t addr) {
   rdDoneCB *cb = rdDoneCB::create(ldClone);
   printf("rd %x @%lld\n", (unsigned int)addr, (long long)globalClock);
 
-  MemRequest::sendReqReadPrefetch(cache, ldClone->getStatsFlag(), addr, cb);
+  MemRequest::sendReqReadPrefetch(cache, ldClone->has_stats(), addr, cb);
   rd_pending++;
 }
 
@@ -151,7 +151,7 @@ static void dowrite(MemObj *cache, Addr_t addr) {
   wrDoneCB *cb = wrDoneCB::create(stClone);
   printf("wr %x @%lld\n", (unsigned int)addr, (long long)globalClock);
 
-  MemRequest::sendReqWrite(cache, stClone->getStatsFlag(), addr, cb);
+  MemRequest::sendReqWrite(cache, stClone->has_stats(), addr, cb);
   wr_pending++;
 }
 

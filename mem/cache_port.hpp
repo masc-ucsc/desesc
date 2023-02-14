@@ -10,8 +10,6 @@
 class Cache_port {
 private:
 protected:
-  MemObj *mobj;
-
   PortGeneric **bkPort;
   PortGeneric * sendFillPort;
 
@@ -36,7 +34,7 @@ protected:
   uint32_t lineSize;
   uint32_t bankShift;
   uint32_t bankSize;
-  uint32_t recvFillWidth;
+  uint32_t fill_line_size;
 
   Time_t blockTime;
 
@@ -50,8 +48,8 @@ protected:
   void   req2(MemRequest *mreq);
 
 public:
-  PortManagerBanked(const std::string &section, MemObj *_mobj);
-  virtual ~PortManagerBanked(){};
+  Cache_port(const std::string &section, const std::string &name);
+  ~Cache_port() = default;
 
   void   blockFill(MemRequest *mreq);
   void   req(MemRequest *mreq);

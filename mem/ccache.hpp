@@ -78,12 +78,12 @@ protected:
     }
 
     bool      shouldNotifyLowerLevels(MsgAction ma, bool incoherent) const;
-    bool      shouldNotifyHigherLevels(MemRequest *mreq, int16_t port) const;
+    bool      shouldNotifyHigherLevels(MemRequest *mreq, int16_t port_id) const;
     StateType getState() const {
       return state;
     };
     StateType calcAdjustState(MemRequest *mreq) const;
-    void      adjustState(MemRequest *mreq, int16_t port);
+    void      adjustState(MemRequest *mreq, int16_t port_id);
 
     static MsgAction othersNeed(MsgAction ma) {
       switch(ma) {
@@ -218,13 +218,13 @@ protected:
   Stats_avg avgMemLat;
   Stats_avg avgHalfMemLat;
   Stats_avg avgSnoopLat;
+  Stats_avg  avgPrefetchLat;
 
   Stats_cntr capInvalidateHit;
   Stats_cntr capInvalidateMiss;
   Stats_cntr invalidateHit;
   Stats_cntr invalidateMiss;
 
-  Stats_avg  avgPrefetchLat;
   Stats_cntr nPrefetchUseful;
   Stats_cntr nPrefetchWasteful;
   Stats_cntr nPrefetchLineFill;
@@ -263,7 +263,7 @@ protected:
   StaticCallbackMember0<CCache, &CCache::cleanup> cleanupCB;
   Cache_port port;
 public:
-  CCache(MemorySystem *gms, const std::string &descr_section, const std::string name="");
+  CCache(MemorySystem *gms, const std::string &descr_section, const std::string &name);
   virtual ~CCache();
 
   int32_t getLineSize() const {
@@ -333,7 +333,7 @@ public:
     return cl->isLocalInvalid();
   }
 
-#ifdef DEBUG
+#ifndef NDEBUG
   void trackAddress(MemRequest *mreq);
 #else
   void trackAddress(MemRequest *mreq) {

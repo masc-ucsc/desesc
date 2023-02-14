@@ -12,16 +12,16 @@ NICECache::NICECache(MemorySystem *gms, const std::string &section, const std::s
     , bsize(Config::get_power2(section, "line_size"))
     , bsizeLog2(log2i(Config::get_power2(section, "line_size")))
     , cold_misses(Config::get_bool(section, "cold_misses"))
-    , readHit("%s:readHit", sName)
-    , pushDownHit("%s:pushDownHit", sName)
-    , writeHit("%s:writeHit", sName)
-    , readMiss("%s:readMiss", sName)
-    , readHalfMiss("%s:readHalfMiss", sName)
-    , writeMiss("%s:writeMiss", sName)
-    , writeHalfMiss("%s:writeHalfMiss", sName)
-    , writeExclusive("%s:writeExclusive", sName)
-    , writeBack("%s:writeBack", sName)
-    , avgMemLat("%s_avgMemLat", sName) {
+    , readHit(fmt::format("{}:readHit", sName))
+    , pushDownHit(fmt::format("{}:pushDownHit", sName))
+    , writeHit(fmt::format("{}:writeHit", sName))
+    , readMiss(fmt::format("{}:readMiss", sName))
+    , readHalfMiss(fmt::format("{}:readHalfMiss", sName))
+    , writeMiss(fmt::format("{}:writeMiss", sName))
+    , writeHalfMiss(fmt::format("{}:writeHalfMiss", sName))
+    , writeExclusive(fmt::format("{}:writeExclusive", sName))
+    , writeBack(fmt::format("{}:writeBack", sName))
+    , avgMemLat(fmt::format("{}_avgMemLat", sName)) {
   // FIXME: the hitdelay should be converted to dyn_hitDelay to support DVFS
 
   warmupStepStart = 256 / 4;
@@ -40,7 +40,7 @@ void NICECache::doReq(MemRequest *mreq)
     hdelay = 1;
   }
 
-  readHit.inc(mreq->getStatsFlag());
+  readHit.inc(mreq->has_stats());
 
   if (!cold_misses && warmup.find(mreq->getAddr() >> bsizeLog2) == warmup.end()) {
     warmup.insert(mreq->getAddr() >> bsizeLog2);
@@ -57,8 +57,8 @@ void NICECache::doReq(MemRequest *mreq)
     mreq->convert2ReqAck(ma_setDirty);
   }
 
-  avgMemLat.sample(hdelay, mreq->getStatsFlag());
-  readHit.inc(mreq->getStatsFlag());
+  avgMemLat.sample(hdelay, mreq->has_stats());
+  readHit.inc(mreq->has_stats());
   router->scheduleReqAck(mreq, hdelay);
 }
 
@@ -86,7 +86,7 @@ void NICECache::doSetStateAck(MemRequest *req)
 void NICECache::doDisp(MemRequest *mreq)
 /* push (up) {{{1 */
 {
-  writeHit.inc(mreq->getStatsFlag());
+  writeHit.inc(mreq->has_stats());
   mreq->ack(hitDelay);
 }
 /* }}} */

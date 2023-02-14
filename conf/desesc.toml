@@ -249,7 +249,11 @@ port_occ   = 1
 port_num   = 1
 port_banks = 32
 
+send_port_occ = 1
+send_port_num = 1
+
 max_requests  = 32
+
 allocate_miss = true   # allocate on cache miss
 victim        = false  # victim cache allocation style
 coherent      = true
@@ -258,6 +262,7 @@ nlp_distance = 2
 nlp_degree   = 1       # 0 disabled
 nlp_stride   = 1
 
+drop_prefetch = true
 prefetch_degree = 0    # 0 disabled
 mega_lines1K    = 8    # 8 lines touched, triggers mega/carped prefetch
 

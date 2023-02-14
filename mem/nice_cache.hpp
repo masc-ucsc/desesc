@@ -40,7 +40,7 @@ protected:
   Stats_avg  avgMemLat;
 
 public:
-  NICECache(MemorySystem *gms, const std::string &section, const std::string &name = NULL);
+  NICECache(MemorySystem *gms, const std::string &section, const std::string &name);
 
   // Entry points to schedule that may schedule a do?? if needed
   void req(MemRequest *req) {

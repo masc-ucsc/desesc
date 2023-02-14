@@ -7,7 +7,6 @@
 UnMemXBar::UnMemXBar(MemorySystem *current, const std::string &section, const std::string &name)
     /* constructor {{{1 */
     : GXBar(section, name) {
-  MSG("building an UnMemXbar named:%s\n", name);
   Xbar_unXbar_balance--;  // decrement balance of XBars
   lower_level = NULL;
 
@@ -33,7 +32,7 @@ void UnMemXBar::doReqAck(MemRequest *mreq)
 {
   I(!mreq->isHomeNode());
 
-  uint32_t pos = addrHash(mreq->getAddr(), LineSize, num_banks);
+  uint32_t pos = common_addr_hash(mreq->getAddr(), LineSize, num_banks);
   router->scheduleReqAckPos(pos, mreq);
 }
 /* }}} */
@@ -41,7 +40,7 @@ void UnMemXBar::doReqAck(MemRequest *mreq)
 void UnMemXBar::doSetState(MemRequest *mreq)
 /* setState (up) {{{1 */
 {
-  uint32_t pos = addrHash(mreq->getAddr(), LineSize, num_banks);
+  uint32_t pos = common_addr_hash(mreq->getAddr(), LineSize, num_banks);
   router->scheduleSetStatePos(pos, mreq);
 }
 /* }}} */

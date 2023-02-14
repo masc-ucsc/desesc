@@ -61,7 +61,7 @@ static void doread(MemObj *cache, Addr_t addr) {
 
   ExtraParameters param;
   param.configure(ldClone);
-  MemRequest::sendReqRead(cache, ldClone->getStatsFlag(), addr, cb, &param);
+  MemRequest::sendReqRead(cache, ldClone->has_stats(), addr, cb, &param);
   rd_pending++;
 }
 
@@ -80,7 +80,7 @@ static void dowrite(MemObj *cache, Addr_t addr) {
   ExtraParameters param;
   param.configure(stClone);
 
-  MemRequest::sendReqWrite(cache, stClone->getStatsFlag(), addr, cb, &param);
+  MemRequest::sendReqWrite(cache, stClone->has_stats(), addr, cb, &param);
   wr_pending++;
 }
 

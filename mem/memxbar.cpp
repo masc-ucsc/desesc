@@ -1,5 +1,7 @@
 // See LICENSE for details.
 
+#include "absl/strings/str_split.h"
+
 #include "memxbar.hpp"
 #include "memory_system.hpp"
 #include "config.hpp"
@@ -10,7 +12,7 @@ MemXBar::MemXBar(const std::string &section, const std::string &name) : GXBar(se
 
 } /*}}}*/
 
-MemXBar::MemXBar(MemorySystem *current, const std::string &section, const std::string &name)
+MemXBar::MemXBar(MemorySystem *current, const std::string &section, const std::string name)
     /* {{{ constructor */
     : GXBar(section, name) {
   I(current);
@@ -38,7 +40,7 @@ MemXBar::MemXBar(MemorySystem *current, const std::string &section, const std::s
     lower_level_banks[i] = current->declareMemoryObj_uniqueName(tmp, vPars[0]);
     addLowerLevel(lower_level_banks[i]);
 
-    XBar_rw_req[i] = new Stats_cntr("%s_to_%s:rw_req", name, lower_level_banks[i]->getName());
+    XBar_rw_req[i] = new Stats_cntr(fmt::format("{}_to_{}:rw_req", name, lower_level_banks[i]->getName()));
   }
 }
 /* }}} */
@@ -49,13 +51,10 @@ void MemXBar::setParam(const std::string &section, const std::string &name) {
   num_banks = Config::get_power2(section, "num_banks");
 }
 
-uint32_t MemXBar::addrHash(Addr_t addr) const
-// {{{ drop lower bits in address
-{
+uint32_t MemXBar::addrHash(Addr_t addr) const {
   addr = addr >> dropBits;
   return (addr % num_banks);
 }
-// }}}
 
 void MemXBar::doReq(MemRequest *mreq)
 /* read if splitter above L1 (down) {{{1 */
@@ -69,7 +68,7 @@ void MemXBar::doReq(MemRequest *mreq)
   I(pos < num_banks);
 
   mreq->resetStart(lower_level_banks[pos]);
-  XBar_rw_req[pos]->inc(mreq->getStatsFlag());
+  XBar_rw_req[pos]->inc(mreq->has_stats());
 
   router->scheduleReqPos(pos, mreq);
 }

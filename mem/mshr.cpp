@@ -1,5 +1,7 @@
 // See LICENSE for details.
 
+#include "fmt/format.h"
+
 #include "mshr.hpp"
 #include "memrequest.hpp"
 #include "memory_system.hpp"
@@ -7,14 +9,13 @@
 #include "snippets.hpp"
 
 MSHR::MSHR(const std::string &n, int32_t size, int16_t lineSize, int16_t nsub)
-    /* baseline MSHR constructor {{{1 */
-    : name(strdup(n))
+    : name(n)
     , Log2LineSize(log2i(lineSize))
     , nEntries(size)
     , nSubEntries(nsub)
-    , avgUse("%s_MSHR_avgUse", n)
-    , avgSubUse("%s_MSHR_avgSubUse", n)
-    , nStallConflict("%s_MSHR:nStallConflict", name)
+    , avgUse(fmt::format("{}_MSHR_avgUse", n))
+    , avgSubUse(fmt::format("{}_MSHR_avgSubUse", n))
+    , nStallConflict(fmt::format("{}_MSHR:nStallConflict", name))
     , MSHRSize(roundUpPower2(size) * 4)
     , MSHRMask(MSHRSize - 1) {
   I(size > 0 && size < 1024 * 32 * 32);
@@ -31,10 +32,7 @@ MSHR::MSHR(const std::string &n, int32_t size, int16_t lineSize, int16_t nsub)
   }
 }
 
-/* }}} */
-bool MSHR::canAccept(Addr_t addr) const
-/* check if can accept new requests {{{1 */
-{
+bool MSHR::canAccept(Addr_t addr) const {
   if (nFreeEntries <= 0) {
     return false;
   }
@@ -46,10 +44,8 @@ bool MSHR::canAccept(Addr_t addr) const
 
   return true;
 }
-/* }}} */
-bool MSHR::canIssue(Addr_t addr) const
-/* check if can issue {{{1 */
-{
+
+bool MSHR::canIssue(Addr_t addr) const {
   uint32_t pos = calcEntry(addr);
   if (entry[pos].nUse) {
     return false;
@@ -59,15 +55,13 @@ bool MSHR::canIssue(Addr_t addr) const
 
   return true;
 }
-/* }}} */
-void MSHR::addEntry(Addr_t addr, CallbackBase *c, MemRequest *mreq)
-/* add entry to wait for an address {{{1 */
-{
+
+void MSHR::addEntry(Addr_t addr, CallbackBase *c, MemRequest *mreq) {
   I(mreq->isRetrying());
   I(nFreeEntries <= nEntries);
   nFreeEntries--;  // it can go negative because invalidate and writeback requests
 
-  avgUse.sample(nEntries - nFreeEntries, mreq->getStatsFlag());
+  avgUse.sample(nEntries - nFreeEntries, mreq->has_stats());
 
   uint32_t pos = calcEntry(addr);
 
@@ -78,47 +72,41 @@ void MSHR::addEntry(Addr_t addr, CallbackBase *c, MemRequest *mreq)
 
   I(entry[pos].nUse);
   entry[pos].nUse++;
-  avgSubUse.sample(entry[pos].nUse, mreq->getStatsFlag());
+  avgSubUse.sample(entry[pos].nUse, mreq->has_stats());
 
   nStallConflict.inc();
 
-#ifdef DEBUG
+#ifndef NDEBUG
   I(!entry[pos].pending_mreq.empty());
   entry[pos].pending_mreq.push_back(mreq);
 #endif
 }
-/* }}} */
 
-void MSHR::blockEntry(Addr_t addr, MemRequest *mreq)
-/* add entry to wait for an address {{{1 */
-{
+void MSHR::blockEntry(Addr_t addr, MemRequest *mreq) {
   I(!mreq->isRetrying());
   I(nFreeEntries <= nEntries);
   nFreeEntries--;  // it can go negative because invalidate and writeback requests
 
-  avgUse.sample(nEntries - nFreeEntries, mreq->getStatsFlag());
+  avgUse.sample(nEntries - nFreeEntries, mreq->has_stats());
 
   uint32_t pos = calcEntry(addr);
   I(nFreeEntries >= 0);
 
   I(entry[pos].nUse == 0);
   entry[pos].nUse++;
-  avgSubUse.sample(entry[pos].nUse, mreq->getStatsFlag());
+  avgSubUse.sample(entry[pos].nUse, mreq->has_stats());
 
-#ifdef DEBUG
+#ifndef NDEBUG
   I(entry[pos].pending_mreq.empty());
   entry[pos].pending_mreq.push_back(mreq);
   entry[pos].block_mreq = mreq;
 #endif
 }
-/* }}} */
 
-bool MSHR::retire(Addr_t addr, MemRequest *mreq)
-/* retire, and check for deps {{{1 */
-{
+bool MSHR::retire(Addr_t addr, MemRequest *mreq) {
   uint32_t pos = calcEntry(addr);
   I(entry[pos].nUse);
-#ifdef DEBUG
+#ifndef NDEBUG
   I(!entry[pos].pending_mreq.empty());
   I(entry[pos].pending_mreq.front() == mreq);
   entry[pos].pending_mreq.pop_front();
@@ -153,18 +141,15 @@ bool MSHR::retire(Addr_t addr, MemRequest *mreq)
 
   return false;
 }
-/* }}} */
-void MSHR::dump() const
-/* dump blocking state {{{1 */
-{
-  printf("MSHR[%s]", name);
+
+void MSHR::dump() const {
+  fmt::print("MSHR[{}]", name);
   for (int i = 0; i < MSHRSize; i++) {
     if (entry[i].nUse) {
-      printf(" [%d].nUse=%d", i, entry[i].nUse);
+      fmt::print(" [{}].nUse={}", i, entry[i].nUse);
     }
     GI(entry[i].nUse == 0, entry[i].cc.empty());
     // GI(entry[i].cc.empty(), entry[i].nUse==0);
   }
-  printf("\n");
+  fmt::print("\n");
 }
-/* }}} */

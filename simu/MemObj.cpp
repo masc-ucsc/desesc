@@ -47,8 +47,6 @@ MemObj::MemObj(const std::string &sSection, const std::string &sName)
 
   // Create router (different objects may override the default router)
   router = new MRouter(this);
-  /*if(strcmp(section, "DL1_core") == 0){
-  }*/
 
   if (!name.empty()) {
     std::string name_lc(name);

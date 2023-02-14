@@ -23,8 +23,7 @@ Bus::Bus(MemorySystem *current, const std::string &section, const std::string &n
 void Bus::doReq(MemRequest *mreq)
 /* forward bus read {{{1 */
 {
-  // MSG("@%lld bus %s 0x%lx %d",globalClock, mreq->getCurrMem()->getName(), mreq->getAddr(), mreq->getAction());
-  TimeDelta_t when = cmdPort->nextSlotDelta(mreq->getStatsFlag()) + delay;
+  TimeDelta_t when = cmdPort->nextSlotDelta(mreq->has_stats()) + delay;
   router->scheduleReq(mreq, when);
 }
 /* }}} */
@@ -32,7 +31,7 @@ void Bus::doReq(MemRequest *mreq)
 void Bus::doDisp(MemRequest *mreq)
 /* forward bus read {{{1 */
 {
-  TimeDelta_t when = dataPort->nextSlotDelta(mreq->getStatsFlag()) + delay;
+  TimeDelta_t when = dataPort->nextSlotDelta(mreq->has_stats()) + delay;
   router->scheduleDisp(mreq, when);
 }
 /* }}} */
@@ -40,7 +39,7 @@ void Bus::doDisp(MemRequest *mreq)
 void Bus::doReqAck(MemRequest *mreq)
 /* data is coming back {{{1 */
 {
-  TimeDelta_t when = dataPort->nextSlotDelta(mreq->getStatsFlag()) + delay;
+  TimeDelta_t when = dataPort->nextSlotDelta(mreq->has_stats()) + delay;
 
   if (mreq->isHomeNode()) {
     mreq->ack(when);
@@ -74,30 +73,22 @@ void Bus::doSetStateAck(MemRequest *mreq)
 }
 /* }}} */
 
-bool Bus::isBusy(Addr_t addr) const
-/* always can accept writes {{{1 */
-{
+bool Bus::isBusy(Addr_t addr) const {
+  (void)addr;
   return false;
 }
-/* }}} */
 
 void Bus::tryPrefetch(Addr_t addr, bool doStats, int degree, Addr_t pref_sign, Addr_t pc, CallbackBase *cb)
-/* forward tryPrefetch {{{1 */
 {
   router->tryPrefetch(addr, doStats, degree, pref_sign, pc, cb);
 }
-/* }}} */
 
-TimeDelta_t Bus::ffread(Addr_t addr)
-/* fast forward reads {{{1 */
-{
+TimeDelta_t Bus::ffread(Addr_t addr) {
+  (void)addr;
   return delay;
 }
-/* }}} */
 
-TimeDelta_t Bus::ffwrite(Addr_t addr)
-/* fast forward writes {{{1 */
-{
+TimeDelta_t Bus::ffwrite(Addr_t addr) {
+  (void)addr;
   return delay;
 }
-/* }}} */

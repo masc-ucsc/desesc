@@ -220,6 +220,8 @@ bool OoOProcessor::advance_clock() {
     return false;
   }
 
+  Tracer::advance_clock();
+
   fetch();
 
   return advance_clock_drain();
@@ -1498,7 +1500,7 @@ void OoOProcessor::retire() {
 
 #endif
 
-    Tracer::stage(dinst, "PNR");
+    Tracer::event(dinst, "PNR");
 
     rROB.push(dinst);
     ROB.pop();

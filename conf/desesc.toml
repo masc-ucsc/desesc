@@ -3,7 +3,7 @@
 # and field names
 
 [trace]
-range = [2000,2400]
+range = [0,2400]
 
 [soc]
 # FIXME: multicore dromajo/desesc
@@ -137,8 +137,8 @@ stq_size      = 64
 stq_late_alloc = false
 ldq_late_alloc = false
 storeset_size = 8192
-il1           = "il1_cache"
-dl1           = "dl1_cache"
+il1           = "il1_cache IL1"
+dl1           = "dl1_cache DL1"
 scoore_serialize = true
 
 decode_delay = 4
@@ -242,7 +242,7 @@ type       = "nice"   # or nice
 cold_misses = true
 size       = 32768
 line_size  = 64
-delay      = 2         # hit delay
+delay      = 10         # hit delay
 miss_delay = 8
 assoc      = 4
 repl_policy = "lru"

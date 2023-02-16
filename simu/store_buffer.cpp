@@ -1,16 +1,17 @@
 // See LICENSE for details.
 
 #include "absl/container/flat_hash_map.h"
+#include "absl/strings/str_split.h"
 
 #include "store_buffer.hpp"
-
 #include "memrequest.hpp"
 #include "config.hpp"
 
 Store_buffer::Store_buffer(Hartid_t hid) {
-  auto l1_sec = Config::get_string("soc", "core", hid, "dl1");
-
+  std::vector<std::string> v      = absl::StrSplit(Config::get_string("soc", "core", hid, "il1"), ' ');
+  auto                     l1_sec = v[0];
   line_size           = Config::get_power2(l1_sec, "line_size");
+
   scb_clean_lines     = 0;
   line_size_addr_bits = log2i(line_size);
   line_size_mask      = line_size - 1;

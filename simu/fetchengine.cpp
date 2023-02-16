@@ -80,13 +80,7 @@ FetchEngine::FetchEngine(Hartid_t id, std::shared_ptr<Gmemory_system> gms_, std:
   std::vector<std::string> v        = absl::StrSplit(Config::get_string("soc", "core", id, "il1"), ' ');
   auto                     isection = v[0];
 
-  il1_enable = false;
-  if (Config::get_bool("soc", "core", id, "caches")) {
-    auto itype = Config::get_string(isection, "type", {"cache", "nice", "bus"});
-    if (itype != "nice") {
-      il1_enable = true;
-    }
-  }
+  il1_enable = Config::get_bool("soc", "core", id, "caches");
 
   il1_line_size = Config::get_power2(isection, "line_size", fetch_width * 2, 8192);
   il1_line_bits = log2i(il1_line_size);

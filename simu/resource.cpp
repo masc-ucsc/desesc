@@ -99,7 +99,7 @@ MemResource::MemResource(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric
   } else {
     MRouter *router = firstLevelMemObj->getRouter();
     DL1             = router->getDownNode();
-    if (DL1->get_type() == "cache") {
+    if (DL1->get_type() == "cache" || DL1->get_type() == "nice") {
       MRouter *mr = DL1->getRouter();
       DL1         = mr->getDownNode();
       if (DL1->get_type() != "cache") {
@@ -249,13 +249,7 @@ FULoad::FULoad(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, LS
     , freeEntries(size) {
   I(ms);
 
-  if (Config::get_bool("soc", "core", id, "caches")) {
-    auto dl1_sec      = Config::get_string("soc", "core", id, "dl1");
-    auto dl1_sec_type = Config::get_string(dl1_sec, "type", {"cache", "nice", "bus"});
-    enableDcache      = dl1_sec_type != "nice";
-  }else{
-    enableDcache      = false;
-  }
+  enableDcache = Config::get_bool("soc", "core", id, "caches");
 
   LSQlateAlloc = Config::get_bool("soc", "core", id, "ldq_late_alloc");
 }
@@ -445,14 +439,8 @@ FUStore::FUStore(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, 
                  std::shared_ptr<Gmemory_system> ms, int32_t size, int32_t id, const char *cad)
     /* constructor {{{1 */
     : MemResource(type, cls, aGen, _lsq, ss, _pref, _scb, l, ms, id, cad), freeEntries(size) {
-  if (Config::get_bool("soc", "core", id, "caches")) {
-    auto dl1_sec      = Config::get_string("soc", "core", id, "dl1");
-    auto dl1_sec_type = Config::get_string(dl1_sec, "type", {"cache", "nice", "bus"});
-    enableDcache      = dl1_sec_type != "nice";
-  }else{
-    enableDcache      = false;
-  }
 
+  enableDcache = Config::get_bool("soc", "core", id, "caches");
   LSQlateAlloc = Config::get_bool("soc", "core", id, "stq_late_alloc");
 }
 /* }}} */

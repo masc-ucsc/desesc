@@ -29,12 +29,7 @@ public:
   static void commit(const Dinst *);
   static void flush(const Dinst *);
 
-  static void advance_clock() {
-    if (likely(!ofs))
-      return;
-
-    last_clock = globalClock;
-  }
+  static void advance_clock();
 
   ~Tracer() {
     if (ofs)

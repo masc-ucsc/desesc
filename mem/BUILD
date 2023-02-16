@@ -19,3 +19,14 @@ cc_library(
     ]
 )
 
+cc_test(
+    name = "mshr_test",
+    srcs = [
+        "mshr_test.cpp",
+    ],
+    deps = [
+        ":mem",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+

@@ -31,26 +31,21 @@ MemObj *MemorySystem::buildMemoryObj(const std::string &device_type, const std::
 
   std::string mystr("");
   // You may insert here the further specializations you may need
-  if (!strcasecmp(device_type, "cache") || !strcasecmp(device_type, "icache")) {
+  if (device_type == "cache") {
     mdev    = new CCache(this, dev_section, dev_name);
     devtype = 0;
-  } else if (!strcasecmp(device_type, "nicecache")) {
-    mdev    = new NICECache(this, dev_section, dev_name);
+  } else if (device_type == "nice") {
+    mdev    = new Nice_cache(this, dev_section, dev_name);
     devtype = 1;
-  } else if (!strcasecmp(device_type, "bus")) {
+  } else if (device_type == "bus") {
     mdev    = new Bus(this, dev_section, dev_name);
     devtype = 2;
-  } else if (!strcasecmp(device_type, "tlb")) {
-    devtype = 3;
-    mdev    = new TLB(this, dev_section, dev_name);
-  } else if (!strcasecmp(device_type, "memxbar")) {
+  } else if (device_type == "memxbar") {
     mdev    = new MemXBar(this, dev_section, dev_name);
     devtype = 4;
-  } else if (!strcasecmp(device_type, "memcontroller")) {
+  } else if (device_type == "memcontroller") {
     mdev    = new MemController(this, dev_section, dev_name);
     devtype = 5;
-  } else if (!strcasecmp(device_type, "void")) {
-    return new DummyMemObj(dev_section, dev_name);
   } else {
     // Check the lower level because it may have it
     return GMemorySystem::buildMemoryObj(device_type, dev_section, dev_name);

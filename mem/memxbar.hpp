@@ -12,14 +12,13 @@ protected:
 
   Stats_cntr **XBar_rw_req;
 
+  void init(const std::string &section);
+
 public:
   MemXBar(MemorySystem *current, const std::string &device_descr_section, const std::string device_name = "");
   MemXBar(const std::string &section, const std::string &name);
   ~MemXBar() {
   }
-
-  // Helper functions
-  void setParam(const std::string &section, const std::string &name);
 
   // Entry points to schedule that may schedule a do?? if needed
   void req(MemRequest *req) {

@@ -180,7 +180,7 @@ protected:
   int32_t lineSize;
   int32_t lineSizeBits;
 
-  bool    nlp;
+  bool    nlp_enabled;
   int32_t nlp_degree;
   int32_t nlp_distance;
   int32_t nlp_stride;
@@ -224,6 +224,7 @@ protected:
   Stats_cntr capInvalidateMiss;
   Stats_cntr invalidateHit;
   Stats_cntr invalidateMiss;
+  Stats_cntr  writeExclusive;
 
   Stats_cntr nPrefetchUseful;
   Stats_cntr nPrefetchWasteful;
@@ -243,7 +244,6 @@ protected:
 
   // Statistics currently not used.
   // Only defined here to prevent bogus warnings from the powermodel.
-  Stats_cntr writeExclusive;
 
   Addr_t minMissAddr;
   Addr_t maxMissAddr;
@@ -251,7 +251,7 @@ protected:
   // END Statistics
   void  displaceLine(Addr_t addr, MemRequest *mreq, Line *l);
   Line *allocateLine(Addr_t addr, MemRequest *mreq);
-  void  mustForwardReqDown(MemRequest *mreq, bool miss, Line *l);
+  void  mustForwardReqDown(MemRequest *mreq, bool miss);
 
   bool notifyLowerLevels(Line *l, MemRequest *mreq);
   bool notifyHigherLevels(Line *l, MemRequest *mreq);
@@ -293,7 +293,6 @@ public:
 
   bool isBusy(Addr_t addr) const;
 
-  void setTurboRatio(float r);
   void dump() const;
 
   void setNeedsCoherence();

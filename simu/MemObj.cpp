@@ -925,10 +925,6 @@ void MemObj::updateXCoreStores(Addr_t addr) {
   I(0);
 }
 void MemObj::replayflush() { I(0); }
-void MemObj::setTurboRatio(float r) {
-  (void)r;
-  I(0);
-}
 void MemObj::plug() { I(0); }
 void MemObj::setNeedsCoherence() {
   // Only cache uses this

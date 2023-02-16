@@ -8,7 +8,7 @@
 
 MemXBar::MemXBar(const std::string &section, const std::string &name) : GXBar(section, name) { /*{{{*/
 
-  setParam(section, name);
+  init(section);
 
 } /*}}}*/
 
@@ -18,12 +18,16 @@ MemXBar::MemXBar(MemorySystem *current, const std::string &section, const std::s
   I(current);
   lower_level_banks = NULL;
 
-  setParam(section, name);
+  init(section);
 
   lower_level_banks = new MemObj *[num_banks];
   XBar_rw_req       = new Stats_cntr *[num_banks];
 
-  auto vPars = absl::StrSplit(Config::get_string(section, "lower_level"));
+  std::vector<std::string_view> vPars = absl::StrSplit(Config::get_string(section, "lower_level"), ' ');
+  if (vPars.empty()) {
+    Config::add_error(fmt::format("invalid lower_level pointer in section:{}",section));
+    return;
+  }
   std::string lower_name;
   if (vPars.size() > 1) {
     lower_name = vPars[1];
@@ -37,7 +41,7 @@ MemXBar::MemXBar(MemorySystem *current, const std::string &section, const std::s
       tmp = fmt::format("{}{}", name, lower_name);
     }
 
-    lower_level_banks[i] = current->declareMemoryObj_uniqueName(tmp, vPars[0]);
+    lower_level_banks[i] = current->declareMemoryObj_uniqueName(tmp, std::string(vPars[0]));
     addLowerLevel(lower_level_banks[i]);
 
     XBar_rw_req[i] = new Stats_cntr(fmt::format("{}_to_{}:rw_req", name, lower_level_banks[i]->getName()));
@@ -45,7 +49,7 @@ MemXBar::MemXBar(MemorySystem *current, const std::string &section, const std::s
 }
 /* }}} */
 
-void MemXBar::setParam(const std::string &section, const std::string &name) {
+void MemXBar::init(const std::string &section) {
 
   dropBits = Config::get_integer(section, "drop_bits");
   num_banks = Config::get_power2(section, "num_banks");

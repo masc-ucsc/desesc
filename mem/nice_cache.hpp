@@ -6,7 +6,7 @@
 #include "memory_system.hpp"
 #include "estl.hpp"
 
-class NICECache : public MemObj {
+class Nice_cache : public MemObj {
 private:
   // a 100% hit cache, used for debugging or as main memory
   const uint32_t hitDelay;
@@ -29,7 +29,7 @@ protected:
 
   // The following statistics don't make any sense for a niceCache, but are instantiated
   // for compatibility, and to supress bogus warnings from the PowerModel about missing
-  // statistics for the NICECache.
+  // statistics for the Nice_cache.
 
   Stats_cntr readMiss;
   Stats_cntr readHalfMiss;
@@ -40,7 +40,7 @@ protected:
   Stats_avg  avgMemLat;
 
 public:
-  NICECache(MemorySystem *gms, const std::string &section, const std::string &name);
+  Nice_cache(MemorySystem *gms, const std::string &section, const std::string &name);
 
   // Entry points to schedule that may schedule a do?? if needed
   void req(MemRequest *req) {

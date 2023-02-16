@@ -5,8 +5,7 @@
 #include "memory_system.hpp"
 #include "config.hpp"
 
-NICECache::NICECache(MemorySystem *gms, const std::string &section, const std::string &sName)
-    /* dummy constructor {{{1 */
+Nice_cache::Nice_cache(MemorySystem *gms, const std::string &section, const std::string &sName)
     : MemObj(section, sName)
     , hitDelay(Config::get_integer(section, "delay"))
     , bsize(Config::get_power2(section, "line_size"))
@@ -22,18 +21,15 @@ NICECache::NICECache(MemorySystem *gms, const std::string &section, const std::s
     , writeExclusive(fmt::format("{}:writeExclusive", sName))
     , writeBack(fmt::format("{}:writeBack", sName))
     , avgMemLat(fmt::format("{}_avgMemLat", sName)) {
-  // FIXME: the hitdelay should be converted to dyn_hitDelay to support DVFS
 
+  (void)gms; // nice cache does not have lower level
   warmupStepStart = 256 / 4;
   warmupStep      = warmupStepStart;
   warmupNext      = 16;
   warmupSlowEvery = 16;
 }
-/* }}} */
 
-void NICECache::doReq(MemRequest *mreq)
-/* read (down) {{{1 */
-{
+void Nice_cache::doReq(MemRequest *mreq) {
   TimeDelta_t hdelay = hitDelay;
 
   if (mreq->isWarmup()) {
@@ -62,61 +58,48 @@ void NICECache::doReq(MemRequest *mreq)
   router->scheduleReqAck(mreq, hdelay);
 }
 
-void NICECache::doReqAck(MemRequest *req)
-/* req ack {{{1 */
-{
+void Nice_cache::doReqAck(MemRequest *req) {
+  (void)req;
   I(0);
 }
-// 1}}}
 
-void NICECache::doSetState(MemRequest *req)
-/* change state request  (up) {{{1 */
-{
+void Nice_cache::doSetState(MemRequest *req) {
+  (void)req;
   I(0);
 }
-/* }}} */
 
-void NICECache::doSetStateAck(MemRequest *req)
-/* push (down) {{{1 */
-{
+void Nice_cache::doSetStateAck(MemRequest *req) {
+  (void)req;
   I(0);
 }
-/* }}} */
 
-void NICECache::doDisp(MemRequest *mreq)
-/* push (up) {{{1 */
-{
+void Nice_cache::doDisp(MemRequest *mreq) {
   writeHit.inc(mreq->has_stats());
   mreq->ack(hitDelay);
 }
-/* }}} */
 
-bool NICECache::isBusy(Addr_t addr) const
-/* can accept reads? {{{1 */
-{
+bool Nice_cache::isBusy(Addr_t addr) const {
+  (void)addr;
   return false;
 }
-/* }}} */
 
-void NICECache::tryPrefetch(Addr_t addr, bool doStats, int degree, Addr_t pref_sign, Addr_t pc, CallbackBase *cb)
-/* drop prefetch {{{1 */
-{
+void Nice_cache::tryPrefetch(Addr_t addr, bool doStats, int degree, Addr_t pref_sign, Addr_t pc, CallbackBase *cb) {
+  (void)addr;
+  (void)doStats;
+  (void)degree;
+  (void)pref_sign;
+  (void)pc;
   if (cb) {
     cb->destroy();
   }
 }
-/* }}} */
 
-TimeDelta_t NICECache::ffread(Addr_t addr)
-/* warmup fast forward read {{{1 */
-{
+TimeDelta_t Nice_cache::ffread(Addr_t addr) {
+  (void)addr;
   return 1;
 }
-/* }}} */
 
-TimeDelta_t NICECache::ffwrite(Addr_t addr)
-/* warmup fast forward writed {{{1 */
-{
+TimeDelta_t Nice_cache::ffwrite(Addr_t addr) {
+  (void)addr;
   return 1;
 }
-/* }}} */

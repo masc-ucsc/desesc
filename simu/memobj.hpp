@@ -377,7 +377,6 @@ public:
   virtual void replayCheckLSQ_removeStore(Dinst *);
   virtual void updateXCoreStores(Addr_t addr);
   virtual void replayflush();
-  virtual void setTurboRatio(float r);
   virtual void plug();
 
   virtual void setNeedsCoherence();

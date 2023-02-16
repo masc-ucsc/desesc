@@ -194,7 +194,6 @@ void MemController::transferOverflowMemory(void) {
 
 // This function determines what action can be performed next and schedules a callback for when that action completes
 void MemController::scheduleNextAction(void) {
-  uint32_t curBank, curRow;
   uint32_t oldestReadyColsBank = numBanks + 1;
   uint32_t oldestReadyRowsBank = numBanks + 1;
   uint32_t oldestReadyRow      = 0;
@@ -206,8 +205,8 @@ void MemController::scheduleNextAction(void) {
 
   // Go through memory references in buffer to determine what actions are ready to begin
   for (uint32_t curReference = 0; curReference < curMemRequests.size(); curReference++) {
-    curBank = curMemRequests[curReference]->Bank;
-    curRow  = curMemRequests[curReference]->Row;
+    auto curBank = curMemRequests[curReference]->Bank;
+    auto curRow  = curMemRequests[curReference]->Row;
     if (!oldestColumnFound) {
       if ((bankState[curBank].state == ACTIVE) && (bankState[curBank].activeRow == curRow)) {
         bankState[curBank].cpend = true;

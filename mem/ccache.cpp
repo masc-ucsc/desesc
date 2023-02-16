@@ -121,13 +121,13 @@ CCache::CCache(MemorySystem *gms, const std::string &section, const std::string 
     nlp_distance = Config::get_integer(section, "nlp_distance", 1, 1024);
     nlp_stride   = Config::get_integer(section, "nlp_stride", 1, 1024);
 
-    nlp_         = nlp_degree!=0;
+    nlp_enabled  = nlp_degree!=0;
   } else {
     nlp_degree   = 0;
     nlp_distance = 0;
     nlp_stride   = 1;
 
-    nlp_         = false;
+    nlp_enabled  = false;
   }
   allocateMiss = Config::get_bool(section, "allocate_miss");
 
@@ -154,12 +154,12 @@ CCache::CCache(MemorySystem *gms, const std::string &section, const std::string 
 
   auto mega_lines1K = Config::get_integer(section,"mega_lines1K",0, 32); // number of lines touched in 1K to trigger mega
   prefetch_megaratio = lineSize * mega_lines1K/1024.0;
-  if (prefetch_ration==0 || prefetch_ratio>1) {
+  if (prefetch_megaratio==0 || prefetch_megaratio>1) {
     prefetch_megaratio = 2.0;  // >1 means never active
   }
 
   if (!allocateMiss && prefetch_megaratio < 1.0) {
-    Config::add_error(fmt::print("{} CCache prefetch_megaratio can be set only for allocateMiss caches", section));
+    Config::add_error(fmt::format("{} CCache prefetch_megaratio can be set only for allocateMiss caches", section));
     return;
   }
 
@@ -184,7 +184,7 @@ CCache::CCache(MemorySystem *gms, const std::string &section, const std::string 
     return;
   }
 
-  if (Config::has_label(section, "just_directory")) {
+  if (Config::has_entry(section, "just_directory")) {
     justDirectory = Config::get_bool(section, "just_directory");
   } else {
     justDirectory = false;
@@ -368,7 +368,6 @@ CCache::Line *CCache::allocateLine(Addr_t addr, MemRequest *mreq) {
 
       double ratio = nHit;
       ratio        = ratio / (double)(nHit + nMiss);
-      // MSG("ratio %f %d %d trying 0x%llx",ratio,nHit,nMiss,addr);
       if (ratio > prefetch_megaratio && ratio < 1.0) {
 #if 1
         for (int i = 0; i < pendAddr_counter; i++) {
@@ -393,7 +392,7 @@ CCache::Line *CCache::allocateLine(Addr_t addr, MemRequest *mreq) {
   return l;
 }
 
-void CCache::mustForwardReqDown(MemRequest *mreq, bool miss, Line *l) {
+void CCache::mustForwardReqDown(MemRequest *mreq, bool miss) {
   if (!mreq->isPrefetch()) {
     s_reqMissLine[mreq->getAction()]->inc(miss && mreq->has_stats());
     s_reqMissState[mreq->getAction()]->inc(!miss && mreq->has_stats());
@@ -408,8 +407,8 @@ void CCache::mustForwardReqDown(MemRequest *mreq, bool miss, Line *l) {
   router->scheduleReq(mreq, 0);  // miss latency already charged
 }
 
-bool CCache::CState::shouldNotifyLowerLevels(MsgAction ma, bool incoherent) const {
-  if (incoherent) {
+bool CCache::CState::shouldNotifyLowerLevels(MsgAction ma, bool inc) const {
+  if (inc) {
     if (state == I) {
       return true;
     }
@@ -751,14 +750,13 @@ void CCache::doReq(MemRequest *mreq) {
     Addr_t page_addr = (addr >> 10) << 10;
     if (page_addr == addr && mreq->getSign() == PSIGN_MEGA) {
       // Time to allocate a megaLine
-      MSG("Mega allocate 0x%llx", addr);
     } else {
       router->scheduleReq(mreq, 0);  // miss latency already charged
       return;
     }
   }
 
-  if (nlp_ && !retrying && !mreq->isPrefetch()) {
+  if (nlp_enabled && !retrying && !mreq->isPrefetch()) {
     Addr_t base = addr + nlp_distance * lineSize;
     for (int i = 0; i < nlp_degree; i++) {
 #if 1
@@ -790,7 +788,7 @@ void CCache::doReq(MemRequest *mreq) {
 
   if (l == 0) {
     MTRACE("doReq cache miss");
-    mustForwardReqDown(mreq, true, 0);
+    mustForwardReqDown(mreq, true);
     return;
   }
 
@@ -807,7 +805,7 @@ void CCache::doReq(MemRequest *mreq) {
 
   if (notifyLowerLevels(l, mreq)) {
     MTRACE("doReq change state down");
-    mustForwardReqDown(mreq, false, l);
+    mustForwardReqDown(mreq, false);
     return;  // Done (no retrying), and wait for the ReqAck
   }
 
@@ -891,7 +889,7 @@ void CCache::doReq(MemRequest *mreq) {
   I(when > globalClock);
   if (mreq->isHomeNode()) {
     mreq->ackAbs(when);
-    DInst *dinst = mreq->getDInst();
+    auto *dinst = mreq->getDinst();
     if (dinst) {
       dinst->setFullMiss(false);
     }
@@ -1016,7 +1014,6 @@ void CCache::doReqAck(MemRequest *mreq) {
   }
 
   when             = port.reqAckDone(mreq);
-  Time_t when_copy = when;
   if (when == 0) {
     MTRACE("doReqAck restartReqAck");
     // Must restart request
@@ -1053,7 +1050,7 @@ void CCache::doReqAck(MemRequest *mreq) {
 
   if (mreq->isHomeNode()) {
     MTRACE("doReqAck isHomeNode, calling ackAbs {}", when);
-    DInst *dinst = mreq->getDInst();
+    auto *dinst = mreq->getDinst();
     if (dinst) {
       dinst->setFullMiss(true);
     }
@@ -1312,10 +1309,6 @@ TimeDelta_t CCache::ffwrite(Addr_t addr) {
   }
 
   return router->ffwrite(addr) + 1;
-}
-
-void CCache::setTurboRatio(float r) {
-  I(coreCoupledFreq);
 }
 
 void CCache::setNeedsCoherence() {

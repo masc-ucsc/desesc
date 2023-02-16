@@ -9,7 +9,7 @@
 #include "memory_system.hpp"
 #include "config.hpp"
 
-MemController::MemController(MemorySystem *current, const std::string &section, const std::string &name)
+MemController::MemController(Memory_system *current, const std::string &section, const std::string &name)
     /* constructor {{{1 */
     : MemObj(section, name)
     , delay(Config::get_integer(section, "delay",1,1024))

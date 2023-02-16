@@ -28,7 +28,7 @@ public:
   void clear();
 };
 
-class GMemorySystem {
+class Gmemory_system {
 private:
   typedef std::map<std::string, uint32_t> StrCounterType;
   static StrCounterType                   usedNames;
@@ -61,15 +61,15 @@ protected:
 
   static std::string privatizeDeviceName(const std::string &given_name, int32_t num);
 
-  virtual MemObj *buildMemoryObj(const std::string &type, const std::string &section, const std::string &name);
+  virtual MemObj *buildMemoryObj(const std::string &type, const std::string &section, const std::string &name) = 0;
 
 public:
-  GMemorySystem(int32_t processorId);
-  virtual ~GMemorySystem();
+  Gmemory_system(int32_t processorId);
+  virtual ~Gmemory_system();
 
   // The code can not be located in constructor because it is nor possible to
   // operate with virtual functions at construction time
-  virtual void buildMemorySystem();
+  virtual void build_memory_system();
 
   MemObj *searchMemoryObj(bool shared, const std::string &section, const std::string &name) const;
   MemObj *searchMemoryObj(bool shared, const std::string &name) const;
@@ -84,10 +84,11 @@ public:
   MemObj  *getPrefetcher() const { return pref; };
 };
 
-class DummyMemorySystem : public GMemorySystem {
+class Dummy_memory_system : public Gmemory_system {
 private:
 protected:
+  MemObj *buildMemoryObj(const std::string &type, const std::string &section, const std::string &name) override;
 public:
-  DummyMemorySystem(int32_t coreId);
-  ~DummyMemorySystem();
+  Dummy_memory_system(int32_t coreId);
+  ~Dummy_memory_system();
 };

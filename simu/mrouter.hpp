@@ -4,7 +4,8 @@
 
 #include <vector>
 
-#include "gmemorysystem.hpp"
+#include "callback.hpp"
+#include "opcode.hpp"
 #include "estl.hpp"
 #include "iassert.hpp"
 #include "snippets.hpp"

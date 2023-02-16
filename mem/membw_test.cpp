@@ -22,7 +22,7 @@
 #include "MemObj.h"
 #include "MemRequest.h"
 #include "MemStruct.h"
-#include "MemorySystem.h"
+#include "Memory_system.h"
 #include "RAWDInst.h"
 #include "callback.h"
 
@@ -183,19 +183,19 @@ static void dodisp(MemObj *cache, Addr_t addr) {
 }
 
 bool           pluggedin = false;
-GMemorySystem *gms_p0    = 0;
-GMemorySystem *gms_p1    = 0;
-GMemorySystem *gms_p4    = 0;
+Gmemory_system *gms_p0    = 0;
+Gmemory_system *gms_p1    = 0;
+Gmemory_system *gms_p4    = 0;
 void           initialize() {
   if (!pluggedin) {
     int         arg1   = 1;
 
-    gms_p0   = new MemorySystem(0);
-    gms_p0->buildMemorySystem();
-    gms_p1 = new MemorySystem(1);
-    gms_p1->buildMemorySystem();
-    gms_p4 = new MemorySystem(4);
-    gms_p4->buildMemorySystem();
+    gms_p0   = new Memory_system(0);
+    gms_p0->buildMemory_system();
+    gms_p1 = new Memory_system(1);
+    gms_p1->buildMemory_system();
+    gms_p4 = new Memory_system(4);
+    gms_p4->buildMemory_system();
     pluggedin = true;
 #ifdef DEBUG_CALLPATH
     forcemsgdump = true;
@@ -212,7 +212,7 @@ void           initialize() {
   st = DInst::create(st_inst, 0x410, 0x400, 0, true);
 }
 
-CCache *getDL1(GMemorySystem *gms) {
+CCache *getDL1(Gmemory_system *gms) {
   MemObj *dl1 = gms->getDL1();
   if (strcasecmp(dl1->getDeviceType(), "cache") != 0) {
     fmt::print("going down from {}\n", dl1->getDeviceType());

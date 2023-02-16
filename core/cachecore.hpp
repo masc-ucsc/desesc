@@ -774,14 +774,18 @@ CacheGeneric<State, Addr_t> *CacheGeneric<State, Addr_t>::create(const std::stri
                                                                  const std::string &cache_name) {
   CacheGeneric *cache = 0;
 
-  auto size_sec        = fmt::format("{}_size", append);
-  auto line_size_sec   = fmt::format("{}_line_size", append);
-  auto addrUnit_sec    = fmt::format("{}_addrUnit", append);
-  auto assoc_sec       = fmt::format("{}_assoc", append);
-  auto repl_policy_sec = fmt::format("{}_repl_policy", append);
-  auto skew_sec        = fmt::format("{}_skew", append);
-  auto xor_sec         = fmt::format("{}_xor", append);
-  auto ship_sec        = fmt::format("{}_ship_sign_bits", append);
+  auto fmt_append{append};
+  if (!fmt_append.empty())
+    fmt_append += "_";
+
+  auto size_sec        = fmt::format("{}size", fmt_append);
+  auto line_size_sec   = fmt::format("{}line_size", fmt_append);
+  auto addrUnit_sec    = fmt::format("{}addrUnit", fmt_append);
+  auto assoc_sec       = fmt::format("{}assoc", fmt_append);
+  auto repl_policy_sec = fmt::format("{}repl_policy", fmt_append);
+  auto skew_sec        = fmt::format("{}skew", fmt_append);
+  auto xor_sec         = fmt::format("{}xor", fmt_append);
+  auto ship_sec        = fmt::format("{}ship_sign_bits", fmt_append);
 
   int32_t s  = Config::get_power2(section, size_sec);
   int32_t a  = Config::get_power2(section, assoc_sec);

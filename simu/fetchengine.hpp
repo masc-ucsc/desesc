@@ -6,16 +6,16 @@
 #include "bpred.hpp"
 #include "emul_base.hpp"
 #include "iassert.hpp"
+#include "gmemory_system.hpp"
 #include "stats.hpp"
 
 // #define ENABLE_LDBP
 
-class GMemorySystem;
 class IBucket;
 
 class FetchEngine {
 private:
-  std::shared_ptr<GMemorySystem> const gms;
+  std::shared_ptr<Gmemory_system> const gms;
 
   std::shared_ptr<BPredictor> bpred;
 
@@ -141,7 +141,7 @@ protected:
   // *******************
 
 public:
-  FetchEngine(Hartid_t i, std::shared_ptr<GMemorySystem> gms, std::shared_ptr<BPredictor> shared_bpred = nullptr);
+  FetchEngine(Hartid_t i, std::shared_ptr<Gmemory_system> gms, std::shared_ptr<BPredictor> shared_bpred = nullptr);
 
   ~FetchEngine();
 

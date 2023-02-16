@@ -10,7 +10,7 @@
 #include "iassert.hpp"
 #include "stats.hpp"
 #include "store_buffer.hpp"
-#include "gmemorysystem.hpp"
+#include "gmemory_system.hpp"
 
 class PortGeneric;
 class Dinst;
@@ -128,7 +128,7 @@ protected:
   bool LSQlateAlloc;
 
   MemResource(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, LSQ *lsq, std::shared_ptr<StoreSet> ss,
-              std::shared_ptr<Prefetcher> pref, std::shared_ptr<Store_buffer> scb, TimeDelta_t l, std::shared_ptr<GMemorySystem> ms, int32_t id,
+              std::shared_ptr<Prefetcher> pref, std::shared_ptr<Store_buffer> scb, TimeDelta_t l, std::shared_ptr<Gmemory_system> ms, int32_t id,
               const char *cad);
 
 public:
@@ -150,7 +150,7 @@ protected:
 
 public:
   FULoad(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, LSQ *lsq, std::shared_ptr<StoreSet> ss, std::shared_ptr<Prefetcher> pref,
-         std::shared_ptr<Store_buffer> scb, TimeDelta_t lsdelay, TimeDelta_t l, std::shared_ptr<GMemorySystem> ms, int32_t size, int32_t id,
+         std::shared_ptr<Store_buffer> scb, TimeDelta_t lsdelay, TimeDelta_t l, std::shared_ptr<Gmemory_system> ms, int32_t size, int32_t id,
          const char *cad);
 
   StallCause canIssue(Dinst *dinst);
@@ -168,7 +168,7 @@ private:
 
 public:
   FUStore(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, LSQ *lsq, std::shared_ptr<StoreSet> ss, std::shared_ptr<Prefetcher> pref,
-          std::shared_ptr<Store_buffer> scb, TimeDelta_t l, std::shared_ptr<GMemorySystem> ms, int32_t size, int32_t id, const char *cad);
+          std::shared_ptr<Store_buffer> scb, TimeDelta_t l, std::shared_ptr<Gmemory_system> ms, int32_t size, int32_t id, const char *cad);
 
   StallCause canIssue(Dinst *dinst);
   void       executing(Dinst *dinst);

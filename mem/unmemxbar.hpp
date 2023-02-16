@@ -11,7 +11,7 @@ protected:
   uint32_t LineSize;
 
 public:
-  UnMemXBar(MemorySystem *current, const std::string &device_descr_section, const std::string &device_name = NULL);
+  UnMemXBar(Memory_system *current, const std::string &device_descr_section, const std::string &device_name = NULL);
   ~UnMemXBar() {
   }
 

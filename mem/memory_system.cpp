@@ -15,14 +15,12 @@
 
 extern DrawArch arch;
 
-/* }}} */
+Memory_system::Memory_system(int32_t processorId)
+: Gmemory_system(processorId) {
+  build_memory_system();
+}
 
-MemorySystem::MemorySystem(int32_t processorId)
-    /* constructor {{{1 */
-    : GMemorySystem(processorId) {}
-/* }}} */
-
-MemObj *MemorySystem::buildMemoryObj(const std::string &device_type, const std::string &dev_section, const std::string &dev_name)
+MemObj *Memory_system::buildMemoryObj(const std::string &device_type, const std::string &dev_section, const std::string &dev_name)
 /* build the correct memory object {{{1 */
 {
   // Returns new created MemoryObj or NULL in known-error mode
@@ -47,8 +45,8 @@ MemObj *MemorySystem::buildMemoryObj(const std::string &device_type, const std::
     mdev    = new MemController(this, dev_section, dev_name);
     devtype = 5;
   } else {
-    // Check the lower level because it may have it
-    return GMemorySystem::buildMemoryObj(device_type, dev_section, dev_name);
+    Config::add_error(fmt::format("unknown memory type:{} from section:{}", device_type, dev_section));
+    return nullptr;
   }
 
   mystr += "\n\"";

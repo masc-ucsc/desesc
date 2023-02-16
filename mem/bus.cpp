@@ -3,7 +3,7 @@
 #include "bus.hpp"
 #include "config.hpp"
 
-Bus::Bus(MemorySystem *current, const std::string &section, const std::string &name)
+Bus::Bus(Memory_system *current, const std::string &section, const std::string &name)
     : MemObj(section, name), delay(Config::get_integer(section, "delay")) {
 
   NumUnits_t  num = Config::get_integer(section, "port_num");

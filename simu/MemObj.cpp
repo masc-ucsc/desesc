@@ -6,7 +6,7 @@
 
 #include <set>
 
-#include "gmemorysystem.hpp"
+#include "gmemory_system.hpp"
 #include "memrequest.hpp"
 #include "absl/strings/str_split.h"
 #include "config.hpp"
@@ -36,13 +36,13 @@ MemObj::MemObj(const std::string &sSection, const std::string &sName)
   isLLC         = false;
 
   std::vector<std::string> lower_level = absl::StrSplit(Config::get_string(section, "lower_level"), ' ');
-  if (lower_level.empty()) {
-    Config::add_error(fmt::format("malformed {} lower_level entry", section));
-    return;
-  }
-  auto lower_level_type = Config::get_string(lower_level[0], "type");
-  if (lower_level_type != "cache" && mem_type == "cache") {
+  if (lower_level.empty() || lower_level[0] == "" || lower_level[0] == "void") {
     isLLC = true;
+  }else{
+    auto lower_level_type = Config::get_string(lower_level[0], "type");
+    if (lower_level_type != "cache" && mem_type == "cache") {
+      isLLC = true;
+    }
   }
 
   // Create router (different objects may override the default router)

@@ -6,10 +6,9 @@
 #include "depwindow.hpp"
 #include "dinst.hpp"
 #include "iassert.hpp"
-#include "gmemorysystem.hpp"
-
-class Resource;
-class GProcessor;
+#include "gmemory_system.hpp"
+#include "resource.hpp"
+#include "gprocessor.hpp"
 
 class ClusterManager {
 private:
@@ -17,7 +16,7 @@ private:
 
 protected:
 public:
-  ClusterManager(std::shared_ptr<GMemorySystem> gms, uint32_t cpuid, GProcessor *gproc);
+  ClusterManager(std::shared_ptr<Gmemory_system> gms, uint32_t cpuid, GProcessor *gproc);
 
   std::shared_ptr<Resource> getResource(Dinst *dinst) const { return scheduler->getResource(dinst); }
 };

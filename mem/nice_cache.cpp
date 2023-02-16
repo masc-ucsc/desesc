@@ -5,7 +5,7 @@
 #include "memory_system.hpp"
 #include "config.hpp"
 
-Nice_cache::Nice_cache(MemorySystem *gms, const std::string &section, const std::string &sName)
+Nice_cache::Nice_cache(Memory_system *gms, const std::string &section, const std::string &sName)
     : MemObj(section, sName)
     , hitDelay(Config::get_integer(section, "delay"))
     , bsize(Config::get_power2(section, "line_size"))

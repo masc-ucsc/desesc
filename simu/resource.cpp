@@ -8,7 +8,7 @@
 // #define MEM_TSO2 1
 #include "cluster.hpp"
 #include "fetchengine.hpp"
-#include "gmemorysystem.hpp"
+#include "gmemory_system.hpp"
 #include "gprocessor.hpp"
 #include "lsq.hpp"
 #include "memrequest.hpp"
@@ -86,7 +86,7 @@ Resource::~Resource()
 
 MemResource::MemResource(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, LSQ *_lsq, std::shared_ptr<StoreSet> ss,
                          std::shared_ptr<Prefetcher> _pref, std::shared_ptr<Store_buffer> _scb, TimeDelta_t l,
-                         std::shared_ptr<GMemorySystem> ms, int32_t id, const char *cad)
+                         std::shared_ptr<Gmemory_system> ms, int32_t id, const char *cad)
     /* constructor {{{1 */
     : MemReplay(type, cls, aGen, ss, l, id)
     , firstLevelMemObj(ms->getDL1())
@@ -94,7 +94,7 @@ MemResource::MemResource(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric
     , pref(_pref)
     , scb(_scb)
     , stldViolations(fmt::format("P({})_{}_{}:stldViolations", id, cls->getName(), cad)) {
-  if (firstLevelMemObj->get_type() == "cache") {
+  if (firstLevelMemObj->get_type() == "cache" || firstLevelMemObj->get_type() == "nice") {
     DL1 = firstLevelMemObj;
   } else {
     MRouter *router = firstLevelMemObj->getRouter();
@@ -239,7 +239,7 @@ void MemReplay::replayManage(Dinst *dinst) {
 
 FULoad::FULoad(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, LSQ *_lsq, std::shared_ptr<StoreSet> ss,
                std::shared_ptr<Prefetcher> _pref, std::shared_ptr<Store_buffer> _scb, TimeDelta_t lsdelay, TimeDelta_t l,
-               std::shared_ptr<GMemorySystem> ms, int32_t size, int32_t id, const char *cad)
+               std::shared_ptr<Gmemory_system> ms, int32_t size, int32_t id, const char *cad)
     /* Constructor {{{1 */
     : MemResource(type, cls, aGen, _lsq, ss, _pref, _scb, l, ms, id, cad)
 #ifdef MEM_TSO2
@@ -442,7 +442,7 @@ void FULoad::performed(Dinst *dinst) {
 
 FUStore::FUStore(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, LSQ *_lsq, std::shared_ptr<StoreSet> ss,
                  std::shared_ptr<Prefetcher> _pref, std::shared_ptr<Store_buffer> _scb, TimeDelta_t l,
-                 std::shared_ptr<GMemorySystem> ms, int32_t size, int32_t id, const char *cad)
+                 std::shared_ptr<Gmemory_system> ms, int32_t size, int32_t id, const char *cad)
     /* constructor {{{1 */
     : MemResource(type, cls, aGen, _lsq, ss, _pref, _scb, l, ms, id, cad), freeEntries(size) {
   if (Config::get_bool("soc", "core", id, "caches")) {

@@ -17,7 +17,7 @@ protected:
   PortGeneric *cmdPort;
 
 public:
-  Bus(MemorySystem *current, const std::string &device_descr_section, const std::string &device_name = NULL);
+  Bus(Memory_system *current, const std::string &device_descr_section, const std::string &device_name = NULL);
   ~Bus() {
   }
 

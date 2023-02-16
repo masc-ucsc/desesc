@@ -32,7 +32,7 @@ protected:
   // END VIRTUAL FUNCTIONS of GProcessor
 
 public:
-  GPUSMProcessor(GMemorySystem *gm, CPU_t i);
+  GPUSMProcessor(Gmemory_system *gm, CPU_t i);
   virtual ~GPUSMProcessor();
 
   LSQ *getLSQ() { return &lsq; }

@@ -12,7 +12,7 @@ MemXBar::MemXBar(const std::string &section, const std::string &name) : GXBar(se
 
 } /*}}}*/
 
-MemXBar::MemXBar(MemorySystem *current, const std::string &section, const std::string name)
+MemXBar::MemXBar(Memory_system *current, const std::string &section, const std::string name)
     /* {{{ constructor */
     : GXBar(section, name) {
   I(current);

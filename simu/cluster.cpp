@@ -2,7 +2,7 @@
 
 #include "cluster.hpp"
 
-#include "gmemorysystem.hpp"
+#include "gmemory_system.hpp"
 #include "gprocessor.hpp"
 #include "resource.hpp"
 #include "config.hpp"
@@ -31,7 +31,7 @@ Cluster::Cluster(const std::string &clusterName, uint32_t pos, uint32_t _cpuid)
   nready = 0;
 }
 
-std::shared_ptr<Resource> Cluster::buildUnit(const std::string &clusterName, uint32_t pos, std::shared_ptr<GMemorySystem> ms, std::shared_ptr<Cluster> cluster,
+std::shared_ptr<Resource> Cluster::buildUnit(const std::string &clusterName, uint32_t pos, std::shared_ptr<Gmemory_system> ms, std::shared_ptr<Cluster> cluster,
                         Opcode type, GProcessor *gproc) {
   auto unitType = Instruction::opcode2Name(type);
 
@@ -167,7 +167,7 @@ std::pair<
    std::shared_ptr<Cluster>
   ,std::array<std::shared_ptr<Resource>, iMAX>
   >
-  Cluster::create(const std::string &clusterName, uint32_t pos, std::shared_ptr<GMemorySystem> ms, uint32_t cpuid,
+  Cluster::create(const std::string &clusterName, uint32_t pos, std::shared_ptr<Gmemory_system> ms, uint32_t cpuid,
                          GProcessor *gproc) {
   // Constraints
   std::array<std::shared_ptr<Resource>, iMAX> res;

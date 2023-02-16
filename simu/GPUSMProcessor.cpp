@@ -42,10 +42,10 @@
 
 #include "clustermanager.hpp"
 #include "fetchengine.hpp"
-#include "gmemorysystem.hpp"
+#include "gmemory_system.hpp"
 #include "config.hpp"
 
-GPUSMProcessor::GPUSMProcessor(GMemorySystem *gm, CPU_t i)
+GPUSMProcessor::GPUSMProcessor(Gmemory_system *gm, CPU_t i)
     : GProcessor(gm, i, 1), IFID(i, this, gm), pipeQ(i), lsq(i), clusterManager(gm, this) { /*{{{*/
 
   numSP             = Config::get_power2("soc", "core", i, "sp_per_sm");

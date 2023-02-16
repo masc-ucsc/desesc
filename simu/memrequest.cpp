@@ -5,7 +5,6 @@
 
 #include "memrequest.hpp"
 #include "cluster.hpp"
-#include "gmemorysystem.hpp"
 #include "memobj.hpp"
 #include "memstruct.hpp"
 #include "pipeline.hpp"

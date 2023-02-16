@@ -11,7 +11,7 @@
 
 #include "fastqueue.hpp"
 #include "fetchengine.hpp"
-#include "gmemorysystem.hpp"
+#include "gmemory_system.hpp"
 #include "memrequest.hpp"
 #include "config.hpp"
 #include "fmt/format.h"
@@ -25,7 +25,7 @@
 // FIXME: to avoid deadlock, prealloc n to the n oldest instructions
 // #define LATE_ALLOC_REGISTER
 
-OoOProcessor::OoOProcessor(std::shared_ptr<GMemorySystem> gm, CPU_t i)
+OoOProcessor::OoOProcessor(std::shared_ptr<Gmemory_system> gm, CPU_t i)
     /* constructor {{{1 */
     : GProcessor(gm, i)
     , MemoryReplay(Config::get_bool("soc", "core", i, "memory_replay"))

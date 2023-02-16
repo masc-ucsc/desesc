@@ -36,7 +36,7 @@ void CCache::trackAddress(MemRequest *mreq) {
 #define MTRACE(a...)
 #endif
 
-CCache::CCache(MemorySystem *gms, const std::string &section, const std::string &name)
+CCache::CCache(Memory_system *gms, const std::string &section, const std::string &name)
     : MemObj(section, name)
     , nTryPrefetch(fmt::format("{}:nTryPrefetch", name))
     , nSendPrefetch(fmt::format("{}:nSendPrefetch", name))

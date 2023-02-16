@@ -263,7 +263,7 @@ protected:
   StaticCallbackMember0<CCache, &CCache::cleanup> cleanupCB;
   Cache_port port;
 public:
-  CCache(MemorySystem *gms, const std::string &descr_section, const std::string &name);
+  CCache(Memory_system *gms, const std::string &descr_section, const std::string &name);
   virtual ~CCache();
 
   int32_t getLineSize() const {

@@ -15,7 +15,7 @@ protected:
   void init(const std::string &section);
 
 public:
-  MemXBar(MemorySystem *current, const std::string &device_descr_section, const std::string device_name = "");
+  MemXBar(Memory_system *current, const std::string &device_descr_section, const std::string device_name = "");
   MemXBar(const std::string &section, const std::string &name);
   ~MemXBar() {
   }

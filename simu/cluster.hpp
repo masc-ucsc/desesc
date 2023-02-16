@@ -13,13 +13,13 @@
 #include "iassert.hpp"
 #include "instruction.hpp"
 #include "stats.hpp"
+#include "gmemory_system.hpp"
 
 class Resource;
-class GMemorySystem;
 
 class Cluster {
 private:
-  std::shared_ptr<Resource> buildUnit(const std::string &clusterName, uint32_t pos, std::shared_ptr<GMemorySystem> ms, std::shared_ptr<Cluster> cluster, Opcode type, GProcessor *gproc);
+  std::shared_ptr<Resource> buildUnit(const std::string &clusterName, uint32_t pos, std::shared_ptr<Gmemory_system> ms, std::shared_ptr<Cluster> cluster, Opcode type, GProcessor *gproc);
 
 protected:
   DepWindow window;
@@ -88,7 +88,7 @@ public:
      std::shared_ptr<Cluster>
     ,std::array<std::shared_ptr<Resource>, iMAX>
     >
-    create(const std::string &clusterName, uint32_t pos, std::shared_ptr<GMemorySystem> ms, uint32_t cpuid, GProcessor *gproc);
+    create(const std::string &clusterName, uint32_t pos, std::shared_ptr<Gmemory_system> ms, uint32_t cpuid, GProcessor *gproc);
 
   const std::string &getName() const { return name; }
   int get_id() const { return cluster_id; }

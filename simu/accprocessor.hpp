@@ -6,7 +6,7 @@
 #include "simu_base.hpp"
 #include "iassert.hpp"
 #include "stats.hpp"
-#include "gmemorysystem.hpp"
+#include "gmemory_system.hpp"
 
 class AccProcessor : public Simu_base {
 private:
@@ -29,7 +29,7 @@ protected:
   typedef CallbackMember2<AccProcessor, uint32_t, Time_t, &AccProcessor::write_performed> write_performedCB;
 
 public:
-  AccProcessor(std::shared_ptr<GMemorySystem> gm, Hartid_t i);
+  AccProcessor(std::shared_ptr<Gmemory_system> gm, Hartid_t i);
   virtual ~AccProcessor();
 
   // API for Execute_egine

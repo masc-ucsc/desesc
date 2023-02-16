@@ -4,10 +4,10 @@
 #include <signal.h>
 #include <stdlib.h>
 
-// #include "MemorySystem.h"
 #include "accprocessor.hpp"
 #include "drawarch.hpp"
-#include "gmemorysystem.hpp"
+#include "memory_system.hpp"
+#include "gmemory_system.hpp"
 #include "gpusmprocessor.hpp"
 #include "gprocessor.hpp"
 #include "inorderprocessor.hpp"
@@ -114,16 +114,12 @@ void BootLoader::plug_simus() {
   auto ncores = Config::get_array_size("soc", "core");
 
   for (auto i = 0u; i < ncores; i++) {
-    std::shared_ptr<GMemorySystem> gm;
+    std::shared_ptr<Gmemory_system> gm;
     auto caches = Config::get_bool("soc", "core", i, "caches");
     if (caches) {
-#if 0
-      gm = std::make_shared<MemorySystem>(i)
-#else
-      I(false);  // FIXME: cleanup the mem
-#endif
+      gm = std::make_shared<Memory_system>(i);
     }else {
-      gm = std::make_shared<DummyMemorySystem>(i);
+      gm = std::make_shared<Dummy_memory_system>(i);
     }
 
     auto                       type = Config::get_string("soc", "core", i, "type", {"ooo", "inorder", "accel"});

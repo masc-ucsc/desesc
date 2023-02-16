@@ -28,8 +28,8 @@
 #include "stats.hpp"
 #include "store_buffer.hpp"
 #include "wavesnap.hpp"
+#include "gmemory_system.hpp"
 
-class GMemorySystem;
 class BPredictor;
 
 struct SMT_fetch {
@@ -61,7 +61,7 @@ protected:
   const size_t  MaxROBSize;
 
   size_t         smt_size;
-  std::shared_ptr<GMemorySystem> memorySystem;
+  std::shared_ptr<Gmemory_system> memorySystem;
 
   std::shared_ptr<StoreSet>     storeset;
   std::shared_ptr<Prefetcher>   prefetcher;
@@ -94,9 +94,9 @@ protected:
 
   // Construction
   void buildInstStats(const std::string &txt);
-  void buildUnit(const std::string &clusterName, std::shared_ptr<GMemorySystem> ms, Cluster *cluster, Opcode type);
+  void buildUnit(const std::string &clusterName, std::shared_ptr<Gmemory_system> ms, Cluster *cluster, Opcode type);
 
-  GProcessor(std::shared_ptr<GMemorySystem> gm, Hartid_t i);
+  GProcessor(std::shared_ptr<Gmemory_system> gm, Hartid_t i);
 
   int32_t    issue();
   void       fetch();

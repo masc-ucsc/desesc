@@ -1,6 +1,6 @@
 // See LICENSE for details.
 
-#include "gmemorysystem.hpp"
+#include "gmemory_system.hpp"
 
 #include <cstdlib>
 #include <string>
@@ -10,8 +10,8 @@
 #include "absl/strings/str_split.h"
 #include "config.hpp"
 
-MemoryObjContainer            GMemorySystem::sharedMemoryObjContainer;
-GMemorySystem::StrCounterType GMemorySystem::usedNames;
+MemoryObjContainer            Gmemory_system::sharedMemoryObjContainer;
+Gmemory_system::StrCounterType Gmemory_system::usedNames;
 DrawArch                      arch;
 
 //////////////////////////////////////////////
@@ -55,9 +55,9 @@ MemObj *MemoryObjContainer::searchMemoryObj(const std::string &device_name) cons
 void MemoryObjContainer::clear() { intlMemoryObjContainer.clear(); }
 
 //////////////////////////////////////////////
-// GMemorySystem
+// Gmemory_system
 
-GMemorySystem::GMemorySystem(int32_t processorId) : coreId(processorId) {
+Gmemory_system::Gmemory_system(int32_t processorId) : coreId(processorId) {
   localMemoryObjContainer = new MemoryObjContainer();
 
   DL1  = 0;
@@ -66,10 +66,9 @@ GMemorySystem::GMemorySystem(int32_t processorId) : coreId(processorId) {
 
   priv_counter = 0;
 
-  buildMemorySystem();
 }
 
-GMemorySystem::~GMemorySystem() {
+Gmemory_system::~Gmemory_system() {
   if (DL1) {
     delete DL1;
   }
@@ -85,21 +84,8 @@ GMemorySystem::~GMemorySystem() {
   delete localMemoryObjContainer;
 }
 
-MemObj *GMemorySystem::buildMemoryObj(const std::string &type, const std::string &section, const std::string &name) {
-  if (!(type == "dummy" || type == "cache" || type == "icache" || type == "scache"
 
-        || type == "markovPrefetcher" || type == "stridePrefetcher" || type == "Prefetcher"
-
-        || type == "splitter" || type == "siftsplitter"
-
-        || type == "smpcache" || type == "memxbar")) {
-    Config::add_error(fmt::format("Invalid memory type [{}]", type));
-  }
-
-  return new DummyMemObj(section, name);
-}
-
-void GMemorySystem::buildMemorySystem() {
+void Gmemory_system::build_memory_system() {
   std::string def_block = Config::get_string("soc", "core", coreId);
 
   IL1 = declareMemoryObj(def_block, "il1");
@@ -121,7 +107,7 @@ void GMemorySystem::buildMemorySystem() {
   }
 }
 
-std::string GMemorySystem::buildUniqueName(const std::string &device_type) {
+std::string Gmemory_system::buildUniqueName(const std::string &device_type) {
   int32_t num;
 
   auto it = usedNames.find(device_type);
@@ -135,19 +121,19 @@ std::string GMemorySystem::buildUniqueName(const std::string &device_type) {
   return fmt::format("{}({})", device_type, num);
 }
 
-std::string GMemorySystem::privatizeDeviceName(const std::string &given_name, int32_t num) {
+std::string Gmemory_system::privatizeDeviceName(const std::string &given_name, int32_t num) {
   return fmt::format("{}({})", given_name, num);
 }
 
-MemObj *GMemorySystem::searchMemoryObj(bool shared, const std::string &section, const std::string &name) const {
+MemObj *Gmemory_system::searchMemoryObj(bool shared, const std::string &section, const std::string &name) const {
   return getMemoryObjContainer(shared)->searchMemoryObj(section, name);
 }
 
-MemObj *GMemorySystem::searchMemoryObj(bool shared, const std::string &name) const {
+MemObj *Gmemory_system::searchMemoryObj(bool shared, const std::string &name) const {
   return getMemoryObjContainer(shared)->searchMemoryObj(name);
 }
 
-MemObj *GMemorySystem::declareMemoryObj_uniqueName(const std::string &name, const std::string &device_descr_section) {
+MemObj *Gmemory_system::declareMemoryObj_uniqueName(const std::string &name, const std::string &device_descr_section) {
 #if 0
   std::vector<std::string> vPars;
   vPars.push_back(device_descr_section);
@@ -158,7 +144,7 @@ MemObj *GMemorySystem::declareMemoryObj_uniqueName(const std::string &name, cons
   return finishDeclareMemoryObj({device_descr_section, name, "shared"});
 }
 
-MemObj *GMemorySystem::declareMemoryObj(const std::string &block, const std::string &field) {
+MemObj *Gmemory_system::declareMemoryObj(const std::string &block, const std::string &field) {
   auto                     str   = Config::get_string(block, field);
   std::vector<std::string> vPars = absl::StrSplit(str, ' ');
 
@@ -173,7 +159,7 @@ MemObj *GMemorySystem::declareMemoryObj(const std::string &block, const std::str
   return ret;
 }
 
-MemObj *GMemorySystem::finishDeclareMemoryObj(const std::vector<std::string> &vPars, const std::string &name_suffix) {
+MemObj *Gmemory_system::finishDeclareMemoryObj(const std::vector<std::string> &vPars, const std::string &name_suffix) {
   bool shared     = false;  // Private by default
   bool privatized = false;
 
@@ -242,10 +228,22 @@ MemObj *GMemorySystem::finishDeclareMemoryObj(const std::vector<std::string> &vP
   return newMem;
 }
 
-DummyMemorySystem::DummyMemorySystem(int32_t _coreId) : GMemorySystem(_coreId) {
+Dummy_memory_system::Dummy_memory_system(int32_t _coreId) : Gmemory_system(_coreId) {
+  build_memory_system();
+}
+
+Dummy_memory_system::~Dummy_memory_system() {
   // Do nothing
 }
 
-DummyMemorySystem::~DummyMemorySystem() {
-  // Do nothing
+MemObj *Dummy_memory_system::buildMemoryObj(const std::string &type, const std::string &section, const std::string &name) {
+  if (!(type == "cache" || type == "nice"
+        || type == "markovPrefetcher" || type == "stridePrefetcher" || type == "Prefetcher"
+        || type == "splitter" || type == "siftsplitter"
+        || type == "smpcache" || type == "memxbar")) {
+    Config::add_error(fmt::format("Invalid memory type [{}]", type));
+  }
+
+  return new DummyMemObj(section, name);
 }
+

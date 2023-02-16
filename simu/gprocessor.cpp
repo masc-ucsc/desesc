@@ -6,7 +6,7 @@
 #include <unistd.h>
 
 #include "fetchengine.hpp"
-#include "gmemorysystem.hpp"
+#include "gmemory_system.hpp"
 #include "fmt/format.h"
 #include "report.hpp"
 
@@ -64,7 +64,7 @@ void GProcessor::fetch() {
   }
 }
 
-GProcessor::GProcessor(std::shared_ptr<GMemorySystem> gm, Hartid_t i)
+GProcessor::GProcessor(std::shared_ptr<Gmemory_system> gm, Hartid_t i)
     : Simu_base(gm, i)
     , FetchWidth(Config::get_integer("soc", "core", i, "fetch_width"))
     , IssueWidth(Config::get_integer("soc", "core", i, "issue_width"))

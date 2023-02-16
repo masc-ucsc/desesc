@@ -14,6 +14,7 @@ cc_library(
         "//simu:simu",
         "//emul:emul",
         "//core:core",
+        "//mem:mem",
     ]
 )
 

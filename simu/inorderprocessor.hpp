@@ -30,7 +30,7 @@ protected:
   // END VIRTUAL FUNCTIONS of GProcessor
 
 public:
-  InOrderProcessor(std::shared_ptr<GMemorySystem> gm, CPU_t i);
+  InOrderProcessor(std::shared_ptr<Gmemory_system> gm, CPU_t i);
   virtual ~InOrderProcessor();
 
   void executing(Dinst *dinst) override final;

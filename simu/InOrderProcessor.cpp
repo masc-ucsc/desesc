@@ -4,11 +4,11 @@
 
 #include "clustermanager.hpp"
 #include "fetchengine.hpp"
-#include "gmemorysystem.hpp"
+#include "gmemory_system.hpp"
 #include "config.hpp"
 #include "tracer.hpp"
 
-InOrderProcessor::InOrderProcessor(std::shared_ptr<GMemorySystem> gm, CPU_t i)
+InOrderProcessor::InOrderProcessor(std::shared_ptr<Gmemory_system> gm, CPU_t i)
     : GProcessor(gm, i)
     , RetireDelay(Config::get_integer("soc", "core", i, "retire_delay"))
     , lsq(i, 32768)

@@ -109,7 +109,7 @@ bimodal_size = 1024
 bimodal_width = 8
 
 [accel_entry]
-caches        = false  # set true to enable caches...
+caches        = true  # set true to enable caches...
 type = "accel"
 frequency_mhz = 200
 
@@ -128,7 +128,7 @@ prefetcher        = "pref_opt"
 smt = 1 # Number of STM context
 
 # Memory Parameters
-caches        = false  # set true to enable caches...
+caches        = true  # set true to enable caches...
 scb_size      = 16
 memory_replay = true
 st_fwd_delay  = 2
@@ -238,12 +238,14 @@ iSALU_SC      = "lsu"
 iSALU_ADDR    = "lsu"
 
 [dl1_cache]
-type       = "cache"   # or nice
+type       = "nice"   # or nice
+cold_misses = true
 size       = 32768
 line_size  = 64
 delay      = 2         # hit delay
 miss_delay = 8
 assoc      = 4
+repl_policy = "lru"
 
 port_occ   = 1
 port_num   = 1
@@ -257,6 +259,8 @@ max_requests  = 32
 allocate_miss = true   # allocate on cache miss
 victim        = false  # victim cache allocation style
 coherent      = true
+inclusive     = true
+directory     = false
 
 nlp_distance = 2
 nlp_degree   = 1       # 0 disabled
@@ -269,12 +273,37 @@ mega_lines1K    = 8    # 8 lines touched, triggers mega/carped prefetch
 lower_level = "privl2 L2 sharedby 2"
 
 [il1_cache]
-type       = "cache"   # or nice
+type       = "nice"   # or nice
+cold_misses = true
 size       = 32768
 line_size  = 64
 delay      = 2         # hit delay
 miss_delay = 8
 assoc      = 4
+repl_policy = "lru"
+
+port_occ   = 1
+port_num   = 1
+port_banks = 32
+
+send_port_occ = 1
+send_port_num = 1
+
+max_requests  = 32
+
+allocate_miss = true   # allocate on cache miss
+victim        = false  # victim cache allocation style
+coherent      = true
+inclusive     = true
+directory     = false
+
+nlp_distance = 2
+nlp_degree   = 1       # 0 disabled
+nlp_stride   = 1
+
+drop_prefetch = true
+prefetch_degree = 0    # 0 disabled
+mega_lines1K    = 8    # 8 lines touched, triggers mega/carped prefetch
 lower_level = "privl2 L2 sharedby 2"
 
 [privl2]

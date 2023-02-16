@@ -14,9 +14,6 @@
 #include "callback.hpp"
 #include "snippets.hpp"
 
-class MemorySystem;
-
-
 class MemController : public MemObj {
 protected:
   class FCFSField {
@@ -74,7 +71,7 @@ protected:
   FCFSQueue                        OverflowMemoryRequests;
 
 public:
-  MemController(MemorySystem *current, const std::string &device_descr_section, const std::string &device_name = NULL);
+  MemController(Memory_system *current, const std::string &device_descr_section, const std::string &device_name = NULL);
   ~MemController() {
   }
 

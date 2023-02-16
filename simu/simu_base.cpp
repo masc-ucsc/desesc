@@ -5,7 +5,7 @@
 #include "config.hpp"
 #include "fmt/format.h"
 
-Simu_base::Simu_base(std::shared_ptr<GMemorySystem> gm, Hartid_t hid_)
+Simu_base::Simu_base(std::shared_ptr<Gmemory_system> gm, Hartid_t hid_)
     : power_down(false)
     , nFreeze(fmt::format("({}):nFreeze", hid_))
     , clockTicks(fmt::format("({}):clockTicks", hid_))

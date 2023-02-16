@@ -4,7 +4,7 @@
 
 #include <string>
 
-#include "gmemorysystem.hpp"
+#include "gmemory_system.hpp"
 #include "emul_base.hpp"
 #include "snippets.hpp"
 #include "stats.hpp"
@@ -32,11 +32,11 @@ protected:
   const Hartid_t hid;
 
   std::shared_ptr<Emul_base>     eint;
-  std::shared_ptr<GMemorySystem> memorySystem;
+  std::shared_ptr<Gmemory_system> memorySystem;
 
   bool adjust_clock(bool en);
 
-  Simu_base(std::shared_ptr<GMemorySystem> gm, Hartid_t i);
+  Simu_base(std::shared_ptr<Gmemory_system> gm, Hartid_t i);
 
 public:
   void set_emul(std::shared_ptr<Emul_base> e) { eint = e; }
@@ -55,7 +55,7 @@ public:
 
   static Time_t getWallClock() { return lastWallClock; }
 
-  std::shared_ptr<GMemorySystem> ref_memory_system() const { return memorySystem; }
+  std::shared_ptr<Gmemory_system> ref_memory_system() const { return memorySystem; }
 
   // API for Simu_base
   virtual bool        advance_clock_drain() = 0;

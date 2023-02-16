@@ -9,7 +9,7 @@
 #include "MemObj.h"
 #include "MemRequest.h"
 #include "MemStruct.h"
-#include "MemorySystem.h"
+#include "Memory_system.h"
 #include "RAWDInst.h"
 #include "ThumbCrack.h"
 #include "callback.h"
@@ -88,9 +88,9 @@ void single() {
   GProcessor *gproc = TaskHandler::getSimu(0);
   I(gproc);
 
-  MemObj *cache1 = gproc->getMemorySystem()->getDL1();
+  MemObj *cache1 = gproc->get_memory_system()->getDL1();
   I(cache1);
-  MemObj *cache2 = gproc->getMemorySystem()->getIL1();
+  MemObj *cache2 = gproc->get_memory_system()->getIL1();
   I(cache2);
 
   printf("trivial test\n");
@@ -119,7 +119,7 @@ void isca_demo() {
   GProcessor *gproc = TaskHandler::getSimu(0);
   I(gproc);
 
-  MemObj *cache1 = gproc->getMemorySystem()->getDL1();
+  MemObj *cache1 = gproc->get_memory_system()->getDL1();
   I(cache1);
 
   printf("access even address 0x102\n");
@@ -140,13 +140,13 @@ void multi() {
   GProcessor *gproc0 = TaskHandler::getSimu(0);
   I(gproc0);
 
-  MemObj *P0DL1 = gproc0->getMemorySystem()->getDL1();
+  MemObj *P0DL1 = gproc0->get_memory_system()->getDL1();
   I(P0DL1);
 
   GProcessor *gproc1 = TaskHandler::getSimu(1);
   I(gproc1);
 
-  MemObj *P1DL1 = gproc1->getMemorySystem()->getDL1();
+  MemObj *P1DL1 = gproc1->get_memory_system()->getDL1();
   I(P1DL1);
 
   printf("Multicore trivial test\n");
@@ -180,13 +180,13 @@ void memcpy() {
   GProcessor *gproc0 = TaskHandler::getSimu(0);
   I(gproc0);
 
-  MemObj *P0DL1 = gproc0->getMemorySystem()->getDL1();
+  MemObj *P0DL1 = gproc0->get_memory_system()->getDL1();
   I(P0DL1);
 
   GProcessor *gproc1 = TaskHandler::getSimu(1);
   I(gproc1);
 
-  MemObj *P1DL1 = gproc1->getMemorySystem()->getDL1();
+  MemObj *P1DL1 = gproc1->get_memory_system()->getDL1();
   I(P1DL1);
 
   printf("Multicore trivial test\n");
@@ -231,19 +231,19 @@ void test2() {
   GProcessor *gproc0 = TaskHandler::getSimu(0);
   I(gproc0);
 
-  MemObj *P0DL1 = gproc0->getMemorySystem()->getDL1();
+  MemObj *P0DL1 = gproc0->get_memory_system()->getDL1();
   I(P0DL1);
 
   GProcessor *gproc1 = TaskHandler::getSimu(1);
   I(gproc1);
 
-  MemObj *P1DL1 = gproc1->getMemorySystem()->getDL1();
+  MemObj *P1DL1 = gproc1->get_memory_system()->getDL1();
   I(P1DL1);
 
   GProcessor *gproc2 = TaskHandler::getSimu(2);
   I(gproc2);
 
-  MemObj *P2DL1 = gproc2->getMemorySystem()->getDL1();
+  MemObj *P2DL1 = gproc2->get_memory_system()->getDL1();
   I(P2DL1);
 
   /*
@@ -283,25 +283,25 @@ void test3() {
   GProcessor *gproc0 = TaskHandler::getSimu(0);
   I(gproc0);
 
-  MemObj *P0DL1 = gproc0->getMemorySystem()->getDL1();
+  MemObj *P0DL1 = gproc0->get_memory_system()->getDL1();
   I(P0DL1);
 
   GProcessor *gproc1 = TaskHandler::getSimu(1);
   I(gproc1);
 
-  MemObj *P1DL1 = gproc1->getMemorySystem()->getDL1();
+  MemObj *P1DL1 = gproc1->get_memory_system()->getDL1();
   I(P1DL1);
 
   GProcessor *gproc2 = TaskHandler::getSimu(2);
   I(gproc2);
 
-  MemObj *P2DL1 = gproc2->getMemorySystem()->getDL1();
+  MemObj *P2DL1 = gproc2->get_memory_system()->getDL1();
   I(P2DL1);
 
   GProcessor *gproc3 = TaskHandler::getSimu(3);
   I(gproc3);
 
-  MemObj *P3DL1 = gproc3->getMemorySystem()->getDL1();
+  MemObj *P3DL1 = gproc3->get_memory_system()->getDL1();
   I(P3DL1);
 
   // rinst->set(insn,pc,addr,data,L1clkRatio,L3clkRatio,keepStats);
@@ -369,9 +369,9 @@ void test4() {
   GProcessor *gproc = TaskHandler::getSimu(0);
   I(gproc);
 
-  MemObj *cache1 = gproc->getMemorySystem()->getDL1();
+  MemObj *cache1 = gproc->get_memory_system()->getDL1();
   I(cache1);
-  MemObj *cache2 = gproc->getMemorySystem()->getIL1();
+  MemObj *cache2 = gproc->get_memory_system()->getIL1();
   I(cache2);
 
   printf("Test 4\n");
@@ -391,28 +391,28 @@ void test5()
   GProcessor *gproc0 = TaskHandler::getSimu(0);
   I(gproc0);
 
-  MemObj *P0DL1 = gproc0->getMemorySystem()->getDL1();
+  MemObj *P0DL1 = gproc0->get_memory_system()->getDL1();
   I(P0DL1);
 
   GProcessor *gproc1 = TaskHandler::getSimu(1);
   I(gproc1);
 
-  MemObj *P1DL1 = gproc1->getMemorySystem()->getDL1();
+  MemObj *P1DL1 = gproc1->get_memory_system()->getDL1();
   I(P1DL1);
 
   GProcessor *gproc2 = TaskHandler::getSimu(2);
   I(gproc2);
 
-  MemObj *P2DL1 = gproc2->getMemorySystem()->getDL1();
+  MemObj *P2DL1 = gproc2->get_memory_system()->getDL1();
   I(P2DL1);
 
 
   GProcessor *gproc3 = TaskHandler::getSimu(3);
   I(gproc3);
 
-  MemObj *P3DL1 = gproc3->getMemorySystem()->getDL1();
+  MemObj *P3DL1 = gproc3->get_memory_system()->getDL1();
   I(P3DL1);
-  MemObj *P3IL1 = gproc3->getMemorySystem()->getIL1();
+  MemObj *P3IL1 = gproc3->get_memory_system()->getIL1();
   I(P3DL1);
 
   // rinst->set(insn,pc,addr,data,L1clkRatio,L3clkRatio,keepStats);
@@ -459,28 +459,28 @@ void test6()
   GProcessor *gproc0 = TaskHandler::getSimu(0);
   I(gproc0);
 
-  MemObj *P0DL1 = gproc0->getMemorySystem()->getDL1();
+  MemObj *P0DL1 = gproc0->get_memory_system()->getDL1();
   I(P0DL1);
 
   GProcessor *gproc1 = TaskHandler::getSimu(1);
   I(gproc1);
 
-  MemObj *P1DL1 = gproc1->getMemorySystem()->getDL1();
+  MemObj *P1DL1 = gproc1->get_memory_system()->getDL1();
   I(P1DL1);
 
   GProcessor *gproc2 = TaskHandler::getSimu(2);
   I(gproc2);
 
-  MemObj *P2DL1 = gproc2->getMemorySystem()->getDL1();
+  MemObj *P2DL1 = gproc2->get_memory_system()->getDL1();
   I(P2DL1);
 
 
   GProcessor *gproc3 = TaskHandler::getSimu(3);
   I(gproc3);
 
-  MemObj *P3DL1 = gproc3->getMemorySystem()->getDL1();
+  MemObj *P3DL1 = gproc3->get_memory_system()->getDL1();
   I(P3DL1);
-  MemObj *P3IL1 = gproc3->getMemorySystem()->getIL1();
+  MemObj *P3IL1 = gproc3->get_memory_system()->getIL1();
   I(P3DL1);
 
   // rinst->set(insn,pc,addr,data,L1clkRatio,L3clkRatio,keepStats);
@@ -530,27 +530,27 @@ void test7()
   GProcessor *gproc0 = TaskHandler::getSimu(0);
   I(gproc0);
 
-  MemObj *P0DL1 = gproc0->getMemorySystem()->getDL1();
+  MemObj *P0DL1 = gproc0->get_memory_system()->getDL1();
   I(P0DL1);
 
   GProcessor *gproc1 = TaskHandler::getSimu(1);
   I(gproc1);
 
-  MemObj *P1DL1 = gproc1->getMemorySystem()->getDL1();
+  MemObj *P1DL1 = gproc1->get_memory_system()->getDL1();
   I(P1DL1);
 
   GProcessor *gproc2 = TaskHandler::getSimu(2);
   I(gproc2);
 
-  MemObj *P2DL1 = gproc2->getMemorySystem()->getDL1();
+  MemObj *P2DL1 = gproc2->get_memory_system()->getDL1();
   I(P2DL1);
 
   GProcessor *gproc3 = TaskHandler::getSimu(3);
   I(gproc3);
 
-  MemObj *P3DL1 = gproc3->getMemorySystem()->getDL1();
+  MemObj *P3DL1 = gproc3->get_memory_system()->getDL1();
   I(P3DL1);
-  MemObj *P3IL1 = gproc3->getMemorySystem()->getIL1();
+  MemObj *P3IL1 = gproc3->get_memory_system()->getIL1();
   I(P3DL1);
   // rinst->set(insn,pc,addr,data,L1clkRatio,L3clkRatio,keepStats);
   rinst.set(0xe0803003,0x400,0x400,130,1,1,true);

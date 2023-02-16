@@ -4,12 +4,12 @@
 
 #include <math.h>
 
-#include "gmemorysystem.hpp"
+#include "gmemory_system.hpp"
 #include "memrequest.hpp"
 #include "config.hpp"
 #include "fmt/format.h"
 
-AccProcessor::AccProcessor(std::shared_ptr<GMemorySystem> gm, Hartid_t i)
+AccProcessor::AccProcessor(std::shared_ptr<Gmemory_system> gm, Hartid_t i)
     /* constructor {{{1 */
     : Simu_base(gm, i)
     , myAddr((i + 1) * 128 * 1024)

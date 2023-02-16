@@ -4,7 +4,7 @@
 #include "memory_system.hpp"
 #include "config.hpp"
 
-UnMemXBar::UnMemXBar(MemorySystem *current, const std::string &section, const std::string &name)
+UnMemXBar::UnMemXBar(Memory_system *current, const std::string &section, const std::string &name)
     /* constructor {{{1 */
     : GXBar(section, name) {
   Xbar_unXbar_balance--;  // decrement balance of XBars

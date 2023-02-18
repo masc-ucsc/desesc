@@ -16,4 +16,3 @@ protected:
 public:
   Memory_system(int32_t processorId);
 };
-

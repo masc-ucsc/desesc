@@ -70,7 +70,7 @@ TEST_F(Emul_Dromajo_test, dhrystone_test) {
   EXPECT_FALSE(inst->hasDstRegister());
   dinst->scrap();
 
-  dromajo_ptr->skip_rabbit(0, 55);    // c.bnez
+  dromajo_ptr->skip_rabbit(0, 55);  // c.bnez
   dinst = dromajo_ptr->peek(0);
   EXPECT_EQ(0x00000000800025d8, dinst->getPC());
   inst = dinst->getInst();
@@ -135,7 +135,7 @@ TEST_F(Emul_Dromajo_test, dhrystone_test) {
   EXPECT_TRUE(inst->isStore());
   dinst->scrap();
 
-  dromajo_ptr->skip_rabbit(0, 41); // c.sdsp
+  dromajo_ptr->skip_rabbit(0, 41);  // c.sdsp
   dinst = dromajo_ptr->peek(0);
   EXPECT_EQ(0x000000008000217e, dinst->getPC());
   EXPECT_EQ(0x00000000800255b0, dinst->getAddr());

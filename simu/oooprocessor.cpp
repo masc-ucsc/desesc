@@ -9,18 +9,18 @@
 #include <iterator>
 #include <numeric>
 
+#include "config.hpp"
 #include "fastqueue.hpp"
 #include "fetchengine.hpp"
+#include "fmt/format.h"
 #include "gmemory_system.hpp"
 #include "memrequest.hpp"
-#include "config.hpp"
-#include "fmt/format.h"
 #include "taskhandler.hpp"
 #include "tracer.hpp"
 
-//#define ESESC_TRACE
-// #define ESESC_CODEPROFILE
-// #define ESESC_BRANCHPROFILE
+// #define ESESC_TRACE
+//  #define ESESC_CODEPROFILE
+//  #define ESESC_BRANCHPROFILE
 
 // FIXME: to avoid deadlock, prealloc n to the n oldest instructions
 // #define LATE_ALLOC_REGISTER
@@ -204,7 +204,7 @@ bool OoOProcessor::advance_clock_drain() {
   }
 
   if (!pipeQ.instQueue.empty()) {
-    auto n =  issue();
+    auto n = issue();
     spaceInInstQueue += n;
   } else if (ROB.empty() && rROB.empty() && !pipeQ.pipeLine.hasOutstandingItems()) {
     return false;
@@ -291,19 +291,19 @@ void OoOProcessor::executed([[maybe_unused]] Dinst *dinst) {
 
 StallCause OoOProcessor::add_inst(Dinst *dinst) {
   if (replayRecovering && dinst->getID() > replayID) {
-    Tracer::stage(dinst,"Wrep");
+    Tracer::stage(dinst, "Wrep");
     return ReplaysStall;
   }
 
   if ((ROB.size() + rROB.size()) >= (MaxROBSize - 1)) {
-    Tracer::stage(dinst,"Wrob");
+    Tracer::stage(dinst, "Wrob");
     return SmallROBStall;
   }
 
   const Instruction *inst = dinst->getInst();
 
   if (nTotalRegs <= 0) {
-    Tracer::stage(dinst,"Wreg");
+    Tracer::stage(dinst, "Wreg");
     return SmallREGStall;
   }
 
@@ -316,7 +316,7 @@ StallCause OoOProcessor::add_inst(Dinst *dinst) {
 
   StallCause sc = cluster->canIssue(dinst);
   if (sc != NoStall) {
-    Tracer::stage(dinst,"Wcls");
+    Tracer::stage(dinst, "Wcls");
     return sc;
   }
 
@@ -447,7 +447,7 @@ StallCause OoOProcessor::add_inst(Dinst *dinst) {
   I(dinst->getCluster());
 
   dinst->markRenamed();
-  Tracer::stage(dinst,"RN");
+  Tracer::stage(dinst, "RN");
 
 #ifdef WAVESNAP_EN
   // add instruction to wavesnap
@@ -1633,18 +1633,18 @@ void OoOProcessor::retire() {
 
 #ifdef ESESC_TRACE
     fmt::print("TR {:<8} {:<8x} r{:<2},r{:<2}= r{:<2} op={} r{:<2} ft:{} rt:{} it:{} et:{} @{}\n",
-        dinst->getID(),
-        dinst->getPC(),
-        dinst->getInst()->getDst1(),
-        dinst->getInst()->getDst2(),
-        dinst->getInst()->getSrc1(),
-        dinst->getInst()->getOpcode(),
-        dinst->getInst()->getSrc2(),
-        globalClock - dinst->getFetchedTime(),
-        globalClock - dinst->getRenamedTime(),
-        globalClock - dinst->getIssuedTime(),
-        globalClock - dinst->getExecutedTime(),
-        globalClock);
+               dinst->getID(),
+               dinst->getPC(),
+               dinst->getInst()->getDst1(),
+               dinst->getInst()->getDst2(),
+               dinst->getInst()->getSrc1(),
+               dinst->getInst()->getOpcode(),
+               dinst->getInst()->getSrc2(),
+               globalClock - dinst->getFetchedTime(),
+               globalClock - dinst->getRenamedTime(),
+               globalClock - dinst->getIssuedTime(),
+               globalClock - dinst->getExecutedTime(),
+               globalClock);
 #endif
 
 #ifdef WAVESNAP_EN

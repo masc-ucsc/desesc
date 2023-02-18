@@ -36,8 +36,8 @@
 
 #include <vector>
 
-#include "dolc.hpp"
 #include "dinst.hpp"  // Addr_t and Opcode
+#include "dolc.hpp"
 
 // #define MEDIUM_TAGE 1
 // #define IMLI_150K 1
@@ -401,9 +401,9 @@ public:
 // TODO: Convert this class to GTable class that includes subtables inside
 class gentry {
 private:
-  int       nsub;
-  std::vector<int8_t> ctr;
-  std::vector<int8_t> u;
+  int                   nsub;
+  std::vector<int8_t>   ctr;
+  std::vector<int8_t>   u;
   std::vector<uint16_t> boff;  // Signature per branch in the entry
 
 public:
@@ -420,9 +420,9 @@ public:
     n = 1;
 #endif
     nsub = n;
-    ctr.resize(n+1, 0); // +1, last means unused
-    u.resize(n+1, 0);
-    boff.resize(n+1, 0xFFFF);
+    ctr.resize(n + 1, 0);  // +1, last means unused
+    u.resize(n + 1, 0);
+    boff.resize(n + 1, 0xFFFF);
     tag = 0;
   }
 
@@ -768,28 +768,28 @@ public:
 
   int TICK;  // for the reset of the u counter
 
-  uint8_t         ghist[HISTBUFFERLENGTH];
-  int             ptghist;
+  uint8_t                     ghist[HISTBUFFERLENGTH];
+  int                         ptghist;
   std::vector<folded_history> ch_i;     // [NHIST + 1];	//utility for computing TAGE indices
   std::vector<folded_history> ch_t[2];  // [NHIST + 1];	//utility for computing TAGE tags
 
   std::vector<std::vector<gentry>> gtable;  // [NHIST + 1];	// tagged TAGE tables
 
-  std::vector<int>    m;           // [NHIST + 1];	// history lengths
-  std::vector<int>    TB;          //[NHIST + 1]; 	// tag width for the different tagged tables
-  std::vector<int>    logg;        // [NHIST + 1];	// log of number entries of the different tagged tables
-  std::vector<int>    GI;          //[NHIST + 1];		// indexes to the different tables are computed only once
-  std::vector<uint>   GTAG;        //[NHIST + 1];		// tags for the different tables are computed only once
-  bool     pred_taken;  // prediction
-  bool     alttaken;    // alternate  TAGEprediction
-  bool     tage_pred;   // TAGE prediction
-  bool     LongestMatchPred;
-  int      HitBank;           // longest matching bank
-  int      AltBank;           // alternate matching bank
-  uint64_t lastBoundaryPC;    // last PC that fetchBoundary was called
-  uint64_t lastBoundarySign;  // lastBoundaryPC ^ PCs in not-taken in the branch bundle
-  bool     lastBoundaryCtrl;
-  int      Seed;  // for the pseudo-random number generator
+  std::vector<int>  m;           // [NHIST + 1];	// history lengths
+  std::vector<int>  TB;          //[NHIST + 1]; 	// tag width for the different tagged tables
+  std::vector<int>  logg;        // [NHIST + 1];	// log of number entries of the different tagged tables
+  std::vector<int>  GI;          //[NHIST + 1];		// indexes to the different tables are computed only once
+  std::vector<uint> GTAG;        //[NHIST + 1];		// tags for the different tables are computed only once
+  bool              pred_taken;  // prediction
+  bool              alttaken;    // alternate  TAGEprediction
+  bool              tage_pred;   // TAGE prediction
+  bool              LongestMatchPred;
+  int               HitBank;           // longest matching bank
+  int               AltBank;           // alternate matching bank
+  uint64_t          lastBoundaryPC;    // last PC that fetchBoundary was called
+  uint64_t          lastBoundarySign;  // lastBoundaryPC ^ PCs in not-taken in the branch bundle
+  bool              lastBoundaryCtrl;
+  int               Seed;  // for the pseudo-random number generator
 
   bool pred_inter;
 
@@ -812,16 +812,16 @@ public:
       , bwidth(_bwidth)
       , nhist(_nhist >= MAXHIST ? MAXHIST : _nhist)
       , sc(_sc) {
-    ch_i.resize(nhist+1);
-    ch_t[0].resize(nhist+1);
-    ch_t[1].resize(nhist+1);
+    ch_i.resize(nhist + 1);
+    ch_t[0].resize(nhist + 1);
+    ch_t[1].resize(nhist + 1);
 
     gtable.resize(nhist + 1);
-    m     .resize(nhist + 1);
-    TB    .resize(nhist + 1);
-    logg  .resize(nhist + 1);
-    GI    .resize(nhist + 1);
-    GTAG  .resize(nhist + 1);
+    m.resize(nhist + 1);
+    TB.resize(nhist + 1);
+    logg.resize(nhist + 1);
+    GI.resize(nhist + 1);
+    GTAG.resize(nhist + 1);
 
     reinit();
     predictorsize();

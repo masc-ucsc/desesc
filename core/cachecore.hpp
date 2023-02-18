@@ -184,7 +184,7 @@ public:
     return line;
   }
 
-  CacheLine *fillLine(Addr_t addr, Addr_t pc=0) {
+  CacheLine *fillLine(Addr_t addr, Addr_t pc = 0) {
     CacheLine *l = findLine2Replace(addr, pc, false);
     I(l);
 
@@ -275,7 +275,7 @@ public:
   typedef typename CacheGeneric<State, Addr_t>::CacheLine Line;
 
 protected:
-  std::vector<Line>  mem;
+  std::vector<Line> mem;
   Line            **content;
   uint16_t          irand;
   ReplacementPolicy policy;
@@ -313,9 +313,7 @@ protected:
   Line *findLinePrivate(Addr_t addr, Addr_t pc = 0);
 
 public:
-  virtual ~HawkCache() {
-    delete[] content;
-  }
+  virtual ~HawkCache() { delete[] content; }
 
   // TODO: do an iterator. not this junk!!
   Line *getPLine(uint32_t l) {
@@ -354,7 +352,7 @@ public:
   typedef typename CacheGeneric<State, Addr_t>::CacheLine Line;
 
 protected:
-  std::vector<Line>  mem;
+  std::vector<Line> mem;
   Line            **content;
   uint16_t          irand;
   ReplacementPolicy policy;
@@ -420,9 +418,7 @@ protected:
   Line *findLinePrivate(Addr_t addr, Addr_t pc = 0);
 
 public:
-  virtual ~CacheAssoc() {
-    delete[] content;
-  }
+  virtual ~CacheAssoc() { delete[] content; }
 
   // TODO: do an iterator. not this junk!!
   Line *getPLine(uint32_t l) {
@@ -444,8 +440,8 @@ public:
   typedef typename CacheGeneric<State, Addr_t>::CacheLine Line;
 
 protected:
-  std::vector<Line>  mem;
-  Line **content;
+  std::vector<Line> mem;
+  Line            **content;
 
   friend class CacheGeneric<State, Addr_t>;
   CacheDM(int32_t size, int32_t blksize, int32_t addrUnit, const std::string &pStr, bool xr);
@@ -454,9 +450,7 @@ protected:
   Line *findLinePrivate(Addr_t addr, Addr_t pc = 0);
 
 public:
-  virtual ~CacheDM() {
-    delete[] content;
-  };
+  virtual ~CacheDM() { delete[] content; };
 
   // TODO: do an iterator. not this junk!!
   Line *getPLine(uint32_t l) {
@@ -478,8 +472,8 @@ public:
   typedef typename CacheGeneric<State, Addr_t>::CacheLine Line;
 
 protected:
-  std::vector<Line>  mem;
-  Line **content;
+  std::vector<Line> mem;
+  Line            **content;
 
   friend class CacheGeneric<State, Addr_t>;
   CacheDMSkew(int32_t size, int32_t blksize, int32_t addrUnit, const std::string &pStr);
@@ -488,9 +482,7 @@ protected:
   Line *findLinePrivate(Addr_t addr, Addr_t pc = 0);
 
 public:
-  virtual ~CacheDMSkew() {
-    delete[] content;
-  };
+  virtual ~CacheDMSkew() { delete[] content; };
 
   // TODO: do an iterator. not this junk!!
   Line *getPLine(uint32_t l) {
@@ -514,7 +506,7 @@ public:
   typedef typename CacheGeneric<State, Addr_t>::CacheLine Line;
 
 protected:
-  std::vector<Line>  mem;
+  std::vector<Line> mem;
   Line            **content;
   uint16_t          irand;
   ReplacementPolicy policy;
@@ -775,8 +767,9 @@ CacheGeneric<State, Addr_t> *CacheGeneric<State, Addr_t>::create(const std::stri
   CacheGeneric *cache = 0;
 
   auto fmt_append{append};
-  if (!fmt_append.empty())
+  if (!fmt_append.empty()) {
     fmt_append += "_";
+  }
 
   auto size_sec        = fmt::format("{}size", fmt_append);
   auto line_size_sec   = fmt::format("{}line_size", fmt_append);
@@ -867,11 +860,11 @@ CacheAssoc<State, Addr_t>::CacheAssoc(int32_t size, int32_t assoc, int32_t blksi
   zero_line.invalidate();
   zero_line.rrip = 0;
 
-  mem.resize(numLines+1, zero_line);
+  mem.resize(numLines + 1, zero_line);
   content = new Line *[numLines + 1];
 
   for (uint32_t i = 0; i < numLines; i++) {
-    content[i]  = &mem[i];
+    content[i] = &mem[i];
   }
 
   irand = 0;
@@ -1210,11 +1203,11 @@ HawkCache<State, Addr_t>::HawkCache(int32_t size, int32_t assoc, int32_t blksize
   zero_line.initialize(this);
   zero_line.invalidate();
 
-  mem.resize(numLines+1, zero_line);
+  mem.resize(numLines + 1, zero_line);
   content = new Line *[numLines + 1];
 
   for (uint32_t i = 0; i < numLines; i++) {
-    content[i]  = &mem[i];
+    content[i] = &mem[i];
   }
 
   irand = 0;
@@ -1494,11 +1487,11 @@ CacheDM<State, Addr_t>::CacheDM(int32_t size, int32_t blksize, int32_t addrUnit,
   zero_line.initialize(this);
   zero_line.invalidate();
 
-  mem.resize(numLines+1, zero_line);
+  mem.resize(numLines + 1, zero_line);
   content = new Line *[numLines + 1];
 
   for (uint32_t i = 0; i < numLines; i++) {
-    content[i]  = &mem[i];
+    content[i] = &mem[i];
   }
 }
 
@@ -1543,11 +1536,11 @@ CacheDMSkew<State, Addr_t>::CacheDMSkew(int32_t size, int32_t blksize, int32_t a
   zero_line.initialize(this);
   zero_line.invalidate();
 
-  mem.resize(numLines+1, zero_line);
+  mem.resize(numLines + 1, zero_line);
   content = new Line *[numLines + 1];
 
   for (uint32_t i = 0; i < numLines; i++) {
-    content[i]  = &mem[i];
+    content[i] = &mem[i];
   }
 }
 
@@ -1711,11 +1704,11 @@ CacheSHIP<State, Addr_t>::CacheSHIP(int32_t size, int32_t assoc, int32_t blksize
   zero_line.initialize(this);
   zero_line.invalidate();
 
-  mem.resize(numLines+1, zero_line);
+  mem.resize(numLines + 1, zero_line);
   content = new Line *[numLines + 1];
 
   for (uint32_t i = 0; i < numLines; i++) {
-    content[i]  = &mem[i];
+    content[i] = &mem[i];
   }
 
   for (uint32_t j = 0; j < (2 ^ log2shct); j++) {

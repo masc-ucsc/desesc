@@ -4,8 +4,8 @@
 
 #include <stdint.h>
 
-#include <string>
 #include <algorithm>
+#include <string>
 #include <vector>
 
 #include "iassert.hpp"
@@ -67,6 +67,6 @@ public:
 
   bool isMemory() const { return isLoad() || isStore(); }
 
-  void dump() const;
+  void        dump() const;
   std::string get_asm() const;
 };

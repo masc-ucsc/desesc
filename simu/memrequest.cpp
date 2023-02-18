@@ -1,15 +1,15 @@
 // See LICENSE for details.
 
+#include "memrequest.hpp"
 
 #include <set>
 
-#include "memrequest.hpp"
 #include "cluster.hpp"
+#include "config.hpp"
 #include "memobj.hpp"
 #include "memstruct.hpp"
 #include "pipeline.hpp"
 #include "resource.hpp"
-#include "config.hpp"
 
 pool<MemRequest> MemRequest::actPool(2048, "MemRequest");
 

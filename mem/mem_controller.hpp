@@ -2,17 +2,17 @@
 
 #pragma once
 
-#include <vector>
 #include <queue>
+#include <vector>
 
 #include "cachecore.hpp"
-#include "stats.hpp"
+#include "callback.hpp"
+#include "config.hpp"
 #include "memory_system.hpp"
 #include "memrequest.hpp"
 #include "port.hpp"
-#include "config.hpp"
-#include "callback.hpp"
 #include "snippets.hpp"
+#include "stats.hpp"
 
 class MemController : public MemObj {
 protected:
@@ -41,7 +41,7 @@ protected:
     PRECHARGE,
     ACTIVE,
     ACCESSING,
-    INIT // Added LNB 5/31/2014
+    INIT  // Added LNB 5/31/2014
   };
   PortGeneric *cmdPort;
 
@@ -72,25 +72,14 @@ protected:
 
 public:
   MemController(Memory_system *current, const std::string &device_descr_section, const std::string &device_name = NULL);
-  ~MemController() {
-  }
+  ~MemController() {}
 
   // Entry points to schedule that may schedule a do?? if needed
-  void req(MemRequest *req) {
-    doReq(req);
-  };
-  void reqAck(MemRequest *req) {
-    doReqAck(req);
-  };
-  void setState(MemRequest *req) {
-    doSetState(req);
-  };
-  void setStateAck(MemRequest *req) {
-    doSetStateAck(req);
-  };
-  void disp(MemRequest *req) {
-    doDisp(req);
-  }
+  void req(MemRequest *req) { doReq(req); };
+  void reqAck(MemRequest *req) { doReqAck(req); };
+  void setState(MemRequest *req) { doSetState(req); };
+  void setStateAck(MemRequest *req) { doSetStateAck(req); };
+  void disp(MemRequest *req) { doDisp(req); }
 
   // This do the real work
   void doReq(MemRequest *req);
@@ -125,4 +114,3 @@ private:
   void transferOverflowMemory(void);
   void scheduleNextAction(void);
 };
-

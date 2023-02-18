@@ -41,9 +41,9 @@
 #include "gpusmprocessor.hpp"
 
 #include "clustermanager.hpp"
+#include "config.hpp"
 #include "fetchengine.hpp"
 #include "gmemory_system.hpp"
-#include "config.hpp"
 
 GPUSMProcessor::GPUSMProcessor(Gmemory_system *gm, CPU_t i)
     : GProcessor(gm, i, 1), IFID(i, this, gm), pipeQ(i), lsq(i), clusterManager(gm, this) { /*{{{*/

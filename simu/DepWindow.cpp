@@ -2,11 +2,11 @@
 
 #include "depwindow.hpp"
 
-#include "gprocessor.hpp"
-#include "resource.hpp"
 #include "config.hpp"
 #include "dinst.hpp"
 #include "fmt/format.h"
+#include "gprocessor.hpp"
+#include "resource.hpp"
 #include "tracer.hpp"
 
 DepWindow::DepWindow(uint32_t cpuid, int src_id, const std::string &clusterName, uint32_t pos)
@@ -57,7 +57,7 @@ void DepWindow::select(Dinst *dinst) {
 
   I(src_cluster_id == dinst->getCluster()->get_id());
 
-  Resource::executingCB::scheduleAbs(schedTime, dinst->getClusterResource().get(), dinst); // NASTY to avoid callback ptr
+  Resource::executingCB::scheduleAbs(schedTime, dinst->getClusterResource().get(), dinst);  // NASTY to avoid callback ptr
 }
 
 // Called when dinst finished execution. Look for dependent to wakeUp
@@ -68,7 +68,7 @@ void DepWindow::executed(Dinst *dinst) {
 
   dinst->markExecuted();
   dinst->clearRATEntry();
-  Tracer::stage(dinst,"WB");
+  Tracer::stage(dinst, "WB");
 
   if (!dinst->hasPending()) {
     return;

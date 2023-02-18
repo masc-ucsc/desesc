@@ -1,11 +1,11 @@
 // See LICENSE for details.
 
 #include "bus.hpp"
+
 #include "config.hpp"
 
 Bus::Bus(Memory_system *current, const std::string &section, const std::string &name)
     : MemObj(section, name), delay(Config::get_integer(section, "delay")) {
-
   NumUnits_t  num = Config::get_integer(section, "port_num");
   TimeDelta_t occ = Config::get_integer(section, "port_occ");
 
@@ -78,8 +78,7 @@ bool Bus::isBusy(Addr_t addr) const {
   return false;
 }
 
-void Bus::tryPrefetch(Addr_t addr, bool doStats, int degree, Addr_t pref_sign, Addr_t pc, CallbackBase *cb)
-{
+void Bus::tryPrefetch(Addr_t addr, bool doStats, int degree, Addr_t pref_sign, Addr_t pc, CallbackBase *cb) {
   router->tryPrefetch(addr, doStats, degree, pref_sign, pc, cb);
 }
 

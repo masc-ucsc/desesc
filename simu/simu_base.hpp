@@ -4,8 +4,8 @@
 
 #include <string>
 
-#include "gmemory_system.hpp"
 #include "emul_base.hpp"
+#include "gmemory_system.hpp"
 #include "snippets.hpp"
 #include "stats.hpp"
 
@@ -31,7 +31,7 @@ private:
 protected:
   const Hartid_t hid;
 
-  std::shared_ptr<Emul_base>     eint;
+  std::shared_ptr<Emul_base>      eint;
   std::shared_ptr<Gmemory_system> memorySystem;
 
   bool adjust_clock(bool en);

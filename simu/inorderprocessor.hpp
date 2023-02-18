@@ -2,12 +2,12 @@
 
 #pragma once
 
+#include "absl/container/flat_hash_map.h"
 #include "fetchengine.hpp"
 #include "gprocessor.hpp"
+#include "iassert.hpp"
 #include "lsq.hpp"
 #include "pipeline.hpp"
-#include "absl/container/flat_hash_map.h"
-#include "iassert.hpp"
 
 class InOrderProcessor : public GProcessor {
 private:

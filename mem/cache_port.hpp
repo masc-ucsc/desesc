@@ -2,20 +2,20 @@
 
 #pragma once
 
+#include "iassert.hpp"
 #include "memobj.hpp"
 #include "memrequest.hpp"
 #include "port.hpp"
-#include "iassert.hpp"
 
 class Cache_port {
 private:
 protected:
   PortGeneric **bkPort;
-  PortGeneric * sendFillPort;
+  PortGeneric  *sendFillPort;
 
   bool    dupPrefetchTag;
   bool    dropPrefetchFill;
-  int32_t maxPrefetch; // 0 means share with maxRequest
+  int32_t maxPrefetch;  // 0 means share with maxRequest
   int32_t curPrefetch;
 
   int32_t maxRequests;
@@ -65,4 +65,3 @@ public:
 
   bool isBusy(Addr_t addr) const;
 };
-

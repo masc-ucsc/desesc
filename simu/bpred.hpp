@@ -20,24 +20,23 @@
 #include <vector>
 
 #include "cachecore.hpp"
-#include "dolc.hpp"
-#include "sctable.hpp"
 #include "dinst.hpp"
+#include "dolc.hpp"
 #include "estl.hpp"
 #include "iassert.hpp"
+#include "sctable.hpp"
 #include "stats.hpp"
 
 #define RAP_T_NT_ONLY 1
 // #define ENABLE_LDBP
 // #define DOC_SIZE 512 //128
 enum BrOpType { BEQ = 0, BNE = 1, BLT = 4, BGE = 5, BLTU = 6, BGEU = 7, ILLEGAL_BR = 8 };
-enum class Outcome {Correct, None, NoBTB, Miss};
+enum class Outcome { Correct, None, NoBTB, Miss };
 
 class MemObj;
 
 class BPred {
 public:
-
   typedef int64_t HistoryType;
   class Hash4HistoryType {
   public:
@@ -69,8 +68,8 @@ public:
   virtual ~BPred();
 
   virtual Outcome predict(Dinst *dinst, bool doUpdate, bool doStats) = 0;
-  virtual void     fetchBoundaryBegin(Dinst *dinst);  // If the branch predictor support fetch boundary model, do it
-  virtual void     fetchBoundaryEnd();                // If the branch predictor support fetch boundary model, do it
+  virtual void    fetchBoundaryBegin(Dinst *dinst);  // If the branch predictor support fetch boundary model, do it
+  virtual void    fetchBoundaryEnd();                // If the branch predictor support fetch boundary model, do it
 
   Outcome doPredict(Dinst *dinst, bool doStats = true) {
     Outcome pred = predict(dinst, true, doStats);
@@ -137,7 +136,7 @@ public:
   ~BPBTB();
 
   Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
-  void     updateOnly(Dinst *dinst);
+  void    updateOnly(Dinst *dinst);
 };
 
 class BPOracle : public BPred {
@@ -232,8 +231,8 @@ protected:
 public:
   BPIMLI(int32_t i, const std::string &section, const std::string &sname);
 
-  void     fetchBoundaryBegin(Dinst *dinst);
-  void     fetchBoundaryEnd();
+  void    fetchBoundaryBegin(Dinst *dinst);
+  void    fetchBoundaryEnd();
   Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
 };
 
@@ -463,7 +462,7 @@ public:
   BPLdbp(int32_t i, const std::string &section, const std::string &sname, MemObj *dl1 = 0);
   ~BPLdbp() {}
 
-  Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
+  Outcome  predict(Dinst *dinst, bool doUpdate, bool doStats);
   bool     outcome_calculator(BrOpType br_op, Data_t br_data1, Data_t br_data2);
   BrOpType branch_type(Addr_t brpc);
 
@@ -578,7 +577,7 @@ private:
 
   Stats_cntr nBranches3;
   Stats_cntr nNoPredict3;
-  Stats_cntr nHit3_miss2;       // Mispred of Level 2 which are fixed by level 3 BPred
+  Stats_cntr nHit3_miss2;  // Mispred of Level 2 which are fixed by level 3 BPred
   Stats_cntr nTaken3;
   Stats_cntr nMiss3;  // hits == nBranches - nMiss
 

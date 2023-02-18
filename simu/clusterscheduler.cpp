@@ -3,15 +3,14 @@
 #include "clusterscheduler.hpp"
 
 #include "cluster.hpp"
-#include "resource.hpp"
 #include "config.hpp"
+#include "resource.hpp"
 
 // #define DUMP_TRACE 1
 
 ClusterScheduler::ClusterScheduler(const ResourcesPoolType &ores) : res(ores) {}
 
-ClusterScheduler::~ClusterScheduler() {
-}
+ClusterScheduler::~ClusterScheduler() {}
 
 RoundRobinClusterScheduler::RoundRobinClusterScheduler(const ResourcesPoolType &ores) : ClusterScheduler(ores) {
   nres.resize(res.size());
@@ -46,8 +45,8 @@ LRUClusterScheduler::LRUClusterScheduler(const ResourcesPoolType &ores) : Cluste
 LRUClusterScheduler::~LRUClusterScheduler() {}
 
 std::shared_ptr<Resource> LRUClusterScheduler::getResource(Dinst *dinst) {
-  const Instruction *inst  = dinst->getInst();
-  Opcode             type  = inst->getOpcode();
+  const Instruction *inst = dinst->getInst();
+  Opcode             type = inst->getOpcode();
 
   std::shared_ptr<Resource> touse = res[type][0];
 
@@ -90,7 +89,7 @@ std::shared_ptr<Resource> UseClusterScheduler::getResource(Dinst *dinst) {
   std::shared_ptr<Resource> touse = res[type][p];
 
   int touse_nintra = (cused[inst->getSrc1()] && cused[inst->getSrc1()]->get_id() != res[type][p]->getCluster()->get_id());
-    touse_nintra  += (cused[inst->getSrc2()] && cused[inst->getSrc2()]->get_id() != res[type][p]->getCluster()->get_id());
+  touse_nintra += (cused[inst->getSrc2()] && cused[inst->getSrc2()]->get_id() != res[type][p]->getCluster()->get_id());
 
 #if 0
   if (touse_nintra==0 && touse->getCluster()->getAvailSpace()>0 && touse->getCluster()->getNReady() <= 2)

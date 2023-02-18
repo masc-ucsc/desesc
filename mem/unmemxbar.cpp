@@ -1,8 +1,9 @@
 // See LICENSE for details
 
 #include "unmemxbar.hpp"
-#include "memory_system.hpp"
+
 #include "config.hpp"
+#include "memory_system.hpp"
 
 UnMemXBar::UnMemXBar(Memory_system *current, const std::string &section, const std::string &name)
     /* constructor {{{1 */

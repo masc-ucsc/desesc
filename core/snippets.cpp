@@ -1,8 +1,9 @@
 // See LICENSE for details.
 
+#include "snippets.hpp"
+
 #include <typeinfo>
 
-#include "snippets.hpp"
 #include "iassert.hpp"
 
 int16_t log2i(uint32_t n) {

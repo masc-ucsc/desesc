@@ -1,17 +1,18 @@
 // See LICENSE for details.
 
+#include "ccache.hpp"
+
 #include <climits>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
 
-#include "ccache.hpp"
-#include "gprocessor.hpp"
-#include "mshr.hpp"
-#include "memrequest.hpp"
 #include "cache_port.hpp"
 #include "config.hpp"
+#include "gprocessor.hpp"
 #include "iassert.hpp"
+#include "memrequest.hpp"
+#include "mshr.hpp"
 
 extern "C" uint64_t esesc_mem_read(uint64_t addr);
 
@@ -25,13 +26,19 @@ void CCache::trackAddress(MemRequest *mreq) {
 #endif
 
 #if 0
-#define MTRACE(a...)   do{  \
-  if (getName() == "DL1(0)") { \
-    fmt::print("@{} {} {} {:x} {} :",(long long int)globalClock,getName(), (int)mreq->getID(), (unsigned int)mreq->getAddr(), mreq->isPrefetch()?"pref":""); \
-    fmt::print(##a); \
-    fmt::print("\n"); \
-  } \
-}while(0)
+#define MTRACE(a...)                                \
+  do {                                              \
+    if (getName() == "DL1(0)") {                    \
+      fmt::print("@{} {} {} {:x} {} :",             \
+                 (long long int)globalClock,        \
+                 getName(),                         \
+                 (int)mreq->getID(),                \
+                 (unsigned int)mreq->getAddr(),     \
+                 mreq->isPrefetch() ? "pref" : ""); \
+      fmt::print(##a);                              \
+      fmt::print("\n");                             \
+    }                                               \
+  } while (0)
 #else
 #define MTRACE(a...)
 #endif
@@ -67,7 +74,6 @@ CCache::CCache(Memory_system *gms, const std::string &section, const std::string
     , nPrefetchDropped(fmt::format("{}:nPrefetchDropped", name))
     , cleanupCB(this)
     , port(section, name) {
-
   s_reqHit[ma_setInvalid]   = new Stats_cntr(fmt::format("{}:setInvalidHit", name));
   s_reqHit[ma_setValid]     = new Stats_cntr(fmt::format("{}:readHit", name));
   s_reqHit[ma_setDirty]     = new Stats_cntr(fmt::format("{}:writeHit", name));
@@ -121,13 +127,13 @@ CCache::CCache(Memory_system *gms, const std::string &section, const std::string
     nlp_distance = Config::get_integer(section, "nlp_distance", 1, 1024);
     nlp_stride   = Config::get_integer(section, "nlp_stride", 1, 1024);
 
-    nlp_enabled  = nlp_degree!=0;
+    nlp_enabled = nlp_degree != 0;
   } else {
     nlp_degree   = 0;
     nlp_distance = 0;
     nlp_stride   = 1;
 
-    nlp_enabled  = false;
+    nlp_enabled = false;
   }
   allocateMiss = Config::get_bool(section, "allocate_miss");
 
@@ -146,15 +152,15 @@ CCache::CCache(Memory_system *gms, const std::string &section, const std::string
   //  BootLoader::getPowerModelPtr()->addTurboCoupledMemory(this);
   //}
 
-  cacheBank            = CacheType::create(section, "", name);
-  lineSize             = cacheBank->getLineSize();
-  lineSizeBits         = log2i(lineSize);
+  cacheBank    = CacheType::create(section, "", name);
+  lineSize     = cacheBank->getLineSize();
+  lineSizeBits = log2i(lineSize);
 
-  prefetch_degree = Config::get_integer(section,"prefetch_degree",0, 32);
+  prefetch_degree = Config::get_integer(section, "prefetch_degree", 0, 32);
 
-  auto mega_lines1K = Config::get_integer(section,"mega_lines1K",0, 32); // number of lines touched in 1K to trigger mega
-  prefetch_megaratio = lineSize * mega_lines1K/1024.0;
-  if (prefetch_megaratio==0 || prefetch_megaratio>1) {
+  auto mega_lines1K  = Config::get_integer(section, "mega_lines1K", 0, 32);  // number of lines touched in 1K to trigger mega
+  prefetch_megaratio = lineSize * mega_lines1K / 1024.0;
+  if (prefetch_megaratio == 0 || prefetch_megaratio > 1) {
     prefetch_megaratio = 2.0;  // >1 means never active
   }
 
@@ -168,9 +174,9 @@ CCache::CCache(Memory_system *gms, const std::string &section, const std::string
     if (!allocateMiss) {
       lineSize2 = 64;  // FIXME: Do not hardcode upper level line size
     }
-    uint32_t MaxRequests = Config::get_integer(section, "max_requests",1, 8192);
+    uint32_t MaxRequests = Config::get_integer(section, "max_requests", 1, 8192);
 
-    mshr  = new MSHR(name       , 128 * MaxRequests, lineSize2, MaxRequests);
+    mshr  = new MSHR(name, 128 * MaxRequests, lineSize2, MaxRequests);
     pmshr = new MSHR(name + "sp", 128 * MaxRequests, lineSize2, MaxRequests);
   }
 
@@ -211,13 +217,10 @@ CCache::CCache(Memory_system *gms, const std::string &section, const std::string
     addLowerLevel(lower_level);
   }
 
-
   lastUpMsg = 0;
 }
 
-CCache::~CCache() {
-  cacheBank->destroy();
-}
+CCache::~CCache() { cacheBank->destroy(); }
 
 void CCache::cleanup() {
   int n = cacheBank->getNumLines();
@@ -237,8 +240,7 @@ void CCache::cleanup() {
   cleanupCB.scheduleAbs(globalClock + 1000000);
 }
 
-void CCache::dropPrefetch(MemRequest *mreq)
-{
+void CCache::dropPrefetch(MemRequest *mreq) {
   I(mreq->isPrefetch());
 
   nPrefetchDropped.inc(mreq->has_stats());
@@ -344,14 +346,14 @@ CCache::Line *CCache::allocateLine(Addr_t addr, MemRequest *mreq) {
 #if 1
   if (prefetch_megaratio < 1) {
     static int conta = 0;
-    Addr_t   pendAddr[32];
+    Addr_t     pendAddr[32];
     int        pendAddr_counter = 0;
     if (conta++ > 8) {  // Do not try all the time
       conta = 0;
 
       Addr_t page_addr = (addr >> 10) << 10;
-      int      nHit      = 0;
-      int      nMiss     = 0;
+      int    nHit      = 0;
+      int    nMiss     = 0;
 
       for (int i = 0; i < (1024 >> lineSizeBits); i++) {
         if (!mshr->canIssue(page_addr + lineSize * i * nlp_stride)) {
@@ -712,7 +714,7 @@ void CCache::doReq(MemRequest *mreq) {
   trackAddress(mreq);
 
   Addr_t addr     = mreq->getAddr();
-  bool     retrying = mreq->isRetrying();
+  bool   retrying = mreq->isRetrying();
 
   if (retrying) {  // reissued operation
     mreq->clearRetrying();
@@ -937,9 +939,7 @@ void CCache::doDisp(MemRequest *mreq) {
   }
 }
 
-void CCache::blockFill(MemRequest *mreq) {
-  port.blockFill(mreq);
-}
+void CCache::blockFill(MemRequest *mreq) { port.blockFill(mreq); }
 
 void CCache::doReqAck(MemRequest *mreq) {
   MTRACE("doReqAck start");
@@ -951,7 +951,7 @@ void CCache::doReqAck(MemRequest *mreq) {
   if (!mreq->isDropped()) {
     if (!mreq->isNonCacheable()) {
       Addr_t addr = mreq->getAddr();
-      Line    *l    = 0;
+      Line  *l    = 0;
       if (mreq->isPrefetch()) {
         l = cacheBank->findLineNoEffect(addr, mreq->getPC());
       } else {
@@ -1013,7 +1013,7 @@ void CCache::doReqAck(MemRequest *mreq) {
     }
   }
 
-  when             = port.reqAckDone(mreq);
+  when = port.reqAckDone(mreq);
   if (when == 0) {
     MTRACE("doReqAck restartReqAck");
     // Must restart request
@@ -1277,9 +1277,7 @@ bool CCache::isBusy(Addr_t addr) const {
   return false;
 }
 
-void CCache::dump() const {
-  mshr->dump();
-}
+void CCache::dump() const { mshr->dump(); }
 
 TimeDelta_t CCache::ffread(Addr_t addr) {
   Addr_t addr_r = 0;
@@ -1311,10 +1309,6 @@ TimeDelta_t CCache::ffwrite(Addr_t addr) {
   return router->ffwrite(addr) + 1;
 }
 
-void CCache::setNeedsCoherence() {
-  needsCoherence = true;
-}
+void CCache::setNeedsCoherence() { needsCoherence = true; }
 
-void CCache::clearNeedsCoherence() {
-  needsCoherence = false;
-}
+void CCache::clearNeedsCoherence() { needsCoherence = false; }

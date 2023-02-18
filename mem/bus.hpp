@@ -2,11 +2,11 @@
 
 #pragma once
 
-#include "stats.hpp"
 #include "memobj.hpp"
-#include "memrequest.hpp"
 #include "memory_system.hpp"
+#include "memrequest.hpp"
 #include "port.hpp"
+#include "stats.hpp"
 
 class Bus : public MemObj {
 protected:
@@ -18,25 +18,14 @@ protected:
 
 public:
   Bus(Memory_system *current, const std::string &device_descr_section, const std::string &device_name = NULL);
-  ~Bus() {
-  }
+  ~Bus() {}
 
   // Entry points to schedule that may schedule a do?? if needed
-  void req(MemRequest *req) {
-    doReq(req);
-  };
-  void reqAck(MemRequest *req) {
-    doReqAck(req);
-  };
-  void setState(MemRequest *req) {
-    doSetState(req);
-  };
-  void setStateAck(MemRequest *req) {
-    doSetStateAck(req);
-  };
-  void disp(MemRequest *req) {
-    doDisp(req);
-  }
+  void req(MemRequest *req) { doReq(req); };
+  void reqAck(MemRequest *req) { doReqAck(req); };
+  void setState(MemRequest *req) { doSetState(req); };
+  void setStateAck(MemRequest *req) { doSetStateAck(req); };
+  void disp(MemRequest *req) { doDisp(req); }
 
   // This do the real work
   void doReq(MemRequest *r);
@@ -52,4 +41,3 @@ public:
 
   bool isBusy(Addr_t addr) const;
 };
-

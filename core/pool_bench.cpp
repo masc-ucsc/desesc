@@ -10,10 +10,10 @@
 
 #include <vector>
 
-#include "threadsafefifo.hpp"
 #include "iassert.hpp"
 #include "pool.hpp"
 #include "snippets.hpp"
+#include "threadsafefifo.hpp"
 
 class DummyObjTest {
   int32_t c;

@@ -4,25 +4,25 @@
 
 #include <vector>
 
+#include "cache_port.hpp"
 #include "cachecore.hpp"
+#include "estl.hpp"
 #include "gprocessor.hpp"
-#include "stats.hpp"
-#include "mshr.hpp"
 #include "memobj.hpp"
 #include "memory_system.hpp"
+#include "mshr.hpp"
 #include "sctable.hpp"
 #include "snippets.hpp"
-#include "estl.hpp"
-#include "cache_port.hpp"
+#include "stats.hpp"
 
-//#include "Prefetcher.h"
-//#define ENABLE_LDBP
+// #include "Prefetcher.h"
+// #define ENABLE_LDBP
 
 class MemRequest;
 
 #define CCACHE_MAXNSHARERS 64
 
-//#define ENABLE_PTRCHASE 1
+// #define ENABLE_PTRCHASE 1
 
 class CCache : public MemObj {
 protected:
@@ -33,7 +33,7 @@ protected:
     StateType shareState;
 
     int16_t nSharers;
-    int16_t share[CCACHE_MAXNSHARERS]; // Max number of shares to remember. If nshares >=8, then broadcast
+    int16_t share[CCACHE_MAXNSHARERS];  // Max number of shares to remember. If nshares >=8, then broadcast
 
   public:
     CState(int32_t lineSize) {
@@ -42,71 +42,42 @@ protected:
       clearTag();
     }
 
-    bool isModified() const {
-      return state == M;
-    }
-    void setModified() {
-      state = M;
-    }
-    bool isExclusive() const {
-      return state == E;
-    }
-    void setExclusive() {
-      state = E;
-    }
-    bool isShared() const {
-      return state == S;
-    }
-    void setShared() {
-      state = S;
-    }
-    bool isValid() const {
-      return state != I || shareState != I;
-    }
-    bool isLocalInvalid() const {
-      return state == I;
-    }
+    bool isModified() const { return state == M; }
+    void setModified() { state = M; }
+    bool isExclusive() const { return state == E; }
+    void setExclusive() { state = E; }
+    bool isShared() const { return state == S; }
+    void setShared() { state = S; }
+    bool isValid() const { return state != I || shareState != I; }
+    bool isLocalInvalid() const { return state == I; }
 
-    void forceInvalid() {
-      state = I;
-    }
+    void forceInvalid() { state = I; }
 
     // If SNOOPS displaces E too
     // bool needsDisp() const { return state == M || state == E; }
-    bool needsDisp() const {
-      return state == M;
-    }
+    bool needsDisp() const { return state == M; }
 
     bool      shouldNotifyLowerLevels(MsgAction ma, bool incoherent) const;
     bool      shouldNotifyHigherLevels(MemRequest *mreq, int16_t port_id) const;
-    StateType getState() const {
-      return state;
-    };
+    StateType getState() const { return state; };
     StateType calcAdjustState(MemRequest *mreq) const;
     void      adjustState(MemRequest *mreq, int16_t port_id);
 
     static MsgAction othersNeed(MsgAction ma) {
-      switch(ma) {
-      case ma_setValid:
-        return ma_setShared;
-      case ma_setDirty:
-        return ma_setInvalid;
-      default:
-        I(0);
+      switch (ma) {
+        case ma_setValid: return ma_setShared;
+        case ma_setDirty: return ma_setInvalid;
+        default: I(0);
       }
       I(0);
       return ma_setDirty;
     }
     MsgAction reqAckNeeds() const {
-      switch(shareState) {
-      case M:
-        return ma_setDirty;
-      case E:
-        return ma_setExclusive;
-      case S:
-        return ma_setShared;
-      case I:
-        return ma_setInvalid;
+      switch (shareState) {
+        case M: return ma_setDirty;
+        case E: return ma_setExclusive;
+        case S: return ma_setShared;
+        case I: return ma_setInvalid;
       }
       I(0);
       return ma_setDirty;
@@ -122,25 +93,19 @@ protected:
       clearTag();
     }
 
-    bool isBroadcastNeeded() const {
-      return nSharers >= CCACHE_MAXNSHARERS;
-    }
+    bool isBroadcastNeeded() const { return nSharers >= CCACHE_MAXNSHARERS; }
 
     int16_t getSharingCount() const {
-      return nSharers; // Directory
+      return nSharers;  // Directory
     }
     void    removeSharing(int16_t id);
     void    addSharing(int16_t id);
-    int16_t getFirstSharingPos() const {
-      return share[0];
-    }
+    int16_t getFirstSharingPos() const { return share[0]; }
     int16_t getSharingPos(int16_t pos) const {
       I(pos < nSharers);
       return share[pos];
     }
-    void clearSharing() {
-      nSharers = 0;
-    }
+    void clearSharing() { nSharers = 0; }
 
     void set(const MemRequest *mreq);
   }; /*}}}*/
@@ -148,28 +113,31 @@ protected:
   typedef CacheGeneric<CState, Addr_t>            CacheType;
   typedef CacheGeneric<CState, Addr_t>::CacheLine Line;
 
-  CacheType *  cacheBank;
-  MSHR *       mshr;
-  MSHR *       pmshr;
+  CacheType *cacheBank;
+  MSHR      *mshr;
+  MSHR      *pmshr;
 
-  Time_t lastUpMsg; // can not bypass up messages (races)
+  Time_t lastUpMsg;  // can not bypass up messages (races)
   Time_t inOrderUpMessageAbs(Time_t when) {
 #if 1
-    if(lastUpMsg > when)
+    if (lastUpMsg > when) {
       when = lastUpMsg;
-    else
+    } else {
       lastUpMsg = when;
+    }
 #endif
     I(when >= globalClock);
-    if(when == globalClock)
+    if (when == globalClock) {
       when++;
+    }
 
     return when;
   }
   TimeDelta_t inOrderUpMessage(TimeDelta_t lat = 0) {
 #if 1
-    if(lastUpMsg > globalClock)
+    if (lastUpMsg > globalClock) {
       lat += (lastUpMsg - globalClock);
+    }
 
     lastUpMsg = globalClock + lat;
 #endif
@@ -218,13 +186,13 @@ protected:
   Stats_avg avgMemLat;
   Stats_avg avgHalfMemLat;
   Stats_avg avgSnoopLat;
-  Stats_avg  avgPrefetchLat;
+  Stats_avg avgPrefetchLat;
 
   Stats_cntr capInvalidateHit;
   Stats_cntr capInvalidateMiss;
   Stats_cntr invalidateHit;
   Stats_cntr invalidateMiss;
-  Stats_cntr  writeExclusive;
+  Stats_cntr writeExclusive;
 
   Stats_cntr nPrefetchUseful;
   Stats_cntr nPrefetchWasteful;
@@ -259,17 +227,15 @@ protected:
   void dropPrefetch(MemRequest *mreq);
 
   void
-                                                  cleanup(); // FIXME: Expose this to MemObj and call it from core on ctx switch or syscall (move to public and remove callback)
+  cleanup();  // FIXME: Expose this to MemObj and call it from core on ctx switch or syscall (move to public and remove callback)
   StaticCallbackMember0<CCache, &CCache::cleanup> cleanupCB;
-  Cache_port port;
+  Cache_port                                      port;
+
 public:
   CCache(Memory_system *gms, const std::string &descr_section, const std::string &name);
   virtual ~CCache();
 
-  int32_t getLineSize() const {
-    return lineSize;
-  }
-
+  int32_t getLineSize() const { return lineSize; }
 
   // Entry points to schedule that may schedule a do?? if needed
   void req(MemRequest *req);
@@ -298,46 +264,45 @@ public:
   void setNeedsCoherence();
   void clearNeedsCoherence();
 
-  bool isJustDirectory() const {
-    return justDirectory;
-  }
+  bool isJustDirectory() const { return justDirectory; }
 
   bool Modified(Addr_t addr) const {
     Line *cl = cacheBank->findLineNoEffect(addr);
-    if(cl != 0)
+    if (cl != 0) {
       return cl->isModified();
+    }
 
     return false;
   }
 
   bool Exclusive(Addr_t addr) const {
     Line *cl = cacheBank->findLineNoEffect(addr);
-    if(cl != 0)
+    if (cl != 0) {
       return cl->isExclusive();
+    }
 
     return false;
   }
 
   bool Shared(Addr_t addr) const {
     Line *cl = cacheBank->findLineNoEffect(addr);
-    if(cl != 0)
+    if (cl != 0) {
       return cl->isShared();
+    }
     return false;
   }
 
   bool Invalid(Addr_t addr) const {
     Line *cl = cacheBank->findLineNoEffect(addr);
-    if(cl == 0)
+    if (cl == 0) {
       return true;
+    }
     return cl->isLocalInvalid();
   }
 
 #ifndef NDEBUG
   void trackAddress(MemRequest *mreq);
 #else
-  void trackAddress(MemRequest *mreq) {
-    (void)mreq;
-  }
+  void trackAddress(MemRequest *mreq) { (void)mreq; }
 #endif
 };
-

@@ -5,8 +5,8 @@
 #include "addresspredictor.hpp"
 #include "bpred.hpp"
 #include "emul_base.hpp"
-#include "iassert.hpp"
 #include "gmemory_system.hpp"
+#include "iassert.hpp"
 #include "stats.hpp"
 
 // #define ENABLE_LDBP

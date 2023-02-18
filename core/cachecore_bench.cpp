@@ -1,6 +1,5 @@
 
 #include "benchmark/benchmark.h"
-
 #include "cachecore.hpp"
 #include "config.hpp"
 #include "report.hpp"
@@ -13,7 +12,7 @@ public:
   bool operator==(SampleState s) const { return id == s.id; }
 };
 
-using MyCacheType=CacheGeneric<SampleState, long>;
+using MyCacheType = CacheGeneric<SampleState, long>;
 
 MyCacheType *cache;
 
@@ -33,7 +32,7 @@ void endBench(const char *str) {
 
   double usecs = (endTime.tv_sec - stTime.tv_sec) * 1000000 + (endTime.tv_usec - stTime.tv_usec);
 
-  fprintf(stderr, "%s: %8.2f Maccesses/s %7.3f%%\n", str, nAccess / usecs, 100 * nMisses / nAccess);
+  fmt::print("{}: {} Maccesses/s {}%\n", str, nAccess / usecs, 100 * nMisses / nAccess);
 }
 
 #define MSIZE 256
@@ -43,7 +42,6 @@ double B[MSIZE][MSIZE];
 double C[MSIZE][MSIZE];
 
 void benchMatrix(const char *str) {
-
   startBench();
 
   MyCacheType::CacheLine *line;
@@ -123,8 +121,7 @@ static void setup_config() {
   file.close();
 }
 
-static void BM_cachecore(benchmark::State& state) {
-
+static void BM_cachecore(benchmark::State &state) {
   Report::init();
   Config::init("cachecore.toml");
 
@@ -136,7 +133,7 @@ static void BM_cachecore(benchmark::State& state) {
 
     MyCacheType::CacheLine *line = cache->findLine(addr);
     if (line) {
-      fprintf(stderr, "ERROR: Line 0x%lX (0x%lX) found\n", cache->calcAddr4Tag(line->getTag()), addr);
+      fmt::print("ERROR: Line {:x} ({:x}) found\n", cache->calcAddr4Tag(line->getTag()), addr);
       exit(-1);
     }
     line     = cache->fillLine(addr);
@@ -148,16 +145,15 @@ static void BM_cachecore(benchmark::State& state) {
 
     MyCacheType::CacheLine *line = cache->findLine(addr);
     if (line == 0) {
-      fprintf(stderr, "ERROR: Line (0x%lX) NOT found\n", addr);
+      fmt::print("ERROR: Line ({:x}) NOT found\n", addr);
       exit(-1);
     }
     if (line->id != i) {
-      fprintf(stderr,
-              "ERROR: Line 0x%lX (0x%lX) line->id %d vs id %d (bad LRU policy)\n",
-              cache->calcAddr4Tag(line->getTag()),
-              addr,
-              line->id,
-              i);
+      fmt::print("ERROR: Line {:x} ({:x}) line->id {} vs id {} (bad LRU policy)\n",
+                 cache->calcAddr4Tag(line->getTag()),
+                 addr,
+                 line->id,
+                 i);
       exit(-1);
     }
   }
@@ -178,9 +174,8 @@ BENCHMARK(BM_cachecore)->Arg(2);
 BENCHMARK(BM_cachecore)->Arg(4);
 #endif
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   setup_config();
   benchmark::Initialize(&argc, argv);
   benchmark::RunSpecifiedBenchmarks();
 }
-

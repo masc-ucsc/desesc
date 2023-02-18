@@ -31,7 +31,7 @@ void Config::exit_on_error() {
     fmt::print("ERROR:{}\n", e);
   }
 
-  abort(); // Abort no exit to avoid the likely seg-faults of a bad configuration
+  abort();  // Abort no exit to avoid the likely seg-faults of a bad configuration
 }
 
 bool Config::check(const std::string &block, const std::string &name) {
@@ -193,10 +193,11 @@ int Config::get_integer(const std::string &block, const std::string &name, int f
     return 0;
   }
 
-  if (ent.is_integer())
+  if (ent.is_integer()) {
     val = ent.as_integer();
-  else
+  } else {
     val = ent.as_floating();
+  }
 
   if (val < from || val > to) {
     errors.emplace_back(fmt::format("conf:{} section:{} field:{} value:{} is not allowed range ({}..<={})\n",
@@ -236,10 +237,11 @@ int Config::get_integer(const std::string &block, const std::string &name, size_
     return 0;
   }
 
-  if (ent2.is_integer())
+  if (ent2.is_integer()) {
     val = ent2.as_integer();
-  else
+  } else {
     val = ent2.as_floating();
+  }
 
   if (val < from || val > to) {
     errors.emplace_back(fmt::format("conf:{} section:{} field:{} value:{} is not allowed range ({}..<={})\n",
@@ -302,10 +304,11 @@ int Config::get_array_integer(const std::string &block, const std::string &name,
   }
 
   int val;
-  if (arr[pos].is_integer())
+  if (arr[pos].is_integer()) {
     val = arr[pos].as_integer();
-  else
+  } else {
     val = arr[pos].as_floating();
+  }
 
   add_used(block, name, pos, fmt::format("{}", val));
   return val;

@@ -39,8 +39,7 @@ protected:
   }
 
 public:
-  virtual ~AddressPredictor() {
-  }
+  virtual ~AddressPredictor() {}
 
   static AddressPredictor *create(const char *section, const char *str);
 
@@ -127,8 +126,7 @@ private:
 
 public:
   Stride_address_predictor(Hartid_t hartid, const std::string &section);
-  virtual ~Stride_address_predictor() {
-  }
+  virtual ~Stride_address_predictor() {}
 
   Addr_t     predict(Addr_t pc, int distance, bool inLine);
   bool       try_chain_predict(MemObj *dl1, Addr_t pc, int distance);
@@ -305,9 +303,7 @@ protected:
 
 public:
   Tage_address_predictor(Hartid_t hartid, const std::string &section);
-  virtual ~Tage_address_predictor() {
-
-  }
+  virtual ~Tage_address_predictor() {}
 
   Addr_t     predict(Addr_t pc, int dist, bool inLine);
   bool       try_chain_predict(MemObj *dl1, Addr_t pc, int distance);
@@ -332,9 +328,7 @@ private:
 public:
   typedef CallbackMember3<Indirect_address_predictor, MemObj *, Addr_t, Addr_t, &Indirect_address_predictor::performed> performedCB;
   Indirect_address_predictor(Hartid_t hartid, const std::string &section);
-  virtual ~Indirect_address_predictor() {
-
-  }
+  virtual ~Indirect_address_predictor() {}
 
   Addr_t     predict(Addr_t pc, int distance, bool inLine);
   bool       try_chain_predict(MemObj *dl1, Addr_t pc, int distance);

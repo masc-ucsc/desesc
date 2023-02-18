@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include "stats.hpp"
-#include "memory_system.hpp"
 #include "estl.hpp"
+#include "memory_system.hpp"
+#include "stats.hpp"
 
 class Nice_cache : public MemObj {
 private:
@@ -43,21 +43,11 @@ public:
   Nice_cache(Memory_system *gms, const std::string &section, const std::string &name);
 
   // Entry points to schedule that may schedule a do?? if needed
-  void req(MemRequest *req) {
-    doReq(req);
-  };
-  void reqAck(MemRequest *req) {
-    doReqAck(req);
-  };
-  void setState(MemRequest *req) {
-    doSetState(req);
-  };
-  void setStateAck(MemRequest *req) {
-    doSetStateAck(req);
-  };
-  void disp(MemRequest *req) {
-    doDisp(req);
-  }
+  void req(MemRequest *req) { doReq(req); };
+  void reqAck(MemRequest *req) { doReqAck(req); };
+  void setState(MemRequest *req) { doSetState(req); };
+  void setStateAck(MemRequest *req) { doSetStateAck(req); };
+  void disp(MemRequest *req) { doDisp(req); }
 
   // This do the real work
   void doReq(MemRequest *r);
@@ -73,4 +63,3 @@ public:
 
   bool isBusy(Addr_t addr) const;
 };
-

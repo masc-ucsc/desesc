@@ -2,9 +2,9 @@
 
 #include "lsq.hpp"
 
-#include "gprocessor.hpp"
 #include "config.hpp"
 #include "fmt/format.h"
+#include "gprocessor.hpp"
 
 LSQFull::LSQFull(Hartid_t hid, int32_t size)
     /* constructor {{{1 */

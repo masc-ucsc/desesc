@@ -25,9 +25,8 @@
 #include "Memory_system.h"
 #include "RAWDInst.h"
 #include "callback.h"
-
-#include "iassert.hpp"
 #include "config.hpp"
+#include "iassert.hpp"
 
 #ifdef DEBUG_CALLPATH
 extern bool forcemsgdump;
@@ -182,15 +181,15 @@ static void dodisp(MemObj *cache, Addr_t addr) {
   wr_pending++;
 }
 
-bool           pluggedin = false;
+bool            pluggedin = false;
 Gmemory_system *gms_p0    = 0;
 Gmemory_system *gms_p1    = 0;
 Gmemory_system *gms_p4    = 0;
-void           initialize() {
+void            initialize() {
   if (!pluggedin) {
-    int         arg1   = 1;
+    int arg1 = 1;
 
-    gms_p0   = new Memory_system(0);
+    gms_p0 = new Memory_system(0);
     gms_p0->buildMemory_system();
     gms_p1 = new Memory_system(1);
     gms_p1->buildMemory_system();
@@ -528,7 +527,7 @@ void MemInterface::testlat(int id) {
 int main(int argc, char **argv) {
   MemInterface mi;
 
-  frequency = Config::get_integer("soc","core", 0, "frequency_mhz") * 1.0e6;
+  frequency = Config::get_integer("soc", "core", 0, "frequency_mhz") * 1.0e6;
 
   if (argc != 5) {
     fmt::print("Usage:\n\t{} <TYP|NC> <RD|DISP|INV|SNOOP|LAT> coreid wait\n", argv[0]);

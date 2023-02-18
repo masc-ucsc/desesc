@@ -6,11 +6,11 @@
 
 #include <set>
 
-#include "gmemory_system.hpp"
-#include "memrequest.hpp"
 #include "absl/strings/str_split.h"
 #include "config.hpp"
 #include "fmt/format.h"
+#include "gmemory_system.hpp"
+#include "memrequest.hpp"
 
 uint16_t MemObj::id_counter = 0;
 
@@ -38,7 +38,7 @@ MemObj::MemObj(const std::string &sSection, const std::string &sName)
   std::vector<std::string> lower_level = absl::StrSplit(Config::get_string(section, "lower_level"), ' ');
   if (lower_level.empty() || lower_level[0] == "" || lower_level[0] == "void") {
     isLLC = true;
-  }else{
+  } else {
     auto lower_level_type = Config::get_string(lower_level[0], "type");
     if (lower_level_type != "cache" && mem_type == "cache") {
       isLLC = true;

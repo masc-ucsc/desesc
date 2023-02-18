@@ -7,10 +7,10 @@
 
 #include <iostream>
 
-#include "memobj.hpp"
-#include "memrequest.hpp"
 #include "config.hpp"
 #include "dinst.hpp"
+#include "memobj.hpp"
+#include "memrequest.hpp"
 
 BimodalStride::BimodalStride(int _size, size_t _width) : size(_size), max_conf(1 << _width) {
   I((size & (size - 1)) == 0);

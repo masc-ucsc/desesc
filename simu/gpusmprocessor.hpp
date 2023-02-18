@@ -4,9 +4,9 @@
 
 #include "fetchengine.hpp"
 #include "gprocessor.hpp"
+#include "iassert.hpp"
 #include "lsq.hpp"
 #include "pipeline.hpp"
-#include "iassert.hpp"
 
 class GPUSMProcessor : public GProcessor {
 private:

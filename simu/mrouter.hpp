@@ -5,9 +5,9 @@
 #include <vector>
 
 #include "callback.hpp"
-#include "opcode.hpp"
 #include "estl.hpp"
 #include "iassert.hpp"
+#include "opcode.hpp"
 #include "snippets.hpp"
 
 class MemObj;

@@ -3,14 +3,14 @@
 #pragma once
 
 #include "bloomfilter.hpp"
-#include "fastqueue.hpp"
-#include "prefetcher.hpp"
-#include "storeset.hpp"
 #include "callback.hpp"
+#include "fastqueue.hpp"
+#include "gmemory_system.hpp"
 #include "iassert.hpp"
+#include "prefetcher.hpp"
 #include "stats.hpp"
 #include "store_buffer.hpp"
-#include "gmemory_system.hpp"
+#include "storeset.hpp"
 
 class PortGeneric;
 class Dinst;
@@ -37,7 +37,7 @@ class LSQ;
 class Resource {
 protected:
   const std::shared_ptr<Cluster> cluster;
-  PortGeneric *const gen;
+  PortGeneric *const             gen;
 
   Stats_avg  avgRenameTime;
   Stats_avg  avgIssueTime;
@@ -99,9 +99,7 @@ protected:
   std::shared_ptr<StoreSet> storeset;
   void                      replayManage(Dinst *dinst);
   struct FailType {
-    FailType() {
-      ssid = -1;
-    }
+    FailType() { ssid = -1; }
     SSID_t ssid;
     Time_t id;
     Addr_t pc;
@@ -112,7 +110,8 @@ protected:
   std::vector<FailType> lf;
 
 public:
-  MemReplay(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *gen, std::shared_ptr<StoreSet> ss, TimeDelta_t l, uint32_t cpuid);
+  MemReplay(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *gen, std::shared_ptr<StoreSet> ss, TimeDelta_t l,
+            uint32_t cpuid);
 };
 
 class MemResource : public MemReplay {
@@ -128,8 +127,8 @@ protected:
   bool LSQlateAlloc;
 
   MemResource(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, LSQ *lsq, std::shared_ptr<StoreSet> ss,
-              std::shared_ptr<Prefetcher> pref, std::shared_ptr<Store_buffer> scb, TimeDelta_t l, std::shared_ptr<Gmemory_system> ms, int32_t id,
-              const char *cad);
+              std::shared_ptr<Prefetcher> pref, std::shared_ptr<Store_buffer> scb, TimeDelta_t l,
+              std::shared_ptr<Gmemory_system> ms, int32_t id, const char *cad);
 
 public:
 };
@@ -149,9 +148,9 @@ protected:
   typedef CallbackMember1<FULoad, Dinst *, &FULoad::cacheDispatched> cacheDispatchedCB;
 
 public:
-  FULoad(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, LSQ *lsq, std::shared_ptr<StoreSet> ss, std::shared_ptr<Prefetcher> pref,
-         std::shared_ptr<Store_buffer> scb, TimeDelta_t lsdelay, TimeDelta_t l, std::shared_ptr<Gmemory_system> ms, int32_t size, int32_t id,
-         const char *cad);
+  FULoad(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, LSQ *lsq, std::shared_ptr<StoreSet> ss,
+         std::shared_ptr<Prefetcher> pref, std::shared_ptr<Store_buffer> scb, TimeDelta_t lsdelay, TimeDelta_t l,
+         std::shared_ptr<Gmemory_system> ms, int32_t size, int32_t id, const char *cad);
 
   StallCause canIssue(Dinst *dinst);
   void       executing(Dinst *dinst);
@@ -167,8 +166,9 @@ private:
   bool    enableDcache;
 
 public:
-  FUStore(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, LSQ *lsq, std::shared_ptr<StoreSet> ss, std::shared_ptr<Prefetcher> pref,
-          std::shared_ptr<Store_buffer> scb, TimeDelta_t l, std::shared_ptr<Gmemory_system> ms, int32_t size, int32_t id, const char *cad);
+  FUStore(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, LSQ *lsq, std::shared_ptr<StoreSet> ss,
+          std::shared_ptr<Prefetcher> pref, std::shared_ptr<Store_buffer> scb, TimeDelta_t l, std::shared_ptr<Gmemory_system> ms,
+          int32_t size, int32_t id, const char *cad);
 
   StallCause canIssue(Dinst *dinst);
   void       executing(Dinst *dinst);

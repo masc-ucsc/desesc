@@ -1,24 +1,22 @@
 // See LICENSE for details.
 
+#include "memory_system.hpp"
+
 #include <cmath>
 #include <cstdio>
 
-#include "memory_system.hpp"
 #include "bus.hpp"
 #include "ccache.hpp"
+#include "config.hpp"
 #include "drawarch.hpp"
 #include "mem_controller.hpp"
 #include "memxbar.hpp"
 #include "nice_cache.hpp"
-#include "config.hpp"
 #include "unmemxbar.hpp"
 
 extern DrawArch arch;
 
-Memory_system::Memory_system(int32_t processorId)
-: Gmemory_system(processorId) {
-  build_memory_system();
-}
+Memory_system::Memory_system(int32_t processorId) : Gmemory_system(processorId) { build_memory_system(); }
 
 MemObj *Memory_system::buildMemoryObj(const std::string &device_type, const std::string &dev_section, const std::string &dev_name)
 /* build the correct memory object {{{1 */

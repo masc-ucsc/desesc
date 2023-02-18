@@ -1,27 +1,28 @@
 // See LICENSE for details
 
+#include "mem_controller.hpp"
+
 #include <cmath>
 #include <iostream>
 #include <queue>
 #include <vector>
 
-#include "mem_controller.hpp"
-#include "memory_system.hpp"
 #include "config.hpp"
+#include "memory_system.hpp"
 
 MemController::MemController(Memory_system *current, const std::string &section, const std::string &name)
     /* constructor {{{1 */
     : MemObj(section, name)
-    , delay(Config::get_integer(section, "delay",1,1024))
-    , PreChargeLatency(Config::get_integer(section, "PreChargeLatency",1, 1024))
-    , RowAccessLatency(Config::get_integer(section, "RowAccessLatency",1, 1024))
-    , ColumnAccessLatency(Config::get_integer(section, "ColumnAccessLatency",4, 1024))
+    , delay(Config::get_integer(section, "delay", 1, 1024))
+    , PreChargeLatency(Config::get_integer(section, "PreChargeLatency", 1, 1024))
+    , RowAccessLatency(Config::get_integer(section, "RowAccessLatency", 1, 1024))
+    , ColumnAccessLatency(Config::get_integer(section, "ColumnAccessLatency", 4, 1024))
     , nPrecharge(fmt::format("{}:nPrecharge", name))
     , nColumnAccess(fmt::format("{}:nColumnAccess", name))
     , nRowAccess(fmt::format("{}:nRowAccess", name))
     , avgMemLat(fmt::format("{}_avgMemLat", name))
     , readHit(fmt::format("{}:readHit", name))
-    , memRequestBufferSize(Config::get_integer(section, "memRequestBufferSize",1, 1024)) {
+    , memRequestBufferSize(Config::get_integer(section, "memRequestBufferSize", 1, 1024)) {
   MemObj *lower_level = NULL;
 
   NumUnits_t  num = Config::get_integer(section, "port_num");
@@ -73,26 +74,21 @@ void MemController::doReqAck(MemRequest *mreq) {
   I(0);
 }
 
-void MemController::doDisp(MemRequest *mreq) {
-  addMemRequest(mreq);
-}
+void MemController::doDisp(MemRequest *mreq) { addMemRequest(mreq); }
 
 void MemController::doSetState(MemRequest *mreq) {
   (void)mreq;
   I(0);
 }
 
-void MemController::doSetStateAck(MemRequest *mreq) {
-  (void)mreq;
-}
+void MemController::doSetStateAck(MemRequest *mreq) { (void)mreq; }
 
 bool MemController::isBusy(Addr_t addr) const {
   (void)addr;
   return false;
 }
 
-void MemController::tryPrefetch(Addr_t addr, bool doStats, int degree, Addr_t pref_sign, Addr_t pc, CallbackBase *cb)
-{
+void MemController::tryPrefetch(Addr_t addr, bool doStats, int degree, Addr_t pref_sign, Addr_t pc, CallbackBase *cb) {
   (void)addr;
   (void)doStats;
   (void)degree;
@@ -115,7 +111,7 @@ TimeDelta_t MemController::ffwrite(Addr_t addr) {
 }
 
 void MemController::addMemRequest(MemRequest *mreq) {
-  I(0); // really, a new?? FIXME:
+  I(0);  // really, a new?? FIXME:
   FCFSField *newEntry = new FCFSField;
 
   newEntry->Bank        = getBank(mreq);
@@ -166,9 +162,9 @@ void MemController::manageRam(void) {
             router->scheduleReqAck(mreq, 1);  //  Fixed doReq acknowledge -- LNB 5/28/2014
             avgMemLat.sample(delta, mreq->has_stats());
           }
-          #ifndef NDEBUG
+#ifndef NDEBUG
           tempMem->mreq = 0;
-          #endif
+#endif
 
           curMemRequests.erase(it);
 

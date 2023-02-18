@@ -1,16 +1,16 @@
 // See LICENSE for details.
 
+#include "store_buffer.hpp"
+
 #include "absl/container/flat_hash_map.h"
 #include "absl/strings/str_split.h"
-
-#include "store_buffer.hpp"
-#include "memrequest.hpp"
 #include "config.hpp"
+#include "memrequest.hpp"
 
 Store_buffer::Store_buffer(Hartid_t hid) {
   std::vector<std::string> v      = absl::StrSplit(Config::get_string("soc", "core", hid, "il1"), ' ');
   auto                     l1_sec = v[0];
-  line_size           = Config::get_power2(l1_sec, "line_size");
+  line_size                       = Config::get_power2(l1_sec, "line_size");
 
   scb_clean_lines     = 0;
   line_size_addr_bits = log2i(line_size);
@@ -32,14 +32,13 @@ void Store_buffer::remove_clean() {
 
   size_t num = 0;
 
-  absl::erase_if(lines, [&num](std::pair<const Addr_t, Store_buffer_line> p) { 
-      if (p.second.is_clean()) {
-        ++num;
-        return false;
-      }
-      return true;
+  absl::erase_if(lines, [&num](std::pair<const Addr_t, Store_buffer_line> p) {
+    if (p.second.is_clean()) {
+      ++num;
+      return false;
     }
-  );
+    return true;
+  });
 
   scb_clean_lines -= num;
 }
@@ -69,7 +68,7 @@ void Store_buffer::add_st(Dinst *dinst) {
     CallbackBase *cb = ownership_doneCB::create(this, st_addr);
     if (dl1) {
       MemRequest::sendReqWrite(dl1, dinst->has_stats(), st_addr, dinst->getPC(), cb);
-    }else{
+    } else {
       cb->schedule(1);
     }
 
@@ -85,7 +84,7 @@ void Store_buffer::add_st(Dinst *dinst) {
   --scb_clean_lines;
   if (dl1) {
     MemRequest::sendReqWrite(dl1, dinst->has_stats(), st_addr, dinst->getPC(), ownership_doneCB::create(this, st_addr));
-  }else{
+  } else {
     ownership_doneCB::schedule(1, this, st_addr);
   }
 }

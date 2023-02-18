@@ -6,10 +6,10 @@
 #include <string>
 #include <vector>
 
-#include "mrouter.hpp"
 #include "callback.hpp"
 #include "dinst.hpp"
 #include "iassert.hpp"
+#include "mrouter.hpp"
 #include "port.hpp"
 
 class MemRequest;

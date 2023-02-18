@@ -186,13 +186,13 @@ private:
   bool     br_ld_chain;
 #endif
 
-  std::shared_ptr<Cluster>     cluster;
-  std::shared_ptr<Resource>    resource;
-  Dinst      **RAT1Entry;
-  Dinst      **RAT2Entry;
-  Dinst      **serializeEntry;
-  FetchEngine *fetch;
-  GProcessor  *gproc;
+  std::shared_ptr<Cluster>  cluster;
+  std::shared_ptr<Resource> resource;
+  Dinst                   **RAT1Entry;
+  Dinst                   **RAT2Entry;
+  Dinst                   **serializeEntry;
+  FetchEngine              *fetch;
+  GProcessor               *gproc;
 
   char nDeps;  // 0, 1 or 2 for RISC processors
 
@@ -443,10 +443,10 @@ public:
   void destroy();
 
   void set(std::shared_ptr<Cluster> cls, std::shared_ptr<Resource> res) {
-    cluster = cls;
+    cluster  = cls;
     resource = res;
   }
-  std::shared_ptr<Cluster> getCluster() const { return cluster; }
+  std::shared_ptr<Cluster>  getCluster() const { return cluster; }
   std::shared_ptr<Resource> getClusterResource() const { return resource; }
 
   void clearRATEntry();

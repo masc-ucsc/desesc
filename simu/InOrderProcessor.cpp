@@ -3,9 +3,9 @@
 #include "inorderprocessor.hpp"
 
 #include "clustermanager.hpp"
+#include "config.hpp"
 #include "fetchengine.hpp"
 #include "gmemory_system.hpp"
-#include "config.hpp"
 #include "tracer.hpp"
 
 InOrderProcessor::InOrderProcessor(std::shared_ptr<Gmemory_system> gm, CPU_t i)
@@ -58,7 +58,6 @@ void InOrderProcessor::executing(Dinst *dinst) { (void)dinst; }
 void InOrderProcessor::executed(Dinst *dinst) { (void)dinst; }
 
 StallCause InOrderProcessor::add_inst(Dinst *dinst) {
-
   const Instruction *inst = dinst->getInst();
 
   size_t rat_off = dinst->getFlowId() % get_smt_size();
@@ -69,20 +68,19 @@ StallCause InOrderProcessor::add_inst(Dinst *dinst) {
   if(((RAT[inst->getSrc1()+rat_off] != 0) && (inst->getSrc1() != LREG_NoDependence) && (inst->getSrc1() != LREG_InvalidOutput)) ||
     ((RAT[inst->getSrc2()+rat_off] != 0) && (inst->getSrc2() != LREG_NoDependence) && (inst->getSrc2() != LREG_InvalidOutput))||
     ((RAT[inst->getDst1()+rat_off] != 0) && (inst->getDst1() != LREG_InvalidOutput))||
-    ((RAT[inst->getDst2()+rat_off] != 0) && (inst->getDst2() != LREG_InvalidOutput))) 
+    ((RAT[inst->getDst2()+rat_off] != 0) && (inst->getDst2() != LREG_InvalidOutput)))
 #else
 #if 1
   // Simple in-order for RAW, but not WAW or WAR
   if (((RAT[inst->getSrc1() + rat_off] != 0) && (inst->getSrc1() != LREG_NoDependence))
-    || ((RAT[inst->getSrc2() + rat_off] != 0) && (inst->getSrc2() != LREG_NoDependence))) 
+      || ((RAT[inst->getSrc2() + rat_off] != 0) && (inst->getSrc2() != LREG_NoDependence)))
 #else
-    // scoreboard, no output dependence
+  // scoreboard, no output dependence
   if (((RAT[inst->getDst1() + rat_off] != 0) && (inst->getDst1() != LREG_InvalidOutput))
-    || ((RAT[inst->getDst2() + rat_off] != 0) && (inst->getDst2() != LREG_InvalidOutput))) 
+      || ((RAT[inst->getDst2() + rat_off] != 0) && (inst->getDst2() != LREG_InvalidOutput)))
 #endif
 #endif
   {
-
 #if 0
     //Useful for debug
     if (hid == 1 ){
@@ -125,7 +123,7 @@ StallCause InOrderProcessor::add_inst(Dinst *dinst) {
   auto cluster = dinst->getCluster();
   if (!cluster) {
     auto res = clusterManager.getResource(dinst);
-    cluster       = res->getCluster();
+    cluster  = res->getCluster();
     dinst->set(cluster, res);
   }
 
@@ -174,7 +172,7 @@ StallCause InOrderProcessor::add_inst(Dinst *dinst) {
   I(dinst->getCluster());
   dinst->markRenamed();
 
-  Tracer::stage(dinst,"RN");
+  Tracer::stage(dinst, "RN");
 
   return NoStall;
 }

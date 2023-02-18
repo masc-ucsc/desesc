@@ -6,10 +6,10 @@
 
 #include <iostream>
 
+#include "cluster.hpp"
 #include "config.hpp"
 #include "emul_base.hpp"
 #include "report.hpp"
-#include "cluster.hpp"
 #include "tracer.hpp"
 
 void TaskHandler::report() {
@@ -121,7 +121,7 @@ void TaskHandler::simu_freeze(Hartid_t fid, Time_t nCycles) {
 void TaskHandler::boot() {
   if (Config::has_entry("trace", "range")) {
     auto t_start = Config::get_array_integer("trace", "range", 0);
-    auto t_end = Config::get_array_integer("trace", "range", 1);
+    auto t_end   = Config::get_array_integer("trace", "range", 1);
     Tracer::open("kanata_log");
     Tracer::track_range(t_start, t_end);
   }
@@ -132,7 +132,7 @@ void TaskHandler::boot() {
       if (likely(!allmaps[hid].deactivating)) {
         allmaps[hid].simu->advance_clock();
         continue;
-      } 
+      }
       auto work_done = allmaps[hid].simu->advance_clock_drain();
       if (!work_done) {
         allmaps[hid].active       = false;
@@ -150,8 +150,7 @@ void TaskHandler::boot() {
 
 void TaskHandler::unboot()
 /* nothing to do {{{1 */
-{
-}
+{}
 /* }}} */
 
 void TaskHandler::plugBegin()

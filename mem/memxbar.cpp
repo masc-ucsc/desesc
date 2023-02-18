@@ -1,10 +1,10 @@
 // See LICENSE for details.
 
-#include "absl/strings/str_split.h"
-
 #include "memxbar.hpp"
-#include "memory_system.hpp"
+
+#include "absl/strings/str_split.h"
 #include "config.hpp"
+#include "memory_system.hpp"
 
 MemXBar::MemXBar(const std::string &section, const std::string &name) : GXBar(section, name) { /*{{{*/
 
@@ -25,7 +25,7 @@ MemXBar::MemXBar(Memory_system *current, const std::string &section, const std::
 
   std::vector<std::string_view> vPars = absl::StrSplit(Config::get_string(section, "lower_level"), ' ');
   if (vPars.empty()) {
-    Config::add_error(fmt::format("invalid lower_level pointer in section:{}",section));
+    Config::add_error(fmt::format("invalid lower_level pointer in section:{}", section));
     return;
   }
   std::string lower_name;
@@ -50,8 +50,7 @@ MemXBar::MemXBar(Memory_system *current, const std::string &section, const std::
 /* }}} */
 
 void MemXBar::init(const std::string &section) {
-
-  dropBits = Config::get_integer(section, "drop_bits");
+  dropBits  = Config::get_integer(section, "drop_bits");
   num_banks = Config::get_power2(section, "num_banks");
 }
 

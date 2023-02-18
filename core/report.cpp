@@ -35,12 +35,12 @@ void Report::init() {
 }
 
 const std::string Report::get_extension() {
-
   auto pos = report_file.rfind('.');
-  if (pos == std::string::npos)
+  if (pos == std::string::npos) {
     return "";
+  }
 
-  return report_file.substr(pos+1);
+  return report_file.substr(pos + 1);
 }
 
 void Report::reinit() {

@@ -2,16 +2,15 @@
 
 #include "cluster.hpp"
 
-#include "gmemory_system.hpp"
-#include "gprocessor.hpp"
-#include "resource.hpp"
 #include "config.hpp"
 #include "estl.hpp"
+#include "gmemory_system.hpp"
+#include "gprocessor.hpp"
 #include "port.hpp"
+#include "resource.hpp"
 #include "store_buffer.hpp"
 
 // Begin: Fields used during constructions
-
 
 Cluster::~Cluster() {
   // Nothing to do
@@ -25,14 +24,14 @@ Cluster::Cluster(const std::string &clusterName, uint32_t pos, uint32_t _cpuid)
     , rdRegPool(fmt::format("P({})_{}{}_rdRegPool", _cpuid, clusterName, pos))
     , wrRegPool(fmt::format("P({})_{}{}_wrRegPool", _cpuid, clusterName, pos))
     , cpuid(_cpuid) {
-  name = fmt::format("{}{}", clusterName, pos);
+  name       = fmt::format("{}{}", clusterName, pos);
   cluster_id = cluster_id_counter++;
 
   nready = 0;
 }
 
-std::shared_ptr<Resource> Cluster::buildUnit(const std::string &clusterName, uint32_t pos, std::shared_ptr<Gmemory_system> ms, std::shared_ptr<Cluster> cluster,
-                        Opcode type, GProcessor *gproc) {
+std::shared_ptr<Resource> Cluster::buildUnit(const std::string &clusterName, uint32_t pos, std::shared_ptr<Gmemory_system> ms,
+                                             std::shared_ptr<Cluster> cluster, Opcode type, GProcessor *gproc) {
   auto unitType = Instruction::opcode2Name(type);
 
   if (!Config::has_entry(clusterName, unitType)) {
@@ -119,18 +118,18 @@ std::shared_ptr<Resource> Cluster::buildUnit(const std::string &clusterName, uin
         }
 
         r = std::make_shared<FULoad>(type,
-                       cluster,
-                       gen,
-                       gproc->getLSQ(),
-                       gproc->ref_SS(),
-                       gproc->ref_prefetcher(),
-                       gproc->ref_SCB(),
-                       st_fwd_delay,
-                       lat,
-                       ms,
-                       ldq_size,
-                       cpuid,
-                       "specld");
+                                     cluster,
+                                     gen,
+                                     gproc->getLSQ(),
+                                     gproc->ref_SS(),
+                                     gproc->ref_prefetcher(),
+                                     gproc->ref_SCB(),
+                                     st_fwd_delay,
+                                     lat,
+                                     ms,
+                                     ldq_size,
+                                     cpuid,
+                                     "specld");
       } break;
       case iSALU_LL:
       case iSALU_SC:
@@ -142,17 +141,17 @@ std::shared_ptr<Resource> Cluster::buildUnit(const std::string &clusterName, uin
         }
 
         r = std::make_shared<FUStore>(type,
-                        cluster,
-                        gen,
-                        gproc->getLSQ(),
-                        gproc->ref_SS(),
-                        gproc->ref_prefetcher(),
-                        gproc->ref_SCB(),
-                        lat,
-                        ms,
-                        stq_size,
-                        cpuid,
-                        Instruction::opcode2Name(type));
+                                      cluster,
+                                      gen,
+                                      gproc->getLSQ(),
+                                      gproc->ref_SS(),
+                                      gproc->ref_prefetcher(),
+                                      gproc->ref_SCB(),
+                                      lat,
+                                      ms,
+                                      stq_size,
+                                      cpuid,
+                                      Instruction::opcode2Name(type));
       } break;
       default: Config::add_error(fmt::format("unknown unit type [{}] [{}]", type, Instruction::opcode2Name(type))); I(0);
     }
@@ -163,12 +162,8 @@ std::shared_ptr<Resource> Cluster::buildUnit(const std::string &clusterName, uin
   return r;
 }
 
-std::pair<
-   std::shared_ptr<Cluster>
-  ,std::array<std::shared_ptr<Resource>, iMAX>
-  >
-  Cluster::create(const std::string &clusterName, uint32_t pos, std::shared_ptr<Gmemory_system> ms, uint32_t cpuid,
-                         GProcessor *gproc) {
+std::pair<std::shared_ptr<Cluster>, std::array<std::shared_ptr<Resource>, iMAX> > Cluster::create(
+    const std::string &clusterName, uint32_t pos, std::shared_ptr<Gmemory_system> ms, uint32_t cpuid, GProcessor *gproc) {
   // Constraints
   std::array<std::shared_ptr<Resource>, iMAX> res;
 
@@ -181,7 +176,7 @@ std::pair<
 
   std::shared_ptr<Cluster> cluster;
 
-  const auto it      = clusterMap.find(cName);
+  const auto it = clusterMap.find(cName);
   if (it != clusterMap.end()) {
     return it->second;
   }

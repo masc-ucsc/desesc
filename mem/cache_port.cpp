@@ -1,13 +1,14 @@
 // See LICENSE for details.
 
 #include "cache_port.hpp"
+
 #include "config.hpp"
 
 Cache_port::Cache_port(const std::string &section, const std::string &name) {
   int numPorts = Config::get_integer(section, "port_num");
   int portOccp = Config::get_integer(section, "port_occ");
 
-  hitDelay  = Config::get_integer(section, "delay",1, 1024);
+  hitDelay  = Config::get_integer(section, "delay", 1, 1024);
   missDelay = Config::get_integer(section, "miss_delay", 1, 1024);
 
   if (Config::has_entry(section, "nc_miss_delay")) {
@@ -19,7 +20,7 @@ Cache_port::Cache_port(const std::string &section, const std::string &name) {
   dataDelay = hitDelay - missDelay;
   tagDelay  = hitDelay - dataDelay;
 
-  numBanks = Config::get_power2(section, "port_banks", 0 , 1024);
+  numBanks             = Config::get_power2(section, "port_banks", 0, 1024);
   int32_t log2numBanks = log2i(numBanks);
   if (numBanks > 1) {
     numBanksMask = (1 << log2numBanks) - 1;
@@ -35,7 +36,7 @@ Cache_port::Cache_port(const std::string &section, const std::string &name) {
   I(bkPort[0]);
   {
     int send_port_occ = 1;
-    int send_port_num  = 1;
+    int send_port_num = 1;
     if (Config::has_entry(section, "send_port_occ")) {
       send_port_num = Config::get_integer(section, "send_port_num");
       send_port_occ = Config::get_integer(section, "send_port_occ");
@@ -90,7 +91,7 @@ Time_t Cache_port::calcNextBankSlot(Addr_t addr) {
 }
 
 void Cache_port::nextBankSlotUntil(Addr_t addr, Time_t until, bool en) {
-  (void)en; // no stats tracking
+  (void)en;  // no stats tracking
   uint32_t bank = (addr >> bankShift) & numBanksMask;
 
   bkPort[bank]->occupyUntil(until);

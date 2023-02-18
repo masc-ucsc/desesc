@@ -6,8 +6,8 @@
 #include <set>
 #include <vector>
 
-#include "fastqueue.hpp"
 #include "dinst.hpp"
+#include "fastqueue.hpp"
 #include "iassert.hpp"
 
 typedef uint32_t CPU_t;

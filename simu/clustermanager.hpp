@@ -5,10 +5,10 @@
 #include "clusterscheduler.hpp"
 #include "depwindow.hpp"
 #include "dinst.hpp"
-#include "iassert.hpp"
 #include "gmemory_system.hpp"
-#include "resource.hpp"
 #include "gprocessor.hpp"
+#include "iassert.hpp"
+#include "resource.hpp"
 
 class ClusterManager {
 private:

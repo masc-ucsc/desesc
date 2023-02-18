@@ -4,13 +4,13 @@
 
 #include <queue>
 
-#include "estl.hpp"
-#include "dinst.hpp"
-#include "stats.hpp"
 #include "callback.hpp"
+#include "dinst.hpp"
+#include "estl.hpp"
 #include "iassert.hpp"
-#include "pool.hpp"
 #include "mshr_entry.hpp"
+#include "pool.hpp"
+#include "stats.hpp"
 
 class MemRequest;
 
@@ -18,18 +18,16 @@ class MSHR {
 private:
 protected:
   const std::string name;
-  const uint32_t Log2LineSize;
-  const int32_t  nEntries;
-  const int32_t  nSubEntries;
+  const uint32_t    Log2LineSize;
+  const int32_t     nEntries;
+  const int32_t     nSubEntries;
 
   int32_t nFreeEntries;
 
   Stats_avg avgUse;
   Stats_avg avgSubUse;
 
-  Addr_t calcLineAddr(Addr_t addr) const {
-    return addr >> Log2LineSize;
-  }
+  Addr_t calcLineAddr(Addr_t addr) const { return addr >> Log2LineSize; }
 
   Stats_cntr nStallConflict;
 
@@ -53,7 +51,7 @@ protected:
     int32_t           nUse;
 #ifndef NDEBUG
     std::deque<MemRequest *> pending_mreq;
-    MemRequest *             block_mreq;
+    MemRequest              *block_mreq;
 #endif
   };
 
@@ -61,11 +59,8 @@ protected:
 
 public:
   MSHR(const std::string &name, int32_t size, int16_t lineSize, int16_t nSubEntries);
-  virtual ~MSHR() {
-  }
-  bool hasFreeEntries() const {
-    return (nFreeEntries > 0);
-  }
+  virtual ~MSHR() {}
+  bool hasFreeEntries() const { return (nFreeEntries > 0); }
 
   bool canAccept(Addr_t paddr) const;
   bool canIssue(Addr_t addr) const;
@@ -74,4 +69,3 @@ public:
   bool retire(Addr_t addr, MemRequest *mreq);
   void dump() const;
 };
-

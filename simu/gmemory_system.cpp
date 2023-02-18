@@ -5,21 +5,19 @@
 #include <cstdlib>
 #include <string>
 
-#include "drawarch.hpp"
-#include "memobj.hpp"
 #include "absl/strings/str_split.h"
 #include "config.hpp"
+#include "drawarch.hpp"
+#include "memobj.hpp"
 
-MemoryObjContainer            Gmemory_system::sharedMemoryObjContainer;
+MemoryObjContainer             Gmemory_system::sharedMemoryObjContainer;
 Gmemory_system::StrCounterType Gmemory_system::usedNames;
-DrawArch                      arch;
+DrawArch                       arch;
 
 //////////////////////////////////////////////
 // MemoryObjContainer
 
-void MemoryObjContainer::addMemoryObj(const std::string &device_name, MemObj *obj) {
-  intlMemoryObjContainer[device_name] = obj;
-}
+void MemoryObjContainer::addMemoryObj(const std::string &device_name, MemObj *obj) { intlMemoryObjContainer[device_name] = obj; }
 
 MemObj *MemoryObjContainer::searchMemoryObj(const std::string &descr_section, const std::string &device_name) const {
   I(!descr_section.empty());
@@ -65,7 +63,6 @@ Gmemory_system::Gmemory_system(int32_t processorId) : coreId(processorId) {
   pref = 0;
 
   priv_counter = 0;
-
 }
 
 Gmemory_system::~Gmemory_system() {
@@ -83,7 +80,6 @@ Gmemory_system::~Gmemory_system() {
 
   delete localMemoryObjContainer;
 }
-
 
 void Gmemory_system::build_memory_system() {
   std::string def_block = Config::get_string("soc", "core", coreId);
@@ -228,22 +224,17 @@ MemObj *Gmemory_system::finishDeclareMemoryObj(const std::vector<std::string> &v
   return newMem;
 }
 
-Dummy_memory_system::Dummy_memory_system(int32_t _coreId) : Gmemory_system(_coreId) {
-  build_memory_system();
-}
+Dummy_memory_system::Dummy_memory_system(int32_t _coreId) : Gmemory_system(_coreId) { build_memory_system(); }
 
 Dummy_memory_system::~Dummy_memory_system() {
   // Do nothing
 }
 
 MemObj *Dummy_memory_system::buildMemoryObj(const std::string &type, const std::string &section, const std::string &name) {
-  if (!(type == "cache" || type == "nice"
-        || type == "markovPrefetcher" || type == "stridePrefetcher" || type == "Prefetcher"
-        || type == "splitter" || type == "siftsplitter"
-        || type == "smpcache" || type == "memxbar")) {
+  if (!(type == "cache" || type == "nice" || type == "markovPrefetcher" || type == "stridePrefetcher" || type == "Prefetcher"
+        || type == "splitter" || type == "siftsplitter" || type == "smpcache" || type == "memxbar")) {
     Config::add_error(fmt::format("Invalid memory type [{}]", type));
   }
 
   return new DummyMemObj(section, name);
 }
-

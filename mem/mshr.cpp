@@ -1,11 +1,11 @@
 // See LICENSE for details.
 
-#include "fmt/format.h"
-
 #include "mshr.hpp"
-#include "memrequest.hpp"
-#include "memory_system.hpp"
+
 #include "config.hpp"
+#include "fmt/format.h"
+#include "memory_system.hpp"
+#include "memrequest.hpp"
 #include "snippets.hpp"
 
 MSHR::MSHR(const std::string &n, int32_t size, int16_t lineSize, int16_t nsub)

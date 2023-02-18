@@ -7,9 +7,9 @@
 
 #include <iostream>
 
+#include "config.hpp"
 #include "fetchengine.hpp"
 #include "memobj.hpp"
-#include "config.hpp"
 
 // #define PREFETCH_HIST 1
 

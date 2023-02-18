@@ -7,15 +7,15 @@
 // #define MEM_TSO 1
 // #define MEM_TSO2 1
 #include "cluster.hpp"
+#include "dinst.hpp"
 #include "fetchengine.hpp"
 #include "gmemory_system.hpp"
 #include "gprocessor.hpp"
 #include "lsq.hpp"
 #include "memrequest.hpp"
 #include "oooprocessor.hpp"
-#include "resource.hpp"
-#include "dinst.hpp"
 #include "port.hpp"
+#include "resource.hpp"
 
 // late allocation flag
 #define USE_PNR
@@ -72,7 +72,7 @@ void Resource::setStats(const Dinst *dinst) {
 Resource::~Resource()
 /* destructor {{{1 */
 {
-  if (EventScheduler::size()>10) {
+  if (EventScheduler::size() > 10) {
     fmt::print("Resources destroyed with {} pending instructions (small is OK)\n", EventScheduler::size());
   }
 
@@ -111,7 +111,8 @@ MemResource::MemResource(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric
 
 /* }}} */
 
-MemReplay::MemReplay(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *_gen, std::shared_ptr<StoreSet> ss, TimeDelta_t l, uint32_t cpuid)
+MemReplay::MemReplay(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *_gen, std::shared_ptr<StoreSet> ss, TimeDelta_t l,
+                     uint32_t cpuid)
     : Resource(type, cls, _gen, l, cpuid), lfSize(8), storeset(ss) {
   lf.resize(lfSize);
 }
@@ -439,7 +440,6 @@ FUStore::FUStore(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, 
                  std::shared_ptr<Gmemory_system> ms, int32_t size, int32_t id, const char *cad)
     /* constructor {{{1 */
     : MemResource(type, cls, aGen, _lsq, ss, _pref, _scb, l, ms, id, cad), freeEntries(size) {
-
   enableDcache = Config::get_bool("soc", "core", id, "caches");
   LSQlateAlloc = Config::get_bool("soc", "core", id, "stq_late_alloc");
 }
@@ -663,7 +663,8 @@ void FUGeneric::performed(Dinst *dinst) {
 
 /***********************************************/
 
-FUBranch::FUBranch(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, TimeDelta_t l, uint32_t cpuid, int32_t mb, bool dom)
+FUBranch::FUBranch(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, TimeDelta_t l, uint32_t cpuid, int32_t mb,
+                   bool dom)
     /* constructor {{{1 */
     : Resource(type, cls, aGen, l, cpuid), freeBranches(mb), drainOnMiss(dom) {
   I(freeBranches > 0);

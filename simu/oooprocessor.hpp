@@ -5,12 +5,12 @@
 #include <algorithm>
 #include <vector>
 
+#include "callback.hpp"
 #include "fastqueue.hpp"
 #include "fetchengine.hpp"
 #include "gprocessor.hpp"
-#include "pipeline.hpp"
-#include "callback.hpp"
 #include "iassert.hpp"
+#include "pipeline.hpp"
 #include "stats.hpp"
 #include "stats_code.hpp"
 

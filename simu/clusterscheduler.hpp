@@ -4,8 +4,8 @@
 
 #include <vector>
 
-#include "resource.hpp"
 #include "dinst.hpp"
+#include "resource.hpp"
 
 using ResourcesPoolType = std::array<std::vector<std::shared_ptr<Resource>>, iMAX>;
 
@@ -44,8 +44,8 @@ public:
 
 class UseClusterScheduler : public ClusterScheduler {
 private:
-  std::vector<unsigned int> nres;
-  std::vector<unsigned int> pos;
+  std::vector<unsigned int>                      nres;
+  std::vector<unsigned int>                      pos;
   std::array<std::shared_ptr<Cluster>, LREG_MAX> cused;
 
 public:

@@ -37,20 +37,20 @@ static const char *opcode2NameTable[] = {
 
 const char *Instruction::opcode2Name(Opcode op) { return opcode2NameTable[op]; }
 
-void Instruction::dump() const {
-  fmt::print(get_asm());
-}
+void Instruction::dump() const { fmt::print(get_asm()); }
 
 std::string Instruction::get_asm() const {
-  if (dst2!=LREG_InvalidOutput) {
-    if (src2==LREG_R0)
+  if (dst2 != LREG_InvalidOutput) {
+    if (src2 == LREG_R0) {
       return fmt::format("r{}, r{} = {} r{}", dst1, dst2, opcode2NameTable[opcode], src1);
+    }
 
     return fmt::format("r{}, r{} = {} r{} r{}", dst1, dst2, opcode2NameTable[opcode], src1, src2);
   }
 
-  if (src2==LREG_R0)
+  if (src2 == LREG_R0) {
     return fmt::format("r{} = {} r{}", dst1, opcode2NameTable[opcode], src1);
+  }
 
   return fmt::format("r{} = {} r{} r{}", dst1, opcode2NameTable[opcode], src1, src2);
 }

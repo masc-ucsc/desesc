@@ -2,14 +2,13 @@
 
 #pragma once
 
-#include "stats.hpp"
 #include "memobj.hpp"
-#include "memrequest.hpp"
 #include "memory_system.hpp"
+#include "memrequest.hpp"
 #include "port.hpp"
+#include "stats.hpp"
 
 class GXBar : public MemObj {
-
 protected:
   enum BypassMode { bypass_none, bypass_global, bypass_shared } bypassMode;
 
@@ -25,7 +24,5 @@ protected:
 
 public:
   GXBar(const std::string &device_descr_section, const std::string &device_name = NULL);
-  ~GXBar() {
-  }
+  ~GXBar() {}
 };
-

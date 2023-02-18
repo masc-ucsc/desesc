@@ -240,8 +240,8 @@ void Dinst::scrap() {
   I(nDeps == 0);  // No deps src
   I(first == 0);  // no dependent instructions
 
-  resource = nullptr; // Needed to have GC
-  cluster = nullptr;
+  resource = nullptr;  // Needed to have GC
+  cluster  = nullptr;
 
   dInstPool.in(this);
 }
@@ -256,8 +256,8 @@ void Dinst::destroy() {
 
   Tracer::commit(this);
 
-  resource = nullptr; // Needed to have GC
-  cluster = nullptr;
+  resource = nullptr;  // Needed to have GC
+  cluster  = nullptr;
 
   dInstPool.in(this);
 }

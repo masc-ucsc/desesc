@@ -74,5 +74,5 @@ public:
   Data topNext() const { return getData(getIDFromTop(1)); }
 
   std::size_t size() const { return nElems; }
-  bool   empty() const { return nElems == 0; }
+  bool        empty() const { return nElems == 0; }
 };

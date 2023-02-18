@@ -155,12 +155,12 @@ static void dowrite(MemObj *cache, Addr_t addr) {
   wr_pending++;
 }
 
-bool           pluggedin = false;
+bool            pluggedin = false;
 Gmemory_system *gms_p0    = 0;
 Gmemory_system *gms_p1    = 0;
-void           initialize() {
+void            initialize() {
   if (!pluggedin) {
-    int         arg1   = 1;
+    int arg1 = 1;
 
     gms_p0 = new Memory_system(0);
     gms_p0->buildMemory_system();

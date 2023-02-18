@@ -28,7 +28,7 @@ public:
   void init(size_t line_size, Addr_t addr) {
     I(state == State::Invalid);
     word_present.assign(line_size >> 2, false);
-    state = State::Uncoherent;
+    state     = State::Uncoherent;
     line_addr = addr;
   }
   void set_waiting_wb() { state = State::Uncoherent; }

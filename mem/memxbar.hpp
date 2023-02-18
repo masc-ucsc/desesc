@@ -17,25 +17,14 @@ protected:
 public:
   MemXBar(Memory_system *current, const std::string &device_descr_section, const std::string device_name = "");
   MemXBar(const std::string &section, const std::string &name);
-  ~MemXBar() {
-  }
+  ~MemXBar() {}
 
   // Entry points to schedule that may schedule a do?? if needed
-  void req(MemRequest *req) {
-    doReq(req);
-  };
-  void reqAck(MemRequest *req) {
-    doReqAck(req);
-  };
-  void setState(MemRequest *req) {
-    doSetState(req);
-  };
-  void setStateAck(MemRequest *req) {
-    doSetStateAck(req);
-  };
-  void disp(MemRequest *req) {
-    doDisp(req);
-  }
+  void req(MemRequest *req) { doReq(req); };
+  void reqAck(MemRequest *req) { doReqAck(req); };
+  void setState(MemRequest *req) { doSetState(req); };
+  void setStateAck(MemRequest *req) { doSetStateAck(req); };
+  void disp(MemRequest *req) { doDisp(req); }
 
   // This do the real work
   void doReq(MemRequest *r);
@@ -53,4 +42,3 @@ public:
 
   uint32_t addrHash(Addr_t addr) const;
 };
-

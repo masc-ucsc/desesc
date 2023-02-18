@@ -28,8 +28,7 @@ StoreSet::StoreSet(const int32_t id)
 }
 /* }}} */
 
-StoreSet::~StoreSet() {
-}
+StoreSet::~StoreSet() {}
 
 SSID_t StoreSet::create_id() {
   static SSID_t rnd = 0;

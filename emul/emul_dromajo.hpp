@@ -36,10 +36,6 @@ public:
     }
   }
 
-  void set_detail(uint64_t ninst) {
-    detail = ninst;
-  }
-  void set_time(uint64_t ninst) {
-    time = ninst;
-  }
+  void set_detail(uint64_t ninst) { detail = ninst; }
+  void set_time(uint64_t ninst) { time = ninst; }
 };

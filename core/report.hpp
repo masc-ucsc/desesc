@@ -7,7 +7,7 @@
 class Report {
 private:
   static inline std::string report_file;
-  static inline int fd = -1;
+  static inline int         fd = -1;
 
 public:
   static void init();

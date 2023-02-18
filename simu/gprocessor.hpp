@@ -12,23 +12,23 @@
 // design for Traditional and SMT processors in mind. That's the
 // reason why it manages the execution engine (RDEX).
 
+#include "callback.hpp"
 #include "cluster.hpp"
 #include "clustermanager.hpp"
+#include "estl.hpp"
 #include "fastqueue.hpp"
+#include "gmemory_system.hpp"
+#include "iassert.hpp"
+#include "instruction.hpp"
 #include "lsq.hpp"
 #include "pipeline.hpp"
 #include "prefetcher.hpp"
 #include "resource.hpp"
-#include "callback.hpp"
-#include "estl.hpp"
 #include "simu_base.hpp"
-#include "iassert.hpp"
-#include "instruction.hpp"
 #include "snippets.hpp"
 #include "stats.hpp"
 #include "store_buffer.hpp"
 #include "wavesnap.hpp"
-#include "gmemory_system.hpp"
 
 class BPredictor;
 
@@ -47,7 +47,7 @@ struct SMT_fetch {
   };
 
   std::shared_ptr<FetchEngine> fetch_next();
-  void update();
+  void                         update();
 };
 
 class GProcessor : public Simu_base {
@@ -60,7 +60,7 @@ protected:
   const int32_t InstQueueSize;
   const size_t  MaxROBSize;
 
-  size_t         smt_size;
+  size_t                          smt_size;
   std::shared_ptr<Gmemory_system> memorySystem;
 
   std::shared_ptr<StoreSet>     storeset;
@@ -71,10 +71,10 @@ protected:
   FastQueue<Dinst *> ROB;
 
   uint32_t smt;  // 1...
-  bool busy;
+  bool     busy;
 
   // BEGIN  Statistics
-  Stats_avg avgFetchWidth;
+  Stats_avg                                         avgFetchWidth;
   std::array<std::unique_ptr<Stats_cntr>, MaxStall> nStall;
   std::array<std::unique_ptr<Stats_cntr>, iMAX>     nInst;
 
@@ -98,8 +98,8 @@ protected:
 
   GProcessor(std::shared_ptr<Gmemory_system> gm, Hartid_t i);
 
-  int32_t    issue();
-  void       fetch();
+  int32_t issue();
+  void    fetch();
 
   virtual StallCause add_inst(Dinst *dinst) = 0;
 

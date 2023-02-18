@@ -8,9 +8,9 @@
 #include <vector>
 
 #include "callback.hpp"
-#include "opcode.hpp"
 #include "estl.hpp"
 #include "iassert.hpp"
+#include "opcode.hpp"
 
 class MemObj;
 
@@ -88,6 +88,7 @@ class Dummy_memory_system : public Gmemory_system {
 private:
 protected:
   MemObj *buildMemoryObj(const std::string &type, const std::string &section, const std::string &name) override;
+
 public:
   Dummy_memory_system(int32_t coreId);
   ~Dummy_memory_system();

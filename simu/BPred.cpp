@@ -13,10 +13,10 @@
 #include <ios>
 #include <iostream>
 
-#include "imlibest.hpp"
-#include "memobj.hpp"
 #include "config.hpp"
 #include "fmt/format.h"
+#include "imlibest.hpp"
+#include "memobj.hpp"
 #include "report.hpp"
 
 // #define CLOSE_TARGET_OPTIMIZATION 1
@@ -1376,16 +1376,16 @@ BPredictor::BPredictor(int32_t i, MemObj *iobj, MemObj *dobj, std::shared_ptr<BP
 
   for (auto n = 0u; n < n_bpred; ++n) {
     auto bpred_section = Config::get_array_string(cpu_section, "bpred", n);
-    auto bpred_delay   = Config::get_integer(bpred_section, "delay", last_bpred_delay+1);
+    auto bpred_delay   = Config::get_integer(bpred_section, "delay", last_bpred_delay + 1);
 
     if (n == 0) {
-      pred1 = getBPred(id, bpred_section, "0");
+      pred1       = getBPred(id, bpred_section, "0");
       bpredDelay1 = bpred_delay;
     } else if (n == 1) {
-      pred2 = getBPred(id, bpred_section, "1");
+      pred2       = getBPred(id, bpred_section, "1");
       bpredDelay2 = bpred_delay;
     } else if (n == 2) {
-      pred3 = getBPred(id, bpred_section, "2");
+      pred3       = getBPred(id, bpred_section, "2");
       bpredDelay3 = bpred_delay;
     } else {
       I(0);
@@ -1394,15 +1394,17 @@ BPredictor::BPredictor(int32_t i, MemObj *iobj, MemObj *dobj, std::shared_ptr<BP
     last_bpred_delay   = bpred_delay;
     last_bpred_section = bpred_section;
   }
-  if (bpredDelay1==0) {
+  if (bpredDelay1 == 0) {
     Config::add_error("branch predictor should have a delay > 0");
     return;
   }
-  if (bpredDelay2==0)
-    bpredDelay2 = bpredDelay1+1;
+  if (bpredDelay2 == 0) {
+    bpredDelay2 = bpredDelay1 + 1;
+  }
 
-  if (bpredDelay3==0)
-    bpredDelay3 = bpredDelay2+1;
+  if (bpredDelay3 == 0) {
+    bpredDelay3 = bpredDelay2 + 1;
+  }
 
   I(bpredDelay1 < bpredDelay3);
   I(bpredDelay2 < bpredDelay3);

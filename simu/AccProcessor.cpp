@@ -4,10 +4,10 @@
 
 #include <math.h>
 
-#include "gmemory_system.hpp"
-#include "memrequest.hpp"
 #include "config.hpp"
 #include "fmt/format.h"
+#include "gmemory_system.hpp"
+#include "memrequest.hpp"
 
 AccProcessor::AccProcessor(std::shared_ptr<Gmemory_system> gm, Hartid_t i)
     /* constructor {{{1 */

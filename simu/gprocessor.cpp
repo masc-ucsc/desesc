@@ -6,8 +6,8 @@
 #include <unistd.h>
 
 #include "fetchengine.hpp"
-#include "gmemory_system.hpp"
 #include "fmt/format.h"
+#include "gmemory_system.hpp"
 #include "report.hpp"
 
 void SMT_fetch::update() {
@@ -25,7 +25,7 @@ void SMT_fetch::update() {
     if (smt_cnt == smt_active) {
       smt_turn = 0;
     } else {
-      smt_turn = smt_active-1;
+      smt_turn = smt_active - 1;
     }
   }
 }
@@ -49,7 +49,7 @@ void GProcessor::fetch() {
 
   auto ifid = smt_fetch.fetch_next();
   if (ifid->isBlocked()) {
-    //fmt::print("fetch on {}\n", ifid->getMissDinst()->getID());
+    // fmt::print("fetch on {}\n", ifid->getMissDinst()->getID());
     return;
   }
 
@@ -122,8 +122,7 @@ GProcessor::GProcessor(std::shared_ptr<Gmemory_system> gm, Hartid_t i)
   busy = false;
 }
 
-GProcessor::~GProcessor() {
-}
+GProcessor::~GProcessor() {}
 
 void GProcessor::buildInstStats(const std::string &txt) {
   for (int32_t t = 0; t < iMAX; t++) {

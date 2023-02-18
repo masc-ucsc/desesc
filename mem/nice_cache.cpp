@@ -1,9 +1,10 @@
 // See LICENSE for details.
 
 #include "nice_cache.hpp"
-#include "memrequest.hpp"
-#include "memory_system.hpp"
+
 #include "config.hpp"
+#include "memory_system.hpp"
+#include "memrequest.hpp"
 
 Nice_cache::Nice_cache(Memory_system *gms, const std::string &section, const std::string &sName)
     : MemObj(section, sName)
@@ -21,8 +22,7 @@ Nice_cache::Nice_cache(Memory_system *gms, const std::string &section, const std
     , writeExclusive(fmt::format("{}:writeExclusive", sName))
     , writeBack(fmt::format("{}:writeBack", sName))
     , avgMemLat(fmt::format("{}_avgMemLat", sName)) {
-
-  (void)gms; // nice cache does not have lower level
+  (void)gms;  // nice cache does not have lower level
   warmupStepStart = 256 / 4;
   warmupStep      = warmupStepStart;
   warmupNext      = 16;

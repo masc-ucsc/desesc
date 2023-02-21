@@ -844,7 +844,7 @@ void CCache::doReq(MemRequest *mreq) {
     return;
   }
 
-  //when = inOrderUpMessageAbs(when);
+  when = inOrderUpMessageAbs(when);
 
   if (justDirectory) {
     if (l->needsDisp()) {

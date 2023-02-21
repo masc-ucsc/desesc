@@ -12,7 +12,7 @@ protected:
 
   Stats_cntr **XBar_rw_req;
 
-  void init(const std::string &section);
+  void init();
 
 public:
   MemXBar(Memory_system *current, const std::string &device_descr_section, const std::string device_name = "");

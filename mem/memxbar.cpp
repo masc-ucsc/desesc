@@ -6,19 +6,19 @@
 #include "config.hpp"
 #include "memory_system.hpp"
 
-MemXBar::MemXBar(const std::string &section, const std::string &name) : GXBar(section, name) { /*{{{*/
+MemXBar::MemXBar(const std::string &sec, const std::string &n) : GXBar(sec, n) { /*{{{*/
 
-  init(section);
+  init();
 
 } /*}}}*/
 
-MemXBar::MemXBar(Memory_system *current, const std::string &section, const std::string name)
+MemXBar::MemXBar(Memory_system *current, const std::string &sec, const std::string n)
     /* {{{ constructor */
-    : GXBar(section, name) {
+    : GXBar(sec, n) {
   I(current);
   lower_level_banks = NULL;
 
-  init(section);
+  init();
 
   lower_level_banks = new MemObj *[num_banks];
   XBar_rw_req       = new Stats_cntr *[num_banks];
@@ -49,7 +49,7 @@ MemXBar::MemXBar(Memory_system *current, const std::string &section, const std::
 }
 /* }}} */
 
-void MemXBar::init(const std::string &section) {
+void MemXBar::init() {
   dropBits  = Config::get_integer(section, "drop_bits");
   num_banks = Config::get_power2(section, "num_banks");
 }

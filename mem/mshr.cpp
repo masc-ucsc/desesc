@@ -104,6 +104,7 @@ void MSHR::blockEntry(Addr_t addr, MemRequest *mreq) {
 }
 
 bool MSHR::retire(Addr_t addr, MemRequest *mreq) {
+  I(mreq);
   uint32_t pos = calcEntry(addr);
   I(entry[pos].nUse);
 #ifndef NDEBUG

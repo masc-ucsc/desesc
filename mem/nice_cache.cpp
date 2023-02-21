@@ -6,22 +6,22 @@
 #include "memory_system.hpp"
 #include "memrequest.hpp"
 
-Nice_cache::Nice_cache(Memory_system *gms, const std::string &section, const std::string &sName)
-    : MemObj(section, sName)
-    , hitDelay(Config::get_integer(section, "delay"))
-    , bsize(Config::get_power2(section, "line_size"))
-    , bsizeLog2(log2i(Config::get_power2(section, "line_size")))
-    , cold_misses(Config::get_bool(section, "cold_misses"))
-    , readHit(fmt::format("{}:readHit", sName))
-    , pushDownHit(fmt::format("{}:pushDownHit", sName))
-    , writeHit(fmt::format("{}:writeHit", sName))
-    , readMiss(fmt::format("{}:readMiss", sName))
-    , readHalfMiss(fmt::format("{}:readHalfMiss", sName))
-    , writeMiss(fmt::format("{}:writeMiss", sName))
-    , writeHalfMiss(fmt::format("{}:writeHalfMiss", sName))
-    , writeExclusive(fmt::format("{}:writeExclusive", sName))
-    , writeBack(fmt::format("{}:writeBack", sName))
-    , avgMemLat(fmt::format("{}_avgMemLat", sName)) {
+Nice_cache::Nice_cache(Memory_system *gms, const std::string &sec, const std::string &n)
+    : MemObj(sec, n)
+    , hitDelay(Config::get_integer(sec, "delay"))
+    , bsize(Config::get_power2(sec, "line_size"))
+    , bsizeLog2(log2i(Config::get_power2(sec, "line_size")))
+    , cold_misses(Config::get_bool(sec, "cold_misses"))
+    , readHit(fmt::format("{}:readHit", n))
+    , pushDownHit(fmt::format("{}:pushDownHit", n))
+    , writeHit(fmt::format("{}:writeHit", n))
+    , readMiss(fmt::format("{}:readMiss", n))
+    , readHalfMiss(fmt::format("{}:readHalfMiss", n))
+    , writeMiss(fmt::format("{}:writeMiss", n))
+    , writeHalfMiss(fmt::format("{}:writeHalfMiss", n))
+    , writeExclusive(fmt::format("{}:writeExclusive", n))
+    , writeBack(fmt::format("{}:writeBack", n))
+    , avgMemLat(fmt::format("{}_avgMemLat", n)) {
   (void)gms;  // nice cache does not have lower level
   warmupStepStart = 256 / 4;
   warmupStep      = warmupStepStart;

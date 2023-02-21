@@ -10,19 +10,19 @@
 #include "config.hpp"
 #include "memory_system.hpp"
 
-MemController::MemController(Memory_system *current, const std::string &section, const std::string &name)
+MemController::MemController(Memory_system *current, const std::string &sec, const std::string &n)
     /* constructor {{{1 */
-    : MemObj(section, name)
-    , delay(Config::get_integer(section, "delay", 1, 1024))
-    , PreChargeLatency(Config::get_integer(section, "PreChargeLatency", 1, 1024))
-    , RowAccessLatency(Config::get_integer(section, "RowAccessLatency", 1, 1024))
-    , ColumnAccessLatency(Config::get_integer(section, "ColumnAccessLatency", 4, 1024))
-    , nPrecharge(fmt::format("{}:nPrecharge", name))
-    , nColumnAccess(fmt::format("{}:nColumnAccess", name))
-    , nRowAccess(fmt::format("{}:nRowAccess", name))
-    , avgMemLat(fmt::format("{}_avgMemLat", name))
-    , readHit(fmt::format("{}:readHit", name))
-    , memRequestBufferSize(Config::get_integer(section, "memRequestBufferSize", 1, 1024)) {
+    : MemObj(sec, n)
+    , delay(Config::get_integer(sec, "delay", 1, 1024))
+    , PreChargeLatency(Config::get_integer(sec, "PreChargeLatency", 1, 1024))
+    , RowAccessLatency(Config::get_integer(sec, "RowAccessLatency", 1, 1024))
+    , ColumnAccessLatency(Config::get_integer(sec, "ColumnAccessLatency", 4, 1024))
+    , nPrecharge(fmt::format("{}:nPrecharge", n))
+    , nColumnAccess(fmt::format("{}:nColumnAccess", n))
+    , nRowAccess(fmt::format("{}:nRowAccess", n))
+    , avgMemLat(fmt::format("{}_avgMemLat", n))
+    , readHit(fmt::format("{}:readHit", n))
+    , memRequestBufferSize(Config::get_integer(sec, "memRequestBufferSize", 1, 1024)) {
   MemObj *lower_level = NULL;
 
   NumUnits_t  num = Config::get_integer(section, "port_num");

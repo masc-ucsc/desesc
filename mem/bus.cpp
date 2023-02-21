@@ -4,8 +4,8 @@
 
 #include "config.hpp"
 
-Bus::Bus(Memory_system *current, const std::string &section, const std::string &name)
-    : MemObj(section, name), delay(Config::get_integer(section, "delay")) {
+Bus::Bus(Memory_system *current, const std::string &sec, const std::string &n)
+    : MemObj(sec, n), delay(Config::get_integer(sec, "delay")) {
   NumUnits_t  num = Config::get_integer(section, "port_num");
   TimeDelta_t occ = Config::get_integer(section, "port_occ");
 

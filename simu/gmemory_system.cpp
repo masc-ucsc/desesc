@@ -30,7 +30,7 @@ MemObj *MemoryObjContainer::searchMemoryObj(const std::string &descr_section, co
   }
 
   const auto sec = it->second->getSection();
-  if (sec == descr_section) {
+  if (sec != descr_section) {
     Config::add_error(
         fmt::format("Two versions of MemoryObject [{}] with different definitions [{}] and [{}]", device_name, sec, descr_section));
     return nullptr;
@@ -85,6 +85,10 @@ void Gmemory_system::build_memory_system() {
   std::string def_block = Config::get_string("soc", "core", coreId);
 
   IL1 = declareMemoryObj(def_block, "il1");
+  if (IL1==nullptr) {
+    Config::add_error("Could not find valid il1 cache");
+    return;
+  }
   IL1->getRouter()->fillRouteTables();
   IL1->setCoreIL1(coreId);
 
@@ -150,9 +154,7 @@ MemObj *Gmemory_system::declareMemoryObj(const std::string &block, const std::st
     return nullptr;
   }
 
-  MemObj *ret = finishDeclareMemoryObj(vPars);
-  I(ret);  // Users of declareMemoryObj dereference without nullptr check so pointer must be valid
-  return ret;
+  return finishDeclareMemoryObj(vPars);
 }
 
 MemObj *Gmemory_system::finishDeclareMemoryObj(const std::vector<std::string> &vPars, const std::string &name_suffix) {
@@ -161,6 +163,11 @@ MemObj *Gmemory_system::finishDeclareMemoryObj(const std::vector<std::string> &v
 
   std::string device_name = (vPars.size() > 1) ? vPars[1] : "";
   std::string shared_arg  = (vPars.size() > 2) ? vPars[2] : "";
+
+  if (device_name == "shared" || device_name == "sharedby") {
+    Config::add_error(fmt::format("lower_levels has {} as name, more likely a missing name like \"lowerl3 NAME shared\"", device_name));
+    return nullptr;
+  }
 
   if (!shared_arg.empty()) {
     std::transform(shared_arg.begin(), shared_arg.end(), shared_arg.begin(), [](unsigned char c) { return std::tolower(c); });
@@ -190,6 +197,9 @@ MemObj *Gmemory_system::finishDeclareMemoryObj(const std::vector<std::string> &v
 
   std::string device_descr_section = vPars[0];
   std::string device_type          = Config::get_string(device_descr_section, "type");
+  if (device_type == "INVALID") {
+    return nullptr;
+  }
 
   /* If the device has been given a name, we may be refering to an
    * already existing device in the system, so let's search

@@ -138,7 +138,6 @@ Dinst *Emul_dromajo::peek(Hartid_t fid) {
   uint64_t last_pc  = virt_machine_get_pc(machine, fid);
   uint32_t insn_raw = -1;
   (void)riscv_read_insn(machine->cpu_state[fid], &insn_raw, last_pc);
-  Instruction esesc_insn;
   // Assume compressed, default to 32-bit insn
   uint32_t funct7  = 0;
   uint32_t rs1     = 0;
@@ -455,14 +454,17 @@ Dinst *Emul_dromajo::peek(Hartid_t fid) {
   I(src2 != LREG_INVALID);
   I(dst1 != LREG_INVALID);
 
-  esesc_insn.set(opcode, src1, src2, dst1, dst2);
   if (detail > 0) {
     --detail;
-    return Dinst::create(&esesc_insn, last_pc, address, fid, false);
+    return Dinst::create(
+      Instruction(opcode, src1, src2, dst1, dst2)
+      , last_pc, address, fid, false);
   }
   if (time > 0) {
     --time;
-    return Dinst::create(&esesc_insn, last_pc, address, fid, true);
+    return Dinst::create(
+      Instruction(opcode, src1, src2, dst1, dst2)
+      , last_pc, address, fid, true);
   }
 
   return nullptr;

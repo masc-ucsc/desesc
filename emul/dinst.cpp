@@ -13,7 +13,9 @@ pool<Dinst> Dinst::dInstPool(32768, "Dinst");  // 4 * tsfifo size
 
 Time_t Dinst::currentID = 0;
 
-Dinst::Dinst() {
+Dinst::Dinst()
+ : inst(Instruction(iOpInvalid, LREG_R0, LREG_R0, LREG_InvalidOutput, LREG_InvalidOutput)){
+
   pend[0].init(this);
   pend[1].init(this);
   pend[2].init(this);
@@ -215,26 +217,6 @@ void Dinst::addDataSign(int ds, int64_t _data, Addr_t _ldpc) {
   }
 }
 #endif
-
-Dinst *Dinst::clone() {
-  Dinst *i = dInstPool.out();
-
-  i->fid  = fid;
-  i->inst = inst;
-  i->pc   = pc;
-  i->addr = addr;
-#ifdef ESESC_TRACE_DATA
-  i->ldpc      = ldpc;
-  i->data      = data;
-  i->data_sign = data_sign;
-  i->chained   = 0;
-#endif
-  i->keep_stats = keep_stats;
-
-  i->setup();
-
-  return i;
-}
 
 void Dinst::scrap() {
   I(nDeps == 0);  // No deps src

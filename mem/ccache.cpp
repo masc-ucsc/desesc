@@ -26,19 +26,12 @@ void CCache::trackAddress(MemRequest *mreq) {
 #endif
 
 #if 0
-#define MTRACE(a...)                                \
-  do {                                              \
-    if (getName() == "DL1(0)") {                    \
-      fmt::print("@{} {} {} {:x} {} :",             \
-                 (long long int)globalClock,        \
-                 getName(),                         \
-                 (int)mreq->getID(),                \
-                 (unsigned int)mreq->getAddr(),     \
-                 mreq->isPrefetch() ? "pref" : ""); \
-      fmt::print(##a);                              \
-      fmt::print("\n");                             \
-    }                                               \
-  } while (0)
+template<class... Args>
+void MTRACE(Args... args) {
+  fmt::print(args...);
+  fmt::print("\n");
+}
+    // if (getName() == "DL1(0)") 
 #else
 #define MTRACE(a...)
 #endif
@@ -709,7 +702,7 @@ void CCache::CState::set(const MemRequest *mreq) {
 }
 
 void CCache::doReq(MemRequest *mreq) {
-  MTRACE("doReq start");
+  MTRACE("doReq start ID:{} @{}", mreq->getID(), globalClock);
 
   trackAddress(mreq);
 
@@ -851,7 +844,7 @@ void CCache::doReq(MemRequest *mreq) {
     return;
   }
 
-  when = inOrderUpMessageAbs(when);
+  //when = inOrderUpMessageAbs(when);
 
   if (justDirectory) {
     if (l->needsDisp()) {
@@ -900,7 +893,7 @@ void CCache::doReq(MemRequest *mreq) {
     router->scheduleReqAckAbs(mreq, when);
   }
 
-  MTRACE("doReq done {}", when);
+  MTRACE("doReq done  ID:{} @{}", mreq->getID(), when);
 
   port.reqRetire(mreq);
   mshr->retire(addr, mreq);

@@ -272,7 +272,6 @@ public:
   bool   isLdCache    = false;
   Time_t memReqTimeL1 = 0;
 #endif
-  Dinst *clone();
 
   bool is_safe() const { return !speculative; }
   bool is_spec() const { return speculative; }
@@ -297,13 +296,12 @@ public:
   void          clearSafe() { isSafe = false; }
 #endif
 
-  static Dinst *create(const Instruction *inst, Addr_t pc, Addr_t address, Hartid_t fid, bool keep_stats) {
+  static Dinst *create(Instruction &&inst, Addr_t pc, Addr_t address, Hartid_t fid, bool keep_stats) {
     Dinst *i = dInstPool.out();
-
-    I(inst);
+    I(inst.getOpcode()!=iOpInvalid);
 
     i->fid      = fid;
-    i->inst     = *inst;
+    i->inst     = std::move(inst);
     i->pc       = pc;
     i->addr     = address;
     i->inflight = 0;

@@ -10,23 +10,25 @@
 //
 // -3 cores doing a write simultaneously, how to handle snoops
 
-#include <stdio.h>
-#include <strings.h>
-
+#include <cstdio>
 #include <exception>
 
-#include "CCache.h"
-#include "DInst.h"
-#include "GProcessor.h"
-#include "Instruction.h"
-#include "MemObj.h"
-#include "MemRequest.h"
-#include "MemStruct.h"
-#include "Memory_system.h"
-#include "RAWDInst.h"
-#include "callback.h"
 #include "gtest/gtest.h"
-#include "nanassert.h"
+
+#include "fmt/format.h"
+#include "iassert.hpp"
+
+#include "config.hpp"
+#include "report.hpp"
+#include "ccache.hpp"
+#include "dinst.hpp"
+#include "gprocessor.hpp"
+#include "instruction.hpp"
+#include "memobj.hpp"
+#include "memrequest.hpp"
+#include "memstruct.hpp"
+#include "memory_system.hpp"
+#include "callback.hpp"
 
 using ::testing::EmptyTestEventListener;
 using ::testing::InitGoogleTest;
@@ -44,12 +46,6 @@ extern bool forcemsgdump;
 static int rd_pending     = 0;
 static int wr_pending     = 0;
 static int num_operations = 0;
-
-#ifdef ENABLE_NBSD
-#include "MemRequest.h"
-void meminterface_start_snoop_req(uint64_t addr, bool inv, uint16_t coreid, bool dcache, void *_mreq) { I(0); }
-void meminterface_req_done(void *param, int mesi) { I(0); }
-#endif
 
 enum currState {
   Modified,   // 0
@@ -80,22 +76,18 @@ currState getState(CCache *cache, Addr_t addr) {
   return state;
 }
 
-DInst   *ld;
-DInst   *st;
-RAWDInst rinst;
-
-void rdDone(DInst *dinst) {
-  printf("rddone @%lld\n", (long long)globalClock);
+void rdDone(Dinst *dinst) {
+  //printf("rddone @%lld\n", (long long)globalClock);
 
   rd_pending--;
-  dinst->recycle();
+  dinst->scrap();
 }
 
-void wrDone(DInst *dinst) {
-  printf("wrdone @%lld\n", (long long)globalClock);
+void wrDone(Dinst *dinst) {
+  //printf("wrdone @%lld\n", (long long)globalClock);
 
   wr_pending--;
-  dinst->recycle();
+  dinst->scrap();
 }
 
 static void waitAllMemOpsDone() {
@@ -104,94 +96,181 @@ static void waitAllMemOpsDone() {
   }
 }
 
-typedef CallbackFunction1<DInst *, &rdDone> rdDoneCB;
-typedef CallbackFunction1<DInst *, &wrDone> wrDoneCB;
+typedef CallbackFunction1<Dinst *, &rdDone> rdDoneCB;
+typedef CallbackFunction1<Dinst *, &wrDone> wrDoneCB;
 
 static void doread(MemObj *cache, Addr_t addr) {
   num_operations++;
-  DInst *ldClone = ld->clone();
-  ldClone->setAddr(addr);
+
+  auto *ldClone = Dinst::create(
+      Instruction(iLALU_LD, LREG_R1, LREG_R2, LREG_R3, LREG_R4)
+      ,0xdeaddead // pc
+      ,addr
+      ,0
+      ,true
+    );
 
   while (cache->isBusy(addr)) {
     EventScheduler::advanceClock();
   }
 
   rdDoneCB *cb = rdDoneCB::create(ldClone);
-  printf("rd %x @%lld\n", (unsigned int)addr, (long long)globalClock);
+  //printf("rd %x @%lld\n", (unsigned int)addr, (long long)globalClock);
 
-  MemRequest::sendReqRead(cache, ldClone->has_stats(), addr, cb);
+  MemRequest::sendReqRead(cache, ldClone->has_stats(), ldClone->getAddr(), ldClone->getPC(), cb);
   rd_pending++;
 }
 
 static void doprefetch(MemObj *cache, Addr_t addr) {
   num_operations++;
-  DInst *ldClone = ld->clone();
-  ldClone->setAddr(addr);
+
+  auto *ldClone = Dinst::create(
+      Instruction(iLALU_LD, LREG_R5, LREG_R6, LREG_R7, LREG_R8)
+      ,0xbeefbeef // pc
+      ,addr
+      ,0
+      ,true
+    );
 
   while (cache->isBusy(addr)) {
     EventScheduler::advanceClock();
   }
 
   rdDoneCB *cb = rdDoneCB::create(ldClone);
-  printf("rd %x @%lld\n", (unsigned int)addr, (long long)globalClock);
+  //printf("rd %x @%lld\n", (unsigned int)addr, (long long)globalClock);
 
-  MemRequest::sendReqReadPrefetch(cache, ldClone->has_stats(), addr, cb);
+  cache->tryPrefetch(ldClone->has_stats(), ldClone->getAddr(), 1, 0xF00D, ldClone->getPC(), cb);
   rd_pending++;
 }
 
 static void dowrite(MemObj *cache, Addr_t addr) {
   num_operations++;
-  DInst *stClone = st->clone();
-  stClone->setAddr(addr);
+
+  auto *stClone = Dinst::create(
+      Instruction(iSALU_ST, LREG_R5, LREG_R6, LREG_R7, LREG_R8)
+      ,0x200 // pc
+      ,addr
+      ,0
+      ,true
+    );
 
   while (cache->isBusy(addr)) {
     EventScheduler::advanceClock();
   }
 
   wrDoneCB *cb = wrDoneCB::create(stClone);
-  printf("wr %x @%lld\n", (unsigned int)addr, (long long)globalClock);
+  //printf("wr %x @%lld\n", (unsigned int)addr, (long long)globalClock);
 
-  MemRequest::sendReqWrite(cache, stClone->has_stats(), addr, cb);
+  MemRequest::sendReqWrite(cache, stClone->has_stats(), stClone->getAddr(), stClone->getPC(), cb);
   wr_pending++;
 }
 
-bool            pluggedin = false;
-Gmemory_system *gms_p0    = 0;
-Gmemory_system *gms_p1    = 0;
+Gmemory_system *gms_p0    = nullptr;
+Gmemory_system *gms_p1    = nullptr;
+
+static void setup_config() {
+  std::ofstream file;
+
+  file.open("cachecore.toml");
+
+  file <<
+"[soc]\n"
+"core = [\"c0\",\"c0\"]\n"
+"[c0]\n"
+"type  = \"ooo\"\n"
+"caches        = true\n"
+"dl1           = \"dl1_cache DL1\"\n"
+"il1           = \"dl1_cache IL1\"\n"
+"[dl1_cache]\n"
+"type       = \"cache\"\n"
+"cold_misses = true\n"
+"size       = 32768\n"
+"line_size  = 64\n"
+"delay      = 2\n"
+"miss_delay = 5\n"
+"assoc      = 4\n"
+"repl_policy = \"lru\"\n"
+"port_occ   = 1\n"
+"port_num   = 1\n"
+"port_banks = 32\n"
+"send_port_occ = 1\n"
+"send_port_num = 1\n"
+"max_requests  = 32\n"
+"allocate_miss = true\n"
+"victim        = false\n"
+"coherent      = true\n"
+"inclusive     = true\n"
+"directory     = false\n"
+"nlp_distance = 2\n"
+"nlp_degree   = 1       # 0 disabled\n"
+"nlp_stride   = 1\n"
+"drop_prefetch = true\n"
+"prefetch_degree = 0    # 0 disabled\n"
+"mega_lines1K    = 8    # 8 lines touched, triggers mega/carped prefetch\n"
+"lower_level = \"privl2 L2 sharedby 2\"\n"
+"[privl2]\n"
+"type       = \"cache\"\n"
+"cold_misses = true\n"
+"size       = 1048576\n"
+"line_size  = 64\n"
+"delay      = 7\n"
+"miss_delay = 13\n"
+"assoc      = 4\n"
+"repl_policy = \"lru\"\n"
+"port_occ   = 1\n"
+"port_num   = 1\n"
+"port_banks = 32\n"
+"send_port_occ = 1\n"
+"send_port_num = 1\n"
+"max_requests  = 32\n"
+"allocate_miss = true\n"
+"victim        = false\n"
+"coherent      = true\n"
+"inclusive     = true\n"
+"directory     = false\n"
+"nlp_distance = 2\n"
+"nlp_degree   = 1       # 0 disabled\n"
+"nlp_stride   = 1\n"
+"drop_prefetch = true\n"
+"prefetch_degree = 0    # 0 disabled\n"
+"mega_lines1K    = 8    # 8 lines touched, triggers mega/carped prefetch\n"
+"lower_level = \"l3 l3 shared\"\n"
+"[l3]\n"
+"type       = \"nice\"\n"
+"line_size  = 64\n"
+"delay      = 31\n"
+"cold_misses = false\n"
+"lower_level = \"\"\n"
+    ;
+
+  file.close();
+}
+
 void            initialize() {
+  static bool pluggedin = false;
   if (!pluggedin) {
-    int arg1 = 1;
+    setup_config();
+
+    Report::init();
+    Config::init("cachecore.toml");
 
     gms_p0 = new Memory_system(0);
-    gms_p0->buildMemory_system();
     gms_p1 = new Memory_system(1);
-    gms_p1->buildMemory_system();
     pluggedin = true;
 #ifdef DEBUG_CALLPATH
     forcemsgdump = true;
 #endif
+
+    Config::exit_on_error();
+    EventScheduler::advanceClock();
   }
-
-  // Create a LD (e5d33000) with PC = 0xfeeffeef and address 1203
-  Instruction *ld_inst = new Instruction();
-  ld_inst->set(iLALU_LD, LREG_R1, LREG_R2, LREG_R3, LREG_R4);
-  ld = DInst::create(ld_inst, 0xfeeffeef, 1203, 0, true);
-
-  Instruction *st_inst = new Instruction();
-  st_inst->set(iSALU_ST, LREG_R1, LREG_R2, LREG_R3, LREG_R4);
-  st = DInst::create(st_inst, 0x410, 0x400, 0, true);
 }
 
 CCache *getDL1(Gmemory_system *gms) {
   MemObj *dl1 = gms->getDL1();
-  if (strcasecmp(dl1->getDeviceType(), "cache") != 0) {
-    printf("going down from %s\n", dl1->getDeviceType());
-    MRouter *router = dl1->getRouter();
-    dl1             = router->getDownNode();
-    if (strcasecmp(dl1->getDeviceType(), "cache") != 0) {
-      printf("ERROR: Neither first or second level is a cache %s\n", dl1->getDeviceType());
-      exit(-1);
-    }
+  if (dl1->get_type() != "cache") {
+    fmt::print("ERROR: The first level must be a cache {}\n", dl1->get_type());
+    exit(-1);
   }
 
   CCache *cdl1 = static_cast<CCache *>(dl1);
@@ -201,11 +280,8 @@ CCache *getDL1(Gmemory_system *gms) {
 CCache *getL3(MemObj *L2) {
   MRouter *router2 = L2->getRouter();
   MemObj  *L3      = router2->getDownNode();
-  if (strncasecmp(L3->getName(), "L3", 2) != 0) {
-    return 0;
-  }
-  if (strcasecmp(L3->getDeviceType(), "cache") != 0) {
-    return 0;
+  if (L3->get_type() != "cache") {
+    return nullptr;
   }
 
   CCache *l3c = static_cast<CCache *>(L3);
@@ -215,6 +291,8 @@ CCache *getL3(MemObj *L2) {
 CCache *getL2(MemObj *P0DL1) {
   MRouter *router = P0DL1->getRouter();
   MemObj  *L2     = router->getDownNode();
+  I(L2->get_type() == "cache");
+
   CCache  *l2c    = static_cast<CCache *>(L2);
   // l2c->setNeedsCoherence();
   return l2c;
@@ -229,6 +307,7 @@ protected:
   CCache      *p1dl1;
   virtual void SetUp() {
     initialize();
+
     p0dl1 = getDL1(gms_p0);
 
     p0l2 = getL2(p0dl1);
@@ -861,7 +940,7 @@ TEST_F(CacheTest, l2_bw) {
   waitAllMemOpsDone();
   Time_t l1_rdtime = globalClock - start;
   t                = ((double)l1_rdtime) / conta;
-  printf("L2 BW rd test %lld (%g cycles/l1_rd)\n", l1_rdtime, t);
+  //printf("L2 BW rd test %lld (%g cycles/l1_rd)\n", l1_rdtime, t);
 
   start = globalClock;
   conta = 0;

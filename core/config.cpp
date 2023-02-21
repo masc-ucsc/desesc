@@ -27,6 +27,7 @@ void Config::exit_on_error() {
     return;
   }
 
+  fmt::print("\n");
   for (const auto &e : errors) {
     fmt::print("ERROR:{}\n", e);
   }

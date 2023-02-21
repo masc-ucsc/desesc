@@ -21,6 +21,15 @@ protected:
   RegType dst2;
 
 public:
+  constexpr Instruction(Opcode op, RegType _src1, RegType _src2, RegType _dst1, RegType _dst2) 
+  : opcode(op)
+  , src1(_src1)
+  , src2(_src2)
+  , dst1(_dst1)
+  , dst2(_dst2) {
+
+  }
+
   static const char *opcode2Name(Opcode type);
   void               set(Opcode op, RegType src1, RegType src2, RegType dst1, RegType dst2);
   bool               doesJump2Label() const {

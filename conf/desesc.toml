@@ -238,12 +238,12 @@ iSALU_SC      = "lsu"
 iSALU_ADDR    = "lsu"
 
 [dl1_cache]
-type       = "nice"   # or nice
+type       = "cache"   # or nice
 cold_misses = true
 size       = 32768
 line_size  = 64
 delay      = 3         # hit delay
-miss_delay = 8
+miss_delay = 2
 assoc      = 4
 repl_policy = "lru"
 
@@ -308,13 +308,46 @@ lower_level = "privl2 L2 sharedby 2"
 
 [privl2]
 type       = "nice"   # or nice
-size       = 32768
+cold_misses = true
+size       = 1048576
 line_size  = 64
-delay      = 2         # hit delay
-miss_delay = 8
-cold_misses = false     # cold misses become hits
+delay      = 10         # hit delay
+miss_delay = 2
 assoc      = 4
+repl_policy = "lru"
+
+port_occ   = 1
+port_num   = 1
+port_banks = 32
+
+send_port_occ = 1
+send_port_num = 1
+
+max_requests  = 32
+
+allocate_miss = true   # allocate on cache miss
+victim        = false  # victim cache allocation style
+coherent      = true
+inclusive     = true
+directory     = false
+
+nlp_distance = 2
+nlp_degree   = 1       # 0 disabled
+nlp_stride   = 1
+
+drop_prefetch = true
+prefetch_degree = 0    # 0 disabled
+mega_lines1K    = 8    # 8 lines touched, triggers mega/carped prefetch
+
+lower_level = "l3 l3 shared"
+
+[l3]
+type = "nice"
+line_size = 64
+delay = 31
+cold_misses = false
 lower_level = ""
+
 
 [pref_opt]
 type       = "stride"

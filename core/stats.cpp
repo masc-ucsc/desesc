@@ -13,7 +13,7 @@ void Stats::subscribe() {
   I(!name.empty());
 
   if (store.find(name) != store.end()) {
-    Config::add_error(fmt::format("gstats is added twice with name [{}]. Use another name\n", name));
+    Config::add_error(fmt::format("gstats is added twice with name [{}]. Use another name", name));
     return;
   }
 

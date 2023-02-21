@@ -30,3 +30,13 @@ cc_test(
     ],
 )
 
+cc_test(
+    name = "cache_test",
+    srcs = [
+        "cache_test.cpp",
+    ],
+    deps = [
+        ":mem",
+        "@com_google_googletest//:gtest_main",
+    ],
+)

@@ -12,10 +12,6 @@ Store_buffer::Store_buffer(Hartid_t hid) {
   auto                     l1_sec = v[0];
   line_size                       = Config::get_power2(l1_sec, "line_size");
   
-  for (size_t  i = 0; i < v.size(); i++)
-  {
-    printf("v[%ld] = %s \n", i, v[i].c_str());
-  }
   scb_clean_lines     = 0;
   line_size_addr_bits = log2i(line_size);
   line_size_mask      = line_size - 1;
@@ -27,10 +23,7 @@ Store_buffer::Store_buffer(Hartid_t hid, MemObj *dl10) {
   auto                     l1_sec = v[0];
   line_size                       = Config::get_power2(l1_sec, "line_size");
   dl1 = dl10;
-  for (size_t  i = 0; i < v.size(); i++)
-  {
-    printf("v[%ld] = %s \n", i, v[i].c_str());
-  }
+  
   scb_clean_lines     = 0;
   line_size_addr_bits = log2i(line_size);
   line_size_mask      = line_size - 1;

@@ -40,3 +40,16 @@ cc_test(
         "@com_google_googletest//:gtest_main",
     ],
 )
+
+cc_test(
+    name = "store_buffer_test",
+    srcs = [
+        "store_buffer_test.cpp",
+    ],
+    deps = [
+        "//simu:simu",
+        ":mem",
+        "@com_google_googletest//:gtest",
+        "@com_google_googletest//:gtest_main"
+    ],
+)

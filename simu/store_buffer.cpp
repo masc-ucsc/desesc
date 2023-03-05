@@ -11,12 +11,32 @@ Store_buffer::Store_buffer(Hartid_t hid) {
   std::vector<std::string> v      = absl::StrSplit(Config::get_string("soc", "core", hid, "il1"), ' ');
   auto                     l1_sec = v[0];
   line_size                       = Config::get_power2(l1_sec, "line_size");
-
+  
+  for (size_t  i = 0; i < v.size(); i++)
+  {
+    printf("v[%ld] = %s \n", i, v[i].c_str());
+  }
   scb_clean_lines     = 0;
   line_size_addr_bits = log2i(line_size);
   line_size_mask      = line_size - 1;
   scb_size            = Config::get_integer("soc", "core", hid, "scb_size", 1, 2048);
 }
+
+Store_buffer::Store_buffer(Hartid_t hid, MemObj *dl10) {
+  std::vector<std::string> v      = absl::StrSplit(Config::get_string("soc", "core", hid, "il1"), ' ');
+  auto                     l1_sec = v[0];
+  line_size                       = Config::get_power2(l1_sec, "line_size");
+  dl1 = dl10;
+  for (size_t  i = 0; i < v.size(); i++)
+  {
+    printf("v[%ld] = %s \n", i, v[i].c_str());
+  }
+  scb_clean_lines     = 0;
+  line_size_addr_bits = log2i(line_size);
+  line_size_mask      = line_size - 1;
+  scb_size            = Config::get_integer("soc", "core", hid, "scb_size", 1, 2048);
+}
+
 
 bool Store_buffer::can_accept_st(Addr_t st_addr) const {
   if ((static_cast<int>(lines.size()) - scb_clean_lines) < scb_size) {

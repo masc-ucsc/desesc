@@ -75,12 +75,13 @@ protected:
 
 public:
 void setupStoreBuffer() {
-    MemObj *dl1 = global_mem_sys_p0->getDL1();
-    if (dl1->get_type() != "cache") {
-      fmt::print("ERROR: The first level must be a cache {}\n", dl1->get_type());
+    MemObj *dl10 = global_mem_sys_p0->getDL1();
+    if (dl10->get_type() != "cache") {
+      fmt::print("ERROR: The first level must be a cache {}\n", dl10->get_type());
       exit(-1);
     }
-    sb  = new Store_buffer(0, dl1);
+    sb  = new Store_buffer(0);
+    sb->dl1 = dl10;
   }
 Dinst *createStInst() {
   Addr_t addr    = 0x200;
@@ -101,7 +102,7 @@ Addr_t sb_calc_offset(Addr_t addr) {
 size_t get_line_size() {
 	return sb->line_size;
 }
-friend class Store_buffer;
+
 };
 /* The first test checks that if the store buffer line can accept a new store instruction,
 by adding a store instruction to the store buffer line and then checking a data_forwarding load */

@@ -99,7 +99,7 @@ static void waitAllMemOpsDone() {
 typedef CallbackFunction1<Dinst *, &rdDone> rdDoneCB;
 typedef CallbackFunction1<Dinst *, &wrDone> wrDoneCB;
 
-static void doread(MemObj *cache, Addr_t addr) {
+static void doread(MemObj *cache, Addr_t addr, bool spectreSafe = false) {
   num_operations++;
 
   auto *ldClone = Dinst::create(
@@ -117,7 +117,11 @@ static void doread(MemObj *cache, Addr_t addr) {
   rdDoneCB *cb = rdDoneCB::create(ldClone);
   //printf("rd %x @%lld\n", (unsigned int)addr, (long long)globalClock);
 
-  MemRequest::sendReqRead(cache, ldClone->has_stats(), ldClone->getAddr(), ldClone->getPC(), cb);
+  if (spectreSafe) {
+    MemRequest::sendSpecReqDL1Read(cache, ldClone->has_stats(), ldClone->getAddr(), ldClone->getPC(), ldClone, cb);
+  } else {
+    MemRequest::sendReqRead(cache, ldClone->has_stats(), ldClone->getAddr(), ldClone->getPC(), cb);
+  }
   rd_pending++;
 }
 
@@ -167,11 +171,19 @@ static void dowrite(MemObj *cache, Addr_t addr) {
 
 Gmemory_system *gms_p0    = nullptr;
 Gmemory_system *gms_p1    = nullptr;
+bool  spectreSafe         = false;
 
 static void setup_config() {
   std::ofstream file;
 
   file.open("cachecore.toml");
+
+  std::string victim    = "victim        = false\n";
+  std::string inclusive = "inclusive     = true\n";
+  if (spectreSafe) {
+    victim    = "victim        = true\n";
+    inclusive = "inclusive     = false\n";
+  }
 
   file <<
 "[soc]\n"
@@ -196,10 +208,12 @@ static void setup_config() {
 "send_port_occ = 1\n"
 "send_port_num = 1\n"
 "max_requests  = 32\n"
-"allocate_miss = true\n"
-"victim        = false\n"
-"coherent      = true\n"
-"inclusive     = true\n"
+"allocate_miss = true\n";
+  file << victim;
+  file <<
+"coherent      = true\n";
+  file << inclusive;
+  file <<
 "directory     = false\n"
 "nlp_distance = 2\n"
 "nlp_degree   = 1       # 0 disabled\n"
@@ -223,10 +237,12 @@ static void setup_config() {
 "send_port_occ = 1\n"
 "send_port_num = 1\n"
 "max_requests  = 32\n"
-"allocate_miss = true\n"
-"victim        = false\n"
-"coherent      = true\n"
-"inclusive     = true\n"
+"allocate_miss = true\n";
+  file << victim;
+  file <<
+"coherent      = true\n";
+  file << inclusive;
+  file <<
 "directory     = false\n"
 "nlp_distance = 2\n"
 "nlp_degree   = 1       # 0 disabled\n"
@@ -320,11 +336,57 @@ protected:
   }
   virtual void TearDown() {}
 };
+// Spectre safe test checks if speculative requests from the CPU
+// update the LRU only once the memreq has become nonspeculative
+
+TEST_F(CacheTest, spectre_safe) {
+  if (spectreSafe) {
+    fmt::print("Only Spectre Safety Cache Test is being run\n");
+    MemRequest::sendDirtyDisp(p0dl1, p0dl1, 0x40000, false);
+    globalClock++;
+    MemRequest::sendDirtyDisp(p0dl1, p0dl1, 0x80000, false);
+    globalClock++;
+    MemRequest::sendDirtyDisp(p0dl1, p0dl1, 0xC0000, false);
+    globalClock++;
+    MemRequest::sendDirtyDisp(p0dl1, p0dl1, 0x100000, false);
+    globalClock++;
+    // set has been filled
+    EXPECT_EQ(Modified, getState(p0dl1, 0x40000));
+    EXPECT_EQ(Modified, getState(p0dl1, 0x80000));
+    EXPECT_EQ(Modified, getState(p0dl1, 0xC0000));
+    EXPECT_EQ(Modified, getState(p0dl1, 0x100000));
+    EXPECT_EQ(Invalid,  getState(p0dl1, 0x140000));
+    // LRU Policy should set 0x40000 to recently accessed, next eviction is 0x80000
+    MemRequest::sendCleanDisp(p0dl1, p0dl1, 0x40000, false, false);
+    globalClock++;
+    MemRequest::sendDirtyDisp(p0dl1, p0dl1, 0x140000, false);
+    globalClock++;
+    EXPECT_EQ(Modified, getState(p0dl1, 0x40000));
+    EXPECT_EQ(Invalid,  getState(p0dl1, 0x80000));
+    EXPECT_EQ(Modified, getState(p0dl1, 0xC0000));
+    EXPECT_EQ(Modified, getState(p0dl1, 0x100000));
+    EXPECT_EQ(Modified, getState(p0dl1, 0x140000));
+    // LRU Policy should not be updated, expect 0xC0000 to be next eviction
+    doread(p0dl1, 0xC0000, true); // does not update LRU
+    waitAllMemOpsDone();
+    MemRequest::sendDirtyDisp(p0dl1, p0dl1, 0x80000, false);
+    globalClock++;
+    EXPECT_EQ(Modified, getState(p0dl1, 0x40000));
+    EXPECT_EQ(Modified, getState(p0dl1, 0x80000));
+    EXPECT_EQ(Invalid,  getState(p0dl1, 0xC0000));
+    EXPECT_EQ(Modified, getState(p0dl1, 0x100000));
+    EXPECT_EQ(Modified, getState(p0dl1, 0x140000));
+  } else {
+    GTEST_SKIP();
+  }
+}
 
 // the first test checks that if no cache has data and then one
 // cache reads it from memory, then that cache gets set to Exclusive
-
 TEST_F(CacheTest, l1miss_l2miss) {
+  if (spectreSafe) {
+    GTEST_SKIP();
+  }
   doread(p0dl1, 0x100);  // L1 miss, L2 miss
   waitAllMemOpsDone();
   EXPECT_EQ(Exclusive, getState(p0dl1, 0x100));
@@ -341,6 +403,9 @@ TEST_F(CacheTest, l1miss_l2miss) {
 }
 
 TEST_F(CacheTest, L1miss_l2hit) {
+  if (spectreSafe) {
+    GTEST_SKIP();
+  }
   doread(p0l2, 0x180);  // L2 miss
   waitAllMemOpsDone();
   EXPECT_EQ(Invalid, getState(p0dl1, 0x180));
@@ -369,6 +434,9 @@ TEST_F(CacheTest, L1miss_l2hit) {
 }
 
 TEST_F(CacheTest, multiple_reqs) {
+  if (spectreSafe) {
+    GTEST_SKIP();
+  }
   // Setup, L2 line (empty in all the others)
   doread(p0l2, 0xF000);  // L2 miss
   waitAllMemOpsDone();
@@ -418,6 +486,9 @@ TEST_F(CacheTest, multiple_reqs) {
 // the second test checks that if one cache reads a line and then
 // a second cache reads that line,  both become shared
 TEST_F(CacheTest, Shared_second_test) {
+  if (spectreSafe) {
+    GTEST_SKIP();
+  }
   doread(p0dl1, 0x200);
   waitAllMemOpsDone();
   doread(p1dl1, 0x200);
@@ -453,6 +524,9 @@ TEST_F(CacheTest, Shared_second_test) {
 // the state of that cache goes to modified
 
 TEST_F(CacheTest, Modified_third_test) {
+  if (spectreSafe) {
+    GTEST_SKIP();
+  }
   dowrite(p0dl1, 0x300);
   waitAllMemOpsDone();
   EXPECT_EQ(Modified, getState(p0dl1, 0x300));
@@ -473,6 +547,9 @@ TEST_F(CacheTest, Modified_third_test) {
 // currently this test fails, and it stays at exclusive
 //
 TEST_F(CacheTest, Modified_fourth_test) {
+  if (spectreSafe) {
+    GTEST_SKIP();
+  }
   doread(p0dl1, 0x400);
   waitAllMemOpsDone();
   dowrite(p0dl1, 0x400);
@@ -493,6 +570,9 @@ TEST_F(CacheTest, Modified_fourth_test) {
 // second becomes shared
 //
 TEST_F(CacheTest, Owner_fifth_test) {
+  if (spectreSafe) {
+    GTEST_SKIP();
+  }
   dowrite(p0dl1, 0x500);
   waitAllMemOpsDone();
   doread(p1dl1, 0x500);
@@ -533,6 +613,9 @@ TEST_F(CacheTest, Owner_fifth_test) {
 // The test currently passes, but it should be noted that the cache line does
 // not actually enter an invalid state, it is just assigned a null pointer
 TEST_F(CacheTest, Invalid_sixth_test) {
+  if (spectreSafe) {
+    GTEST_SKIP();
+  }
   doread(p0dl1, 0x600);
   waitAllMemOpsDone();
   dowrite(p1dl1, 0x600);
@@ -580,6 +663,9 @@ TEST_F(CacheTest, Invalid_sixth_test) {
 // write and becomes modified, while the first cache is invalidated.
 
 TEST_F(CacheTest, Invalid_seventh_test) {
+  if (spectreSafe) {
+    GTEST_SKIP();
+  }
   doread(p0dl1, 0x700);
   waitAllMemOpsDone();
   EXPECT_EQ(Exclusive, getState(p0dl1, 0x700));
@@ -632,6 +718,9 @@ TEST_F(CacheTest, Invalid_seventh_test) {
 // This test fails. The first cache does transition from Owner to Invalid,
 // but the second cache fails to go from shared to modified.
 TEST_F(CacheTest, Invalid_eighth_test) {
+  if (spectreSafe) {
+    GTEST_SKIP();
+  }
   dowrite(p1dl1, 0x800);
   waitAllMemOpsDone();
   doread(p0dl1, 0x800);
@@ -668,6 +757,9 @@ TEST_F(CacheTest, Invalid_eighth_test) {
 // cache does a write which makes it modified and the first cache invalid
 //
 TEST_F(CacheTest, Invalid_ninth_test) {
+  if (spectreSafe) {
+    GTEST_SKIP();
+  }
   doread(p0dl1, 0x900);
   waitAllMemOpsDone();
   dowrite(p1dl1, 0x900);
@@ -776,6 +868,9 @@ TEST_F(CacheTest, Invalid_ninth_test) {
 }
 
 TEST_F(CacheTest, justDirectory) {
+  if (spectreSafe) {
+    GTEST_SKIP();
+  }
   printf("BEGIN L2 directory test\n");
   doread(p0dl1, 0x900);
   waitAllMemOpsDone();
@@ -914,6 +1009,9 @@ TEST_F(CacheTest,prefetch2) {
 #endif
 
 TEST_F(CacheTest, l2_bw) {
+  if (spectreSafe) {
+    GTEST_SKIP();
+  }
   printf("BEGIN L2 BW test\n");
 
   Time_t start;

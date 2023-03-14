@@ -300,11 +300,11 @@ void CCache::displaceLine(Addr_t naddr, MemRequest *mreq, Line *l) {
   displacedSend.inc(doStats);
 
   if (l->needsDisp()) {
-    MTRACE("displace 0x%llx dirty", naddr);
+    MTRACE("displace {0:#x} dirty", naddr);
     router->sendDirtyDisp(naddr, mreq->has_stats(), 1);
     writeBack.inc(mreq->has_stats());
   } else {
-    MTRACE("displace 0x%llx clean", naddr);
+    MTRACE("displace {0:#x} clean", naddr);
     router->sendCleanDisp(naddr, l->isPrefetch(), mreq->has_stats(), 1);
   }
 
@@ -495,7 +495,7 @@ void CCache::CState::adjustState(MemRequest *mreq, int16_t portid) {
     } else {
       I(mreq->getAction() == ma_setValid);
       if (nSharers == 0) {
-        state = I;
+        //state = I;
       }
     }
   } else if (mreq->isSetStateAck()) {
@@ -735,7 +735,7 @@ void CCache::doReq(MemRequest *mreq) {
   }
 
   Line *l = 0;
-  if (mreq->isPrefetch()) {
+  if (mreq->isPrefetch() || mreq->is_spec()) {
     l = cacheBank->findLineNoEffect(addr, mreq->getPC());
   } else {
     l = cacheBank->readLine(addr, mreq->getPC());
@@ -906,7 +906,12 @@ void CCache::doDisp(MemRequest *mreq) {
 
   // A disp being prefetch means that the line was prefetched but never used
 
-  Line *l = cacheBank->findLineNoEffect(addr, mreq->getPC());
+  Line *l;
+  if (mreq->is_safe()) {
+    l = cacheBank->findLine(addr, mreq->getPC());
+  } else {
+    l = cacheBank->findLineNoEffect(addr, mreq->getPC());
+  }
   if (l == 0 && victim && allocateMiss && !mreq->isPrefetch()) {
     MTRACE("doDisp allocateLine");
     l = allocateLine(addr, mreq);

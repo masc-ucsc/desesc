@@ -40,3 +40,14 @@ cc_test(
         "@com_google_googletest//:gtest_main",
     ],
 )
+
+cc_test(
+    name = "spectre_safe_exclusive_cache_test",
+    srcs = [
+        "spectre_safe_exclusive_cache_test.cpp",
+    ],
+    deps = [
+        ":mem",
+        "@com_google_googletest//:gtest_main",
+    ],
+)

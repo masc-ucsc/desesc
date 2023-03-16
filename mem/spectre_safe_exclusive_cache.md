@@ -1,7 +1,7 @@
 # The Spectre-Safe Exclusive Cache in DESESC: Implementation and Tests
 
 ## Implementation
-The implementation follows the proposal, which can be found [here](https://demo.hedgedoc.org/s/F_K61OTi2).
+The implementation follows the proposal, which can be found [here](https://demo.hedgedoc.org/s/F_K61OTi2). The general idea is to avoid speculative look-up, allocation (eviction), and invalidation. All speculative operations bring no effect.
 
 ## Tests
 

@@ -494,9 +494,9 @@ void CCache::CState::adjustState(MemRequest *mreq, int16_t portid) {
       state = M;
     } else {
       I(mreq->getAction() == ma_setValid);
-      if (nSharers == 0) {
-        state = I;
-      }
+      // if (nSharers == 0) {
+      //   state = I;
+      // }
     }
   } else if (mreq->isSetStateAck()) {
     if (mreq->getAction() == ma_setInvalid) {
@@ -735,7 +735,9 @@ void CCache::doReq(MemRequest *mreq) {
   }
 
   Line *l = 0;
-  if (mreq->isPrefetch()) {
+  if (mreq->isPrefetch() || (victim && mreq->is_spec())) {
+    // for exclusive spectre-safe cache,
+    // if spec, look up with no effect
     l = cacheBank->findLineNoEffect(addr, mreq->getPC());
   } else {
     l = cacheBank->readLine(addr, mreq->getPC());
@@ -890,6 +892,11 @@ void CCache::doReq(MemRequest *mreq) {
     }
   } else {
     mreq->convert2ReqAck(l->reqAckNeeds());
+    if (victim && mreq->is_safe()) {
+      // for exclusive spectre-safe cache,
+      // invalidate iff not speculative
+      l->invalidate();
+    }
     router->scheduleReqAckAbs(mreq, when);
   }
 
@@ -945,7 +952,9 @@ void CCache::doReqAck(MemRequest *mreq) {
     if (!mreq->isNonCacheable()) {
       Addr_t addr = mreq->getAddr();
       Line  *l    = 0;
-      if (mreq->isPrefetch()) {
+      if (mreq->isPrefetch() || (victim && mreq->is_spec())) {
+        // for exclusive spectre-safe cache,
+        // if spec, look up with no effect
         l = cacheBank->findLineNoEffect(addr, mreq->getPC());
       } else {
         l = cacheBank->readLine(addr, mreq->getPC());
@@ -976,6 +985,11 @@ void CCache::doReqAck(MemRequest *mreq) {
           MTRACE("doReqAck allocateLine");
           l = allocateLine(addr, mreq);
         } else if (!allocateMiss && mreq->isHomeNode()) {
+          MTRACE("doReqAck allocateLine");
+          l = allocateLine(addr, mreq);
+        } else if (victim && mreq->is_safe() && mreq->isHomeNode()) {
+          // for exclusive spectre-safe cache,
+          // allocate iff non-speculative & top-level
           MTRACE("doReqAck allocateLine");
           l = allocateLine(addr, mreq);
         }

@@ -5,7 +5,9 @@ The implementation follows the proposal, which can be found [here](https://demo.
 
 ## Tests
 
-The test file [spectre_safe_exclusive_cache_test.cpp](spectre_safe_exclusive_cache_test.cpp) is based on the existing [coherence cache test file](cache_test.cpp). There are 4 tests for exclusiveness and 3 tests for spectre-safeness. To build and run the tests:
+The test file [spectre_safe_exclusive_cache_test.cpp](spectre_safe_exclusive_cache_test.cpp) is based on the existing [coherence cache test file](cache_test.cpp). The modifications made (git diff) can be found [here](https://github.com/kofyou/desesc/commit/3a188c785462c794560386ff8bee584c42d1f341).
+
+There are 4 tests for exclusiveness and 3 tests for spectre-safeness. To build and run the tests:
 ```
 bazelisk build -c dbg //mem:spectre_safe_exclusive_cache_test
 

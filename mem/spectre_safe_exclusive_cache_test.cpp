@@ -1,3 +1,8 @@
+// Acknowledgement: This file uses cache_test.cpp as a template
+
+// This tests the exclusive spectre-safe cache, whose implementation
+// currently takes advantage of the victim configuration
+
 // See LICENSE for details.
 
 // cache test
@@ -99,7 +104,8 @@ static void waitAllMemOpsDone() {
 typedef CallbackFunction1<Dinst *, &rdDone> rdDoneCB;
 typedef CallbackFunction1<Dinst *, &wrDone> wrDoneCB;
 
-static void doread(MemObj *cache, Addr_t addr) {
+// non-speculative read by default
+static void doread(MemObj *cache, Addr_t addr, bool spec = false) {
   num_operations++;
 
   auto *ldClone = Dinst::create(
@@ -117,7 +123,11 @@ static void doread(MemObj *cache, Addr_t addr) {
   rdDoneCB *cb = rdDoneCB::create(ldClone);
   //printf("rd %x @%lld\n", (unsigned int)addr, (long long)globalClock);
 
-  MemRequest::sendReqRead(cache, ldClone->has_stats(), ldClone->getAddr(), ldClone->getPC(), cb);
+  if (spec) {
+    MemRequest::sendSpecReqDL1Read(cache, ldClone->has_stats(), ldClone->getAddr(), ldClone->getPC(), /*Dinst *dinst*/ 0, cb);
+  } else {
+    MemRequest::sendSafeReqDL1Read(cache, ldClone->has_stats(), ldClone->getAddr(), ldClone->getPC(), /*Dinst *dinst*/ 0, cb);
+  }
   rd_pending++;
 }
 
@@ -165,6 +175,26 @@ static void dowrite(MemObj *cache, Addr_t addr) {
   wr_pending++;
 }
 
+// return an address based on the cache level,
+// the specified tag, index, and offeset
+static Addr_t designAddr(Addr_t level, Addr_t tag, Addr_t index, Addr_t offset) {
+  // hardcoded offset 6 bits
+  Addr_t index_base = 1 << 6;
+  Addr_t tag_base;
+  if (level == 1) {
+    // hardcoded L1 index bits
+    // 32768 / 64 / 4 = 128 sets: index 7 bits
+    tag_base = 1 << 13;
+  } else if (level == 2) {
+    // hardcoded L2 index bits
+    // 1048576 / 64 / 4 = 4096 sets: index 12 bits
+    tag_base = 1 << 18;
+  } else {
+    EXPECT_EQ(true, false);
+  }
+  return tag * tag_base + index * index_base + offset;
+}
+
 Gmemory_system *gms_p0    = nullptr;
 Gmemory_system *gms_p1    = nullptr;
 
@@ -197,9 +227,9 @@ static void setup_config() {
 "send_port_num = 1\n"
 "max_requests  = 32\n"
 "allocate_miss = true\n"
-"victim        = false\n"
+"victim        = true   # exclusive spectre-safe\n"
 "coherent      = true\n"
-"inclusive     = true\n"
+"inclusive     = false  # exclusive\n"
 "directory     = false\n"
 "nlp_distance = 2\n"
 "nlp_degree   = 1       # 0 disabled\n"
@@ -224,9 +254,9 @@ static void setup_config() {
 "send_port_num = 1\n"
 "max_requests  = 32\n"
 "allocate_miss = true\n"
-"victim        = false\n"
+"victim        = true   # exclusive spectre-safe\n"
 "coherent      = true\n"
-"inclusive     = true\n"
+"inclusive     = false  # exclusive\n"
 "directory     = false\n"
 "nlp_distance = 2\n"
 "nlp_degree   = 1       # 0 disabled\n"
@@ -321,6 +351,165 @@ protected:
   virtual void TearDown() {}
 };
 
+// Test exclusiveness
+
+// read to L1, it should not be in L2
+TEST_F(CacheTest, readL1_exclusive) {
+  // addr for L1 index 1
+  Addr_t addr = designAddr(1, 0, 1, 0);
+  doread(p0dl1, addr);
+  waitAllMemOpsDone();
+
+  // ensure that the line is in L1 but not L2
+  EXPECT_EQ(Exclusive, getState(p0dl1, addr));
+  EXPECT_EQ(Invalid, getState(p0l2, addr));
+}
+
+// read to L2, then read to L1,
+// it should no longer be in L2
+TEST_F(CacheTest, readL2_readL1_invalidation) {
+  // addr for L2 index 2
+  Addr_t addr = designAddr(2, 0, 2, 0);
+  doread(p0l2, addr);
+  waitAllMemOpsDone();
+
+  doread(p0dl1, addr);
+  waitAllMemOpsDone();
+
+  // ensure that the line is sent to L1
+  EXPECT_EQ(Exclusive, getState(p0dl1, addr));
+  EXPECT_EQ(Invalid, getState(p0l2, addr));
+}
+
+// read to L1, then displace it,
+// it should be in L2
+TEST_F(CacheTest, readL1_dispL1_victim) {
+  // addr for L1 index 3 with different tag
+  Addr_t to_evict = designAddr(1, 0, 3, 0);
+  doread(p0dl1, to_evict);
+  waitAllMemOpsDone();
+
+  doread(p0dl1, designAddr(1, 1, 3, 0));
+  doread(p0dl1, designAddr(1, 2, 3, 0));
+  doread(p0dl1, designAddr(1, 3, 3, 0));
+  waitAllMemOpsDone();
+
+  // before eviction the line in in L1 but not L2
+  EXPECT_EQ(Exclusive, getState(p0dl1, to_evict));
+  EXPECT_EQ(Invalid, getState(p0l2, to_evict));
+
+  // evict
+  doread(p0dl1, designAddr(1, 4, 3, 0));
+  waitAllMemOpsDone();
+
+  // ensure that the evicted line is in L2
+  EXPECT_EQ(Invalid, getState(p0dl1, to_evict));
+  EXPECT_EQ(Exclusive, getState(p0l2, to_evict));
+}
+
+// read to L1, read to L2, then displace L2,
+// it should still be in L1 since it does not send back invalidations
+TEST_F(CacheTest, readL1L2_dispL2_no_bak_inv) {
+  // addr for L2 index 4 with different tag
+  Addr_t to_evict = designAddr(2, 0, 4, 0);
+
+  // read to L1
+  doread(p0dl1, to_evict);
+  waitAllMemOpsDone();
+
+  // read to L2
+  doread(p0l2, to_evict);
+  // there seem to be some strange re-orderings
+  // have to finish this first
+  waitAllMemOpsDone();
+
+  doread(p0l2, designAddr(2, 1, 4, 0));
+  doread(p0l2, designAddr(2, 2, 4, 0));
+  doread(p0l2, designAddr(2, 3, 4, 0));
+  waitAllMemOpsDone();
+
+  // before eviction the line is in L1 and L2
+  EXPECT_EQ(Exclusive, getState(p0dl1, to_evict));
+  EXPECT_EQ(Exclusive, getState(p0l2, to_evict));
+
+  // evict
+  doread(p0l2, designAddr(2, 4, 4, 0));
+  waitAllMemOpsDone();
+
+  // ensure that the line is on longer in L2 but stays in L1
+  EXPECT_EQ(Exclusive, getState(p0dl1, to_evict));
+  EXPECT_EQ(Invalid, getState(p0l2, to_evict));
+}
+
+// Test spectre-safeness
+
+// read to L1 speculatively,
+// but it should not be a valid line because no speculative allocation is allowed
+TEST_F(CacheTest, sreadL1_no_alloc) {
+  // addr for L1 index 5
+  Addr_t addr = designAddr(1, 0, 5, 0);
+
+  // speculative read to L1
+  bool spec = true;
+  doread(p0dl1, addr, spec);
+  waitAllMemOpsDone();
+
+  // no allocation
+  EXPECT_EQ(Invalid, getState(p0dl1, addr));
+  EXPECT_EQ(Invalid, getState(p0l2, addr));
+}
+
+// read to L2, then read to L1 speculatively, 
+// L2 should still have the line because no speculative invalidation is allowed
+TEST_F(CacheTest, readL2_sreadL1_no_inv) {
+  // addr for L2 index 6
+  Addr_t addr = designAddr(2, 0, 6, 0);
+  doread(p0l2, addr);
+  waitAllMemOpsDone();
+
+  // speculative read to L1
+  bool spec = true;
+  doread(p0dl1, addr, spec);
+  waitAllMemOpsDone();
+
+  // no allocation in L1
+  // no invalidation in L2
+  EXPECT_EQ(Invalid, getState(p0dl1, addr));
+  EXPECT_EQ(Exclusive, getState(p0l2, addr));
+}
+
+
+// read to L1, and the following speculative read shall not update LRU,
+// due to no effect look-up
+TEST_F(CacheTest, readL1_sreadL1_no_LRU) {
+  // addr for L1 index 7 with different tag
+  Addr_t to_evict = designAddr(1, 0, 7, 0);
+  doread(p0dl1, to_evict);
+  waitAllMemOpsDone();
+  doread(p0dl1, designAddr(1, 1, 7, 0));
+  doread(p0dl1, designAddr(1, 2, 7, 0));
+  doread(p0dl1, designAddr(1, 3, 7, 0));
+  waitAllMemOpsDone();
+
+  // speculative read to L1
+  // it shall not update LRU
+  bool spec = true;
+  doread(p0dl1, to_evict, spec);
+  waitAllMemOpsDone();
+
+  // before eviction the line is there
+  EXPECT_EQ(Exclusive, getState(p0dl1, to_evict));
+
+  // evict
+  doread(p0dl1, designAddr(1, 4, 7, 0));
+  waitAllMemOpsDone();
+
+  // ensure that the oldest line gets evicted
+  // even if it is touched by a spec read
+  EXPECT_EQ(Invalid, getState(p0dl1, to_evict));
+}
+
+#if 0
 // the first test checks that if no cache has data and then one
 // cache reads it from memory, then that cache gets set to Exclusive
 
@@ -955,3 +1144,4 @@ TEST_F(CacheTest, l2_bw) {
 
   printf("END L2 BW test\n");
 }
+#endif

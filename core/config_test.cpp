@@ -34,10 +34,10 @@ protected:
     file << "a = [\"leaf1\", \"leaf2\"]\n";
     file << "[leaf1]\n";
     file << "v=3\n";
-    file << "str=foo\n";
+    file << "str=\"foo\"\n";
     file << "[leaf2]\n";
     file << "v=4\n";
-    file << "str=bar\n";
+    file << "str=\"bar\"\n";
 
     file.close();
   }

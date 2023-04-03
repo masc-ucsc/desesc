@@ -430,6 +430,8 @@ StallCause OoOProcessor::add_inst(Dinst *dinst) {
 #ifdef TRACK_FORWARDING
   avgNumSrc.sample(inst->getnsrc(), dinst->has_stats());
   avgNumDep.sample(n, dinst->has_stats());
+#else
+  (void)n;
 #endif
 
   dinst->setRAT1Entry(&RAT[inst->getDst1()]);

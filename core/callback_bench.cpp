@@ -10,11 +10,6 @@ typedef CallbackFunction0<&counter_fsm>       counter2_fsmCB;
 int total = 0;
 
 void counter_fsm() {
-  static int local = 1;
-
-  local++;
-
-  // printf("counter_fms local:%d clock:@%lld\n", local, (long long)globalClock);
 
   if (total & 1) {
     counter2_fsmCB::create()->schedule(1);  // +1cycle

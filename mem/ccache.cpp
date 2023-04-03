@@ -218,15 +218,12 @@ CCache::~CCache() { cacheBank->destroy(); }
 void CCache::cleanup() {
   int n = cacheBank->getNumLines();
 
-  int nInvalidated = 0;
-
   for (int i = 0; i < n; i++) {
     Line *l = cacheBank->getPLine(n);
     if (!l->isValid()) {
       continue;
     }
 
-    nInvalidated++;
     l->invalidate();
   }
 

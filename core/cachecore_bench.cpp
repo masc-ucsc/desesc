@@ -114,6 +114,7 @@ static void setup_config() {
   file << "size       = 32768\n";
   file << "line_size  = 64\n";
   file << "delay      = 2         # hit delay\n";
+  file << "repl_policy = \"LRU\"\n";
   file << "miss_delay = 8\n";
   file << "assoc      = 4\n";
   file << "\n";

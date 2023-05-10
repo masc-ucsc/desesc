@@ -27,7 +27,6 @@ http_archive(
     sha256 = "cdc885473510ae0ea909b5589367f8da784df8b00325c55c7cbbab3058424120",
     strip_prefix = "fmt-9.1.0",
     urls = [
-        #"https://github.com/fmtlib/fmt/archive/7bdf0628b1276379886c7f6dda2cef2b3b374f0b.zip",
         "https://github.com/fmtlib/fmt/archive/refs/tags/9.1.0.zip",
     ],
 )

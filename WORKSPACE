@@ -8,16 +8,17 @@ load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
 # google benchmark
 http_archive(
     name = "com_google_benchmark",
-    sha256 = "2d6c797dbd21bd230afca4080731c49a71307de0985c63cb69ccde1a41e7148d",
-    strip_prefix = "benchmark-b177433f3ee2513b1075140c723d73ab8901790f",
-    urls = ["https://github.com/google/benchmark/archive/b177433f3ee2513b1075140c723d73ab8901790f.zip"],
+    sha256 = "927475805a19b24f9c67dd9765bb4dcc8b10fd7f0e616905cc4fee406bed81a7",
+    strip_prefix = "benchmark-1.8.0",
+    urls = ["https://github.com/google/benchmark/archive/refs/tags/v1.8.0.zip"],
 )
 
 # google tests
 http_archive(
   name = "com_google_googletest",
-  urls = ["https://github.com/google/googletest/archive/609281088cfefc76f9d0ce82e1ff6c30cc3591e5.zip"],
-  strip_prefix = "googletest-609281088cfefc76f9d0ce82e1ff6c30cc3591e5",
+  sha256 = "ffa17fbc5953900994e2deec164bb8949879ea09b411e07f215bfbb1f87f4632",
+  urls = ["https://github.com/google/googletest/archive/refs/tags/v1.13.0.zip"],
+  strip_prefix = "googletest-1.13.0",
 )
 
 # fmt

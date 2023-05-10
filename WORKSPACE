@@ -59,7 +59,7 @@ http_archive(
     urls = ["https://github.com/google/perfetto/archive/refs/tags/v28.0.tar.gz"],
 )
 
-# Perfetto
+# toml11
 http_archive(
     name = "toml11",
     build_file = "toml11.BUILD",

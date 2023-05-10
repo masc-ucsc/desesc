@@ -2,6 +2,33 @@
 
 Dromajo ESESC
 
+DESESC is an evolution from SESC, but it does not use semantic versioning. The
+reason is that after each major change (new letter) there is a period of "beta"
+unstable which is akind of 0.x version in semantic versioning.
+
+Each major release adds a letter:
+
+[SESC](https://sesc.sourceforge.net) 
+
+ MIPS based OoO core with multicore and TLS support
+
+[ESESC](https://masc.soe.ucsc.edu/esesc/)
+
+Major changes from SESC:
+
+  * QEMU based emulator (MIPS/RISC-V/ARM)
+  * Power/thermal
+  * Statistical sampling
+
+DESESC:
+
+Major changes from ESESC:
+
+  * Dromajo instead of QEMU
+  * Specter Safe OoO model
+  * Major rework for modern C++
+  * New configuration
+
 ## Setup
 
 DESESC requires gcc (or clang) versions 10 or newer and bazelisk.

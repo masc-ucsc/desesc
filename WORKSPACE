@@ -8,9 +8,9 @@ load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
 # google benchmark
 http_archive(
     name = "com_google_benchmark",
-    sha256 = "2d6c797dbd21bd230afca4080731c49a71307de0985c63cb69ccde1a41e7148d",
-    strip_prefix = "benchmark-b177433f3ee2513b1075140c723d73ab8901790f",
-    urls = ["https://github.com/google/benchmark/archive/b177433f3ee2513b1075140c723d73ab8901790f.zip"],
+    sha256 = "c2f84bd62247c36fb94560193b5cc5355ad9c8bf2fe8339811c78a1a1f655f4b",
+    strip_prefix = "benchmark-318dd44225e4a6f0af191bbe0e265cf28533626d",
+    urls = ["https://github.com/google/benchmark/archive/318dd44225e4a6f0af191bbe0e265cf28533626d.zip"],
 )
 
 # google tests

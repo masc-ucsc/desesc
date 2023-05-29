@@ -59,7 +59,7 @@ void InOrderProcessor::executed(Dinst *dinst) { (void)dinst; }
 StallCause InOrderProcessor::add_inst(Dinst *dinst) {
   const Instruction *inst = dinst->getInst();
 
-  size_t smt = dinst->getFlowId() % get_smt_size();
+  size_t smt_local = dinst->getFlowId() % get_smt_size();
 
 #if 1
 #if 0
@@ -71,8 +71,8 @@ StallCause InOrderProcessor::add_inst(Dinst *dinst) {
 #else
 #if 1
   // Simple in-order for RAW, but not WAW or WAR
-  if (((RAT[smt][inst->getSrc1()] != nullptr) && (inst->getSrc1() != RegType::LREG_NoDependence))
-      || ((RAT[smt][inst->getSrc2()] != nullptr) && (inst->getSrc2() != RegType::LREG_NoDependence)))
+  if (((RAT[smt_local][inst->getSrc1()] != nullptr) && (inst->getSrc1() != RegType::LREG_NoDependence))
+      || ((RAT[smt_local][inst->getSrc2()] != nullptr) && (inst->getSrc2() != RegType::LREG_NoDependence)))
 #else
   // scoreboard, no output dependence
   if (((RAT[smt][inst->getDst1()] != 0) && (inst->getDst1() != RegType::LREG_InvalidOutput))
@@ -145,28 +145,28 @@ StallCause InOrderProcessor::add_inst(Dinst *dinst) {
   if (!dinst->isSrc2Ready()) {
     // It already has a src2 dep. It means that it is solved at
     // retirement (Memory consistency. coherence issues)
-    if (RAT[smt][inst->getSrc1()]) {
-      RAT[smt][inst->getSrc1()]->addSrc1(dinst);
+    if (RAT[smt_local][inst->getSrc1()]) {
+      RAT[smt_local][inst->getSrc1()]->addSrc1(dinst);
     }
   } else {
-    if (RAT[smt][inst->getSrc1()]) {
-      RAT[smt][inst->getSrc1()]->addSrc1(dinst);
+    if (RAT[smt_local][inst->getSrc1()]) {
+      RAT[smt_local][inst->getSrc1()]->addSrc1(dinst);
     }
 
-    if (RAT[smt][inst->getSrc2()]) {
-      RAT[smt][inst->getSrc2()]->addSrc2(dinst);
+    if (RAT[smt_local][inst->getSrc2()]) {
+      RAT[smt_local][inst->getSrc2()]->addSrc2(dinst);
     }
   }
 
   I(!dinst->isExecuted());
 
-  dinst->setRAT1Entry(&RAT[smt][inst->getDst1()]);
-  dinst->setRAT2Entry(&RAT[smt][inst->getDst2()]);
+  dinst->setRAT1Entry(&RAT[smt_local][inst->getDst1()]);
+  dinst->setRAT2Entry(&RAT[smt_local][inst->getDst2()]);
 
   dinst->getCluster()->add_inst(dinst);
 
-  RAT[smt][inst->getDst1()] = dinst;
-  RAT[smt][inst->getDst2()] = dinst;
+  RAT[smt_local][inst->getDst1()] = dinst;
+  RAT[smt_local][inst->getDst2()] = dinst;
 
   I(dinst->getCluster());
   dinst->markRenamed();

@@ -42,12 +42,27 @@ cc_test(
 )
 
 cc_test(
-    name = "spectre_safe_exclusive_cache_test",
+    name = "store_buffer_test",
     srcs = [
-        "spectre_safe_exclusive_cache_test.cpp",
+        "store_buffer_test.cpp",
     ],
     deps = [
+        "//simu:simu",
         ":mem",
-        "@com_google_googletest//:gtest_main",
+        "@com_google_googletest//:gtest",
+        "@com_google_googletest//:gtest_main"
+    ],
+)
+
+cc_test(
+    name = "resource_test",
+    srcs = [
+        "resource_test.cpp",
+    ],
+    deps = [
+        "//simu:simu",
+        ":mem",
+        "@com_google_googletest//:gtest",
+        "@com_google_googletest//:gtest_main"
     ],
 )

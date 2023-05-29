@@ -7,6 +7,17 @@
 #include "gmemory_system.hpp"
 #include "memory_system.hpp"
 #include "gtest/gtest.h"
+#include "callback.hpp"
+#include "ccache.hpp"
+#include "dinst.hpp"
+#include "fmt/format.h"
+#include "gtest/gtest.h"
+#include "iassert.hpp"
+#include "instruction.hpp"
+#include "memobj.hpp"
+#include "memrequest.hpp"
+#include "memstruct.hpp"
+#include "report.hpp"
 
 std::shared_ptr<Gmemory_system> global_mem_sys_p0 = nullptr;
 
@@ -81,7 +92,7 @@ void setupStoreBuffer() {
   }
 Dinst *createStInst() {
   Addr_t addr    = 0x200;
-  auto  *st_inst = Dinst::create(Instruction(iSALU_ST, LREG_R1, LREG_R2, LREG_R3, LREG_R4),
+  auto  *st_inst = Dinst::create(Instruction(Opcode::iSALU_ST, RegType::LREG_R1, RegType::LREG_R2, RegType::LREG_R3, RegType::LREG_R4),
                                 0xdeaddead  // pc
                                 ,
                                 addr,

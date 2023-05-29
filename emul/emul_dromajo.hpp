@@ -6,7 +6,7 @@
 #include "emul_base.hpp"
 
 class Emul_dromajo : public Emul_base {
-protected:
+private:
   RISCVMachine *machine = nullptr;
 
   uint64_t num;
@@ -19,18 +19,22 @@ protected:
 
 public:
   Emul_dromajo();
-  virtual ~Emul_dromajo();
+  Emul_dromajo(const Emul_dromajo &)            = default;
+  Emul_dromajo(Emul_dromajo &&)                 = delete;
+  Emul_dromajo &operator=(const Emul_dromajo &) = default;
+  Emul_dromajo &operator=(Emul_dromajo &&)      = delete;
+  ~Emul_dromajo() override                      = default;
 
   void destroy_machine();
 
-  virtual Dinst *peek(Hartid_t fid) final;
-  virtual void   execute(Hartid_t fid) final;
+  Dinst *peek(Hartid_t fid) final;
+  void   execute(Hartid_t fid) final;
 
-  virtual Hartid_t get_num() const final;
-  virtual bool     is_sleeping(Hartid_t fid) const;
+  [[nodiscard]] Hartid_t get_num() const final;
+  [[nodiscard]] bool     is_sleeping(Hartid_t fid) const override;
 
-  virtual void skip_rabbit(Hartid_t fid, size_t ninst) final {
-    // TODO: do this more efficiently
+  void skip_rabbit(Hartid_t fid, size_t ninst) final {
+    // TODO(??): do this more efficiently
     for (size_t i = 0; i < ninst; ++i) {
       execute(fid);
     }

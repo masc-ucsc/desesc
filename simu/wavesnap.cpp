@@ -4,6 +4,8 @@
 
 #include <cmath>
 
+static const std::string opcode_mapping{"0123456789abcdefghijklmnopqrstuvwxyzABCDEFHIJKLMNPQRSTUVWXYZ"};
+
 Wavesnap::Wavesnap() {
   this->window_pointer         = 0;
   this->update_count           = 0;
@@ -65,7 +67,7 @@ void Wavesnap::record_pipe(pipeline_info *next) {
   }
 }
 
-void Wavesnap::add_pipeline_info(pipeline_info *pipe_info, instruction_info *d) {
+void Wavesnap::add_pipeline_info(pipeline_info *pipe_info, Instruction_info *d) {
   uint64_t min_time = this->dinst_info[wait_buffer[0]].fetched_time;
 
   pipe_info->wait_cycles.push_back(d->fetched_time - min_time);
@@ -80,8 +82,8 @@ void Wavesnap::add_instruction(Dinst *dinst) {
   completed.push_back(false);
 }
 
-instruction_info Wavesnap::extract_inst_info(Dinst *dinst, uint64_t committed) {
-  instruction_info result;
+Instruction_info Wavesnap::extract_inst_info(Dinst *dinst, uint64_t committed) {
+  Instruction_info result;
 
   result.fetched_time   = dinst->getFetchedTime();
   result.renamed_time   = dinst->getRenamedTime();
@@ -120,9 +122,9 @@ void Wavesnap::update_window(Dinst *dinst, uint64_t committed) {
         this->current_encoding       = "";
         break;
       } else {
-        instruction_info *d = &(dinst_info[wait_buffer[j]]);
+        const auto &d = (dinst_info[wait_buffer[j]]);
         if (i < MAX_MOVING_GRAPH_NODES - 1) {
-          this->current_encoding += ENCODING[d->opcode];
+          this->current_encoding += opcode_mapping[static_cast<int>(d.opcode)];
         }
       }
     }
@@ -131,9 +133,9 @@ void Wavesnap::update_window(Dinst *dinst, uint64_t committed) {
     // of the window.
     while (completed[MAX_MOVING_GRAPH_NODES - 1] && completed.size() >= MAX_MOVING_GRAPH_NODES) {
       // add last instruction of the window
-      instruction_info *d = &(dinst_info[wait_buffer[MAX_MOVING_GRAPH_NODES - 1]]);
-      this->current_encoding += ENCODING[d->opcode];
-      this->current_hash = this->hash(this->current_encoding, d->pc);
+      const auto &d = (dinst_info[wait_buffer[MAX_MOVING_GRAPH_NODES - 1]]);
+      this->current_encoding += opcode_mapping[static_cast<int>(d.opcode)];
+      this->current_hash = this->hash(this->current_encoding, d.pc);
 #ifndef RECORD_ONCE
       pipeline_info next;
       next.count = 1;

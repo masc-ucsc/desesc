@@ -368,7 +368,7 @@ BPLdbp::BPLdbp(int32_t i, const std::string &section, const std::string &sname, 
 
 Outcome BPLdbp::predict(Dinst *dinst, bool doUpdate, bool doStats) {
 #if 1
-  if (dinst->getInst()->getOpcode() != iBALU_LBRANCH) {  // don't bother about jumps and calls
+  if (dinst->getInst()->getOpcode() != Opcode::iBALU_LBRANCH) {  // don't bother about jumps and calls
     return Outcome::None;
   }
 #endif

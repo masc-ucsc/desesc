@@ -4,11 +4,13 @@
 
 #include <cstdint>
 
+#include "fmt/format.h"
+
 using Hartid_t = uint32_t;
 using Addr_t   = uint64_t;
 using Data_t   = uint64_t;
 
-enum Opcode {
+enum class Opcode {
   iOpInvalid = 0,
   //-----------------
   iRALU,
@@ -38,9 +40,39 @@ enum Opcode {
   //-----------------
   iMAX
 };
+inline auto format_as(Opcode f) { return fmt::underlying(f); }
+
+template <typename T>
+class Opcode_array : public std::array<T, static_cast<int>(Opcode::iMAX)> {
+public:
+  const T& operator[](Opcode e) const { return this->at(static_cast<std::size_t>(e)); }
+  T&       operator[](Opcode e) { return this->at(static_cast<std::size_t>(e)); }
+};
+
+class OpcodeIterator {
+  Opcode op;
+
+public:
+  explicit OpcodeIterator(Opcode _op = Opcode::iRALU) : op(_op) {}
+
+  const Opcode&   operator*() const { return op; }
+  OpcodeIterator& operator++() {
+    op = static_cast<Opcode>(static_cast<int>(op) + 1);
+    return *this;
+  }
+  bool operator!=(const OpcodeIterator& other) const { return op != other.op; }
+};
+
+class Opcodes_it {
+public:
+  [[nodiscard]] OpcodeIterator begin() const { return OpcodeIterator(Opcode::iRALU); }
+  [[nodiscard]] OpcodeIterator end() const { return OpcodeIterator(Opcode::iMAX); }
+};
+
+static inline const Opcodes_it Opcodes;
 
 // enum RegType:short {
-enum RegType {
+enum class RegType {
   LREG_R0 = 0,  // No dependence
   LREG_R1,
   LREG_R2,
@@ -175,8 +207,15 @@ enum RegType {
   LREG_MAX
 };
 
-// enum ClusterType { AUnit = 0, BUnit, CUnit, LUnit, SUnit };
-enum TranslationType { ARM = 0, THUMB, THUMB32, SPARC32 };
+inline bool is_arch(RegType r) { return static_cast<int>(r) < static_cast<int>(RegType::LREG_ARCH0); }
+inline auto format_as(RegType f) { return fmt::underlying(f); }
+
+template <typename T>
+class RegType_array : public std::array<T, static_cast<int>(RegType::LREG_MAX)> {
+public:
+  const T& operator[](RegType e) const { return this->at(static_cast<std::size_t>(e)); }
+  T&       operator[](RegType e) { return this->at(static_cast<std::size_t>(e)); }
+};
 
 // Common alias
 #define LREG_ZERO         LREG_R0

@@ -18,22 +18,20 @@
 #include <cstdio>
 #include <exception>
 
-#include "gtest/gtest.h"
-
-#include "fmt/format.h"
-#include "iassert.hpp"
-
-#include "config.hpp"
-#include "report.hpp"
+#include "callback.hpp"
 #include "ccache.hpp"
+#include "config.hpp"
 #include "dinst.hpp"
+#include "fmt/format.h"
 #include "gprocessor.hpp"
+#include "gtest/gtest.h"
+#include "iassert.hpp"
 #include "instruction.hpp"
 #include "memobj.hpp"
+#include "memory_system.hpp"
 #include "memrequest.hpp"
 #include "memstruct.hpp"
-#include "memory_system.hpp"
-#include "callback.hpp"
+#include "report.hpp"
 
 using ::testing::EmptyTestEventListener;
 using ::testing::InitGoogleTest;
@@ -82,14 +80,14 @@ currState getState(CCache *cache, Addr_t addr) {
 }
 
 void rdDone(Dinst *dinst) {
-  //printf("rddone @%lld\n", (long long)globalClock);
+  // printf("rddone @%lld\n", (long long)globalClock);
 
   rd_pending--;
   dinst->scrap();
 }
 
 void wrDone(Dinst *dinst) {
-  //printf("wrdone @%lld\n", (long long)globalClock);
+  // printf("wrdone @%lld\n", (long long)globalClock);
 
   wr_pending--;
   dinst->scrap();
@@ -108,20 +106,20 @@ typedef CallbackFunction1<Dinst *, &wrDone> wrDoneCB;
 static void doread(MemObj *cache, Addr_t addr, bool spec = false) {
   num_operations++;
 
-  auto *ldClone = Dinst::create(
-      Instruction(iLALU_LD, LREG_R1, LREG_R2, LREG_R3, LREG_R4)
-      ,0xdeaddead // pc
-      ,addr
-      ,0
-      ,true
-    );
+  auto *ldClone
+      = Dinst::create(Instruction(Opcode::iLALU_LD, RegType::LREG_R1, RegType::LREG_R2, RegType::LREG_R3, RegType::LREG_R4),
+                      0xdeaddead  // pc
+                      ,
+                      addr,
+                      0,
+                      true);
 
   while (cache->isBusy(addr)) {
     EventScheduler::advanceClock();
   }
 
   rdDoneCB *cb = rdDoneCB::create(ldClone);
-  //printf("rd %x @%lld\n", (unsigned int)addr, (long long)globalClock);
+  // printf("rd %x @%lld\n", (unsigned int)addr, (long long)globalClock);
 
   if (spec) {
     MemRequest::sendSpecReqDL1Read(cache, ldClone->has_stats(), ldClone->getAddr(), ldClone->getPC(), /*Dinst *dinst*/ 0, cb);
@@ -134,20 +132,20 @@ static void doread(MemObj *cache, Addr_t addr, bool spec = false) {
 static void doprefetch(MemObj *cache, Addr_t addr) {
   num_operations++;
 
-  auto *ldClone = Dinst::create(
-      Instruction(iLALU_LD, LREG_R5, LREG_R6, LREG_R7, LREG_R8)
-      ,0xbeefbeef // pc
-      ,addr
-      ,0
-      ,true
-    );
+  auto *ldClone
+      = Dinst::create(Instruction(Opcode::iLALU_LD, RegType::LREG_R5, RegType::LREG_R6, RegType::LREG_R7, RegType::LREG_R8),
+                      0xbeefbeef  // pc
+                      ,
+                      addr,
+                      0,
+                      true);
 
   while (cache->isBusy(addr)) {
     EventScheduler::advanceClock();
   }
 
   rdDoneCB *cb = rdDoneCB::create(ldClone);
-  //printf("rd %x @%lld\n", (unsigned int)addr, (long long)globalClock);
+  // printf("rd %x @%lld\n", (unsigned int)addr, (long long)globalClock);
 
   cache->tryPrefetch(ldClone->has_stats(), ldClone->getAddr(), 1, 0xF00D, ldClone->getPC(), cb);
   rd_pending++;
@@ -156,20 +154,20 @@ static void doprefetch(MemObj *cache, Addr_t addr) {
 static void dowrite(MemObj *cache, Addr_t addr) {
   num_operations++;
 
-  auto *stClone = Dinst::create(
-      Instruction(iSALU_ST, LREG_R5, LREG_R6, LREG_R7, LREG_R8)
-      ,0x200 // pc
-      ,addr
-      ,0
-      ,true
-    );
+  auto *stClone
+      = Dinst::create(Instruction(Opcode::iSALU_ST, RegType::LREG_R5, RegType::LREG_R6, RegType::LREG_R7, RegType::LREG_R8),
+                      0x200  // pc
+                      ,
+                      addr,
+                      0,
+                      true);
 
   while (cache->isBusy(addr)) {
     EventScheduler::advanceClock();
   }
 
   wrDoneCB *cb = wrDoneCB::create(stClone);
-  //printf("wr %x @%lld\n", (unsigned int)addr, (long long)globalClock);
+  // printf("wr %x @%lld\n", (unsigned int)addr, (long long)globalClock);
 
   MemRequest::sendReqWrite(cache, stClone->has_stats(), stClone->getAddr(), stClone->getPC(), cb);
   wr_pending++;
@@ -195,88 +193,86 @@ static Addr_t designAddr(Addr_t level, Addr_t tag, Addr_t index, Addr_t offset) 
   return tag * tag_base + index * index_base + offset;
 }
 
-Gmemory_system *gms_p0    = nullptr;
-Gmemory_system *gms_p1    = nullptr;
+Gmemory_system *gms_p0 = nullptr;
+Gmemory_system *gms_p1 = nullptr;
 
 static void setup_config() {
   std::ofstream file;
 
   file.open("cachecore.toml");
 
-  file <<
-"[soc]\n"
-"core = [\"c0\",\"c0\"]\n"
-"[c0]\n"
-"type  = \"ooo\"\n"
-"caches        = true\n"
-"dl1           = \"dl1_cache DL1\"\n"
-"il1           = \"dl1_cache IL1\"\n"
-"[dl1_cache]\n"
-"type       = \"cache\"\n"
-"cold_misses = true\n"
-"size       = 32768\n"
-"line_size  = 64\n"
-"delay      = 5\n"
-"miss_delay = 2\n"
-"assoc      = 4\n"
-"repl_policy = \"lru\"\n"
-"port_occ   = 1\n"
-"port_num   = 1\n"
-"port_banks = 32\n"
-"send_port_occ = 1\n"
-"send_port_num = 1\n"
-"max_requests  = 32\n"
-"allocate_miss = true\n"
-"victim        = true   # exclusive spectre-safe\n"
-"coherent      = true\n"
-"inclusive     = false  # exclusive\n"
-"directory     = false\n"
-"nlp_distance = 2\n"
-"nlp_degree   = 1       # 0 disabled\n"
-"nlp_stride   = 1\n"
-"drop_prefetch = true\n"
-"prefetch_degree = 0    # 0 disabled\n"
-"mega_lines1K    = 8    # 8 lines touched, triggers mega/carped prefetch\n"
-"lower_level = \"privl2 L2 sharedby 2\"\n"
-"[privl2]\n"
-"type       = \"cache\"\n"
-"cold_misses = true\n"
-"size       = 1048576\n"
-"line_size  = 64\n"
-"delay      = 13\n"
-"miss_delay = 7\n"
-"assoc      = 4\n"
-"repl_policy = \"lru\"\n"
-"port_occ   = 1\n"
-"port_num   = 1\n"
-"port_banks = 32\n"
-"send_port_occ = 1\n"
-"send_port_num = 1\n"
-"max_requests  = 32\n"
-"allocate_miss = true\n"
-"victim        = true   # exclusive spectre-safe\n"
-"coherent      = true\n"
-"inclusive     = false  # exclusive\n"
-"directory     = false\n"
-"nlp_distance = 2\n"
-"nlp_degree   = 1       # 0 disabled\n"
-"nlp_stride   = 1\n"
-"drop_prefetch = true\n"
-"prefetch_degree = 0    # 0 disabled\n"
-"mega_lines1K    = 8    # 8 lines touched, triggers mega/carped prefetch\n"
-"lower_level = \"l3 l3 shared\"\n"
-"[l3]\n"
-"type       = \"nice\"\n"
-"line_size  = 64\n"
-"delay      = 31\n"
-"cold_misses = false\n"
-"lower_level = \"\"\n"
-    ;
+  file << "[soc]\n"
+          "core = [\"c0\",\"c0\"]\n"
+          "[c0]\n"
+          "type  = \"ooo\"\n"
+          "caches        = true\n"
+          "dl1           = \"dl1_cache DL1\"\n"
+          "il1           = \"dl1_cache IL1\"\n"
+          "[dl1_cache]\n"
+          "type       = \"cache\"\n"
+          "cold_misses = true\n"
+          "size       = 32768\n"
+          "line_size  = 64\n"
+          "delay      = 5\n"
+          "miss_delay = 2\n"
+          "assoc      = 4\n"
+          "repl_policy = \"lru\"\n"
+          "port_occ   = 1\n"
+          "port_num   = 1\n"
+          "port_banks = 32\n"
+          "send_port_occ = 1\n"
+          "send_port_num = 1\n"
+          "max_requests  = 32\n"
+          "allocate_miss = true\n"
+          "victim        = true   # exclusive spectre-safe\n"
+          "coherent      = true\n"
+          "inclusive     = false  # exclusive\n"
+          "directory     = false\n"
+          "nlp_distance = 2\n"
+          "nlp_degree   = 1       # 0 disabled\n"
+          "nlp_stride   = 1\n"
+          "drop_prefetch = true\n"
+          "prefetch_degree = 0    # 0 disabled\n"
+          "mega_lines1K    = 8    # 8 lines touched, triggers mega/carped prefetch\n"
+          "lower_level = \"privl2 L2 sharedby 2\"\n"
+          "[privl2]\n"
+          "type       = \"cache\"\n"
+          "cold_misses = true\n"
+          "size       = 1048576\n"
+          "line_size  = 64\n"
+          "delay      = 13\n"
+          "miss_delay = 7\n"
+          "assoc      = 4\n"
+          "repl_policy = \"lru\"\n"
+          "port_occ   = 1\n"
+          "port_num   = 1\n"
+          "port_banks = 32\n"
+          "send_port_occ = 1\n"
+          "send_port_num = 1\n"
+          "max_requests  = 32\n"
+          "allocate_miss = true\n"
+          "victim        = true   # exclusive spectre-safe\n"
+          "coherent      = true\n"
+          "inclusive     = false  # exclusive\n"
+          "directory     = false\n"
+          "nlp_distance = 2\n"
+          "nlp_degree   = 1       # 0 disabled\n"
+          "nlp_stride   = 1\n"
+          "drop_prefetch = true\n"
+          "prefetch_degree = 0    # 0 disabled\n"
+          "mega_lines1K    = 8    # 8 lines touched, triggers mega/carped prefetch\n"
+          "lower_level = \"l3 l3 shared\"\n"
+          "[l3]\n"
+          "type       = \"nice\"\n"
+          "line_size  = 64\n"
+          "delay      = 31\n"
+          "cold_misses = false\n"
+          "lower_level = \"\"\n";
 
   file.close();
 }
 
-void            initialize() {
+void initialize() {
   static bool pluggedin = false;
   if (!pluggedin) {
     setup_config();
@@ -284,8 +280,8 @@ void            initialize() {
     Report::init();
     Config::init("cachecore.toml");
 
-    gms_p0 = new Memory_system(0);
-    gms_p1 = new Memory_system(1);
+    gms_p0    = new Memory_system(0);
+    gms_p1    = new Memory_system(1);
     pluggedin = true;
 #ifdef DEBUG_CALLPATH
     forcemsgdump = true;
@@ -323,7 +319,7 @@ CCache *getL2(MemObj *P0DL1) {
   MemObj  *L2     = router->getDownNode();
   I(L2->get_type() == "cache");
 
-  CCache  *l2c    = static_cast<CCache *>(L2);
+  CCache *l2c = static_cast<CCache *>(L2);
   // l2c->setNeedsCoherence();
   return l2c;
 }
@@ -459,7 +455,7 @@ TEST_F(CacheTest, sreadL1_no_alloc) {
   EXPECT_EQ(Invalid, getState(p0l2, addr));
 }
 
-// read to L2, then read to L1 speculatively, 
+// read to L2, then read to L1 speculatively,
 // L2 should still have the line because no speculative invalidation is allowed
 TEST_F(CacheTest, readL2_sreadL1_no_inv) {
   // addr for L2 index 6
@@ -477,7 +473,6 @@ TEST_F(CacheTest, readL2_sreadL1_no_inv) {
   EXPECT_EQ(Invalid, getState(p0dl1, addr));
   EXPECT_EQ(Exclusive, getState(p0l2, addr));
 }
-
 
 // read to L1, and the following speculative read shall not update LRU,
 // due to no effect look-up

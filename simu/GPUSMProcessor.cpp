@@ -58,9 +58,6 @@ GPUSMProcessor::GPUSMProcessor(Gmemory_system *gm, CPU_t i)
 
   spaceInInstQueue = InstQueueSize;
 
-  // RAT = new Dinst* [LREG_MAX * numSP * maxwarps * 128];
-  // bzero(RAT,sizeof(Dinst*)*LREG_MAX * numSP * maxwarps * 128);
-
   uint64_t ratsize = LREG_MAX * numSP * maxwarps;  // 16777216; //2^24
   // uint64_t ratsize =4294967296; //2^32
   RAT = new Dinst *[ratsize];

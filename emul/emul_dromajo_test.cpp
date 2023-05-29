@@ -74,7 +74,7 @@ TEST_F(Emul_Dromajo_test, dhrystone_test) {
   dinst = dromajo_ptr->peek(0);
   EXPECT_EQ(0x00000000800025d8, dinst->getPC());
   inst = dinst->getInst();
-  EXPECT_EQ(10, inst->getSrc1());
+  EXPECT_EQ(static_cast<RegType>(10), inst->getSrc1());
   EXPECT_EQ(0x00000000800025e8, dinst->getAddr());
   EXPECT_TRUE(inst->isBranch());
   dinst->scrap();
@@ -83,7 +83,7 @@ TEST_F(Emul_Dromajo_test, dhrystone_test) {
   dinst = dromajo_ptr->peek(0);  // csrr
   EXPECT_EQ(0x0000000080002aaa, dinst->getPC());
   inst = dinst->getInst();
-  EXPECT_EQ(15, inst->getDst1());
+  EXPECT_EQ(static_cast<RegType>(15), inst->getDst1());
   dinst->scrap();
 
   dromajo_ptr->skip_rabbit(0, 197);
@@ -91,8 +91,8 @@ TEST_F(Emul_Dromajo_test, dhrystone_test) {
   EXPECT_EQ(0x0000000080002094, dinst->getPC());
   EXPECT_EQ(0x00000000800020a4, dinst->getAddr());
   inst = dinst->getInst();
-  EXPECT_EQ(0, inst->getSrc1());
-  EXPECT_EQ(10, inst->getSrc2());
+  EXPECT_EQ(static_cast<RegType>(0), inst->getSrc1());
+  EXPECT_EQ(static_cast<RegType>(10), inst->getSrc2());
   EXPECT_FALSE(inst->hasDstRegister());
   EXPECT_TRUE(inst->isBranch());
   dinst->scrap();
@@ -108,8 +108,8 @@ TEST_F(Emul_Dromajo_test, dhrystone_test) {
   dinst = dromajo_ptr->peek(0);
   EXPECT_EQ(0x0000000080002b38, dinst->getPC());
   inst = dinst->getInst();
-  EXPECT_EQ(8, inst->getSrc1());
-  EXPECT_EQ(12, inst->getDst1());
+  EXPECT_EQ(static_cast<RegType>(8), inst->getSrc1());
+  EXPECT_EQ(static_cast<RegType>(12), inst->getDst1());
   EXPECT_TRUE(inst->isALU());
   dinst->scrap();
 
@@ -118,8 +118,8 @@ TEST_F(Emul_Dromajo_test, dhrystone_test) {
   EXPECT_EQ(0x0000000080002b46, dinst->getPC());
   EXPECT_EQ(0x0000000080025658, dinst->getAddr());
   inst = dinst->getInst();
-  EXPECT_EQ(8, inst->getSrc1());
-  EXPECT_EQ(15, inst->getSrc2());
+  EXPECT_EQ(static_cast<RegType>(8), inst->getSrc1());
+  EXPECT_EQ(static_cast<RegType>(15), inst->getSrc2());
   EXPECT_FALSE(inst->hasDstRegister());
   EXPECT_TRUE(inst->isStore());
   dinst->scrap();
@@ -129,8 +129,8 @@ TEST_F(Emul_Dromajo_test, dhrystone_test) {
   EXPECT_EQ(0x0000000080002004, dinst->getPC());
   EXPECT_EQ(0x0000000080025658, dinst->getAddr());
   inst = dinst->getInst();
-  EXPECT_EQ(12, inst->getSrc1());
-  EXPECT_EQ(11, inst->getSrc2());
+  EXPECT_EQ(static_cast<RegType>(12), inst->getSrc1());
+  EXPECT_EQ(static_cast<RegType>(11), inst->getSrc2());
   EXPECT_FALSE(inst->hasDstRegister());
   EXPECT_TRUE(inst->isStore());
   dinst->scrap();
@@ -140,8 +140,8 @@ TEST_F(Emul_Dromajo_test, dhrystone_test) {
   EXPECT_EQ(0x000000008000217e, dinst->getPC());
   EXPECT_EQ(0x00000000800255b0, dinst->getAddr());
   inst = dinst->getInst();
-  EXPECT_EQ(2, inst->getSrc1());
-  EXPECT_EQ(18, inst->getSrc2());
+  EXPECT_EQ(static_cast<RegType>(2), inst->getSrc1());
+  EXPECT_EQ(static_cast<RegType>(18), inst->getSrc2());
   EXPECT_FALSE(inst->hasDstRegister());
   EXPECT_TRUE(inst->isStore());
   dinst->scrap();

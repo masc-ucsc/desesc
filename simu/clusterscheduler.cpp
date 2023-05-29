@@ -13,31 +13,28 @@ ClusterScheduler::ClusterScheduler(const ResourcesPoolType &ores) : res(ores) {}
 ClusterScheduler::~ClusterScheduler() {}
 
 RoundRobinClusterScheduler::RoundRobinClusterScheduler(const ResourcesPoolType &ores) : ClusterScheduler(ores) {
-  nres.resize(res.size());
-  pos.resize(res.size(), 0);
-
-  for (size_t i = 0; i < res.size(); i++) {
-    nres[i] = res[i].size();
+  for (const auto op : Opcodes) {
+    nres[op] = res[op].size();
   }
 }
 
 RoundRobinClusterScheduler::~RoundRobinClusterScheduler() {}
 
 std::shared_ptr<Resource> RoundRobinClusterScheduler::getResource(Dinst *dinst) {
-  const Instruction *inst = dinst->getInst();
-  Opcode             type = inst->getOpcode();
+  const auto *inst = dinst->getInst();
+  auto        op   = inst->getOpcode();
 
-  unsigned int i = pos[type];
-  if (i >= nres[type]) {
-    i         = 0;
-    pos[type] = 1;
+  unsigned int i = pos[op];
+  if (i >= nres[op]) {
+    i       = 0;
+    pos[op] = 1;
   } else {
-    pos[type]++;
+    pos[op]++;
   }
 
-  I(i < res[type].size());
+  I(i < res[op].size());
 
-  return res[type][i];
+  return res[op][i];
 }
 
 LRUClusterScheduler::LRUClusterScheduler(const ResourcesPoolType &ores) : ClusterScheduler(ores) {}
@@ -45,14 +42,14 @@ LRUClusterScheduler::LRUClusterScheduler(const ResourcesPoolType &ores) : Cluste
 LRUClusterScheduler::~LRUClusterScheduler() {}
 
 std::shared_ptr<Resource> LRUClusterScheduler::getResource(Dinst *dinst) {
-  const Instruction *inst = dinst->getInst();
-  Opcode             type = inst->getOpcode();
+  const auto *inst = dinst->getInst();
+  auto        op   = inst->getOpcode();
 
-  std::shared_ptr<Resource> touse = res[type][0];
+  std::shared_ptr<Resource> touse = res[op][0];
 
-  for (size_t i = 1; i < res[type].size(); i++) {
-    if (touse->getUsedTime() > res[type][i]->getUsedTime()) {
-      touse = res[type][i];
+  for (size_t i = 1; i < res[op].size(); i++) {
+    if (touse->getUsedTime() > res[op][i]->getUsedTime()) {
+      touse = res[op][i];
     }
   }
 
@@ -61,67 +58,59 @@ std::shared_ptr<Resource> LRUClusterScheduler::getResource(Dinst *dinst) {
 }
 
 UseClusterScheduler::UseClusterScheduler(const ResourcesPoolType &ores) : ClusterScheduler(ores) {
-  nres.resize(res.size());
-  pos.resize(res.size(), 0);
-
-  for (size_t i = 0; i < res.size(); i++) {
-    nres[i] = res[i].size();
-  }
-  for (size_t i = 0; i < LREG_MAX; i++) {
-    cused[i] = nullptr;
+  for (const auto op : Opcodes) {
+    nres[op] = res[op].size();
   }
 }
 
 UseClusterScheduler::~UseClusterScheduler() {}
 
 std::shared_ptr<Resource> UseClusterScheduler::getResource(Dinst *dinst) {
-  const Instruction *inst = dinst->getInst();
-  Opcode             type = inst->getOpcode();
+  const auto *inst = dinst->getInst();
+  auto        op   = inst->getOpcode();
 
-  unsigned int p = pos[type];
-  if (p >= nres[type]) {
-    p         = 0;
-    pos[type] = 1;
+  auto p = pos[op];
+  if (p >= nres[op]) {
+    p       = 0;
+    pos[op] = 1;
   } else {
-    pos[type]++;
+    pos[op]++;
   }
 
-  std::shared_ptr<Resource> touse = res[type][p];
+  auto touse = res[op][p];
 
-  int touse_nintra = (cused[inst->getSrc1()] && cused[inst->getSrc1()]->get_id() != res[type][p]->getCluster()->get_id());
-  touse_nintra += (cused[inst->getSrc2()] && cused[inst->getSrc2()]->get_id() != res[type][p]->getCluster()->get_id());
+  int touse_nintra = (cused[inst->getSrc1()] && cused[inst->getSrc1()]->get_id() != res[op][p]->getCluster()->get_id()) ? 1 : 0;
+  touse_nintra += (cused[inst->getSrc2()] && cused[inst->getSrc2()]->get_id() != res[op][p]->getCluster()->get_id());
 
 #if 0
   if (touse_nintra==0 && touse->getCluster()->getAvailSpace()>0 && touse->getCluster()->getNReady() <= 2)
     return touse;
 #endif
 
-  for (size_t i = 0; i < res[type].size(); i++) {
-    uint16_t n = p + i;
-    if (n >= res[type].size()) {
-      n -= res[type].size();
+  for (const auto i : Opcodes) {
+    uint32_t n = p + static_cast<uint32_t>(i);
+    if (n >= res[op].size()) {
+      n -= res[op].size();
     }
 
-    if (res[type][n]->getCluster()->getAvailSpace() <= 0) {
+    if (res[op][n]->getCluster()->getAvailSpace() <= 0) {
       continue;
     }
 
-    int nintra = (cused[inst->getSrc1()] != res[type][n]->getCluster() && cused[inst->getSrc1()])
-                 + (cused[inst->getSrc2()] != res[type][n]->getCluster() && cused[inst->getSrc2()]);
+    int nintra = ((cused[inst->getSrc1()] != res[op][n]->getCluster() && cused[inst->getSrc1()]) ? 1 : 0)
+                 + ((cused[inst->getSrc2()] != res[op][n]->getCluster() && cused[inst->getSrc2()]) ? 1 : 0);
 
 #if 1
-    if (nintra == touse_nintra && touse->getCluster()->getNReady() < res[type][n]->getCluster()->getNReady()) {
-      // if (nintra == touse_nintra && touse->getCluster()->getAvailSpace() < res[type][n]->getCluster()->getAvailSpace()) {
-      // Same # deps, pick the less busy
-      touse        = res[type][n];
+    if (nintra == touse_nintra && touse->getCluster()->getNReady() < res[op][n]->getCluster()->getNReady()) {
+      touse        = res[op][n];
       touse_nintra = nintra;
     } else if (nintra < touse_nintra) {
-      touse        = res[type][n];
+      touse        = res[op][n];
       touse_nintra = nintra;
     }
 #else
-    if (touse->getCluster()->getAvailSpace() > res[type][n]->getCluster()->getAvailSpace()) {
-      touse        = res[type][n];
+    if (touse->getCluster()->getAvailSpace() > res[op][n]->getCluster()->getAvailSpace()) {
+      touse        = res[op][n];
       touse_nintra = nintra;
     }
 #endif
@@ -129,7 +118,7 @@ std::shared_ptr<Resource> UseClusterScheduler::getResource(Dinst *dinst) {
 
   cused[inst->getDst1()] = touse->getCluster();
   cused[inst->getDst2()] = touse->getCluster();
-  I(cused[LREG_NoDependence] == 0);
+  I(cused[RegType::LREG_NoDependence] == 0);
 
   return touse;
 }

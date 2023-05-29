@@ -51,9 +51,9 @@ protected:
     int32_t      occ;
   };
 
-  static inline std::map<std::string, UnitEntry>                                                                        unitMap;
-  static inline std::map<std::string, std::shared_ptr<Resource>>                                                        resourceMap;
-  static inline std::map<std::string, std::pair<std::shared_ptr<Cluster>, std::array<std::shared_ptr<Resource>, iMAX>>> clusterMap;
+  static inline std::map<std::string, UnitEntry>                                                                    unitMap;
+  static inline std::map<std::string, std::shared_ptr<Resource>>                                                    resourceMap;
+  static inline std::map<std::string, std::pair<std::shared_ptr<Cluster>, Opcode_array<std::shared_ptr<Resource>>>> clusterMap;
 
   void delEntry() {
     windowSize++;
@@ -81,10 +81,10 @@ public:
   virtual void executed(Dinst *dinst)            = 0;
   virtual bool retire(Dinst *dinst, bool replay) = 0;
 
-  static std::pair<std::shared_ptr<Cluster>, std::array<std::shared_ptr<Resource>, iMAX>> create(const std::string &clusterName,
-                                                                                                 uint32_t           pos,
-                                                                                                 std::shared_ptr<Gmemory_system> ms,
-                                                                                                 uint32_t cpuid, GProcessor *gproc);
+  static std::pair<std::shared_ptr<Cluster>, Opcode_array<std::shared_ptr<Resource>>> create(const std::string &clusterName,
+                                                                                             uint32_t           pos,
+                                                                                             std::shared_ptr<Gmemory_system> ms,
+                                                                                             uint32_t cpuid, GProcessor *gproc);
 
   const std::string &getName() const { return name; }
   int                get_id() const { return cluster_id; }

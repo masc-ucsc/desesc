@@ -23,7 +23,7 @@
 
 /* }}} */
 
-Resource::Resource(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, TimeDelta_t l, uint32_t cpuid)
+Resource::Resource(Opcode type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, TimeDelta_t l, uint32_t cpuid)
     /* constructor {{{1 */
     : cluster(cls)
     , gen(aGen)
@@ -84,9 +84,9 @@ Resource::~Resource()
 
 /***********************************************/
 
-MemResource::MemResource(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, LSQ *_lsq, std::shared_ptr<StoreSet> ss,
+MemResource::MemResource(Opcode type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, LSQ *_lsq, std::shared_ptr<StoreSet> ss,
                          std::shared_ptr<Prefetcher> _pref, std::shared_ptr<Store_buffer> _scb, TimeDelta_t l,
-                         std::shared_ptr<Gmemory_system> ms, int32_t id, const char *cad)
+                         std::shared_ptr<Gmemory_system> ms, int32_t id, const std::string &cad)
     /* constructor {{{1 */
     : MemReplay(type, cls, aGen, ss, l, id)
     , firstLevelMemObj(ms->getDL1())
@@ -111,7 +111,7 @@ MemResource::MemResource(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric
 
 /* }}} */
 
-MemReplay::MemReplay(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *_gen, std::shared_ptr<StoreSet> ss, TimeDelta_t l,
+MemReplay::MemReplay(Opcode type, std::shared_ptr<Cluster> cls, PortGeneric *_gen, std::shared_ptr<StoreSet> ss, TimeDelta_t l,
                      uint32_t cpuid)
     : Resource(type, cls, _gen, l, cpuid), lfSize(8), storeset(ss) {
   lf.resize(lfSize);
@@ -212,7 +212,7 @@ void MemReplay::replayManage(Dinst *dinst) {
     int i = pos2;
     if (dinst->getID() > lf[i].id && dinst->getSSID() != lf[i].ssid) {
 #ifndef NDEBUG
-      fmt::print("3.merging {} and {} : pc {} and {} : addr {} and {} : id {u and {} ({})\n",
+      fmt::print("3.merging {} and {} : pc {} and {} : addr {} and {} : id {} and {} ({})\n",
                  lf[i].ssid,
                  dinst->getSSID(),
                  lf[i].pc,
@@ -238,9 +238,9 @@ void MemReplay::replayManage(Dinst *dinst) {
 
 /***********************************************/
 
-FULoad::FULoad(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, LSQ *_lsq, std::shared_ptr<StoreSet> ss,
+FULoad::FULoad(Opcode type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, LSQ *_lsq, std::shared_ptr<StoreSet> ss,
                std::shared_ptr<Prefetcher> _pref, std::shared_ptr<Store_buffer> _scb, TimeDelta_t lsdelay, TimeDelta_t l,
-               std::shared_ptr<Gmemory_system> ms, int32_t size, int32_t id, const char *cad)
+               std::shared_ptr<Gmemory_system> ms, int32_t size, int32_t id, const std::string &cad)
     /* Constructor {{{1 */
     : MemResource(type, cls, aGen, _lsq, ss, _pref, _scb, l, ms, id, cad)
 #ifdef MEM_TSO2
@@ -435,9 +435,9 @@ void FULoad::performed(Dinst *dinst) {
 
 /***********************************************/
 
-FUStore::FUStore(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, LSQ *_lsq, std::shared_ptr<StoreSet> ss,
+FUStore::FUStore(Opcode type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, LSQ *_lsq, std::shared_ptr<StoreSet> ss,
                  std::shared_ptr<Prefetcher> _pref, std::shared_ptr<Store_buffer> _scb, TimeDelta_t l,
-                 std::shared_ptr<Gmemory_system> ms, int32_t size, int32_t id, const char *cad)
+                 std::shared_ptr<Gmemory_system> ms, int32_t size, int32_t id, const std::string &cad)
     /* constructor {{{1 */
     : MemResource(type, cls, aGen, _lsq, ss, _pref, _scb, l, ms, id, cad), freeEntries(size) {
   enableDcache = Config::get_bool("soc", "core", id, "caches");
@@ -594,7 +594,7 @@ bool FUStore::retire(Dinst *dinst, bool flushing) {
 
 /***********************************************/
 
-FUGeneric::FUGeneric(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, TimeDelta_t l, uint32_t cpuid)
+FUGeneric::FUGeneric(Opcode type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, TimeDelta_t l, uint32_t cpuid)
     /* constructor {{{1 */
     : Resource(type, cls, aGen, l, cpuid) {}
 /* }}} */
@@ -663,7 +663,7 @@ void FUGeneric::performed(Dinst *dinst) {
 
 /***********************************************/
 
-FUBranch::FUBranch(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, TimeDelta_t l, uint32_t cpuid, int32_t mb,
+FUBranch::FUBranch(Opcode type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, TimeDelta_t l, uint32_t cpuid, int32_t mb,
                    bool dom)
     /* constructor {{{1 */
     : Resource(type, cls, aGen, l, cpuid), freeBranches(mb), drainOnMiss(dom) {
@@ -734,7 +734,7 @@ void FUBranch::performed(Dinst *dinst) {
 
 /***********************************************/
 
-FURALU::FURALU(uint8_t type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, TimeDelta_t l, int32_t id)
+FURALU::FURALU(Opcode type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, TimeDelta_t l, int32_t id)
     /* constructor {{{1 */
     : Resource(type, cls, aGen, l, id)
     , dmemoryBarrier(fmt::format("P({})_{}_dmemoryBarrier", id, cls->getName()))

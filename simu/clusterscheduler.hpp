@@ -7,7 +7,7 @@
 #include "dinst.hpp"
 #include "resource.hpp"
 
-using ResourcesPoolType = std::array<std::vector<std::shared_ptr<Resource>>, iMAX>;
+using ResourcesPoolType = Opcode_array<std::vector<std::shared_ptr<Resource>>>;
 
 class ClusterScheduler {
 private:
@@ -23,8 +23,8 @@ public:
 
 class RoundRobinClusterScheduler : public ClusterScheduler {
 private:
-  std::vector<unsigned int> nres;
-  std::vector<unsigned int> pos;
+  Opcode_array<uint32_t> nres;
+  Opcode_array<uint32_t> pos;
 
 public:
   RoundRobinClusterScheduler(const ResourcesPoolType &res);
@@ -44,9 +44,9 @@ public:
 
 class UseClusterScheduler : public ClusterScheduler {
 private:
-  std::vector<unsigned int>                      nres;
-  std::vector<unsigned int>                      pos;
-  std::array<std::shared_ptr<Cluster>, LREG_MAX> cused;
+  Opcode_array<uint32_t>                  nres;
+  Opcode_array<uint32_t>                  pos;
+  RegType_array<std::shared_ptr<Cluster>> cused;
 
 public:
   UseClusterScheduler(const ResourcesPoolType &res);

@@ -1433,7 +1433,7 @@ public:
 #if 0
     bias = !WeakConf;
 #else
-    bias             = HighConf;
+    bias = HighConf;
 #endif
     sign = GI[1];
 
@@ -1548,7 +1548,7 @@ public:
                      std::vector<folded_history> &G, std::vector<folded_history> &J, long long &LH, long long &GBRHIST) {
     // special treatment for unconditional branchs;
     int maxt;
-    if (brtype == iBALU_LBRANCH) {
+    if (brtype == Opcode::iBALU_LBRANCH) {
       maxt = 1;
     } else {
       maxt = 4;
@@ -1557,7 +1557,7 @@ public:
     // the return stack associated history
 
 #ifdef IMLI
-    if (brtype == iBALU_LBRANCH) {
+    if (brtype == Opcode::iBALU_LBRANCH) {
       if (target < PC) {
         // This branch is a branch "loop"
         if (!taken) {
@@ -1573,7 +1573,7 @@ public:
     }
 #ifdef IMLIOH
     if (IMLIcount >= 1) {
-      if (brtype == iBALU_LBRANCH) {
+      if (brtype == Opcode::iBALU_LBRANCH) {
         if (target >= PC) {
           PIPE[(PC ^ (PC >> 4)) & (PASTSIZE - 1)]
               = ohhisttable[(((PC ^ (PC >> 4)) << SHIFTFUTURE) + IMLIcount) & (OHHISTTABLESIZE - 1)];
@@ -1584,7 +1584,7 @@ public:
 #endif
 #endif
 
-    if (brtype == iBALU_LBRANCH) {
+    if (brtype == Opcode::iBALU_LBRANCH) {
       GBRHIST = (GBRHIST << 1) + taken;
       LH      = (LH << 1) + (taken);
     }
@@ -1885,7 +1885,17 @@ public:
 #endif
     // END TAGE UPDATE
 
-    HistoryUpdate(PC, iBALU_LBRANCH, resolveDir, branchTarget, phist, ptghist, ch_i, ch_t[0], ch_t[1], L_shist[INDLOCAL], GHIST);
+    HistoryUpdate(PC,
+                  Opcode::iBALU_LBRANCH,
+                  resolveDir,
+                  branchTarget,
+                  phist,
+                  ptghist,
+                  ch_i,
+                  ch_t[0],
+                  ch_t[1],
+                  L_shist[INDLOCAL],
+                  GHIST);
     // END PREDICTOR UPDATE
   }
 

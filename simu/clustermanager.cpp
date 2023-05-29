@@ -19,7 +19,7 @@ ClusterManager::ClusterManager(std::shared_ptr<Gmemory_system> ms, uint32_t cpui
     auto [cluster, new_res] = Cluster::create(clusterName, i, ms, cpuid, gproc);
     I(cluster);
 
-    for (int32_t t = 0; t < iMAX; t++) {
+    for (const auto t : Opcodes) {
       if (new_res[t]) {
         res[t].push_back(new_res[t]);
       }
@@ -41,11 +41,11 @@ ClusterManager::ClusterManager(std::shared_ptr<Gmemory_system> ms, uint32_t cpui
   }
 
   // 0 is an invalid opcde. All the other should be defined
-  for (Opcode i = static_cast<Opcode>(1); i < iMAX; i = static_cast<Opcode>((int)i + 1)) {
+  for (const auto i : Opcodes) {
     if (!res[i].empty()) {
       continue;
     }
 
-    Config::add_error(fmt::format("core:{} does not support instruction type {}", coreSection, Instruction::opcode2Name(i)));
+    Config::add_error(fmt::format("core:{} does not support instruction type {}", coreSection, i));
   }
 }

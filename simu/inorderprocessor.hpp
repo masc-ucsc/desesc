@@ -15,7 +15,7 @@ private:
 
   LSQNone lsq;
 
-  Dinst **RAT;
+  std::vector<RegType_array<Dinst *>> RAT;
 
 protected:
   ClusterManager clusterManager;

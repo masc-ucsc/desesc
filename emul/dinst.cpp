@@ -11,11 +11,9 @@
 
 pool<Dinst> Dinst::dInstPool(32768, "Dinst");  // 4 * tsfifo size
 
-Time_t Dinst::currentID = 0;
-
 Dinst::Dinst()
- : inst(Instruction(iOpInvalid, LREG_R0, LREG_R0, LREG_InvalidOutput, LREG_InvalidOutput)){
-
+    : inst(Instruction(Opcode::iOpInvalid, RegType::LREG_R0, RegType::LREG_R0, RegType::LREG_InvalidOutput,
+                       RegType::LREG_InvalidOutput)) {
   pend[0].init(this);
   pend[1].init(this);
   pend[2].init(this);
@@ -23,83 +21,81 @@ Dinst::Dinst()
   nDeps = 0;
 }
 
-void Dinst::dump(const char *str) {
-  fprintf(stderr,
-          "%s:%p (%d) %lld %c Dinst: pc=0x%llx, addr=0x%llx src1=%d (%s) src2 = %d dest1 =%d dest2 = %d",
-          str,
-          this,
-          fid,
-          (long long)ID,
-          keep_stats ? 't' : 'd',
-          (long long)pc,
-          (long long)addr,
-          (int)(inst.getSrc1()),
-          inst.getOpcodeName(),
-          inst.getSrc2(),
-          inst.getDst1(),
-          inst.getDst2());
+void Dinst::dump(std::string_view str) {
+  fmt::print("{} ({}) {} {} Dinst: pc=0x{:x}, addr=0x{:x} src1={} ({}) src2={} dest1={} dest2={}",
+             str,
+             fid,
+             (long long)ID,
+             keep_stats ? 't' : 'd',
+             (long long)pc,
+             (long long)addr,
+             (int)(inst.getSrc1()),
+             inst.getOpcodeName(),
+             inst.getSrc2(),
+             inst.getDst1(),
+             inst.getDst2());
 
   Time_t t;
 
   t = getRenamedTime() - getFetchTime();
   if (getRenamedTime()) {
-    fprintf(stderr, " %5d", (int)t);
+    fmt::print(" %5d", (int)t);
   } else {
-    fprintf(stderr, "    na");
+    fmt::print("    na");
   }
 
   t = getIssuedTime() - getRenamedTime();
   if (getIssuedTime()) {
-    fprintf(stderr, " %5d", (int)t);
+    fmt::print(" %5d", (int)t);
   } else {
-    fprintf(stderr, "    na");
+    fmt::print("    na");
   }
 
   t = getExecutedTime() - getIssuedTime();
   if (getExecutedTime()) {
-    fprintf(stderr, " %5d", (int)t);
+    fmt::print(" %5d", (int)t);
   } else {
-    fprintf(stderr, "    na");
+    fmt::print("    na");
   }
 
   t = globalClock - getExecutedTime();
   if (getExecutedTime()) {
-    fprintf(stderr, " %5d", (int)t);
+    fmt::print(" %5d", (int)t);
   } else {
-    fprintf(stderr, "    na");
+    fmt::print("    na");
   }
 
   if (performed) {
-    fprintf(stderr, " performed");
+    fmt::print(" performed");
   } else if (executing) {
-    fprintf(stderr, " executing");
+    fmt::print(" executing");
   } else if (executed) {
-    fprintf(stderr, " executed");
+    fmt::print(" executed");
   } else if (issued) {
-    fprintf(stderr, " issued");
+    fmt::print(" issued");
   } else {
-    fprintf(stderr, " non-issued");
+    fmt::print(" non-issued");
   }
   if (replay) {
-    fprintf(stderr, " REPLAY ");
+    fmt::print(" REPLAY ");
   }
 
   if (hasPending()) {
-    fprintf(stderr, " has pending");
+    fmt::print(" has pending");
   }
   if (!isSrc1Ready()) {
-    fprintf(stderr, " has src1 deps");
+    fmt::print(" has src1 deps");
   }
   if (!isSrc2Ready()) {
-    fprintf(stderr, " has src2 deps");
+    fmt::print(" has src2 deps");
   }
   if (!isSrc3Ready()) {
-    fprintf(stderr, " has src3 deps");
+    fmt::print(" has src3 deps");
   }
 
   // inst.dump("Inst->");
 
-  fprintf(stderr, "\n");
+  fmt::print("\n");
 }
 
 void Dinst::clearRATEntry() {

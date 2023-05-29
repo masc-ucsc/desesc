@@ -120,11 +120,6 @@ OoOProcessor::OoOProcessor(std::shared_ptr<Gmemory_system> gm, CPU_t i)
     , fwd2done2(fmt::format("P({})_fwd2done2", i))
 #endif
     , codeProfile(fmt::format("P({})_prof", i)) {
-  bzero(RAT, sizeof(Dinst *) * LREG_MAX);
-  bzero(serializeRAT, sizeof(Dinst *) * LREG_MAX);
-#ifdef TRACK_FORWARDING
-  bzero(fwdDone, sizeof(Time_t) * LREG_MAX);
-#endif
 
   spaceInInstQueue = InstQueueSize;
 
@@ -370,14 +365,14 @@ StallCause OoOProcessor::add_inst(Dinst *dinst) {
         }
       } else {
         // Serialize if same register is being accessed
-        if (inst->getSrc1() < LREG_ARCH0) {
+        if (is_arch(inst->getSrc1())) {
           last_serializeLogical = inst->getSrc1();
         } else if (last_serializePC != dinst->getPC()) {
-          last_serializeLogical = LREG_InvalidOutput;
+          last_serializeLogical = RegType::LREG_InvalidOutput;
         }
         last_serializePC = dinst->getPC();
 
-        if (last_serializeLogical < LREG_ARCH0) {
+        if (is_arch(last_serializeLogical)) {
           if (inst->isMemory()) {
             if (serializeRAT[last_serializeLogical]) {
               if (inst->isLoad()) {
@@ -392,8 +387,8 @@ StallCause OoOProcessor::add_inst(Dinst *dinst) {
             dinst->setSerializeEntry(&serializeRAT[last_serializeLogical]);
             serializeRAT[last_serializeLogical] = dinst;
           } else {
-            serializeRAT[inst->getDst1()] = 0;
-            serializeRAT[inst->getDst2()] = 0;
+            serializeRAT[inst->getDst1()] = nullptr;
+            serializeRAT[inst->getDst2()] = nullptr;
           }
         }
       }
@@ -1765,7 +1760,7 @@ bool OoOProcessor::loadIsSpec() {
         if (!dinst->isExecuted()) {
           br_unresolved.push_back(pos);
         }
-      } else if (dinst->getInst()->getOpcode() == iCALU_FPDIV || dinst->getInst()->getOpcode() == iCALU_DIV) {
+      } else if (dinst->getInst()->getOpcode() == Opcode::iCALU_FPDIV || dinst->getInst()->getOpcode() == Opcode::iCALU_DIV) {
         if (!dinst->isExecuted()) {
           div_unresolved.push_back(pos);
         }

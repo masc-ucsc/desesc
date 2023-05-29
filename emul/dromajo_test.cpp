@@ -197,7 +197,7 @@ int iterate_core(RISCVMachine *m, int hartid) {
   }
 #endif  // BRANCHPROF
 
-  int keep_going = virt_machine_run(m, hartid);
+  int keep_going = virt_machine_run(m, hartid, 1);
   if (last_pc == virt_machine_get_pc(m, hartid)) {
     return 0;
   }

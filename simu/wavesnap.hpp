@@ -25,7 +25,6 @@
 #define DUMP_PATH "dump.txt"
 
 // encode instructions
-#define ENCODING  "0123456789abcdefghijklmnopqrstuvwxyzABCDEFHIJKLMNPQRSTUVWXYZ"
 #define HASH_SEED 0x2345
 #define HASH_SIZE 0XFFFF
 
@@ -50,7 +49,7 @@
 #include <boost/serialization/string.hpp>
 #include <boost/serialization/vector.hpp>
 */
-class instruction_info {
+class Instruction_info {
 public:
   uint64_t pc;
   uint64_t fetched_time;
@@ -58,17 +57,17 @@ public:
   uint64_t issued_time;
   uint64_t executed_time;
   uint64_t committed_time;
-  uint8_t  opcode;
+  Opcode   opcode;
   uint64_t id;
 
-  instruction_info() {
+  Instruction_info() {
     this->pc             = 0;
     this->fetched_time   = 0;
     this->renamed_time   = 0;
     this->issued_time    = 0;
     this->executed_time  = 0;
     this->committed_time = 0;
-    this->opcode         = 0;
+    this->opcode         = Opcode::iOpInvalid;
     this->id             = 0;
   }
 };
@@ -153,7 +152,7 @@ private:
 
   // private methods and member variables
   void     record_pipe(pipeline_info* next);
-  void     add_pipeline_info(pipeline_info* pipe_info, instruction_info* dinst);
+  void     add_pipeline_info(pipeline_info* pipe_info, Instruction_info* dinst);
   uint64_t hash(std::string signature, uint64_t more);
 #ifdef RECORD_ONCE
   std::vector<bool> signature_hit;
@@ -171,7 +170,7 @@ public:
   std::vector<uint64_t>                wait_buffer;
   std::vector<bool>                    completed;
   pipeline_info                        working_window;
-  std::map<uint64_t, instruction_info> dinst_info;
+  std::map<uint64_t, Instruction_info> dinst_info;
   uint64_t                             window_pointer;
   std::string                          current_encoding;
 #ifdef HASHED_RECORD
@@ -193,7 +192,7 @@ public:
   void window_frequency();
 
   // other
-  instruction_info extract_inst_info(Dinst* dinst, uint64_t committed);
+  Instruction_info extract_inst_info(Dinst* dinst, uint64_t committed);
   void             add_to_RAT(Dinst* dinst);
   void             merge();
 #ifdef HASHED_RECORD

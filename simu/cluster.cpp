@@ -31,8 +31,8 @@ Cluster::Cluster(const std::string &clusterName, uint32_t pos, uint32_t _cpuid)
 }
 
 std::shared_ptr<Resource> Cluster::buildUnit(const std::string &clusterName, uint32_t pos, std::shared_ptr<Gmemory_system> ms,
-                                             std::shared_ptr<Cluster> cluster, Opcode type, GProcessor *gproc) {
-  auto unitType = Instruction::opcode2Name(type);
+                                             std::shared_ptr<Cluster> cluster, Opcode op, GProcessor *gproc) {
+  auto unitType = fmt::format("{}", op);
 
   if (!Config::has_entry(clusterName, unitType)) {
     return nullptr;
@@ -62,19 +62,19 @@ std::shared_ptr<Resource> Cluster::buildUnit(const std::string &clusterName, uin
   }
 
   int unitID = 0;
-  switch (type) {
-    case iBALU_LBRANCH:
-    case iBALU_LJUMP:
-    case iBALU_LCALL:
-    case iBALU_RBRANCH:
-    case iBALU_RJUMP:
-    case iBALU_RCALL:
-    case iBALU_RET: unitID = 1; break;
-    case iLALU_LD: unitID = 2; break;
-    case iSALU_LL:
-    case iSALU_SC:
-    case iSALU_ST:
-    case iSALU_ADDR: unitID = 3; break;
+  switch (op) {
+    case Opcode::iBALU_LBRANCH:
+    case Opcode::iBALU_LJUMP:
+    case Opcode::iBALU_LCALL:
+    case Opcode::iBALU_RBRANCH:
+    case Opcode::iBALU_RJUMP:
+    case Opcode::iBALU_RCALL:
+    case Opcode::iBALU_RET: unitID = 1; break;
+    case Opcode::iLALU_LD: unitID = 2; break;
+    case Opcode::iSALU_LL:
+    case Opcode::iSALU_SC:
+    case Opcode::iSALU_ST:
+    case Opcode::iSALU_ADDR: unitID = 3; break;
     default: unitID = 0; break;
   }
 
@@ -86,38 +86,38 @@ std::shared_ptr<Resource> Cluster::buildUnit(const std::string &clusterName, uin
   if (it2 != resourceMap.end()) {
     r = it2->second;
   } else {
-    switch (type) {
-      case iOpInvalid:
-      case iRALU: r = std::make_shared<FURALU>(type, cluster, gen, lat, cpuid); break;
-      case iAALU:
-      case iCALU_FPMULT:
-      case iCALU_FPDIV:
-      case iCALU_FPALU:
-      case iCALU_MULT:
-      case iCALU_DIV: r = std::make_shared<FUGeneric>(type, cluster, gen, lat, cpuid); break;
-      case iBALU_LBRANCH:
-      case iBALU_LJUMP:
-      case iBALU_LCALL:
-      case iBALU_RBRANCH:
-      case iBALU_RJUMP:
-      case iBALU_RCALL:
-      case iBALU_RET: {
+    switch (op) {
+      case Opcode::iOpInvalid:
+      case Opcode::iRALU: r = std::make_shared<FURALU>(op, cluster, gen, lat, cpuid); break;
+      case Opcode::iAALU:
+      case Opcode::iCALU_FPMULT:
+      case Opcode::iCALU_FPDIV:
+      case Opcode::iCALU_FPALU:
+      case Opcode::iCALU_MULT:
+      case Opcode::iCALU_DIV: r = std::make_shared<FUGeneric>(op, cluster, gen, lat, cpuid); break;
+      case Opcode::iBALU_LBRANCH:
+      case Opcode::iBALU_LJUMP:
+      case Opcode::iBALU_LCALL:
+      case Opcode::iBALU_RBRANCH:
+      case Opcode::iBALU_RJUMP:
+      case Opcode::iBALU_RCALL:
+      case Opcode::iBALU_RET: {
         auto max_branches = Config::get_integer("soc", "core", cpuid, "max_branches");
         if (max_branches == 0) {
           max_branches = INT_MAX;
         }
         bool drain_on_miss = Config::get_bool("soc", "core", cpuid, "drain_on_miss");
 
-        r = std::make_shared<FUBranch>(type, cluster, gen, lat, cpuid, max_branches, drain_on_miss);
+        r = std::make_shared<FUBranch>(op, cluster, gen, lat, cpuid, max_branches, drain_on_miss);
       } break;
-      case iLALU_LD: {
+      case Opcode::iLALU_LD: {
         TimeDelta_t st_fwd_delay = Config::get_integer("soc", "core", cpuid, "st_fwd_delay");
         int32_t     ldq_size     = Config::get_integer("soc", "core", cpuid, "ldq_size", 0, 256 * 1024);
         if (ldq_size == 0) {
           ldq_size = 256 * 1024;
         }
 
-        r = std::make_shared<FULoad>(type,
+        r = std::make_shared<FULoad>(op,
                                      cluster,
                                      gen,
                                      gproc->getLSQ(),
@@ -131,16 +131,16 @@ std::shared_ptr<Resource> Cluster::buildUnit(const std::string &clusterName, uin
                                      cpuid,
                                      "specld");
       } break;
-      case iSALU_LL:
-      case iSALU_SC:
-      case iSALU_ST:
-      case iSALU_ADDR: {
+      case Opcode::iSALU_LL:
+      case Opcode::iSALU_SC:
+      case Opcode::iSALU_ST:
+      case Opcode::iSALU_ADDR: {
         int32_t stq_size = Config::get_integer("soc", "core", cpuid, "stq_size", 0, 256 * 1024);
         if (stq_size == 0) {
           stq_size = 256 * 1024;
         }
 
-        r = std::make_shared<FUStore>(type,
+        r = std::make_shared<FUStore>(op,
                                       cluster,
                                       gen,
                                       gproc->getLSQ(),
@@ -151,9 +151,9 @@ std::shared_ptr<Resource> Cluster::buildUnit(const std::string &clusterName, uin
                                       ms,
                                       stq_size,
                                       cpuid,
-                                      Instruction::opcode2Name(type));
+                                      fmt::format("{}", op));
       } break;
-      default: Config::add_error(fmt::format("unknown unit type [{}] [{}]", type, Instruction::opcode2Name(type))); I(0);
+      default: Config::add_error(fmt::format("unknown unit type {}", op)); I(0);
     }
     I(r);
     resourceMap[resourceName] = r;
@@ -162,10 +162,12 @@ std::shared_ptr<Resource> Cluster::buildUnit(const std::string &clusterName, uin
   return r;
 }
 
-std::pair<std::shared_ptr<Cluster>, std::array<std::shared_ptr<Resource>, iMAX> > Cluster::create(
-    const std::string &clusterName, uint32_t pos, std::shared_ptr<Gmemory_system> ms, uint32_t cpuid, GProcessor *gproc) {
+std::pair<std::shared_ptr<Cluster>, Opcode_array<std::shared_ptr<Resource>>> Cluster::create(const std::string &clusterName,
+                                                                                             uint32_t           pos,
+                                                                                             std::shared_ptr<Gmemory_system> ms,
+                                                                                             uint32_t cpuid, GProcessor *gproc) {
   // Constraints
-  std::array<std::shared_ptr<Resource>, iMAX> res;
+  Opcode_array<std::shared_ptr<Resource>> res;
 
   auto recycleAt = Config::get_string(clusterName, "recycle_at", {"executing", "executed", "retired"});
 
@@ -194,8 +196,8 @@ std::pair<std::shared_ptr<Cluster>, std::array<std::shared_ptr<Resource>, iMAX> 
   cluster->regPool   = cluster->nRegs;
   cluster->lateAlloc = Config::get_bool(clusterName, "late_alloc");
 
-  for (int32_t t = 0; t < iMAX; t++) {
-    auto r = cluster->buildUnit(clusterName, pos, ms, cluster, static_cast<Opcode>(t), gproc);
+  for (const auto t : Opcodes) {
+    auto r = cluster->buildUnit(clusterName, pos, ms, cluster, t, gproc);
     res[t] = r;
   }
 

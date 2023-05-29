@@ -15,13 +15,12 @@ InOrderProcessor::InOrderProcessor(std::shared_ptr<Gmemory_system> gm, CPU_t i)
     , clusterManager(gm, i, this) {  // {{{1
 
   auto smtnum = get_smt_size();
-  RAT         = new Dinst *[LREG_MAX * smtnum * 128];
-  bzero(RAT, sizeof(Dinst *) * LREG_MAX * smtnum * 128);
+
+  RAT.resize(smtnum);  // RAT first index
 }
 // 1}}}
 
 InOrderProcessor::~InOrderProcessor() { /*{{{*/
-  delete RAT;
   // Nothing to do
 } /*}}}*/
 
@@ -60,24 +59,24 @@ void InOrderProcessor::executed(Dinst *dinst) { (void)dinst; }
 StallCause InOrderProcessor::add_inst(Dinst *dinst) {
   const Instruction *inst = dinst->getInst();
 
-  size_t rat_off = dinst->getFlowId() % get_smt_size();
+  size_t smt = dinst->getFlowId() % get_smt_size();
 
 #if 1
 #if 0
   // Simple in-order
-  if(((RAT[inst->getSrc1()+rat_off] != 0) && (inst->getSrc1() != LREG_NoDependence) && (inst->getSrc1() != LREG_InvalidOutput)) ||
-    ((RAT[inst->getSrc2()+rat_off] != 0) && (inst->getSrc2() != LREG_NoDependence) && (inst->getSrc2() != LREG_InvalidOutput))||
-    ((RAT[inst->getDst1()+rat_off] != 0) && (inst->getDst1() != LREG_InvalidOutput))||
-    ((RAT[inst->getDst2()+rat_off] != 0) && (inst->getDst2() != LREG_InvalidOutput)))
+  if(((RAT[smt][inst->getSrc1()] != 0) && (inst->getSrc1() != RegType::LREG_NoDependence) && (inst->getSrc1() != RegType::LREG_InvalidOutput)) ||
+    ((RAT[smt][inst->getSrc2()] != 0) && (inst->getSrc2() != RegType::LREG_NoDependence) && (inst->getSrc2() != RegType::LREG_InvalidOutput))||
+    ((RAT[smt][inst->getDst1()] != 0) && (inst->getDst1() != RegType::LREG_InvalidOutput))||
+    ((RAT[smt][inst->getDst2()] != 0) && (inst->getDst2() != RegType::LREG_InvalidOutput)))
 #else
 #if 1
   // Simple in-order for RAW, but not WAW or WAR
-  if (((RAT[inst->getSrc1() + rat_off] != 0) && (inst->getSrc1() != LREG_NoDependence))
-      || ((RAT[inst->getSrc2() + rat_off] != 0) && (inst->getSrc2() != LREG_NoDependence)))
+  if (((RAT[smt][inst->getSrc1()] != nullptr) && (inst->getSrc1() != RegType::LREG_NoDependence))
+      || ((RAT[smt][inst->getSrc2()] != nullptr) && (inst->getSrc2() != RegType::LREG_NoDependence)))
 #else
   // scoreboard, no output dependence
-  if (((RAT[inst->getDst1() + rat_off] != 0) && (inst->getDst1() != LREG_InvalidOutput))
-      || ((RAT[inst->getDst2() + rat_off] != 0) && (inst->getDst2() != LREG_InvalidOutput)))
+  if (((RAT[smt][inst->getDst1()] != 0) && (inst->getDst1() != RegType::LREG_InvalidOutput))
+      || ((RAT[smt][inst->getDst2()] != 0) && (inst->getDst2() != RegType::LREG_InvalidOutput)))
 #endif
 #endif
   {
@@ -98,12 +97,12 @@ StallCause InOrderProcessor::add_inst(Dinst *dinst) {
         RAT[inst->getSrc2()]->dump("\nSRC2 in use by:");
       }
 
-      if ((RAT[inst->getDst1()] != 0) && (inst->getDst2() != LREG_InvalidOutput)){
+      if ((RAT[inst->getDst1()] != 0) && (inst->getDst2() != RegType::LREG_InvalidOutput)){
         str.append("dst1, ");
         RAT[inst->getDst1()]->dump("\nDST1 in use by:");
       }
 
-      if ((RAT[inst->getDst2()] != 0) && (inst->getDst2() != LREG_InvalidOutput)){
+      if ((RAT[inst->getDst2()] != 0) && (inst->getDst2() != RegType::LREG_InvalidOutput)){
         str.append("dst2, ");
         RAT[inst->getDst2()]->dump("\nDST2 in use by:");
       }
@@ -146,28 +145,28 @@ StallCause InOrderProcessor::add_inst(Dinst *dinst) {
   if (!dinst->isSrc2Ready()) {
     // It already has a src2 dep. It means that it is solved at
     // retirement (Memory consistency. coherence issues)
-    if (RAT[inst->getSrc1() + rat_off]) {
-      RAT[inst->getSrc1() + rat_off]->addSrc1(dinst);
+    if (RAT[smt][inst->getSrc1()]) {
+      RAT[smt][inst->getSrc1()]->addSrc1(dinst);
     }
   } else {
-    if (RAT[inst->getSrc1() + rat_off]) {
-      RAT[inst->getSrc1() + rat_off]->addSrc1(dinst);
+    if (RAT[smt][inst->getSrc1()]) {
+      RAT[smt][inst->getSrc1()]->addSrc1(dinst);
     }
 
-    if (RAT[inst->getSrc2() + rat_off]) {
-      RAT[inst->getSrc2() + rat_off]->addSrc2(dinst);
+    if (RAT[smt][inst->getSrc2()]) {
+      RAT[smt][inst->getSrc2()]->addSrc2(dinst);
     }
   }
 
   I(!dinst->isExecuted());
 
-  dinst->setRAT1Entry(&RAT[inst->getDst1() + rat_off]);
-  dinst->setRAT2Entry(&RAT[inst->getDst2() + rat_off]);
+  dinst->setRAT1Entry(&RAT[smt][inst->getDst1()]);
+  dinst->setRAT2Entry(&RAT[smt][inst->getDst2()]);
 
   dinst->getCluster()->add_inst(dinst);
 
-  RAT[inst->getDst1() + rat_off] = dinst;
-  RAT[inst->getDst2() + rat_off] = dinst;
+  RAT[smt][inst->getDst1()] = dinst;
+  RAT[smt][inst->getDst2()] = dinst;
 
   I(dinst->getCluster());
   dinst->markRenamed();

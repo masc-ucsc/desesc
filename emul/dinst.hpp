@@ -196,8 +196,8 @@ private:
 
   char nDeps;  // 0, 1 or 2 for RISC processors
 
-  static Time_t currentID;
-  Time_t        ID;  // static ID, increased every create (currentID). pointer to the
+  static inline Time_t currentID = 0;
+  Time_t               ID;  // static ID, increased every create (currentID). pointer to the
 #ifndef NDEBUG
   uint64_t mreq_id;
 #endif
@@ -298,7 +298,7 @@ public:
 
   static Dinst *create(Instruction &&inst, Addr_t pc, Addr_t address, Hartid_t fid, bool keep_stats) {
     Dinst *i = dInstPool.out();
-    I(inst.getOpcode()!=iOpInvalid);
+    I(inst.getOpcode() != Opcode::iOpInvalid);
 
     i->fid      = fid;
     i->inst     = std::move(inst);
@@ -327,7 +327,7 @@ public:
     i->keep_stats = keep_stats;
 
     i->setup();
-    I(i->getInst()->getOpcode());
+    I(i->getInst()->getOpcode() != Opcode::iOpInvalid);
 
     return i;
   }
@@ -704,7 +704,7 @@ public:
 
   const Instruction *getInst() const { return &inst; }
 
-  void dump(const char *id);
+  void dump(std::string_view txt);
 
   // methods required for LDSTBuffer
   bool isLoadForwarded() const { return loadForwarded; }

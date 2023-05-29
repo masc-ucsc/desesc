@@ -76,7 +76,7 @@ protected:
   // BEGIN  Statistics
   Stats_avg                                         avgFetchWidth;
   std::array<std::unique_ptr<Stats_cntr>, MaxStall> nStall;
-  std::array<std::unique_ptr<Stats_cntr>, iMAX>     nInst;
+  Opcode_array<std::unique_ptr<Stats_cntr>>         nInst;
 
   // OoO Stats
   Stats_avg  rrobUsed;

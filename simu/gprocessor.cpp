@@ -125,9 +125,8 @@ GProcessor::GProcessor(std::shared_ptr<Gmemory_system> gm, Hartid_t i)
 GProcessor::~GProcessor() {}
 
 void GProcessor::buildInstStats(const std::string &txt) {
-  for (int32_t t = 0; t < iMAX; t++) {
-    nInst[t]
-        = std::make_unique<Stats_cntr>(fmt::format("P({})_{}_{}:n", hid, txt, Instruction::opcode2Name(static_cast<Opcode>(t))));
+  for (const auto t : Opcodes) {
+    nInst[t] = std::make_unique<Stats_cntr>(fmt::format("P({})_{}_{}:n", hid, txt, t));
   }
 }
 

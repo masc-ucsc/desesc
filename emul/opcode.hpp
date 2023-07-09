@@ -40,7 +40,54 @@ enum class Opcode {
   //-----------------
   iMAX
 };
-inline auto format_as(Opcode f) { return fmt::underlying(f); }
+inline auto format_as(Opcode f) {
+  if (f == Opcode::iOpInvalid) {
+    return "iOpInvalid";
+  } else if (f == Opcode::iRALU) {
+    return "iRALU";
+  } else if (f == Opcode::iAALU) {
+    return "iAALU";
+  } else if (f == Opcode::iBALU_LBRANCH) {
+    return "iBALU_LBRANCH";
+  } else if (f == Opcode::iBALU_RBRANCH) {
+    return "iBALU_RBRANCH";
+  } else if (f == Opcode::iBALU_LJUMP) {
+    return "iBALU_LJUMP";
+  } else if (f == Opcode::iBALU_RJUMP) {
+    return "iBALU_RJUMP";
+  } else if (f == Opcode::iBALU_LCALL) {
+    return "iBALU_LCALL";
+  } else if (f == Opcode::iBALU_RCALL) {
+    return "iBALU_RCALL";
+  } else if (f == Opcode::iBALU_RET) {
+    return "iBALU_RET";
+  } else if (f == Opcode::iLALU_LD) {
+    return "iLALU_LD";
+  } else if (f == Opcode::iSALU_ST) {
+    return "iSALU_ST";
+  } else if (f == Opcode::iSALU_LL) {
+    return "iSALU_LL";
+  } else if (f == Opcode::iSALU_SC) {
+    return "iSALU_SC";
+  } else if (f == Opcode::iSALU_ADDR) {
+    return "iSALU_ADDR";
+  } else if (f == Opcode::iCALU_FPMULT) {
+    return "iCALU_FPMULT";
+  } else if (f == Opcode::iCALU_FPDIV) {
+    return "iCALU_FPDIV";
+  } else if (f == Opcode::iCALU_FPALU) {
+    return "iCALU_FPALU";
+  } else if (f == Opcode::iCALU_MULT) {
+    return "iCALU_MULT";
+  } else if (f == Opcode::iCALU_DIV) {
+    return "iCALU_DIV";
+  } else if (f == Opcode::iMAX) {
+    return "iMAX";
+  } else {
+    return "invalid_OPCODE";
+  }
+  // return fmt::underlying(f);
+}
 
 template <typename T>
 class Opcode_array : public std::array<T, static_cast<int>(Opcode::iMAX)> {
@@ -213,6 +260,7 @@ inline auto format_as(RegType f) { return fmt::underlying(f); }
 template <typename T>
 class RegType_array : public std::array<T, static_cast<int>(RegType::LREG_MAX)> {
 public:
+  RegType_array() : std::array<T, static_cast<int>(RegType::LREG_MAX)>{} { std::fill(this->begin(), this->end(), T{}); }
   const T& operator[](RegType e) const { return this->at(static_cast<std::size_t>(e)); }
   T&       operator[](RegType e) { return this->at(static_cast<std::size_t>(e)); }
 };

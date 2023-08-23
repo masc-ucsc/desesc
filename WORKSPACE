@@ -27,9 +27,9 @@ http_archive(
 # google tests
 http_archive(
   name = "com_google_googletest",
-  sha256 = "ffa17fbc5953900994e2deec164bb8949879ea09b411e07f215bfbb1f87f4632",
-  urls = ["https://github.com/google/googletest/archive/refs/tags/v1.13.0.zip"],
-  strip_prefix = "googletest-1.13.0",
+  sha256 = "1f357c27ca988c3f7c6b4bf68a9395005ac6761f034046e9dde0896e3aba00e4",
+  urls = ["https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip"],
+  strip_prefix = "googletest-1.14.0",
 )
 
 # fmt

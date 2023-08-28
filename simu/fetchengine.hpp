@@ -39,6 +39,9 @@ private:
 #ifndef NDEBUG
   Dinst *missDinst;
 #endif
+  
+  Dinst *transientDinst;
+
   CallbackContainer cbPending;
 
   Time_t lastMissTime;  // FIXME: maybe we need an array
@@ -121,6 +124,9 @@ public:
 #ifndef NDEBUG
   Dinst *getMissDinst() const { return missDinst; }
 #endif
+
+  Dinst *getTransientInst() const { return transientDinst; }
+  void setTransientInst(Dinst *dinst);
 
   void clearMissInst(Dinst *dinst, Time_t missFetchTime);
   void setMissInst(Dinst *dinst);

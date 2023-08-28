@@ -155,7 +155,7 @@ private:
   bool dispatched;
   bool fullMiss;  // Only for DL1
   bool speculative;
-
+  bool transient;
   // END Boolean flags
 
   SSID_t      SSID;
@@ -251,6 +251,7 @@ private:
     dispatched   = false;
     fullMiss     = false;
     speculative  = true;
+    transient    = false;
 
 #ifdef DINST_PARENT
     pend[0].setParentDinst(0);
@@ -276,6 +277,15 @@ public:
   bool is_safe() const { return !speculative; }
   bool is_spec() const { return speculative; }
   void mark_safe() { speculative = false; }
+  
+  bool isTransient() const { 
+    //printf("checking transient Inst %B", transient);
+    return transient;
+  }
+  void setTransient() { 
+    transient = true; 
+    //printf("Setting transient in ::dinst\n");
+  }
 
   bool has_stats() const { return keep_stats; }
 
@@ -439,6 +449,8 @@ public:
 
   void scrap();  // Destroys the instruction without any other effects
   void destroy();
+  void destroyTransientInst();
+
 
   void set(std::shared_ptr<Cluster> cls, std::shared_ptr<Resource> res) {
     cluster  = cls;
@@ -731,16 +743,36 @@ public:
     issued = globalClock;
   }
 
+  void markIssuedTransient() {
+   // I(issued == 0);
+    //I(executing == 0);
+    //I(executed == 0);
+    issued = globalClock;
+  }
+
+
   bool isExecuted() const { return executed; }
   void markExecuted() {
     I(issued != 0);
     I(executed == 0);
     executed = globalClock;
   }
+  void markExecutedTransient() {
+   // I(issued != 0);
+    //I(executed == 0);
+    executed = globalClock;
+  }
+
+
   bool isExecuting() const { return executing; }
   void markExecuting() {
     I(issued != 0);
     I(executing == 0);
+    executing = globalClock;
+  }
+  void markExecutingTransient() {
+   // I(issued != 0);
+    //I(executing == 0);
     executing = globalClock;
   }
 

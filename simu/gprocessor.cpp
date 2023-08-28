@@ -48,10 +48,64 @@ void GProcessor::fetch() {
   }
 
   auto ifid = smt_fetch.fetch_next();
-  if (ifid->isBlocked()) {
+ /* if (ifid->isBlocked()) {
     // fmt::print("fetch on {}\n", ifid->getMissDinst()->getID());
     return;
-  }
+  }*/
+
+     if(ifid->isBlocked()){
+       int i=0;
+       //Addr_t addr = 0xaaeabeea;
+       auto *transientInst = ifid->getTransientInst();
+       Addr_t pc =transientInst->getAddr() + 4;
+
+       printf("gProcessor::Yahoo!!!Blocked Inst  %lx ", transientInst->getAddr());
+       std::cout<< "gProcessor::Yahoo!!!Blocked Inst Opcode"<<  transientInst->getInst()->getOpcodeName()<<std::endl;
+       while (i<1){
+         //printf("gProcessor:: Entering transient Inst\n");
+         auto  *alu_inst = Dinst::create(Instruction(Opcode::iRALU, RegType::LREG_R3, RegType::LREG_R3, RegType::LREG_R3, RegType::LREG_R3)
+                                    ,pc
+                                    ,0
+                                    ,0
+                                    ,true);
+     
+     printf("gProcessor::Yahoo!!! transient Inst Created %ld\n", alu_inst->getID());
+     //I(alu_inst->getAddr());
+     alu_inst->setTransient();
+     StallCause c = add_inst(alu_inst);
+     if (c != NoStall) {
+        if (i < RealisticWidth) {
+          nStall[c]->add(RealisticWidth - i, alu_inst->has_stats());
+        }
+       
+      }
+      alu_inst->setGProc(this);
+
+
+     //printf("gProcessor:: Istransient Inst %B\n",alu_inst->isTransient());
+     i++;
+       }
+     return;
+   }
+    //fmt::print("fetch on {}\n", ifid->getMissDinst()->getID());
+    //int i=0;
+    //Addr_t  pc = ifid->getTransientInst()->getAddr() + 4;
+    //ifid->getTransientInst()->setTransient();
+    
+    /*while(i<1){
+      auto  *alu_inst = Dinst::create(Instruction(Opcode::iSALU_ADDR, RegType::LREG_R3, RegType::LREG_R3, RegType::LREG_R3, RegType::LREG_R3)
+                                    ,pc
+                                    ,0       //addr =0 for add Inst
+                                    ,0
+                                    ,true);*/
+    //pc = pc + 4;
+    //alu_inst->setTransient();
+    //i++;
+    //printf("setTransient in gprocessor");
+   // }
+    
+
+
 
   auto     smt_hid = hid;  // FIXME: do SMT fetch
   IBucket *bucket  = pipeQ.pipeLine.newItem();
@@ -146,6 +200,9 @@ int32_t GProcessor::issue() {
       I(!bucket->empty());
 
       Dinst *dinst = bucket->top();
+     // if(dinst->isTransient())
+        //printf("gProc::YAhoo Transientinst starts adding \n");
+
 
       StallCause c = add_inst(dinst);
       if (c != NoStall) {

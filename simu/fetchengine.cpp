@@ -865,3 +865,9 @@ void FetchEngine::setMissInst(Dinst *dinst) {
   missDinst = dinst;
 #endif
 }
+
+void FetchEngine::setTransientInst(Dinst *dinst) {
+  //(void)dinst;
+  printf("fetchengine:: seting root Dinst\n");
+  transientDinst = dinst;
+}

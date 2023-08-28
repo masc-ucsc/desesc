@@ -239,3 +239,17 @@ void Dinst::destroy() {
 
   dInstPool.in(this);
 }
+void Dinst::destroyTransientInst() {
+
+  I(issued);
+  //I(executed);
+
+  I(first == 0);  // no dependent instructions
+
+  //Tracer::commit(this);
+
+  resource = nullptr;  // Needed to have GC
+  cluster  = nullptr;
+
+  dInstPool.in(this);
+}

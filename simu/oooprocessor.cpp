@@ -18,7 +18,7 @@
 #include "taskhandler.hpp"
 #include "tracer.hpp"
 
-// #define ESESC_TRACE
+//  #define ESESC_TRACE
 //  #define ESESC_CODEPROFILE
 //  #define ESESC_BRANCHPROFILE
 
@@ -224,8 +224,13 @@ bool OoOProcessor::advance_clock() {
 
 void OoOProcessor::executing(Dinst *dinst)
 // {{{1 Called when the instruction starts to execute
-{
-  dinst->markExecuting();
+{ 
+  if(dinst->isTransient()){
+  printf("OOOProc::executing Transientinst starts to executing\n");
+  dinst->markExecutingTransient();
+  } else {
+    dinst->markExecuting();
+  }
   Tracer::stage(dinst, "EX");
 
 #ifdef LATE_ALLOC_REGISTER
@@ -278,6 +283,9 @@ void OoOProcessor::executing(Dinst *dinst)
 // 1}}}
 //
 void OoOProcessor::executed([[maybe_unused]] Dinst *dinst) {
+  
+  //if(dinst->isTransient())
+  //printf("OOOProc::executed Transientinst starts to executed\n");
 #ifdef TRACK_FORWARDING
   fwdDone[dinst->getInst()->getDst1()] = globalClock;
   fwdDone[dinst->getInst()->getDst2()] = globalClock;
@@ -285,6 +293,10 @@ void OoOProcessor::executed([[maybe_unused]] Dinst *dinst) {
 }
 
 StallCause OoOProcessor::add_inst(Dinst *dinst) {
+
+  //if(dinst->isTransient())
+  //printf("OOOProc::add_inst YAhoo Transientinst is added\n");
+
   if (replayRecovering && dinst->getID() > replayID) {
     Tracer::stage(dinst, "Wrep");
     return ReplaysStall;
@@ -397,6 +409,9 @@ StallCause OoOProcessor::add_inst(Dinst *dinst) {
 
   nInst[inst->getOpcode()]->inc(dinst->has_stats());  // FIXME: move to cluster
 
+  printf("OOOProc::add_inst %ld Adding in ROB\n",dinst->getID());
+  if(dinst->isTransient())
+  printf("OOOProc::add_inst Transient %ld Adding in ROB\n",dinst->getID());
   ROB.push(dinst);
   I(dinst->getCluster() != 0);  // Resource::schedule must set the resource field
 
@@ -630,6 +645,9 @@ void OoOProcessor::rtt_load_hit(Dinst *dinst) {
 }
 
 void OoOProcessor::rtt_alu_hit(Dinst *dinst) {
+  
+  if(dinst->isTransient())
+    printf("OOOProc::YAhoo Transientinst rtl_alu_hit\n");
   // update fields using information from RTT and LT
   // num_ops = src1(nops) + src2(nops) + 1
   // ld_ptr = ptr of src1 and src2
@@ -678,6 +696,10 @@ void OoOProcessor::rtt_alu_hit(Dinst *dinst) {
   rtt_vec[dst].num_ops            = nops;
   rtt_vec[dst].load_table_pointer = tmp;
   rtt_vec[dst].pc_list            = tmp2;
+  
+  if(dinst->isTransient())
+       printf("OOOProcessor::alu_hit exiting\n");
+
 }
 
 void OoOProcessor::rtt_br_hit(Dinst *dinst) {
@@ -1396,6 +1418,8 @@ int OoOProcessor::btt_pointer_check(Dinst *dinst, int btt_id) {
 #endif
 
 void OoOProcessor::retire() {
+  //printf("\nOOOProc::retire Entering  \n");
+  //int wasTransientInst =0;
 #ifdef ENABLE_LDBP
   int64_t gclock = int64_t(clockTicks.getDouble());
   if (gclock != power_clock) {
@@ -1498,9 +1522,36 @@ void OoOProcessor::retire() {
 #endif
 
     Tracer::event(dinst, "PNR");
+    
+    if(dinst->isTransient()){
+      printf("OOOProc::retire Destroying Transient Insit %ld\n",dinst->getID());
+      //dinst->markExecuted();
+      //dinst->markPerformed();
 
-    rROB.push(dinst);
-    ROB.pop();
+      //ROB.pop()
+      if (!dinst->isExecuted()) {
+        dinst->markExecutedTransient();
+        dinst->clearRATEntry();
+        Tracer::stage(dinst, "TR");
+        while (dinst->hasPending()) {
+          Dinst *dstReady = dinst->getNextPending();
+          I(dstReady->isTransient());
+        }
+      }
+
+      dinst->destroyTransientInst();
+      //wasTransientInst = 1;
+      ROB.pop();
+      return;
+
+      
+      //dinst->destroyTransientInst();
+      //printf("OOOProc::After Destroyed Transient Inst\n");
+    } else {
+      //printf("OOOProc::Safe Inst\n");
+      rROB.push(dinst);
+      ROB.pop();
+    }
   }
 
   if (!ROB.empty() && ROB.top()->has_stats()) {
@@ -1678,6 +1729,8 @@ void OoOProcessor::retire() {
 
     rROB.pop();
   }
+//if(wasTransientInst)
+  //printf("OOOProcessor::retire Transient Exiting from retire \n");
 }
 
 void OoOProcessor::replay(Dinst *target)

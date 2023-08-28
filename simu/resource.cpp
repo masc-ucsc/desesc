@@ -745,7 +745,9 @@ FURALU::FURALU(Opcode type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, Tim
 
 StallCause FURALU::canIssue(Dinst *dinst)
 /* canIssue {{{1 */
-{
+{  if(dinst->isTransient())
+    printf("Resource:::FUALU::CanIssue Transient Inst\n");
+
   I(dinst->getPC() != 0xf00df00d);  // It used to be a Syspend, but not longer true
 
   if (dinst->getPC() == 0xdeaddead) {
@@ -783,6 +785,8 @@ StallCause FURALU::canIssue(Dinst *dinst)
 void FURALU::executing(Dinst *dinst)
 /* executing {{{1 */
 {
+  if(dinst->isTransient())
+    printf("Resource:::FUALU::Executing Transient Inst\n");
   cluster->executing(dinst);
   executedCB::scheduleAbs(gen->nextSlot(dinst->has_stats()) + lat, this, dinst);
 
@@ -793,6 +797,8 @@ void FURALU::executing(Dinst *dinst)
 void FURALU::executed(Dinst *dinst)
 /* executed {{{1 */
 {
+   if(dinst->isTransient())
+    printf("Resource::FULOAD::Executed Transient Inst\n");
   cluster->executed(dinst);
   dinst->markPerformed();
 }
@@ -800,7 +806,9 @@ void FURALU::executed(Dinst *dinst)
 
 bool FURALU::preretire(Dinst *dinst, [[maybe_unused]] bool flushing)
 /* preretire {{{1 */
-{
+{ 
+  if(dinst->isTransient())
+    printf("Resource::FUALU::IsRetire Transient Inst\n");
   return dinst->isExecuted();
 }
 /* }}} */

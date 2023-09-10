@@ -59,11 +59,10 @@ void GProcessor::fetch() {
   if(ifid->isBlocked()) {
       // printf("gprocessor::fetch on branchmiss{}%lx\n", ifid->getMissDinst()->getAddr());
        int i=0;
-       //auto *transient_dinst = ifid->get_next_transient_dinst() ;
-       Addr_t pc = ifid->get_miss_dinst()->getAddr() + 4;
+       auto *transient_dinst = ifid->get_next_transient_dinst();
+       Addr_t pc = transient_dinst->getAddr();
 
        printf("gprocessor::fetch on branchmiss{}%lx\n",ifid->get_miss_dinst()->getAddr());
-       printf("gprocessor::fetch on branchmisspc}%lx\n",ifid->get_miss_dinst()->getAddr()+4);
        printf("gprocessor::fetch on branchmissTransient{}%lx\n",ifid->get_next_transient_dinst()->getAddr() );
        //printf("gProcessor::Yahoo!!!Blocked Inst  %lx ", transient_dinst->getAddr());
        //std::cout<< "gProcessor::Yahoo!!!Blocked Inst Opcode"<<  transient_dinst->getInst()->getOpcodeName()<<std::endl;

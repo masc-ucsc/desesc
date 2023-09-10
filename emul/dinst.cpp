@@ -246,7 +246,7 @@ void Dinst::destroyTransientInst() {
 
   I(first == 0);  // no dependent instructions
 
-  //Tracer::commit(this);
+  Tracer::commit(this);
 
   resource = nullptr;  // Needed to have GC
   cluster  = nullptr;

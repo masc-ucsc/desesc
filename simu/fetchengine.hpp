@@ -40,7 +40,7 @@ private:
   Dinst *missDinst;
 #endif
   
-  Dinst *transientDinst;
+  //Dinst *transientDinst;
 
   CallbackContainer cbPending;
 
@@ -120,12 +120,15 @@ public:
 
   void dump(const std::string &str) const;
 
+  Dinst *transientDinst;
   bool isBlocked() const { return missInst; }
 #ifndef NDEBUG
   Dinst *getMissDinst() const { return missDinst; }
 #endif
 
-  Dinst *getTransientInst() const { return transientDinst; }
+  Dinst *get_next_transient_dinst() const { return transientDinst; }
+
+  Dinst *get_miss_dinst() const { return transientDinst; }
   void setTransientInst(Dinst *dinst);
 
   void clearMissInst(Dinst *dinst, Time_t missFetchTime);

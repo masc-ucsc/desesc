@@ -133,6 +133,8 @@ bool FetchEngine::processBranch(Dinst *dinst, uint16_t n2Fetch) {
   }
 
   setMissInst(dinst);
+  setTransientInst(dinst);
+  printf(" fetch::setting br transient miss addr:%lx\n",dinst->getAddr());
 
   Time_t n = (globalClock - lastMissTime);
   avgFetchTime.sample(n, dinst->has_stats());
@@ -858,7 +860,8 @@ void FetchEngine::clearMissInst(Dinst *dinst, Time_t missFetchTime) {
 
 void FetchEngine::setMissInst(Dinst *dinst) {
   (void)dinst;
-  I(!missInst);
+  if(!dinst->isTransient())
+   I(!missInst);
 
   missInst = true;
 #ifndef NDEBUG
@@ -867,7 +870,7 @@ void FetchEngine::setMissInst(Dinst *dinst) {
 }
 
 void FetchEngine::setTransientInst(Dinst *dinst) {
-  //(void)dinst;
-  printf("fetchengine:: seting root Dinst\n");
+  (void)dinst;
+  printf("fetchengine:: setTransient Dinst %lx\n",dinst->getAddr());
   transientDinst = dinst;
 }

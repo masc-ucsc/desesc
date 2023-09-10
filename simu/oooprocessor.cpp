@@ -165,8 +165,12 @@ OoOProcessor::~OoOProcessor()
 /* }}} */
 
 bool OoOProcessor::advance_clock_drain() {
+
+  printf("OOOProc::advance_clock_drain ::decode_stage() is called\n");
   bool abort = decode_stage();
   if (abort || !busy) {
+
+    printf("OOOProc::advance_clock_drain ::decode_stage() return busy\n");
     return busy;
   }
 
@@ -199,14 +203,18 @@ bool OoOProcessor::advance_clock_drain() {
   }
 
   if (!pipeQ.instQueue.empty()) {
+    printf("OOOProc::advance_clock_drain ::Entering issue()\n");
     auto n = issue();
+    printf("OOOProc::advance_clock_drain ::issue() is done\n");
     spaceInInstQueue += n;
   } else if (ROB.empty() && rROB.empty() && !pipeQ.pipeLine.hasOutstandingItems()) {
+    printf("OOOProc::advance_clock_drain ::issue() is not called \n");
     return false;
   }
 
   retire();
 
+  printf("OOOProc::advance_clock_drain  return true\n");
   return true;
 }
 
@@ -218,6 +226,7 @@ bool OoOProcessor::advance_clock() {
   Tracer::advance_clock();
 
   fetch();
+  printf("OOOProc::advance_clock ::fetch() is called\n");
 
   return advance_clock_drain();
 }
@@ -226,10 +235,11 @@ void OoOProcessor::executing(Dinst *dinst)
 // {{{1 Called when the instruction starts to execute
 { 
   if(dinst->isTransient()){
-  printf("OOOProc::executing Transientinst starts to executing\n");
-  dinst->markExecutingTransient();
+    printf("OOOProc::executing  Transient starts to dinstID %lx\n", dinst->getID());
+    dinst->markExecutingTransient();
   } else {
     dinst->markExecuting();
+    printf("OOOProc::executing  starts to dinstID %lx\n", dinst->getID());
   }
   Tracer::stage(dinst, "EX");
 
@@ -284,8 +294,11 @@ void OoOProcessor::executing(Dinst *dinst)
 //
 void OoOProcessor::executed([[maybe_unused]] Dinst *dinst) {
   
-  //if(dinst->isTransient())
-  //printf("OOOProc::executed Transientinst starts to executed\n");
+  if(dinst->isTransient())
+    printf("OOOProc::executed Transientinst starts to executed\n");
+  else 
+    printf("OOOProc::executed  starts to dinstID %lx\n", dinst->getID());
+
 #ifdef TRACK_FORWARDING
   fwdDone[dinst->getInst()->getDst1()] = globalClock;
   fwdDone[dinst->getInst()->getDst2()] = globalClock;
@@ -294,8 +307,11 @@ void OoOProcessor::executed([[maybe_unused]] Dinst *dinst) {
 
 StallCause OoOProcessor::add_inst(Dinst *dinst) {
 
-  //if(dinst->isTransient())
-  //printf("OOOProc::add_inst YAhoo Transientinst is added\n");
+  if(dinst->isTransient())
+    printf("OOOProc::add_inst YAhoo Transientinst is added\n");
+  else
+    printf("OOOProc::add_int  starts to dinstID %lx\n", dinst->getID());
+
 
   if (replayRecovering && dinst->getID() > replayID) {
     Tracer::stage(dinst, "Wrep");
@@ -409,9 +425,9 @@ StallCause OoOProcessor::add_inst(Dinst *dinst) {
 
   nInst[inst->getOpcode()]->inc(dinst->has_stats());  // FIXME: move to cluster
 
-  printf("OOOProc::add_inst %ld Adding in ROB\n",dinst->getID());
+  printf("OOOProc::add_instROB Adding in ROB %lx\n",dinst->getID());
   if(dinst->isTransient())
-  printf("OOOProc::add_inst Transient %ld Adding in ROB\n",dinst->getID());
+    printf("OOOProc::add_instROB Transient %ld Adding in ROB\n",dinst->getID());
   ROB.push(dinst);
   I(dinst->getCluster() != 0);  // Resource::schedule must set the resource field
 
@@ -474,6 +490,7 @@ StallCause OoOProcessor::add_inst(Dinst *dinst) {
   }
 #endif
 
+  printf("OOOProc::add_inst %ld Exiting add_inst\n", dinst->getID());
   return NoStall;
 }
 /* }}} */
@@ -1418,7 +1435,7 @@ int OoOProcessor::btt_pointer_check(Dinst *dinst, int btt_id) {
 #endif
 
 void OoOProcessor::retire() {
-  //printf("\nOOOProc::retire Entering  \n");
+  printf("\nOOOProc::retire Entering  \n");
   //int wasTransientInst =0;
 #ifdef ENABLE_LDBP
   int64_t gclock = int64_t(clockTicks.getDouble());
@@ -1534,12 +1551,13 @@ void OoOProcessor::retire() {
         dinst->clearRATEntry();
         Tracer::stage(dinst, "TR");
         while (dinst->hasPending()) {
-          Dinst *dstReady = dinst->getNextPending();
-          I(dstReady->isTransient());
+          //Dinst *dstReady = dinst->getNextPending();
+          //I(dstReady->isTransient());
         }
       }
 
       dinst->destroyTransientInst();
+      printf("OOOProc::retire transient Inst destroy from rob %lx\n", dinst->getID());
       //wasTransientInst = 1;
       ROB.pop();
       return;
@@ -1548,7 +1566,7 @@ void OoOProcessor::retire() {
       //dinst->destroyTransientInst();
       //printf("OOOProc::After Destroyed Transient Inst\n");
     } else {
-      //printf("OOOProc::Safe Inst\n");
+      printf("OOOProc::retire Inst retire from rob %lx\n", dinst->getID());
       rROB.push(dinst);
       ROB.pop();
     }
@@ -1725,12 +1743,13 @@ void OoOProcessor::retire() {
 
     if (dinst->isPerformed()) {  // Stores can perform after retirement
       dinst->destroy();
+      printf("OOOProcessor::retire destroy instID %lx \n", dinst->getID());
     }
 
     rROB.pop();
   }
 //if(wasTransientInst)
-  //printf("OOOProcessor::retire Transient Exiting from retire \n");
+  //printf("OOOProcessor::retire  Exiting from retirinstID %lx \n", );
 }
 
 void OoOProcessor::replay(Dinst *target)

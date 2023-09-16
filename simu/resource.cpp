@@ -531,6 +531,7 @@ bool FUStore::preretire(Dinst *dinst, bool flushing) {
     return true;
   }
   if (flushing) {
+    printf("Resource::FUStore_Preretire Perfomred dinst %lx and addr %lx\n",dinst->getID(), dinst->getAddr());
     performed(dinst);
     return true;
   }
@@ -542,6 +543,7 @@ bool FUStore::preretire(Dinst *dinst, bool flushing) {
     return false;
   }
 
+  printf("Resource::FUStore_preretire sening to SCB  dinst %lx and addr %lx\n",dinst->getID(), dinst->getAddr());
   scb->add_st(dinst);
 
   if (enableDcache) {
@@ -551,6 +553,7 @@ bool FUStore::preretire(Dinst *dinst, bool flushing) {
                              dinst->getPC(),
                              performedCB::create(this, dinst));
   } else {
+    printf("Resource::FUStore_preretire Perfomred dinst %lx and addr %lx\n",dinst->getID(), dinst->getAddr());
     performed(dinst);
   }
 

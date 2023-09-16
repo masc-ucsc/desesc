@@ -8,7 +8,7 @@
 #include <fstream>
 #include <iterator>
 #include <numeric>
-
+#include <iostream>
 #include "config.hpp"
 #include "fastqueue.hpp"
 #include "fetchengine.hpp"
@@ -167,10 +167,11 @@ OoOProcessor::~OoOProcessor()
 bool OoOProcessor::advance_clock_drain() {
 
   printf("OOOProc::advance_clock_drain ::decode_stage() is called\n");
+  
   bool abort = decode_stage();
   if (abort || !busy) {
 
-    printf("OOOProc::advance_clock_drain ::decode_stage() return busy\n");
+    printf("OOOProc::advance_clock_drain ::decode_stage() return not busy/abort\n");
     return busy;
   }
 
@@ -208,13 +209,13 @@ bool OoOProcessor::advance_clock_drain() {
     printf("OOOProc::advance_clock_drain ::issue() is done\n");
     spaceInInstQueue += n;
   } else if (ROB.empty() && rROB.empty() && !pipeQ.pipeLine.hasOutstandingItems()) {
-    printf("OOOProc::advance_clock_drain ::issue() is not called \n");
+    printf("OOOProc::advance_clock_drain :: issue::No issue() pipeQ.instQueue Empty!!!\n");
     return false;
   }
 
   retire();
 
-  printf("OOOProc::advance_clock_drain  return true\n");
+  printf("OOOProc::advance_clock_drain  retire done \n");
   return true;
 }
 
@@ -225,6 +226,7 @@ bool OoOProcessor::advance_clock() {
 
   Tracer::advance_clock();
 
+  printf("\nOOOProc::advance_clock() Leaving with pipeQ.InstQ.bucket size %ld\n",pipeQ.instQueue.size());
   fetch();
   printf("OOOProc::advance_clock ::fetch() is called\n");
 
@@ -307,19 +309,21 @@ void OoOProcessor::executed([[maybe_unused]] Dinst *dinst) {
 
 StallCause OoOProcessor::add_inst(Dinst *dinst) {
 
-  if(dinst->isTransient())
-    printf("OOOProc::add_inst YAhoo Transientinst is added\n");
+  if (dinst->isTransient())
+    printf("OOOProc::add_inst YAhoo Transientinst is %lx\n", dinst->getID());
   else
     printf("OOOProc::add_int  starts to dinstID %lx\n", dinst->getID());
 
 
   if (replayRecovering && dinst->getID() > replayID) {
     Tracer::stage(dinst, "Wrep");
+    printf("ooop::add_inst replaystall dinstID %lx\n", dinst->getID());
     return ReplaysStall;
   }
 
   if ((ROB.size() + rROB.size()) >= (MaxROBSize - 1)) {
-    Tracer::stage(dinst, "Wrob");
+    Tracer::stage(dinst, "Wrob");  
+    printf("ooop::add_inst robsizestall dinstID %lx\n", dinst->getID());
     return SmallROBStall;
   }
 
@@ -327,6 +331,7 @@ StallCause OoOProcessor::add_inst(Dinst *dinst) {
 
   if (nTotalRegs <= 0) {
     Tracer::stage(dinst, "Wreg");
+    printf("ooop::add_inst regstall dinstID %lx\n", dinst->getID());
     return SmallREGStall;
   }
 
@@ -340,6 +345,7 @@ StallCause OoOProcessor::add_inst(Dinst *dinst) {
   StallCause sc = cluster->canIssue(dinst);
   if (sc != NoStall) {
     Tracer::stage(dinst, "Wcls");
+    printf("ooop::add_inst clusterissue_stall dinstID %lx\n", dinst->getID());
     return sc;
   }
 
@@ -1436,7 +1442,7 @@ int OoOProcessor::btt_pointer_check(Dinst *dinst, int btt_id) {
 
 void OoOProcessor::retire() {
   printf("\nOOOProc::retire Entering  \n");
-  //int wasTransientInst =0;
+
 #ifdef ENABLE_LDBP
   int64_t gclock = int64_t(clockTicks.getDouble());
   if (gclock != power_clock) {
@@ -1542,36 +1548,43 @@ void OoOProcessor::retire() {
     
     if(dinst->isTransient()){
       printf("OOOProc::retire Destroying Transient Insit %ld\n",dinst->getID());
-      //dinst->markExecuted();
-      //dinst->markPerformed();
-
-      //ROB.pop()
+      
       if (!dinst->isExecuted()) {
         dinst->markExecutedTransient();
         dinst->clearRATEntry();
         Tracer::stage(dinst, "TR");
+
         while (dinst->hasPending()) {
-          //Dinst *dstReady = dinst->getNextPending();
-          //I(dstReady->isTransient());
+          Dinst *dstReady = dinst->getNextPending();
+          I(dstReady->isTransient());
         }
       }
-
-      dinst->destroyTransientInst();
+     
       printf("OOOProc::retire transient Inst destroy from rob %lx\n", dinst->getID());
-      //wasTransientInst = 1;
+      //dinst->clearRATEntry();
+      //Tracer::stage(dinst, "TR");
+      //dinst->destroyTransientInst();
+      //ROB.pop();
+      I(dinst->getCluster());
+      bool done_cluster = dinst->getCluster()->retire(dinst, flushing);
+      if (!done_cluster) {
+      break;
+      }
+      if (dinst->getInst()->hasDstRegister()) {
+      nTotalRegs++;
+      }
+    
+      dinst->destroyTransientInst();
       ROB.pop();
       return;
-
-      
-      //dinst->destroyTransientInst();
-      //printf("OOOProc::After Destroyed Transient Inst\n");
-    } else {
+  } else {
       printf("OOOProc::retire Inst retire from rob %lx\n", dinst->getID());
       rROB.push(dinst);
       ROB.pop();
     }
   }
-
+//ROB_loop end
+//ROB sampling stats
   if (!ROB.empty() && ROB.top()->has_stats()) {
     robUsed.sample(ROB.size(), true);
 #ifdef TRACK_TIMELEAK
@@ -1601,7 +1614,7 @@ void OoOProcessor::retire() {
     avgPNRMissLoadSpec.sample(true, total_miss);
 #endif
   }
-
+//ROB sampling end
   if (!rROB.empty()) {
     rrobUsed.sample(rROB.size(), rROB.top()->has_stats());
 
@@ -1636,6 +1649,7 @@ void OoOProcessor::retire() {
 #endif
   }
 
+//rROB starts 
   for (uint16_t i = 0; i < RetireWidth && !rROB.empty(); i++) {
     Dinst *dinst = rROB.top();
     if (last_serialized == dinst) {
@@ -1657,12 +1671,16 @@ void OoOProcessor::retire() {
     }
 
     I(dinst->getCluster());
-
+   
+    if (dinst->getInst()->isStore())
+      std::cout<<"OOOProc::Store retire Inst entering  rRob " << dinst->getID() << "and Addr "
+        << dinst->getAddr()<<"and Opcode " << dinst->getInst()->getOpcodeName()<<std::endl;
     bool done = dinst->getCluster()->retire(dinst, flushing);
     if (!done) {
+      printf("OOOProc::retire:: not done rROB  retire() instid %lx\n",dinst->getID());
       break;
     }
-
+//TODO powerspec
     Hartid_t smt_hid = dinst->getFlowId();
     if (dinst->isReplay()) {
       flushing     = true;
@@ -1743,13 +1761,17 @@ void OoOProcessor::retire() {
 
     if (dinst->isPerformed()) {  // Stores can perform after retirement
       dinst->destroy();
-      printf("OOOProcessor::retire destroy instID %lx \n", dinst->getID());
+      printf("OOOProcessor::retire destroy instID %lx  and Addr %lx", dinst->getID(),dinst->getAddr());
+      std::cout << "Opcode is :" <<  dinst->getInst()->getOpcodeName() << std::endl;
+    } else {
+      printf("OOOProcessor::retire not performed  instID %lx and Addr %lx", dinst->getID(),dinst->getAddr());
+      std::cout << "Not Performed Opcode is :" <<  dinst->getInst()->getOpcodeName() << std::endl;
     }
 
     rROB.pop();
   }
-//if(wasTransientInst)
-  //printf("OOOProcessor::retire  Exiting from retirinstID %lx \n", );
+// rROB_end
+   //printf("OOOProcessor::retire  Exiting from retirinstID %lx \n", );
 }
 
 void OoOProcessor::replay(Dinst *target)

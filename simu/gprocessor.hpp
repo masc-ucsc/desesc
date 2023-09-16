@@ -141,6 +141,7 @@ public:
   // Returns the maximum number of flows this processor can support
   size_t get_smt_size() const override { return smt_size; }
 
+  void add_inst_transient_on_branch_miss(IBucket *bucket, Addr_t pc);
   void report(const std::string &str);
 
   std::shared_ptr<StoreSet>     ref_SS() { return storeset; }

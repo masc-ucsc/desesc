@@ -9,6 +9,7 @@
 #include "fmt/format.h"
 #include "gmemory_system.hpp"
 #include "report.hpp"
+#include "tracer.hpp"
 
 void SMT_fetch::update() {
   if (smt_lastTime != globalClock) {
@@ -48,22 +49,27 @@ void GProcessor::fetch() {
     return;
   }
 
-  auto ifid = smt_fetch.fetch_next();
-  //  if (ifid->isBlocked()) {
+  auto ifid = smt_fetch.fetch_next(); 
+  //if (ifid->isBlocked()) {
     // fmt::print("fetch on {}\n", ifid->getMissDinst()->getID());
     //return;
- // }
+  //}
 
   auto     smt_hid = hid;  // FIXME: do SMT fetch
   IBucket *bucket  = pipeQ.pipeLine.newItem();
   if(ifid->isBlocked()) {
-      // printf("gprocessor::fetch on branchmiss{}%lx\n", ifid->getMissDinst()->getAddr());
-       int i=0;
+       Addr_t pc = ifid->getMissDinst()->getAddr() + 4;
+       printf("gprocessor::fetch on branchmiss{}%lx\n",ifid->get_miss_dinst()->getAddr());
+       printf("gprocessor::fetch on branchmiss + 4 {}%lx\n",pc);
+       //printf("gprocessor::fetch on branchmiss{}%lx\n", ifid->getMissDinst()->getAddr());
+      /* int i=0;
        auto *transient_dinst = ifid->get_next_transient_dinst();
-       Addr_t pc = transient_dinst->getAddr();
+       //Addr_t pc = transient_dinst->getAddr();
+       Addr_t pc = ifid->getMissDinst()->getAddr() + 4;
 
        printf("gprocessor::fetch on branchmiss{}%lx\n",ifid->get_miss_dinst()->getAddr());
-       printf("gprocessor::fetch on branchmissTransient{}%lx\n",ifid->get_next_transient_dinst()->getAddr() );
+       printf("gprocessor::fetch on branchmissTransient{}%lx\n",transient_dinst->getAddr());
+       printf("gprocessor::fetch on branchmiss + 4 {}%lx\n",pc);
        //printf("gProcessor::Yahoo!!!Blocked Inst  %lx ", transient_dinst->getAddr());
        //std::cout<< "gProcessor::Yahoo!!!Blocked Inst Opcode"<<  transient_dinst->getInst()->getOpcodeName()<<std::endl;
        while (i<1){
@@ -73,18 +79,24 @@ void GProcessor::fetch() {
                                     ,0
                                     ,0
                                     ,true);
-         if(alu_dinst)
-           printf("gProcessor::Yahoo!!! transient Inst Created %ld and addr is %lx\n", alu_dinst->getID(),alu_dinst->getAddr());
+         
          alu_dinst->setTransient();
+         if(alu_dinst)
+           std::cout<< "gProcessor::Yahoo!!Transient  Inst Opcode"<<alu_dinst->getInst()->getOpcodeName()<<std::endl;
          if (bucket) {
+           //add_inst_transient_on_branch_miss(bucket);
            //alu_dinst->setFetchTime();
            bucket->push(alu_dinst);
+           Tracer::stage(alu_dinst, "IF");
            //spaceInInstQueue -= bucket->size();
-           //pipeQ.instQueue.push(bucket);
-           printf("gProcessor::Yahoo!!! Bucket Inst Created %ld and bucket size is %lu", alu_dinst->getID(), bucket->size());
+           pipeQ.pipeLine.readyItem(bucket);//must bucket-> markedfetch()
+           printf("gProcessor::Yahoo!!! Bucket Inst Created %ld and bucket size is %lu", 
+               alu_dinst->getID(), bucket->size());
          }
          i++;
-       }
+       }*/
+
+       add_inst_transient_on_branch_miss(bucket, pc);
        return; 
   }
 
@@ -96,6 +108,35 @@ void GProcessor::fetch() {
     }
   }
 }
+
+void GProcessor:: add_inst_transient_on_branch_miss(IBucket *bucket, Addr_t pc) {
+       int i=0;
+       while (i<1){
+         //printf("gProcessor:: Entering transient Inst\n");
+         auto  *alu_dinst = Dinst::create(Instruction(Opcode::iRALU, RegType::LREG_R3, RegType::LREG_R3, RegType::LREG_R3, RegType::LREG_R3)
+                                    ,pc
+                                    ,0
+                                    ,0
+                                    ,true);
+         
+         alu_dinst->setTransient();
+         if(alu_dinst)
+           std::cout<< "gProcessor::Yahoo!!Transient  Inst Opcode"<<alu_dinst->getInst()->getOpcodeName()<<std::endl;
+         if (bucket) {
+           //alu_dinst->setFetchTime();
+           bucket->push(alu_dinst);
+           Tracer::stage(alu_dinst, "IF");
+           //spaceInInstQueue -= bucket->size();
+           pipeQ.pipeLine.readyItem(bucket);//must bucket-> markedfetch()
+           printf("gProcessor::Yahoo!!! Bucket Inst Created %ld and bucket size is %lu", 
+               alu_dinst->getID(), bucket->size());
+         }
+         i++;
+       }
+}
+
+
+
 
 GProcessor::GProcessor(std::shared_ptr<Gmemory_system> gm, Hartid_t i)
     : Simu_base(gm, i)
@@ -174,7 +215,7 @@ int32_t GProcessor::issue() {
     do {
       I(!bucket->empty());
       if (i >= IssueWidth) {
-        printf("gProc::Issue  Wrong i and  issuewidth is %d %d\n",i, IssueWidth);
+        printf("gProc::Issue  Sorry Wrong!!! ::i>= issuewidth is %d %d\n",i, IssueWidth);
         return i;
       }
 
@@ -188,12 +229,14 @@ int32_t GProcessor::issue() {
 
 
 
-      printf("\ngProc::add_inst \n");
+      std::cout<< "gProcessor:: issueYahoo!!!Inst issued Opcode"<< dinst->getInst()->getOpcodeName()<<std::endl;
       StallCause c = add_inst(dinst);
       if (c != NoStall) {
         if (i < RealisticWidth) {
           nStall[c]->add(RealisticWidth - i, dinst->has_stats());
+          printf("gProc::Issue  Sorry Wrong!!! ::i<RealWidthis %d %d\n",i, RealisticWidth);
         }
+          printf("gProc::Issue  Sorry only  stall added  %d %d\n",i, RealisticWidth);
         return i;
       }
       dinst->setGProc(this);
@@ -207,7 +250,7 @@ int32_t GProcessor::issue() {
     pipeQ.instQueue.pop();
   } while (!pipeQ.instQueue.empty());
 
-  printf("\ngProc::issue Leaving\n");
+  printf("\ngProc::issue Leaving Correctly\n");
   return i;
 }
 
@@ -227,17 +270,25 @@ bool GProcessor::decode_stage() {
     IBucket *bucket = pipeQ.pipeLine.nextItem();
     if (bucket) {
       I(!bucket->empty());
-      printf("\ngProc::decode bucketinstQ id is %lx\n",bucket->top()->getID());
+      printf("\ngProc::decode top Instid is %lx and decode bucketsize is %ld\n", 
+          bucket->top()->getID(), bucket->size());
+      std::cout<< "gProcessor:: decode Yahoo!!!Inst Opcode "<< bucket->top()->getInst()->getOpcodeName()<<std::endl;
       spaceInInstQueue -= bucket->size();
       pipeQ.instQueue.push(bucket);
 
+
     } else {
       noFetch2.inc(use_stats);
+      printf("\ngProc::decode No fetch: Bucket Empty!!!");
     }
   } else {
     noFetch.inc(use_stats);
+    printf("\ngProc::decode No fetch: spaceInInstQueue < FetchWidth");
   }
 
-  printf("\ngProc::decode Leaving\n");
+  //IBucket *bucket = pipeQ.instQueue.top();
+  //pipeQ.instQueue.push(bucket);
+  //printf("\ngProc::decode Leaving with pipeQ.InstQ.bucket size %ld\n", bucket->size());
+  printf("\ngProc::decode Leaving \n");
   return false;
 }

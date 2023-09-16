@@ -214,15 +214,18 @@ void Cluster::select(Dinst *dinst) {
 
 StallCause Cluster::canIssue(Dinst *dinst) const {
   if (regPool <= 0) {
+    printf("Cluster::can issue reg stall dinstID %lx\n", dinst->getID());
     return SmallREGStall;
   }
 
   if (windowSize <= 0) {
+    printf("Cluster::can issue window size stall dinstID %lx\n", dinst->getID());
     return SmallWinStall;
   }
 
   StallCause sc = window.canIssue(dinst);
   if (sc != NoStall) {
+    printf("Cluster::canissue window cannot isuue stall dinstID %lx\n", dinst->getID());
     return sc;
   }
 
@@ -275,6 +278,7 @@ bool ExecutingCluster::retire(Dinst *dinst, bool reply) {
 
   if (hasDest) {
     regPool++;
+  printf("Cluster::Executing retire :: regpool++ Inst reg Pool %d  %lx\n",regPool,  dinst->getID());
     I(regPool <= nRegs);
   }
 
@@ -313,6 +317,7 @@ bool ExecutedCluster::retire(Dinst *dinst, bool reply) {
   bool hasDest = (dinst->getInst()->hasDstRegister());
   if (hasDest) {
     regPool++;
+  printf("Cluster::Executed retire ::regPool++:: Inst regPool %d  %lx\n",regPool,  dinst->getID());
     I(regPool <= nRegs);
   }
   // dinst->dump("ret");
@@ -351,6 +356,7 @@ bool RetiredCluster::retire(Dinst *dinst, bool reply) {
 
   if (hasDest) {
     regPool++;
+  printf("Cluster::Retired  retire :: regPool++: Inst reg Pool %d  %lx\n",regPool,  dinst->getID());
     I(regPool <= nRegs);
   }
 

@@ -124,18 +124,20 @@ IBucket *Pipeline::nextItem() {
 
     if (((buffer.top())->getClock() + PipeLength) > globalClock) {
 #if 0
-      fprintf(stderr,"1 @%lld Buffer[%p] .top.ID (%d) ->getClock(@%lld) to be issued after %d cycles\n"
-          ,(long long int) globalClock
-          ,buffer.top()
-          ,(int) ((buffer.top())->top())->getID()
-          ,(long long int)((buffer.top())->getClock())
-          ,PipeLength
-          );
+//#if 1
+        fprintf(stderr,"1 @%lld Buffer[%p] .top.ID (%d) ->getClock(@%lld) to be issued after %d cycles\n" 
+           ,(long long int) globalClock
+           ,buffer.top()
+           ,(int) ((buffer.top())->top())->getID()
+           ,(long long int)((buffer.top())->getClock())
+           ,PipeLength
+           );
 #endif
       return 0;
     } else {
 #if 0
-      fprintf(stderr,"2 @%lld Buffer[%p] .top.ID (%d) ->getClock(@%lld) to be issued after %d cycles\n"
+//#if 1
+       fprintf(stderr,"2 @%lld Buffer[%p] .top.ID (%d) ->getClock(@%lld) to be issued after %d cycles\n"1
           ,(long long int) globalClock
           ,buffer.top()
           ,(int) ((buffer.top())->top())->getID()
@@ -146,7 +148,7 @@ IBucket *Pipeline::nextItem() {
     }
     IBucket *b = buffer.top();
     buffer.pop();
-    // fprintf(stderr,"@%lld: Popping Bucket[%p]\n",(long long int)globalClock ,b);
+    //fprintf(stderr,"@%lld: Popping Bucket[%p]\n",(long long int)globalClock ,b);
     I(!b->empty());
     I(!b->cleanItem);
 

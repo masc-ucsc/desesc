@@ -49,57 +49,26 @@ void GProcessor::fetch() {
     return;
   }
 
-  auto ifid = smt_fetch.fetch_next(); 
-  //if (ifid->isBlocked()) {
+  auto ifid = smt_fetch.fetch_next();
+ //must be before *bucket 
+  /*if (ifid->isBlocked()) {
     // fmt::print("fetch on {}\n", ifid->getMissDinst()->getID());
-    //return;
-  //}
+     return;
+  }*/
 
   auto     smt_hid = hid;  // FIXME: do SMT fetch
   IBucket *bucket  = pipeQ.pipeLine.newItem();
-  if(ifid->isBlocked()) {
-       Addr_t pc = ifid->getMissDinst()->getAddr() + 4;
-       printf("gprocessor::fetch on branchmiss{}%lx\n",ifid->get_miss_dinst()->getAddr());
-       printf("gprocessor::fetch on branchmiss + 4 {}%lx\n",pc);
+
+    if(ifid->isBlocked()) {
+        Addr_t pc = ifid->getMissDinst()->getAddr() + 4;
+        printf("gprocessor::fetch on branchmiss{}%lx\n",ifid->get_miss_dinst()->getAddr());
+        printf("gprocessor::fetch on branchmiss + 4 {}%lx\n",pc);
        //printf("gprocessor::fetch on branchmiss{}%lx\n", ifid->getMissDinst()->getAddr());
-      /* int i=0;
-       auto *transient_dinst = ifid->get_next_transient_dinst();
-       //Addr_t pc = transient_dinst->getAddr();
-       Addr_t pc = ifid->getMissDinst()->getAddr() + 4;
-
-       printf("gprocessor::fetch on branchmiss{}%lx\n",ifid->get_miss_dinst()->getAddr());
-       printf("gprocessor::fetch on branchmissTransient{}%lx\n",transient_dinst->getAddr());
-       printf("gprocessor::fetch on branchmiss + 4 {}%lx\n",pc);
-       //printf("gProcessor::Yahoo!!!Blocked Inst  %lx ", transient_dinst->getAddr());
-       //std::cout<< "gProcessor::Yahoo!!!Blocked Inst Opcode"<<  transient_dinst->getInst()->getOpcodeName()<<std::endl;
-       while (i<1){
-         //printf("gProcessor:: Entering transient Inst\n");
-         auto  *alu_dinst = Dinst::create(Instruction(Opcode::iRALU, RegType::LREG_R3, RegType::LREG_R3, RegType::LREG_R3, RegType::LREG_R3)
-                                    ,pc
-                                    ,0
-                                    ,0
-                                    ,true);
-         
-         alu_dinst->setTransient();
-         if(alu_dinst)
-           std::cout<< "gProcessor::Yahoo!!Transient  Inst Opcode"<<alu_dinst->getInst()->getOpcodeName()<<std::endl;
-         if (bucket) {
-           //add_inst_transient_on_branch_miss(bucket);
-           //alu_dinst->setFetchTime();
-           bucket->push(alu_dinst);
-           Tracer::stage(alu_dinst, "IF");
-           //spaceInInstQueue -= bucket->size();
-           pipeQ.pipeLine.readyItem(bucket);//must bucket-> markedfetch()
-           printf("gProcessor::Yahoo!!! Bucket Inst Created %ld and bucket size is %lu", 
-               alu_dinst->getID(), bucket->size());
-         }
-         i++;
-       }*/
-
-       add_inst_transient_on_branch_miss(bucket, pc);
+       if (bucket) 
+         add_inst_transient_on_branch_miss(bucket, pc);
        return; 
   }
-
+ 
   if (bucket) {
     ifid->fetch(bucket, eint, smt_hid);
     if (!bucket->empty()) {
@@ -111,9 +80,9 @@ void GProcessor::fetch() {
 
 void GProcessor:: add_inst_transient_on_branch_miss(IBucket *bucket, Addr_t pc) {
        int i=0;
-       while (i<1){
+       while (i< FetchWidth) {
          //printf("gProcessor:: Entering transient Inst\n");
-         auto  *alu_dinst = Dinst::create(Instruction(Opcode::iRALU, RegType::LREG_R3, RegType::LREG_R3, RegType::LREG_R3, RegType::LREG_R3)
+         auto  *alu_dinst = Dinst::create(Instruction(Opcode::iAALU, RegType::LREG_R3, RegType::LREG_R3, RegType::LREG_R3, RegType::LREG_R3)
                                     ,pc
                                     ,0
                                     ,0
@@ -127,12 +96,14 @@ void GProcessor:: add_inst_transient_on_branch_miss(IBucket *bucket, Addr_t pc) 
            bucket->push(alu_dinst);
            Tracer::stage(alu_dinst, "IF");
            //spaceInInstQueue -= bucket->size();
-           pipeQ.pipeLine.readyItem(bucket);//must bucket-> markedfetch()
+           //pipeQ.pipeLine.readyItem(bucket);//must bucket-> markedfetch()
            printf("gProcessor::Yahoo!!! Bucket Inst Created %ld and bucket size is %lu", 
                alu_dinst->getID(), bucket->size());
          }
          i++;
+         pc = pc + 4;
        }
+      pipeQ.pipeLine.readyItem(bucket);//must bucket-> markedfetch() after loop
 }
 
 

@@ -182,6 +182,9 @@ void FetchEngine::chainLoadDone(Dinst *dinst) {
 
 void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Hartid_t fid, int32_t n2Fetch) {
   Addr_t lastpc = 0;
+  /*if (fid->isBlocked()){
+  Addr_t pc = ifid->getMissDinst()->getAddr() + 4;
+  }*/
 
 #ifdef USE_FUSE
   RegType last_dest = LREG_R0;
@@ -646,7 +649,19 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
     eint->execute(fid);
     Tracer::stage(dinst, "IF");
     dinst->setFetchTime();
-    bucket->push(dinst);
+    /*if (fid->isBlocked()){
+      auto  *alu_dinst = Dinst::create(Instruction(Opcode::iAALU, RegType::LREG_R3, RegType::LREG_R3, RegType::LREG_R3, RegType::LREG_R3)
+                                    ,pc
+                                    ,0
+                                    ,0
+                                    ,true);
+         
+         alu_dinst->setTransient();
+         bucket->push(alu_dinst);
+         pc = pc + 4;
+    } else {*/
+      bucket->push(dinst);
+    //}
 
 #ifdef USE_FUSE
     if (dinst->getInst()->isControl()) {
@@ -705,6 +720,10 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
     // Fetch uses getHead, ROB retires getTail
   } while (n2Fetch > 0);
 
+  /*if(fid->isBlocked()) {
+   pipeQ.pipeLine.readyItem(bucket);//must bucket-> markedfetch()
+   return; 
+  }*/
   bpred->fetchBoundaryEnd();
 
   if (il1_enable && !bucket->empty()) {
@@ -860,7 +879,8 @@ void FetchEngine::clearMissInst(Dinst *dinst, Time_t missFetchTime) {
 
 void FetchEngine::setMissInst(Dinst *dinst) {
   (void)dinst;
-  if(!dinst->isTransient())
+  //if(!dinst->isTransient())
+  printf("fetchengine:: setMIss Dinst %lx and bool is %b\n",dinst->getAddr(), missInst);
    I(!missInst);
 
   missInst = true;

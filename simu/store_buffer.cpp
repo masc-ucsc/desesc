@@ -35,9 +35,9 @@ void Store_buffer::remove_clean() {
   absl::erase_if(lines, [&num](std::pair<const Addr_t, Store_buffer_line> p) {
     if (p.second.is_clean()) {
       ++num;
-      return false;
+      return true;
     }
-    return true;
+    return false;
   });
 
   scb_clean_lines -= num;

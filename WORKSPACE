@@ -65,9 +65,9 @@ http_archive(
 http_archive(
     name = "com_google_perfetto",
     build_file = "perfetto.BUILD",
-    sha256 = "06eec38d02f99d225cdad9444102e77d9da717f8cc55f84a3b212abe94a5fc5a",
-    strip_prefix = "perfetto-28.0/sdk",
-    urls = ["https://github.com/google/perfetto/archive/refs/tags/v28.0.tar.gz"],
+    sha256 = "92160b0fbeb8c4992cc0690d832dd923cee1dda466f3364ef4ed26a835e55e40",
+    strip_prefix = "perfetto-38.0/sdk",
+    urls = ["https://github.com/google/perfetto/archive/refs/tags/v38.0.tar.gz"],
 )
 
 # toml11

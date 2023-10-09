@@ -73,7 +73,8 @@ FetchEngine::FetchEngine(Hartid_t id, std::shared_ptr<Gmemory_system> gms_, std:
   }
 
   missInst = false;
-
+  //for flushing transient from pipeline
+  is_fetch_next_ready = false;
   // Move to libmem/Prefetcher.cpp ; it can be stride or DVTAGE
   // FIXME: use AddressPredictor::create()
 
@@ -133,6 +134,7 @@ bool FetchEngine::processBranch(Dinst *dinst, uint16_t n2Fetch) {
   }
 
   setMissInst(dinst);
+  is_fetch_next_ready = false;
   setTransientInst(dinst);
   printf(" fetch::setting br transient miss addr:%lx\n",dinst->getAddr());
 
@@ -849,6 +851,7 @@ void FetchEngine::unBlockFetchBPredDelay(Dinst *dinst, Time_t missFetchTime) {
 
 void FetchEngine::unBlockFetch(Dinst *dinst, Time_t missFetchTime) {
   clearMissInst(dinst, missFetchTime);
+  is_fetch_next_ready = true;
 
   I(missFetchTime != 0 || globalClock < 1000);  // The first branch can have time zero fetch
 

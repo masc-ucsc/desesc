@@ -156,6 +156,7 @@ private:
   bool fullMiss;  // Only for DL1
   bool speculative;
   bool transient;
+  bool present_in_rob;
   // END Boolean flags
 
   SSID_t      SSID;
@@ -252,6 +253,8 @@ private:
     fullMiss     = false;
     speculative  = true;
     transient    = false;
+   
+    present_in_rob = false;
 
 #ifdef DINST_PARENT
     pend[0].setParentDinst(0);
@@ -286,7 +289,8 @@ public:
     transient = true; 
     //printf("Setting transient in ::dinst\n");
   }
-
+  bool is_present_in_rob() { return present_in_rob; }
+  void set_present_in_rob() { present_in_rob = true; }
   bool has_stats() const { return keep_stats; }
 
 #if 0

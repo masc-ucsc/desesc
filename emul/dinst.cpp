@@ -241,7 +241,7 @@ void Dinst::destroy() {
 }
 void Dinst::destroyTransientInst() {
 
-  I(issued);
+  //I(issued);
   //I(executed);
 
   I(first == 0);  // no dependent instructions

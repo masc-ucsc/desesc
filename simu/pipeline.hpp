@@ -50,7 +50,10 @@ public:
   bool     hasOutstandingItems() const;
   void     readyItem(IBucket *b);
   void     doneItem(IBucket *b);
+  void     flush_transient_inst_from_buffer();
   IBucket *nextItem();
+  IBucket *next_item_transient();
+
 
   size_t size() const { return buffer.size(); }
 };
@@ -93,4 +96,5 @@ public:
 
   Pipeline             pipeLine;
   FastQueue<IBucket *> instQueue;
+ 
 };

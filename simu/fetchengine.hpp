@@ -125,12 +125,13 @@ public:
 #ifndef NDEBUG
   Dinst *getMissDinst() const { return missDinst; }
 #endif
-
+  
   Dinst *get_next_transient_dinst() const { return transientDinst +4; }
 
   Dinst *get_miss_dinst() const { return transientDinst; }
   void setTransientInst(Dinst *dinst);
 
+  bool is_fetch_next_ready;
   void clearMissInst(Dinst *dinst, Time_t missFetchTime);
   void setMissInst(Dinst *dinst);
 

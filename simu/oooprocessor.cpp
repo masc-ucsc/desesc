@@ -435,6 +435,7 @@ StallCause OoOProcessor::add_inst(Dinst *dinst) {
   if(dinst->isTransient())
     printf("OOOProc::add_instROB Transient %ld Adding in ROB\n",dinst->getID());
   ROB.push(dinst);
+  dinst->set_present_in_rob();
   I(dinst->getCluster() != 0);  // Resource::schedule must set the resource field
 
   int n = 0;

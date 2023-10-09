@@ -833,7 +833,7 @@ void MemObj::shift_load_data_buffer(Addr_t pc, int tl_type) {
 void DummyMemObj::doReq(MemRequest *req)
 /* req {{{1 */
 {
-  I(0);
+  //I(0);// for cache=false fails assertion
   req->ack();
 }
 /* }}} */

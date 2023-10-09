@@ -128,7 +128,8 @@ prefetcher        = "pref_opt"
 smt = 1 # Number of STM context
 
 # Memory Parameters
-caches        = true  # set true to enable caches...
+#caches        = true  # set true to enable caches...
+caches        = false
 scb_size      = 16
 memory_replay = true
 st_fwd_delay  = 2

@@ -50,7 +50,7 @@ Resource::Resource(Opcode type, std::shared_ptr<Cluster> cls, PortGeneric *aGen,
 /* }}} */
 
 void Resource::setStats(const Dinst *dinst) {
-  if (!dinst->has_stats()) {
+  if (!dinst->has_stats() || dinst->isTransient()) {
     return;
   }
 
@@ -801,7 +801,7 @@ void FURALU::executed(Dinst *dinst)
 /* executed {{{1 */
 {
    if(dinst->isTransient())
-    printf("Resource::FULOAD::Executed Transient Inst\n");
+    printf("Resource::FURALU::Executed Transient Inst\n");
   cluster->executed(dinst);
   dinst->markPerformed();
 }
@@ -810,8 +810,9 @@ void FURALU::executed(Dinst *dinst)
 bool FURALU::preretire(Dinst *dinst, [[maybe_unused]] bool flushing)
 /* preretire {{{1 */
 { 
-  if(dinst->isTransient())
+  if(dinst->isTransient()) {
     printf("Resource::FUALU::IsRetire Transient Inst\n");
+  }
   return dinst->isExecuted();
 }
 /* }}} */

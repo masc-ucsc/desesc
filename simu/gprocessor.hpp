@@ -144,6 +144,7 @@ public:
   void add_inst_transient_on_branch_miss(IBucket *bucket, Addr_t pc);
   void flush_transient_inst_on_fetch_ready();
   void flush_transient_inst_from_inst_queue();
+  void flush_rob();
   void report(const std::string &str);
 
   std::shared_ptr<StoreSet>     ref_SS() { return storeset; }

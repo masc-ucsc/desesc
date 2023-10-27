@@ -154,14 +154,18 @@ void Pipeline::doneItem(IBucket *b) {
     if (bucket) {
       while(!bucket->empty()) {
         auto *dinst = bucket->top();
-        printf("Pipeline::flush::bucket.size %lu\n instID %lx",bucket->size(), 
+        printf("Pipeline::flush::bucket.size is  %lu and instID %lx\n",bucket->size(), 
             dinst->getID()); 
         bucket->pop();
         //I(dinst->isTransient());
         if (dinst->isTransient() && !dinst->is_present_in_rob()) {
-         printf("Pipeline::flush::bucket.size destroying transient %lu\n instID %lx",bucket->size(), 
-         dinst->getID());  dinst->destroyTransientInst();
-        }
+         I(dinst->isTransient());
+         printf("Pipeline::flush:: destroying transient bucket size is %lu and instID is %lx\n",bucket->size(), 
+         dinst->getID());  
+         dinst->destroyTransientInst();
+         } else {
+         //push to a new buffer_rob_shadow;
+         }
       }
       //buffer.pop();
       if(bucket->empty()) {

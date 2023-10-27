@@ -1,0 +1,6 @@
+
+digraph simple_hierarchy {
+
+node [color=Green,fontcolor=Blue,font=Courier,shape=record]
+
+}

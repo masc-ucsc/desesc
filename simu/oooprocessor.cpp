@@ -1473,82 +1473,10 @@ void OoOProcessor::retire() {
       break;
     }
 
-#ifdef ENABLE_LDBP
-    if (dinst->getInst()->isLoad()) {
-      num_loads.inc(true);  // inc load counter
-      DL1->hit_on_load_table(dinst, false);
-      int lt_idx = DL1->return_load_table_index(dinst->getPC());
-      if ((lt_idx != -1)) {
-        if (DL1->load_table_vec[lt_idx].conf > DL1->getLoadTableConf()) {
-          num_ld_conf.inc(true);
-        }
-        if (DL1->load_table_vec[lt_idx].data_conf > DL1->getLoadDataConf()) {
-          num_ld_data_conf.inc(true);
-        }
-      }
-      rtt_load_hit(dinst);
-    }
-
-    // handle complex ALU in RTT
-    if (dinst->getInst()->isComplex()) {
-      RegType dst             = dinst->getInst()->getDst1();
-      rtt_vec[dst].num_ops    = NUM_OPS + 1;
-      rtt_vec[dst].is_complex = true;
-    }
-
-    if (dinst->getInst()->isALU()) {  // if ALU hit on ldbp_retire_table
-      RegType alu_dst  = dinst->getInst()->getDst1();
-      RegType alu_src1 = dinst->getInst()->getSrc1();
-      RegType alu_src2 = dinst->getInst()->getSrc2();
-      if (alu_src1 == LREG_R0 && alu_src2 == LREG_R0) {  // Load Immediate
-        // DL1->hit_on_load_table(dinst, true);
-        rtt_load_hit(dinst);  // load_table_vec index is always 0 for Li; index 1 to LOAD_TABLE_SIZE is for other LDs
-        // rtt_alu_hit(dinst);
-      } else {  // other ALUs
-        rtt_alu_hit(dinst);
-      }
-    }
-
-#if 1
-    // condition to find a MV instruction
-    if (dinst->getInst()->getOpcode() == iRALU
-        && (dinst->getInst()->getSrc1() != LREG_R0 && dinst->getInst()->getSrc2() == LREG_R0)) {
-      RegType alu_dst = dinst->getInst()->getDst1();
-      rtt_alu_hit(dinst);
-    } else if (dinst->getInst()->getOpcode() == iRALU
-               && (dinst->getInst()->getSrc1() == LREG_R0 && dinst->getInst()->getSrc2() != LREG_R0)) {
-      RegType alu_dst = dinst->getInst()->getDst1();
-      rtt_alu_hit(dinst);
-    }
-#endif
-
-    // if(dinst->getInst()->getOpcode() == iBALU_LBRANCH) {}
-    if (dinst->getInst()->isBranch()) {
-      num_br.inc(true);
-      // compute num of inflight branches
-      for (uint32_t i = 0; i < ROB.size(); i++) {  // calculate num of inflight branches
-        uint32_t pos       = ROB.getIDFromTop(i);
-        Dinst   *tmp_dinst = ROB.getData(pos);
-        if (tmp_dinst->getInst()->isBranch() && (tmp_dinst->getPC() == dinst->getPC())) {
-          num_inflight_branches++;
-        }
-      }
-      inflight_branch = num_inflight_branches;
-      dinst->setInflight(inflight_branch);
-
-      if (dinst->isUseLevel3()) {
-        power_save_mode_ctr = 0;
-        // ldbp_power_mode_cycles.inc(true);
-      }
-      rtt_br_hit(dinst);
-    }
-
-#endif
-
     Tracer::event(dinst, "PNR");
     
     if(dinst->isTransient()){
-      printf("OOOProc::retire Destroying Transient Insit %ld\n",dinst->getID());
+      //printf("OOOProc::retire Destroying Transient Insit %ld\n",dinst->getID());
       
       if (!dinst->isExecuted()) {
         dinst->markExecutedTransient();
@@ -1561,7 +1489,7 @@ void OoOProcessor::retire() {
         }
       }
      
-      printf("OOOProc::retire transient Inst destroy from rob %lx\n", dinst->getID());
+      //printf("OOOProc::retire transient Inst destroy from rob %lx\n", dinst->getID());
       //dinst->clearRATEntry();
       //Tracer::stage(dinst, "TR");
       //dinst->destroyTransientInst();
@@ -1569,13 +1497,14 @@ void OoOProcessor::retire() {
       I(dinst->getCluster());
       bool done_cluster = dinst->getCluster()->retire(dinst, flushing);
       if (!done_cluster) {
-      break;
+        break;
       }
       if (dinst->getInst()->hasDstRegister()) {
-      nTotalRegs++;
+        nTotalRegs++;
       }
     
       dinst->destroyTransientInst();
+      printf("OOOProc::retire transient Inst destroy from rob %lx\n", dinst->getID());
       ROB.pop();
       return;
   } else {
@@ -1583,11 +1512,22 @@ void OoOProcessor::retire() {
       rROB.push(dinst);
       ROB.pop();
     }
+  }//!ROB.empty()_loop_end
+
+//if (!ROB.empty() && ROB.top()->has_stats() && !ROB.top()->isTransient()) {
+ 
+if (!ROB.empty() && ROB.top()->has_stats()) {
+  int rob_size  = 0;
+  for (uint32_t i = 0; i < ROB.size(); i++) {
+      uint32_t pos   = ROB.getIDFromTop(i);
+      Dinst   *dinst = ROB.getData(pos);
+      if (!dinst->isTransient()) {
+        rob_size++;
+      }
   }
-//ROB_loop end
-//ROB sampling stats
-  if (!ROB.empty() && ROB.top()->has_stats()) {
-    robUsed.sample(ROB.size(), true);
+  
+  //robUsed.sample(rob_size, true);
+  robUsed.sample(ROB.size(), true);
 #ifdef TRACK_TIMELEAK
     int total_hit  = 0;
     int total_miss = 0;
@@ -1605,18 +1545,20 @@ void OoOProcessor::retire() {
         continue;
       }
 
-      if (dinst->isFullMiss()) {
-        total_miss++;
-      } else {
-        total_hit++;
-      }
+      //if (!dinst->isTransient()) {
+        if (dinst->isFullMiss()) {
+          total_miss++;
+        } else {
+          total_hit++;
+        }
+      //}
     }
-    avgPNRHitLoadSpec.sample(total_hit, true);
+    avgPNRHitLoadSpec.sample(total_hit, true );
     avgPNRMissLoadSpec.sample(true, total_miss);
 #endif
-  }
-//ROB sampling end
-  if (!rROB.empty()) {
+  } //ROB_Load_Spec_sampling end
+  
+if (!rROB.empty()) {
     rrobUsed.sample(rROB.size(), rROB.top()->has_stats());
 
 #ifdef ESESC_CODEPROFILE
@@ -1650,7 +1592,7 @@ void OoOProcessor::retire() {
 #endif
   }
 
-//rROB starts 
+//rROB_starts 
   for (uint16_t i = 0; i < RetireWidth && !rROB.empty(); i++) {
     Dinst *dinst = rROB.top();
     if (last_serialized == dinst) {
@@ -1681,7 +1623,7 @@ void OoOProcessor::retire() {
       printf("OOOProc::retire:: not done rROB  retire() instid %lx\n",dinst->getID());
       break;
     }
-//TODO powerspec
+   
     Hartid_t smt_hid = dinst->getFlowId();
     if (dinst->isReplay()) {
       flushing     = true;
@@ -1770,9 +1712,9 @@ void OoOProcessor::retire() {
     }
 
     rROB.pop();
-  }
-// rROB_end
-   //printf("OOOProcessor::retire  Exiting from retirinstID %lx \n", );
+  }// !rROB.empty()_loop_ends
+   
+  //printf("OOOProcessor::retire  Exiting from retirinstID %lx \n", );
 }
 
 void OoOProcessor::replay(Dinst *target)

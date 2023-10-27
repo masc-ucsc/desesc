@@ -117,10 +117,12 @@ void GProcessor::fetch() {
 
   auto ifid = smt_fetch.fetch_next();
  //must be before *bucket 
-  /*if (ifid->isBlocked()) {
+  /*
+  if (ifid->isBlocked()) {
     // fmt::print("fetch on {}\n", ifid->getMissDinst()->getID());
      return;
-  }*/
+  }
+*/
 
   auto     smt_hid = hid;  // FIXME: do SMT fetch
   IBucket *bucket  = pipeQ.pipeLine.newItem();
@@ -134,6 +136,8 @@ void GProcessor::fetch() {
          add_inst_transient_on_branch_miss(bucket, pc);
        return; 
   }
+    //enable only when !ifid->isblocked() to flush transient before every new fetch 
+    //after a branch miss-prediction resolved at execute stage
     if(ifid->is_fetch_next_ready) {
       flush_transient_inst_on_fetch_ready();
     }
@@ -150,8 +154,54 @@ void GProcessor::flush_transient_inst_on_fetch_ready() {
  
   pipeQ.pipeLine.flush_transient_inst_from_buffer();
   flush_transient_inst_from_inst_queue();
+  flush_rob();
+}
+void GProcessor::flush_rob() {
+//try the for loop scan
+  while(!ROB.empty()) {
+    //auto *dinst = ROB.top();
+    printf("GPROCCESOR::ROB FLUSHING  ENTERING \n");  
+    auto *dinst = ROB.end_data();
+    //if (!dinst->isTransient())
+      //break;
+    printf("GPROCCESOR::ROB FLUSHING :: instID %lx\n", dinst->getID());  
+    //makes sure isExecuted in preretire()
+    bool  done  = dinst->getClusterResource()->preretire(dinst, false);
+    if (!done) {
+      //break;//FIXME
+      //ROB.pop();
+      ROB.push_pipe_in_cluster(dinst);
+      ROB.pop_from_back();
+      continue;
+    }
+
+    bool done_cluster = dinst->getCluster()->retire(dinst, false);
+
+    if (!done_cluster) {
+      //break;
+      //ROB.pop(); 
+      ROB.push_pipe_in_cluster(dinst);
+      ROB.pop_from_back();
+      continue;
+    }
+    if (dinst->isTransient()) {
+         printf("GPROCCESOR::ROB FLUSHING destroying_ROB transient instID %lx\n", dinst->getID());  
+         dinst->destroyTransientInst();
+    } 
+
+  ROB.pop_from_back();    
+  }
+
+  while(!ROB.empty_pipe_in_cluster()) {
+    auto *dinst = ROB.back_pipe_in_cluster();//get last element from vector:back()
+    ROB.pop_pipe_in_cluster();//pop last element
+    ROB.push(dinst);//push in the end
+  }
+
 
 }
+
+
 
 void GProcessor::flush_transient_inst_from_inst_queue() {
     
@@ -164,17 +214,18 @@ void GProcessor::flush_transient_inst_from_inst_queue() {
     if (bucket) {
       while(!bucket->empty()) {
         auto *dinst = bucket->top();
-        printf("PipeQ::flush::instqueue.size %lu\n instID %lx",bucket->size(), 
+        printf("Gprocess::flush_inst_queue::instqueue.size is %lu and instID %lx\n",bucket->size(), 
             dinst->getID()); 
         bucket->pop();
         //I(dinst->isTransient());
         if (dinst->isTransient() && !dinst->is_present_in_rob()) {
-         printf("PipeQ::flush::bucket.size destroying transient %lu\n instID %lx",bucket->size(), 
-         dinst->getID());  dinst->destroyTransientInst();
+         printf("Gprocess::flush_inst_queue::instqueue.size is %lu and  destroying transient instID %lx\n",bucket->size(), 
+         dinst->getID());  
+         dinst->destroyTransientInst();
         }
       }
       if(bucket->empty()) {//FIXME
-       printf("PipeQ::flush::bucket.empty () \n"); 
+       printf("Gprocess::flush_inst_queue::bucket.empty:: so added back to bucketPool \n"); 
         I(bucket->empty());
         pipeQ.pipeLine.doneItem(bucket);
       }
@@ -197,17 +248,17 @@ void GProcessor:: add_inst_transient_on_branch_miss(IBucket *bucket, Addr_t pc) 
                                     ,0
                                     ,true);
          
-         alu_dinst->setTransient();
          if(alu_dinst)
-           std::cout<< "gProcessor::Yahoo!!Transient  Inst Opcode"<<alu_dinst->getInst()->getOpcodeName()<<std::endl;
+           std::cout<<std::endl<< "gProcessor::Yahoo!!Transient  Inst Created Opcode is "<<alu_dinst->getInst()->getOpcodeName()<<std::endl;
+         alu_dinst->setTransient();
          if (bucket) {
            //alu_dinst->setFetchTime();
            bucket->push(alu_dinst);
            Tracer::stage(alu_dinst, "IF");
            //spaceInInstQueue -= bucket->size();
            //pipeQ.pipeLine.readyItem(bucket);//must bucket-> markedfetch()
-           printf("gProcessor::Yahoo!!! Bucket Inst Created %ld and bucket size is %lu", 
-               alu_dinst->getID(), bucket->size());
+           printf("gProcessor::Yahoo!!! Bucket Inst Created %lx and bucket size is %lu\n", 
+             alu_dinst->getID(), bucket->size());
          }
          i++;
          pc = pc + 4;

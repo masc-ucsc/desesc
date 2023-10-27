@@ -287,7 +287,7 @@ public:
   }
   void setTransient() { 
     transient = true; 
-    //printf("Setting transient in ::dinst\n");
+    printf("Setting transient in ::dinst %lx\n", ID);
   }
   bool is_present_in_rob() { return present_in_rob; }
   void set_present_in_rob() { present_in_rob = true; }

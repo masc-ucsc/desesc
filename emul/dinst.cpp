@@ -233,6 +233,7 @@ void Dinst::destroy() {
   I(first == 0);  // no dependent instructions
 
   Tracer::commit(this);
+  printf(" Dinst::DEstroy Commit CO  Inst %ld\n", this->getID());
 
   resource = nullptr;  // Needed to have GC
   cluster  = nullptr;
@@ -241,13 +242,14 @@ void Dinst::destroy() {
 }
 void Dinst::destroyTransientInst() {
 
+  //I(nDeps == 0);  // No deps src
   //I(issued);
   //I(executed);
 
-  //I(first == 0);  // no dependent instructions
+  I(first == 0);  // no dependent instructions
 
   Tracer::commit(this);
-  printf(" Dinst::DEstroy_transient Commit CO transient  Inst %lx\n", this->getID());
+  printf(" Dinst::DEstroy_transient Commit CO transient  Inst %ld\n", this->getID());
   resource = nullptr;  // Needed to have GC
   cluster  = nullptr;
 

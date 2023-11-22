@@ -35,6 +35,7 @@ public:
 
   void executing(Dinst *dinst) override final;
   void executed(Dinst *dinst) override final;
+  void flushed(Dinst *dinst) override final;
 
   // No LSQ speculation, so not memory replay (just populate accordingly)
   LSQ *getLSQ() override final { return &lsq; }

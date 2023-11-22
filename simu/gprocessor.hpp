@@ -122,6 +122,7 @@ public:
 
   virtual void   executing(Dinst *dinst) = 0;
   virtual void   executed(Dinst *dinst)  = 0;
+  virtual void   flushed(Dinst *dinst)  = 0;
   virtual LSQ   *getLSQ()                = 0;
   virtual bool   is_nuking()             = 0;
   virtual bool   isReplayRecovering()    = 0;
@@ -144,10 +145,11 @@ public:
   void add_inst_transient_on_branch_miss(IBucket *bucket, Addr_t pc);
   void flush_transient_inst_on_fetch_ready();
   void flush_transient_inst_from_inst_queue();
-  void flush_rob();
+  void flush_transient_from_rob();
   void report(const std::string &str);
 
   std::shared_ptr<StoreSet>     ref_SS() { return storeset; }
   std::shared_ptr<Prefetcher>   ref_prefetcher() { return prefetcher; }
   std::shared_ptr<Store_buffer> ref_SCB() { return scb; }
+  friend class Cluster;
 };

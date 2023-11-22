@@ -96,6 +96,7 @@ public:
 
   void   executing(Dinst *dinst) override final;
   void   executed(Dinst *dinst) override final;
+  void   flushed(Dinst *dinst) override final;
   LSQ   *getLSQ() override final { return &lsq; }
   void   replay(Dinst *target) override final;
   bool   is_nuking() override final { return flushing; }

@@ -154,14 +154,16 @@ void Pipeline::doneItem(IBucket *b) {
     if (bucket) {
       while(!bucket->empty()) {
         auto *dinst = bucket->top();
-        printf("Pipeline::flush::bucket.size is  %lu and instID %lx\n",bucket->size(), 
-            dinst->getID()); 
+        if(dinst) { 
+          printf("Pipeline::flush::bucket.size is  %lu and instID %ld and Transient is %b\n",bucket->size(), 
+            dinst->getID(), dinst->isTransient()); 
+        }
         bucket->pop();
         //I(dinst->isTransient());
         if (dinst->isTransient() && !dinst->is_present_in_rob()) {
          I(dinst->isTransient());
-         printf("Pipeline::flush:: destroying transient bucket size is %lu and instID is %lx\n",bucket->size(), 
-         dinst->getID());  
+         printf("Pipeline::flush:: destroying transient bucket size is %lu and instID is %ld\n",bucket->size(), 
+            dinst->getID());  
          dinst->destroyTransientInst();
          } else {
          //push to a new buffer_rob_shadow;
@@ -178,7 +180,7 @@ void Pipeline::doneItem(IBucket *b) {
     }
   }
 IBucket *Pipeline::next_item_transient() {
-  printf("Pipeline::buffer->nextItemtran::butter.top()  \n"); 
+  printf("Pipeline::nextItemtran::buffer.top()  \n"); 
   IBucket *b = buffer.top();
   buffer.pop();
     //fprintf(stderr,"@%lld: Popping Bucket[%p]\n",(long long int)globalClock ,b);

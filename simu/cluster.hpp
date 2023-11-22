@@ -55,12 +55,13 @@ protected:
   static inline std::map<std::string, std::shared_ptr<Resource>>                                                    resourceMap;
   static inline std::map<std::string, std::pair<std::shared_ptr<Cluster>, Opcode_array<std::shared_ptr<Resource>>>> clusterMap;
 
-  void delEntry() {
+  /*void delEntry() {
     windowSize++;
     I(windowSize <= MaxWinSize);
-  }
+  }*/
   void newEntry() {
     windowSize--;
+    printf("Cluster::newEntry() windowSize-- %d\n", windowSize);  
     I(windowSize >= 0);
   }
 
@@ -75,11 +76,39 @@ public:
     clusterMap.clear();
   }
 
+  void delEntry() {
+    windowSize++;
+    printf("Cluster::delEntry() windowSize++ %d and MaxWinSize %d \n", windowSize, MaxWinSize);  
+    I(windowSize <= MaxWinSize);
+  }
+  void add_reg_pool() {
+    regPool++;
+    printf("Cluster::add_reg_pool regPool++ %d and %d nRegs is\n", regPool, nRegs);  
+    I(regPool <= nRegs);
+  }
+
+  int32_t get_reg_pool() {
+   return  regPool;
+  }
+
+  int32_t get_nregs() {
+   return  nRegs;
+  }
+  
+  int32_t get_window_size() {
+   return  windowSize;
+  }
+  
+  int32_t get_window_maxsize() {
+   return MaxWinSize;
+  }
+  
   void select(Dinst *dinst);
 
   virtual void executing(Dinst *dinst)           = 0;
   virtual void executed(Dinst *dinst)            = 0;
   virtual bool retire(Dinst *dinst, bool replay) = 0;
+  virtual void flushed(Dinst *dinst)            = 0;
 
   static std::pair<std::shared_ptr<Cluster>, Opcode_array<std::shared_ptr<Resource>>> create(const std::string &clusterName,
                                                                                              uint32_t           pos,
@@ -111,6 +140,7 @@ public:
   void executing(Dinst *dinst);
   void executed(Dinst *dinst);
   bool retire(Dinst *dinst, bool replay);
+  void flushed(Dinst *dinst);
 };
 
 class ExecutedCluster : public Cluster {
@@ -122,6 +152,7 @@ public:
   void executing(Dinst *dinst);
   void executed(Dinst *dinst);
   bool retire(Dinst *dinst, bool replay);
+  void flushed(Dinst *dinst);
 };
 
 class RetiredCluster : public Cluster {
@@ -132,4 +163,5 @@ public:
   void executing(Dinst *dinst);
   void executed(Dinst *dinst);
   bool retire(Dinst *dinst, bool replay);
+  void flushed(Dinst *dinst);
 };

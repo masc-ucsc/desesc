@@ -156,7 +156,10 @@ private:
   bool fullMiss;  // Only for DL1
   bool speculative;
   bool transient;
+  bool del_entry;
+  bool is_rrob;
   bool present_in_rob;
+  bool flush_transient;
   // END Boolean flags
 
   SSID_t      SSID;
@@ -198,6 +201,7 @@ private:
   char nDeps;  // 0, 1 or 2 for RISC processors
 
   static inline Time_t currentID = 0;
+  static inline Time_t currentID_trans = 1000000;
   Time_t               ID;  // static ID, increased every create (currentID). pointer to the
 #ifndef NDEBUG
   uint64_t mreq_id;
@@ -252,9 +256,12 @@ private:
     dispatched   = false;
     fullMiss     = false;
     speculative  = true;
-    transient    = false;
-   
-    present_in_rob = false;
+    
+    transient        = false;
+    del_entry        = false;
+    is_rrob          = false;
+    flush_transient  = false;
+    present_in_rob   = false;
 
 #ifdef DINST_PARENT
     pend[0].setParentDinst(0);
@@ -286,12 +293,41 @@ public:
     return transient;
   }
   void setTransient() { 
-    transient = true; 
-    printf("Setting transient in ::dinst %lx\n", ID);
+    transient = true;
+    //ID = currentID_trans++;
+      
+    printf("Setting transient in ::dinst %ld\n", ID);
   }
+ 
+  void mark_flush_transient() { 
+    flush_transient = true; 
+    printf("Setting flush_transient in ::dinst %ld\n", ID);
+  }
+
+  void mark_del_entry() { 
+    del_entry = true; 
+    printf("Setting mark_del_entry  ::dinst %ld\n", ID);
+  }
+  
+  void unmark_del_entry() { 
+    del_entry = false; 
+    printf("Setting mark_del_entry  ::dinst %ld\n", ID);
+  }
+  void mark_rrob() { 
+    is_rrob = true; 
+    printf("Setting mark_rrob  ::dinst %ld\n", ID);
+  }
+
+
+
+
+
   bool is_present_in_rob() { return present_in_rob; }
   void set_present_in_rob() { present_in_rob = true; }
+  bool is_flush_transient() { return flush_transient; }
   bool has_stats() const { return keep_stats; }
+  bool is_del_entry() { return del_entry; }
+  bool is_present_rrob() { return is_rrob; }
 
 #if 0
   void setLdCache() { isLdCache = true; }
@@ -633,6 +669,7 @@ public:
 
   void addSrc1(Dinst *d) {
     I(d->nDeps < MAX_PENDING_SOURCES);
+    
     d->nDeps++;
 
     I(executed == 0);
@@ -654,6 +691,7 @@ public:
 
   void addSrc2(Dinst *d) {
     I(d->nDeps < MAX_PENDING_SOURCES);
+    
     d->nDeps++;
     I(executed == 0);
     I(d->executed == 0);
@@ -711,7 +749,9 @@ public:
   bool hasPending() const { return first != 0; }
 
   bool hasDeps() const {
-    GI(!pend[0].isUsed && !pend[1].isUsed && !pend[2].isUsed, nDeps == 0);
+    printf("Dinst:: Inst %ld\n",ID);
+    if(!isTransient())
+      GI(!pend[0].isUsed && !pend[1].isUsed && !pend[2].isUsed, nDeps == 0);
     return nDeps != 0;
   }
 
@@ -801,7 +841,11 @@ public:
   bool isPerformed() const { return performed; }
   void markPerformed() {
     // Loads get performed first, and then executed
+    printf("Dinst ::markPerformed Insit %ld and isTransient is %b\n",
+        getID(), isTransient());
+    
     GI(!inst.isLoad(), executed != 0);
+    
     performed = true;
   }
 
@@ -810,6 +854,10 @@ public:
     I(inst.isStore());
     retired = true;
   }
+  void mark_retired() {
+    retired = true;
+  }
+
   bool isPrefetch() const { return prefetch; }
   void markPrefetch() { prefetch = true; }
   bool isDispatched() const { return dispatched; }

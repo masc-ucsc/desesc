@@ -518,5 +518,11 @@ void Emul_dromajo::init_dromajo_machine() {
     argv[i] = const_cast<char *>(dromajo_args[i]);
   }
 
+  fmt::print("\ndromajo arguments:");
+  for (const auto *str : dromajo_args) {
+    fmt::print(" {}", str);
+  }
+  fmt::print("\n");
+
   machine = virt_machine_main(dromajo_args.size(), argv);
 }

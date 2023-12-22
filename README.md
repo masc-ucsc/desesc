@@ -80,3 +80,9 @@ To run the default simulation (dhrystone):
 ```
 ./bazel-bin/main/desesc -c ./conf/desesc.toml
 ```
+
+### Konata
+
+You may want to use https://github.com/shioyadan/Konata to see the traces generated
+
+

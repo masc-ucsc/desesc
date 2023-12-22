@@ -282,7 +282,7 @@ Dinst *Emul_dromajo::peek(Hartid_t fid) {
       // TO-DO: the rest of floating point insns
       switch (insn_raw & 0x7F) {
         case 0x03:
-          if (funct3 < 6) {
+          if (funct3 <= 6) {
             opcode  = Opcode::iLALU_LD;
             src1    = (RegType)(rs1);
             src2    = RegType::LREG_NoDependence;
@@ -348,6 +348,11 @@ Dinst *Emul_dromajo::peek(Hartid_t fid) {
           }
           src1 = (RegType)(rs1);
           src2 = (RegType)(rs2);
+          dst1 = (RegType)(rd);
+          break;
+        case 0x37: // LUI
+          src1 = RegType::LREG_NoDependence;
+          src2 = RegType::LREG_NoDependence;
           dst1 = (RegType)(rd);
           break;
         case 0x3b:

@@ -86,10 +86,16 @@ http_archive(
     name = "dromajo",
     build_file = "dromajo.BUILD",
     patches = ["//external:dromajo.patch"],
-    sha256 = "351a6cba0d42eb0b3f49289376f6af3ca313aaa6718ed7fcb43f0f3a4b5a2d48",
-    strip_prefix = "dromajo-866b264a093551ff5442f241d90bea9ac7eb3431",
+    #sha256 = "351a6cba0d42eb0b3f49289376f6af3ca313aaa6718ed7fcb43f0f3a4b5a2d48",
+    sha256 = "962d33494cfc2f475a3761d417b033fe254ade95653bf7ae67970934bc8f8e66",
+    #sha256 = "891e3d917719cd69c1ea5f232a2e40d84c21fe01751cd69bc65681704530b8a3",
+    #strip_prefix = "dromajo-866b264a093551ff5442f241d90bea9ac7eb3431",
+    strip_prefix = "dromajo-fc37f65350cf44edcd1b92a59f371aea5d1145e7",
+    #strip_prefix = "dromajo-44a81c318ed4c523e942d80680e42655899b5b87",
     urls = [
-        "https://github.com/masc-ucsc/dromajo/archive/866b264a093551ff5442f241d90bea9ac7eb3431.zip",
+        #"https://github.com/masc-ucsc/dromajo/archive/866b264a093551ff5442f241d90bea9ac7eb3431.zip",
+	"https://github.com/masc-ucsc/dromajo/archive/fc37f65350cf44edcd1b92a59f371aea5d1145e7.zip",
+        #"https://github.com/masc-ucsc/dromajo/archive/866b264a093551ff5442f241d90bea9ac7eb3431.zip",
     ],
 )
 

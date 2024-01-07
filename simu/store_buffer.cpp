@@ -47,15 +47,14 @@ void Store_buffer::remove_clean() {
     return true;
   });
 
-  scb_clean_lines -= num;
+  scb_clean_lines = num;
 }
 
 void Store_buffer::add_st(Dinst *dinst) {
-  Addr_t st_addr = dinst->getAddr();
+  auto st_addr = dinst->getAddr();
   I(can_accept_st(st_addr));
 
   auto st_addr_line = calc_line(st_addr);
-
   auto it = lines.find(st_addr_line);
   if (it == lines.end()) {
     if ((static_cast<int>(lines.size()) + scb_clean_lines) >= scb_size) {
@@ -79,11 +78,14 @@ void Store_buffer::add_st(Dinst *dinst) {
       cb->schedule(1);
     }
 
+    // fmt::print("scb::add_st {} no pending st for addr 0x{}\n", dinst->getID(), st_addr);
+
     return;
   }
 
   it->second.add_st(calc_offset(st_addr));
   if (it->second.is_waiting_wb()) {
+    // fmt::print("scb::add_st {} with pending WB for addr 0x{}\n", dinst->getID(), st_addr);
     return;  // DONE
   }
 
@@ -94,6 +96,8 @@ void Store_buffer::add_st(Dinst *dinst) {
   } else {
     ownership_doneCB::schedule(1, this, st_addr);
   }
+
+  // fmt::print("scb::add_st {} clean WB for addr 0x{}\n", dinst->getID(), st_addr);
 }
 
 void Store_buffer::ownership_done(Addr_t st_addr) {
@@ -105,6 +109,8 @@ void Store_buffer::ownership_done(Addr_t st_addr) {
 
   ++scb_clean_lines;
   it->second.set_clean();
+
+  // fmt::print("scb::done addr 0x{} clean:{}\n", st_addr, scb_clean_lines);
 }
 
 bool Store_buffer::is_ld_forward(Addr_t addr) const {

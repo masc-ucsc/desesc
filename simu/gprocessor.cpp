@@ -146,6 +146,7 @@ int32_t GProcessor::issue() {
       I(!bucket->empty());
 
       Dinst *dinst = bucket->top();
+      dinst->setGProc(this);
 
       StallCause c = add_inst(dinst);
       if (c != NoStall) {
@@ -154,7 +155,6 @@ int32_t GProcessor::issue() {
         }
         return i;
       }
-      dinst->setGProc(this);
       i++;
 
       bucket->pop();

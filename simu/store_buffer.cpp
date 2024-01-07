@@ -11,7 +11,14 @@ Store_buffer::Store_buffer(Hartid_t hid, std::shared_ptr<Gmemory_system> ms) {
   std::vector<std::string> v      = absl::StrSplit(Config::get_string("soc", "core", hid, "il1"), ' ');
   auto                     l1_sec = v[0];
   line_size                       = Config::get_power2(l1_sec, "line_size");
-  dl1 = ms->getDL1();
+
+  bool enableDcache = Config::get_bool("soc", "core", hid, "caches");
+  if (enableDcache) {
+    dl1 = ms->getDL1();
+  } else {
+    dl1 = nullptr;
+  }
+
   scb_clean_lines     = 0;
   line_size_addr_bits = log2i(line_size);
   line_size_mask      = line_size - 1;
@@ -108,4 +115,3 @@ bool Store_buffer::is_ld_forward(Addr_t addr) const {
 
   return it->second.is_ld_forward(calc_offset(addr));
 }
-

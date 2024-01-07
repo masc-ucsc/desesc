@@ -74,10 +74,10 @@ http_archive(
 http_archive(
     name = "toml11",
     build_file = "toml11.BUILD",
-    sha256 = "4124577f989d6a558229ef8f06944ca210e4cf1fe72975eaa2528f1a53f129c4",
-    strip_prefix = "toml11-3.7.1",
+    sha256 = "72e956f42002dd1566c5551a693ec0f6fa3bea3a0e7bcea29bcdace98738da74",
+    strip_prefix = "toml11-3.8.1",
     urls = [
-        "https://github.com/ToruNiina/toml11/archive/v3.7.1.zip",
+        "https://github.com/ToruNiina/toml11/archive/v3.8.1.zip",
     ],
 )
 

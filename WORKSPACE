@@ -86,10 +86,10 @@ http_archive(
     name = "dromajo",
     build_file = "dromajo.BUILD",
     patches = ["//external:dromajo.patch"],
-    sha256 = "188b5d829e7824d1b06de3640b3064fb0b2e2075d63a9dfe85296ff092deba1b",
-    strip_prefix = "dromajo-203163401d93a68c7d78b264a205e072d664636a",
+    sha256 = "0e4d5df7194628e7c542491f909f19fbf30b230b5579014d3fb83f3acdc06532",
+    strip_prefix = "dromajo-e1bd5e7d0dfb95d8c1a1a108075c1cb160c74f42",
     urls = [
-      "https://github.com/masc-ucsc/dromajo/archive/203163401d93a68c7d78b264a205e072d664636a.zip",
+      "https://github.com/masc-ucsc/dromajo/archive/e1bd5e7d0dfb95d8c1a1a108075c1cb160c74f42.zip",
     ],
 )
 

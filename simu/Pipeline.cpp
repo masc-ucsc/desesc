@@ -2,6 +2,7 @@
 
 #include "pipeline.hpp"
 
+#include "gprocessor.hpp"
 #include "config.hpp"
 
 IBucket::IBucket(size_t size, Pipeline *p, bool clean)
@@ -111,9 +112,95 @@ void Pipeline::doneItem(IBucket *b) {
   bucketPool.push_back(b);
 }
 
+/*void Pipeline::flush_transient_inst_from_buffer() {
+  
+  uint32_t buffer_size = buffer.size();
+  printf("Pipeline::flush::Entering ::buffersize is %u\n",buffer_size); 
+  for ( uint32_t i = 0; i < buffer_size; i++) {
+    uint32_t pos = buffer.getIDFromTop(i);
+    IBucket *bucket = buffer.getData(pos);
+    if (bucket) {
+    uint32_t bucket_size = bucket->size();
+    for( uint32_t j = 0; j < bucket_size; j++) {
+      uint32_t p = bucket->getIDFromTop(j);
+      if(!bucket->empty()){
+      Dinst *dinst = bucket->getData(p);
+      if (dinst->isTransient() && !dinst->is_present_in_rob()){
+        dinst-> destroyTransientInst();
+        //bucket->pop();
+        
+      }
+      }
+    }//j_loop
+    
+    if(bucket->empty()) {
+      I(bucket->empty());
+      bucket->clock = 0;
+      bucketPool.push_back(bucket);
+      //buffer.pop();
+    }
+    }//if(bucket)
+  }//i_loop
+}
+
+*/
+  void Pipeline::flush_transient_inst_from_buffer() {
+    printf("Pipeline::flush::Entering ::buffersize is %lu\n",buffer.size()); 
+    
+    while(!buffer.empty()) {
+    
+    printf("Pipeline::flush::!buffer.empty () buffer size inside is %lu\n",buffer.size()); 
+    auto *bucket = next_item_transient();
+    if (bucket) {
+      while(!bucket->empty()) {
+        auto *dinst = bucket->top();
+        if(dinst) { 
+          printf("Pipeline::flush::bucket.size is  %lu and instID %ld and Transient is %b\n",bucket->size(), 
+            dinst->getID(), dinst->isTransient()); 
+        }
+        bucket->pop();
+        //I(dinst->isTransient());
+        if (dinst->isTransient() && !dinst->is_present_in_rob()) {
+         I(dinst->isTransient());
+         printf("Pipeline::flush:: destroying transient bucket size is %lu and instID is %ld\n",bucket->size(), 
+            dinst->getID());  
+         dinst->destroyTransientInst();
+         } else {
+         //push to a new buffer_rob_shadow;
+         }
+      }
+      //buffer.pop();
+      if(bucket->empty()) {
+       printf("Pipeline::flush::bucket.empty () \n"); 
+        I(bucket->empty());
+        bucket->clock = 0;
+        bucketPool.push_back(bucket);
+      }
+    }
+    }
+  }
+IBucket *Pipeline::next_item_transient() {
+  printf("Pipeline::nextItemtran::buffer.top()  \n"); 
+  IBucket *b = buffer.top();
+  buffer.pop();
+    //fprintf(stderr,"@%lld: Popping Bucket[%p]\n",(long long int)globalClock ,b);
+  I(!b->empty());
+  I(!b->cleanItem);
+
+  I(!b->empty());
+  I(b->top() != 0);
+
+  printf("Pipeline::buffer->nextItem()::returns! \n"); 
+  return b;
+  }
+
+
+
 IBucket *Pipeline::nextItem() {
   while (1) {
     if (buffer.empty()) {
+       printf("Pipeline::NextItem empty () \n"); 
+
 #ifndef NDEBUG
       // It should not be possible to propagate more buckets
       clearItems();
@@ -123,19 +210,22 @@ IBucket *Pipeline::nextItem() {
     }
 
     if (((buffer.top())->getClock() + PipeLength) > globalClock) {
+       printf("Pipeline::NextItem  () buffer.top())->getClock() + PipeLength) ::returns 0\n"); 
 #if 0
-      fprintf(stderr,"1 @%lld Buffer[%p] .top.ID (%d) ->getClock(@%lld) to be issued after %d cycles\n"
-          ,(long long int) globalClock
-          ,buffer.top()
-          ,(int) ((buffer.top())->top())->getID()
-          ,(long long int)((buffer.top())->getClock())
-          ,PipeLength
-          );
+//#if 1
+        fprintf(stderr,"1 @%lld Buffer[%p] .top.ID (%d) ->getClock(@%lld) to be issued after %d cycles\n" 
+           ,(long long int) globalClock
+           ,buffer.top()
+           ,(int) ((buffer.top())->top())->getID()
+           ,(long long int)((buffer.top())->getClock())
+           ,PipeLength
+           );
 #endif
       return 0;
     } else {
 #if 0
-      fprintf(stderr,"2 @%lld Buffer[%p] .top.ID (%d) ->getClock(@%lld) to be issued after %d cycles\n"
+//#if 1
+       fprintf(stderr,"2 @%lld Buffer[%p] .top.ID (%d) ->getClock(@%lld) to be issued after %d cycles\n"1
           ,(long long int) globalClock
           ,buffer.top()
           ,(int) ((buffer.top())->top())->getID()
@@ -144,20 +234,21 @@ IBucket *Pipeline::nextItem() {
           );
 #endif
     }
+    printf("Pipeline::buffer->nextItem()::butter.top()  \n"); 
     IBucket *b = buffer.top();
     buffer.pop();
-    // fprintf(stderr,"@%lld: Popping Bucket[%p]\n",(long long int)globalClock ,b);
+    //fprintf(stderr,"@%lld: Popping Bucket[%p]\n",(long long int)globalClock ,b);
     I(!b->empty());
     I(!b->cleanItem);
 
     I(!b->empty());
     I(b->top() != 0);
 
+    printf("Pipeline::buffer->nextItem()::returns! \n"); 
     return b;
-  }
-
-  I(0);
+    }
 }
+
 
 PipeQueue::PipeQueue(CPU_t i)
     : pipeLine(

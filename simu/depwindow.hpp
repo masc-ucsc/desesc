@@ -33,4 +33,5 @@ public:
   StallCause canIssue(Dinst *dinst) const;
   void       add_inst(Dinst *dinst);
   void       executed(Dinst *dinst);
+  void       executed_flushed(Dinst *dinst);
 };

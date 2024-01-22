@@ -42,21 +42,24 @@ void Store_buffer::remove_clean() {
   absl::erase_if(lines, [&num](std::pair<const Addr_t, Store_buffer_line> p) {
     if (p.second.is_clean()) {
       ++num;
-      return false;
+      return true;
     }
-    return true;
+    return false;
   });
 
   scb_clean_lines = num;
 }
 
 void Store_buffer::add_st(Dinst *dinst) {
+
   auto st_addr = dinst->getAddr();
+  // printf("Store_buffer::Entering add_st on dinst id %ld and addr %lx\n",dinst->getID(),dinst->getAddr());
   I(can_accept_st(st_addr));
 
   auto st_addr_line = calc_line(st_addr);
   auto it = lines.find(st_addr_line);
   if (it == lines.end()) {
+    printf("Store_buffer: add_st lines.end()on search for dinst id %ld and addr %lx\n",dinst->getID(),dinst->getAddr());
     if ((static_cast<int>(lines.size()) + scb_clean_lines) >= scb_size) {
       remove_clean();
     }
@@ -68,7 +71,7 @@ void Store_buffer::add_st(Dinst *dinst) {
     I(line.state == Store_buffer_line::State::Uncoherent);
 
     lines.insert({st_addr_line, line});
-
+    printf("Store_buffer::Entering add_st lines.end() new line is inserted on dinst id %ld and addr %lx\n",dinst->getID(),dinst->getAddr());
     line.set_waiting_wb();
 
     CallbackBase *cb = ownership_doneCB::create(this, st_addr);
@@ -88,12 +91,20 @@ void Store_buffer::add_st(Dinst *dinst) {
     // fmt::print("scb::add_st {} with pending WB for addr 0x{}\n", dinst->getID(), st_addr);
     return;  // DONE
   }
+//FIX
+  auto it_found = lines.find(st_addr_line);
+  if (it_found != lines.end()) 
+    printf("Store_buffer:: add_st Yahoo line is found !!!Before sent Memreq_ownership_doneCB on dinst id %ld and addr %lx and lineaddr %lx \n",
+        dinst->getID(),dinst->getAddr(),st_addr_line);
+//FIXEND
 
   it->second.set_waiting_wb();
   --scb_clean_lines;
   if (dl1) {
+    printf("Store_buffer:: add_st sent Memreq_ownership_doneCB on dinst id %ld and addr %lx\n",dinst->getID(),dinst->getAddr());
     MemRequest::sendReqWrite(dl1, dinst->has_stats(), st_addr, dinst->getPC(), ownership_doneCB::create(this, st_addr));
   } else {
+    printf("Store_buffer:: add_st sent ownership_doneCB on dinst id %ld and addr %lx\n",dinst->getID(),dinst->getAddr());
     ownership_doneCB::schedule(1, this, st_addr);
   }
 
@@ -102,6 +113,7 @@ void Store_buffer::add_st(Dinst *dinst) {
 
 void Store_buffer::ownership_done(Addr_t st_addr) {
   auto st_addr_line = calc_line(st_addr);
+  printf("Store_buffer::ownershipdone Entering addr %lx and line addess %lx \n",st_addr,st_addr_line);
 
   auto it = lines.find(st_addr_line);
   I(it != lines.end());
@@ -109,8 +121,6 @@ void Store_buffer::ownership_done(Addr_t st_addr) {
 
   ++scb_clean_lines;
   it->second.set_clean();
-
-  // fmt::print("scb::done addr 0x{} clean:{}\n", st_addr, scb_clean_lines);
 }
 
 bool Store_buffer::is_ld_forward(Addr_t addr) const {

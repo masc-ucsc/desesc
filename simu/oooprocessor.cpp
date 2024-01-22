@@ -8,7 +8,7 @@
 #include <fstream>
 #include <iterator>
 #include <numeric>
-
+#include <iostream>
 #include "config.hpp"
 #include "fastqueue.hpp"
 #include "fetchengine.hpp"
@@ -18,7 +18,7 @@
 #include "taskhandler.hpp"
 #include "tracer.hpp"
 
-// #define ESESC_TRACE
+//  #define ESESC_TRACE
 //  #define ESESC_CODEPROFILE
 //  #define ESESC_BRANCHPROFILE
 
@@ -165,8 +165,13 @@ OoOProcessor::~OoOProcessor()
 /* }}} */
 
 bool OoOProcessor::advance_clock_drain() {
+
+  printf("OOOProc::advance_clock_drain ::decode_stage() is called\n");
+  
   bool abort = decode_stage();
   if (abort || !busy) {
+
+    printf("OOOProc::advance_clock_drain ::decode_stage() return not busy/abort\n");
     return busy;
   }
 
@@ -199,13 +204,19 @@ bool OoOProcessor::advance_clock_drain() {
   }
 
   if (!pipeQ.instQueue.empty()) {
+    printf("OOOProc::advance_clock_drain ::Entering issue()\n");
     auto n = issue();
+    printf("OOOProc::advance_clock_drain ::issue() is done\n");
     spaceInInstQueue += n;
   } else if (ROB.empty() && rROB.empty() && !pipeQ.pipeLine.hasOutstandingItems()) {
+    printf("OOOProc::advance_clock_drain :: ROB.empty() && rROB.empty(): return FALSE :not issue!!!\n");
     return false;
   }
 
+  printf("OOOProc::advance_clock_drain ::before entering retire !!!\n");
   retire();
+
+  printf("OOOProc::advance_clock_drain  retire done \n");
 
   return true;
 }
@@ -217,15 +228,23 @@ bool OoOProcessor::advance_clock() {
 
   Tracer::advance_clock();
 
+  printf("\nOOOProc::advance_clock() Leaving with pipeQ.InstQ.bucket size %ld\n",pipeQ.instQueue.size());
   fetch();
+  printf("OOOProc::advance_clock ::fetch() is called\n");
 
   return advance_clock_drain();
 }
 
 void OoOProcessor::executing(Dinst *dinst)
 // {{{1 Called when the instruction starts to execute
-{
-  dinst->markExecuting();
+{ 
+  if(dinst->isTransient()){
+    printf("OOOProc::executing  Transient starts to dinstID %ld\n", dinst->getID());
+    dinst->markExecutingTransient();
+  } else {
+    dinst->markExecuting();
+    printf("OOOProc::executing  starts to dinstID %ld\n", dinst->getID());
+  }
   Tracer::stage(dinst, "EX");
 
 #ifdef LATE_ALLOC_REGISTER
@@ -278,20 +297,42 @@ void OoOProcessor::executing(Dinst *dinst)
 // 1}}}
 //
 void OoOProcessor::executed([[maybe_unused]] Dinst *dinst) {
+  
+  if(dinst->isTransient())
+    printf("OOOProc::executed Transientinst starts to executed\n");
+  else 
+    printf("OOOProc::executed  starts to dinstID %ld\n", dinst->getID());
+
 #ifdef TRACK_FORWARDING
   fwdDone[dinst->getInst()->getDst1()] = globalClock;
   fwdDone[dinst->getInst()->getDst2()] = globalClock;
 #endif
 }
+void OoOProcessor::flushed(Dinst *dinst)
+// {{{1 Called when the instruction is flushed 
+{ 
+  //if(dinst->isTransient())
+  printf("OOOProc::flushing !!!YAhoo inst is flushed %ld\n", dinst->getID());
+}
+
 
 StallCause OoOProcessor::add_inst(Dinst *dinst) {
+
+  if (dinst->isTransient())
+    printf("OOOProc::add_inst YAhoo Transientinst is %ld\n", dinst->getID());
+  else
+    printf("OOOProc::add_int  starts to dinstID %ld\n", dinst->getID());
+
+
   if (replayRecovering && dinst->getID() > replayID) {
     Tracer::stage(dinst, "Wrep");
+    printf("ooop::add_inst replaystall dinstID %ld\n", dinst->getID());
     return ReplaysStall;
   }
 
   if ((ROB.size() + rROB.size()) >= (MaxROBSize - 1)) {
-    Tracer::stage(dinst, "Wrob");
+    Tracer::stage(dinst, "Wrob");  
+    printf("ooop::add_inst robsizestall dinstID %ld\n", dinst->getID());
     return SmallROBStall;
   }
 
@@ -299,6 +340,7 @@ StallCause OoOProcessor::add_inst(Dinst *dinst) {
 
   if (nTotalRegs <= 0) {
     Tracer::stage(dinst, "Wreg");
+    printf("ooop::add_inst regstall dinstID %ld\n", dinst->getID());
     return SmallREGStall;
   }
 
@@ -312,6 +354,7 @@ StallCause OoOProcessor::add_inst(Dinst *dinst) {
   StallCause sc = cluster->canIssue(dinst);
   if (sc != NoStall) {
     Tracer::stage(dinst, "Wcls");
+    printf("ooop::add_inst clusterissue_stall Wait for Cluster( Wcls STAGE) dinstID %ld\n", dinst->getID());
     return sc;
   }
 
@@ -397,19 +440,25 @@ StallCause OoOProcessor::add_inst(Dinst *dinst) {
 
   nInst[inst->getOpcode()]->inc(dinst->has_stats());  // FIXME: move to cluster
 
+  printf("OOOProc::add_inst ROB Adding in ROB %ld\n",dinst->getID());
+  if(dinst->isTransient())
+    printf("OOOProc::add_inst push in ROB Transient %ld Adding in ROB\n",dinst->getID());
   ROB.push(dinst);
+  dinst->set_present_in_rob();
   I(dinst->getCluster() != 0);  // Resource::schedule must set the resource field
 
   int n = 0;
   if (!dinst->isSrc2Ready()) {
     // It already has a src2 dep. It means that it is solved at
     // retirement (Memory consistency. coherence issues)
+    printf("OOOProc::add_inst !dinst->isSrc2Ready() %ld \n",dinst->getID());
     if (RAT[inst->getSrc1()]) {
       RAT[inst->getSrc1()]->addSrc1(dinst);
       n++;
       // MSG("addDep0 %8ld->%8lld %lld",RAT[inst->getSrc1()]->getID(), dinst->getID(), globalClock);
     }
   } else {
+    printf("OOOProc::add_inst dinst->isSrc2Ready() %ld \n",dinst->getID());
     if (RAT[inst->getSrc1()]) {
       RAT[inst->getSrc1()]->addSrc1(dinst);
       n++;
@@ -445,6 +494,8 @@ StallCause OoOProcessor::add_inst(Dinst *dinst) {
 
   dinst->markRenamed();
   Tracer::stage(dinst, "RN");
+  printf("OOOPROCCESOR::add_inst :  done rename instID %ld\n", dinst->getID());  
+
 
 #ifdef WAVESNAP_EN
   // add instruction to wavesnap
@@ -459,6 +510,7 @@ StallCause OoOProcessor::add_inst(Dinst *dinst) {
   }
 #endif
 
+  printf("OOOProc::add_inst %ld Exiting add_inst with NoStall \n", dinst->getID());
   return NoStall;
 }
 /* }}} */
@@ -630,6 +682,9 @@ void OoOProcessor::rtt_load_hit(Dinst *dinst) {
 }
 
 void OoOProcessor::rtt_alu_hit(Dinst *dinst) {
+  
+  if(dinst->isTransient())
+    printf("OOOProc::YAhoo Transientinst rtl_alu_hit\n");
   // update fields using information from RTT and LT
   // num_ops = src1(nops) + src2(nops) + 1
   // ld_ptr = ptr of src1 and src2
@@ -678,6 +733,10 @@ void OoOProcessor::rtt_alu_hit(Dinst *dinst) {
   rtt_vec[dst].num_ops            = nops;
   rtt_vec[dst].load_table_pointer = tmp;
   rtt_vec[dst].pc_list            = tmp2;
+  
+  if(dinst->isTransient())
+       printf("OOOProcessor::alu_hit exiting\n");
+
 }
 
 void OoOProcessor::rtt_br_hit(Dinst *dinst) {
@@ -1396,6 +1455,8 @@ int OoOProcessor::btt_pointer_check(Dinst *dinst, int btt_id) {
 #endif
 
 void OoOProcessor::retire() {
+  printf("\nOOOProc::retire Entering  \n");
+
 #ifdef ENABLE_LDBP
   int64_t gclock = int64_t(clockTicks.getDouble());
   if (gclock != power_clock) {
@@ -1417,94 +1478,123 @@ void OoOProcessor::retire() {
   // Pass all the ready instructions to the rrob
   while (!ROB.empty()) {
     auto *dinst = ROB.top();
+    
+    printf("OOOProc::retire:: preretire ROB Inst %ld\n", dinst->getID());
+    I(dinst->getCluster());
     bool  done  = dinst->getClusterResource()->preretire(dinst, flushing);
     // Addr_t ppc = dinst->getPC();
     // MSG("MV");
     GI(flushing && dinst->isExecuted(), done);
     if (!done) {
+    printf("OOOProc::retire !done: preretire RETURN FALSE Inst %ld\n",dinst->getID());
       break;
     }
 
-#ifdef ENABLE_LDBP
-    if (dinst->getInst()->isLoad()) {
-      num_loads.inc(true);  // inc load counter
-      DL1->hit_on_load_table(dinst, false);
-      int lt_idx = DL1->return_load_table_index(dinst->getPC());
-      if ((lt_idx != -1)) {
-        if (DL1->load_table_vec[lt_idx].conf > DL1->getLoadTableConf()) {
-          num_ld_conf.inc(true);
-        }
-        if (DL1->load_table_vec[lt_idx].data_conf > DL1->getLoadDataConf()) {
-          num_ld_data_conf.inc(true);
-        }
-      }
-      rtt_load_hit(dinst);
-    }
-
-    // handle complex ALU in RTT
-    if (dinst->getInst()->isComplex()) {
-      RegType dst             = dinst->getInst()->getDst1();
-      rtt_vec[dst].num_ops    = NUM_OPS + 1;
-      rtt_vec[dst].is_complex = true;
-    }
-
-    if (dinst->getInst()->isALU()) {  // if ALU hit on ldbp_retire_table
-      RegType alu_dst  = dinst->getInst()->getDst1();
-      RegType alu_src1 = dinst->getInst()->getSrc1();
-      RegType alu_src2 = dinst->getInst()->getSrc2();
-      if (alu_src1 == LREG_R0 && alu_src2 == LREG_R0) {  // Load Immediate
-        // DL1->hit_on_load_table(dinst, true);
-        rtt_load_hit(dinst);  // load_table_vec index is always 0 for Li; index 1 to LOAD_TABLE_SIZE is for other LDs
-        // rtt_alu_hit(dinst);
-      } else {  // other ALUs
-        rtt_alu_hit(dinst);
+    I(dinst->getCluster());
+    if(dinst->isTransient()){
+      bool done_cluster = dinst->getCluster()->retire(dinst, flushing);
+      if (!done_cluster) {
+        printf("OOOProc::retire !done: retire  RETURN FALSE Inst %ld\n",dinst->getID());
+        break;
       }
     }
-
-#if 1
-    // condition to find a MV instruction
-    if (dinst->getInst()->getOpcode() == iRALU
-        && (dinst->getInst()->getSrc1() != LREG_R0 && dinst->getInst()->getSrc2() == LREG_R0)) {
-      RegType alu_dst = dinst->getInst()->getDst1();
-      rtt_alu_hit(dinst);
-    } else if (dinst->getInst()->getOpcode() == iRALU
-               && (dinst->getInst()->getSrc1() == LREG_R0 && dinst->getInst()->getSrc2() != LREG_R0)) {
-      RegType alu_dst = dinst->getInst()->getDst1();
-      rtt_alu_hit(dinst);
-    }
-#endif
-
-    // if(dinst->getInst()->getOpcode() == iBALU_LBRANCH) {}
-    if (dinst->getInst()->isBranch()) {
-      num_br.inc(true);
-      // compute num of inflight branches
-      for (uint32_t i = 0; i < ROB.size(); i++) {  // calculate num of inflight branches
-        uint32_t pos       = ROB.getIDFromTop(i);
-        Dinst   *tmp_dinst = ROB.getData(pos);
-        if (tmp_dinst->getInst()->isBranch() && (tmp_dinst->getPC() == dinst->getPC())) {
-          num_inflight_branches++;
+    //Tracer::event(dinst, "PNR");
+    printf("OOOProc::retire !Event PNR Insit %ld\n",dinst->getID());
+    if(dinst->is_flush_transient()) {
+      if (!dinst->isExecuted()) {
+        dinst->markExecutedTransient();
+        dinst->clearRATEntry();
+        printf("OOOProc::retire !Executed  mark_flush_Transient  from ROB Insit %ld\n",dinst->getID());
+        //dinst->getCluster()->delEntry();
+        while (dinst->hasPending()) {
+          Dinst *dstReady = dinst->getNextPending();
+          I(dstReady->isTransient());
+        }
+      } else {
+          while (dinst->hasPending()) {
+            Dinst *dstReadyPending = dinst->getNextPending();
+            I(dstReadyPending->isTransient());
         }
       }
-      inflight_branch = num_inflight_branches;
-      dinst->setInflight(inflight_branch);
 
-      if (dinst->isUseLevel3()) {
-        power_save_mode_ctr = 0;
-        // ldbp_power_mode_cycles.inc(true);
+      
+      printf("OOOProc::retire !Executed  mark_flush_Transient  from ROB Insit %ld\n",dinst->getID());
+      std::cout<<"OOOProc:: retire mark_flush_transient before Destroy " << dinst->getID() << "and Addr "
+        << dinst->getAddr()<<"and Opcode " << dinst->getInst()->getOpcodeName()<<std::endl;
+
+      if (dinst->getInst()->hasDstRegister()) {
+        nTotalRegs++;
       }
-      rtt_br_hit(dinst);
+      Tracer::event(dinst, "PNR");
+      dinst->destroyTransientInst();
+      ROB.pop();
+      continue;
+
+    }//is_flush_transient_if 
+
+    if(dinst->isTransient()){
+      //printf("OOOProc::retire Destroying Transient Insit %ld\n",dinst->getID());
+      
+      if (!dinst->isExecuted()) {
+        dinst->markExecutedTransient();
+        dinst->clearRATEntry();
+        //dinst->getCluster()->delEntry();
+        printf("OOOProc::retire !Executed  Transient Insit %ld\n",dinst->getID());
+        //Tracer::stage(dinst, "TR");
+
+        while (dinst->hasPending()) {
+          Dinst *dstReady = dinst->getNextPending();
+          I(dstReady->isTransient());
+        }
+      }
+     
+      //printf("OOOProc::retire transient Inst destroy from rob %ld\n", dinst->getID());
+      //dinst->clearRATEntry();
+      //Tracer::stage(dinst, "TR");
+      //dinst->destroyTransientInst();
+      //ROB.pop();
+      //I(dinst->getCluster());
+      //bool done_cluster = dinst->getCluster()->retire(dinst, flushing);
+      //if (!done_cluster) {
+        //break;
+      //}
+      if (dinst->getInst()->hasDstRegister()) {
+        nTotalRegs++;
+      }
+      while (dinst->hasPending()) {
+        Dinst *dstReady = dinst->getNextPending();
+        I(dstReady->isTransient());
+      }
+    
+      std::cout<<"OOOProc:: retire Inst before Destroy " << dinst->getID() << "and Addr "
+        << dinst->getAddr()<<"and Opcode " << dinst->getInst()->getOpcodeName()<<std::endl;
+      Tracer::event(dinst, "PNR");
+      dinst->destroyTransientInst();
+      ROB.pop();
+      //return;
+      continue;
+  } else {
+      Tracer::event(dinst, "PNR");
+      printf("OOOProc::retire Inst retire from rob=>rrob %ld\n", dinst->getID());
+      rROB.push(dinst);
+      ROB.pop();
     }
+  }//!ROB.empty()_loop_end
 
-#endif
-
-    Tracer::event(dinst, "PNR");
-
-    rROB.push(dinst);
-    ROB.pop();
+//if (!ROB.empty() && ROB.top()->has_stats() && !ROB.top()->isTransient()) {
+ 
+if (!ROB.empty() && ROB.top()->has_stats()) {
+  int rob_size  = 0;
+  for (uint32_t i = 0; i < ROB.size(); i++) {
+      uint32_t pos   = ROB.getIDFromTop(i);
+      Dinst   *dinst = ROB.getData(pos);
+      if (!dinst->isTransient()) {
+        rob_size++;
+      }
   }
-
-  if (!ROB.empty() && ROB.top()->has_stats()) {
-    robUsed.sample(ROB.size(), true);
+  
+  //robUsed.sample(rob_size, true);
+  robUsed.sample(ROB.size(), true);
 #ifdef TRACK_TIMELEAK
     int total_hit  = 0;
     int total_miss = 0;
@@ -1522,18 +1612,20 @@ void OoOProcessor::retire() {
         continue;
       }
 
-      if (dinst->isFullMiss()) {
-        total_miss++;
-      } else {
-        total_hit++;
-      }
+      //if (!dinst->isTransient()) {
+        if (dinst->isFullMiss()) {
+          total_miss++;
+        } else {
+          total_hit++;
+        }
+      //}
     }
-    avgPNRHitLoadSpec.sample(total_hit, true);
+    avgPNRHitLoadSpec.sample(total_hit, true );
     avgPNRMissLoadSpec.sample(true, total_miss);
 #endif
-  }
-
-  if (!rROB.empty()) {
+  } //ROB_Load_Spec_sampling end
+  
+if (!rROB.empty()) {
     rrobUsed.sample(rROB.size(), rROB.top()->has_stats());
 
 #ifdef ESESC_CODEPROFILE
@@ -1567,8 +1659,23 @@ void OoOProcessor::retire() {
 #endif
   }
 
+//rROB_loop_starts 
   for (uint16_t i = 0; i < RetireWidth && !rROB.empty(); i++) {
     Dinst *dinst = rROB.top();
+    dinst->mark_rrob();
+    /*if( dinst->getCluster()->get_reg_pool() >= dinst->getCluster()->get_nregs()-3) {
+      printf("OOOProc::retire::  regPool %d and nregs is %d rROB Insit %ld\n",
+          dinst->getCluster()->get_reg_pool() ,dinst->getCluster()->get_nregs(), dinst->getID());
+      break;
+    }*/
+    /*if( dinst->getCluster()->get_window_size() >= dinst->getCluster()->get_window_maxsize()-3){
+      printf("OOOProc::retire::  windowsize %d and maxwindowsize is %d rROB Insit %ld\n",
+       dinst->getCluster()->get_window_size(),dinst->getCluster()->get_window_maxsize(), 
+       dinst->getID());
+      break;
+    }*/
+
+    printf("OOOProc::retire:: Reading from  rROB Inst %ld\n", dinst->getID());
     if (last_serialized == dinst) {
       last_serialized = 0;
     }
@@ -1588,12 +1695,16 @@ void OoOProcessor::retire() {
     }
 
     I(dinst->getCluster());
-
+   
+    if (dinst->getInst()->isStore())
+      std::cout<<"OOOProc::Store retire Inst entering  rRob " << dinst->getID() << "and Addr "
+        << dinst->getAddr()<<"and Opcode " << dinst->getInst()->getOpcodeName()<<std::endl;
     bool done = dinst->getCluster()->retire(dinst, flushing);
     if (!done) {
+      printf("OOOProc::retire:: not done rROB  retire() instid %ld\n",dinst->getID());
       break;
     }
-
+   
     Hartid_t smt_hid = dinst->getFlowId();
     if (dinst->isReplay()) {
       flushing     = true;
@@ -1674,10 +1785,17 @@ void OoOProcessor::retire() {
 
     if (dinst->isPerformed()) {  // Stores can perform after retirement
       dinst->destroy();
+      printf("OOOProcessor::retire destroy instID %ld  and Addr %ld", dinst->getID(),dinst->getAddr());
+      std::cout << "Opcode is :" <<  dinst->getInst()->getOpcodeName() << std::endl;
+    } else {
+      printf("OOOProcessor::retire not performed  instID %ld and Addr %ld", dinst->getID(),dinst->getAddr());
+      std::cout << "Not Performed Opcode is :" <<  dinst->getInst()->getOpcodeName() << std::endl;
     }
 
     rROB.pop();
-  }
+  }// !rROB.empty()_loop_ends
+   
+  printf("OOOProcessor::retire  Exiting from retire \n");
 }
 
 void OoOProcessor::replay(Dinst *target)

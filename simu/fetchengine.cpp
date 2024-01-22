@@ -73,7 +73,8 @@ FetchEngine::FetchEngine(Hartid_t id, std::shared_ptr<Gmemory_system> gms_, std:
   }
 
   missInst = false;
-
+  //for flushing transient from pipeline
+  is_fetch_next_ready = false;
   // Move to libmem/Prefetcher.cpp ; it can be stride or DVTAGE
   // FIXME: use AddressPredictor::create()
 
@@ -133,6 +134,9 @@ bool FetchEngine::processBranch(Dinst *dinst, uint16_t n2Fetch) {
   }
 
   setMissInst(dinst);
+  is_fetch_next_ready = false;
+  setTransientInst(dinst);
+  printf(" fetch::setting br transient miss addr:%ld\n",dinst->getAddr());
 
   Time_t n = (globalClock - lastMissTime);
   avgFetchTime.sample(n, dinst->has_stats());
@@ -180,6 +184,9 @@ void FetchEngine::chainLoadDone(Dinst *dinst) {
 
 void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Hartid_t fid, int32_t n2Fetch) {
   Addr_t lastpc = 0;
+  /*if (fid->isBlocked()){
+  Addr_t pc = ifid->getMissDinst()->getAddr() + 4;
+  }*/
 
 #ifdef USE_FUSE
   RegType last_dest = LREG_R0;
@@ -644,7 +651,19 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
     eint->execute(fid);
     Tracer::stage(dinst, "IF");
     dinst->setFetchTime();
-    bucket->push(dinst);
+    /*if (fid->isBlocked()){
+      auto  *alu_dinst = Dinst::create(Instruction(Opcode::iAALU, RegType::LREG_R3, RegType::LREG_R3, RegType::LREG_R3, RegType::LREG_R3)
+                                    ,pc
+                                    ,0
+                                    ,0
+                                    ,true);
+         
+         alu_dinst->setTransient();
+         bucket->push(alu_dinst);
+         pc = pc + 4;
+    } else {*/
+      bucket->push(dinst);
+    //}
 
 #ifdef USE_FUSE
     if (dinst->getInst()->isControl()) {
@@ -703,6 +722,10 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
     // Fetch uses getHead, ROB retires getTail
   } while (n2Fetch > 0);
 
+  /*if(fid->isBlocked()) {
+   pipeQ.pipeLine.readyItem(bucket);//must bucket-> markedfetch()
+   return; 
+  }*/
   bpred->fetchBoundaryEnd();
 
   if (il1_enable && !bucket->empty()) {
@@ -828,6 +851,7 @@ void FetchEngine::unBlockFetchBPredDelay(Dinst *dinst, Time_t missFetchTime) {
 
 void FetchEngine::unBlockFetch(Dinst *dinst, Time_t missFetchTime) {
   clearMissInst(dinst, missFetchTime);
+  is_fetch_next_ready = true;
 
   I(missFetchTime != 0 || globalClock < 1000);  // The first branch can have time zero fetch
 
@@ -858,10 +882,18 @@ void FetchEngine::clearMissInst(Dinst *dinst, Time_t missFetchTime) {
 
 void FetchEngine::setMissInst(Dinst *dinst) {
   (void)dinst;
-  I(!missInst);
+  //if(!dinst->isTransient())
+  printf("fetchengine:: setMIss Dinst %ld and bool is %b\n",dinst->getAddr(), missInst);
+   I(!missInst);
 
   missInst = true;
 #ifndef NDEBUG
   missDinst = dinst;
 #endif
+}
+
+void FetchEngine::setTransientInst(Dinst *dinst) {
+  (void)dinst;
+  printf("fetchengine:: setTransient Dinst %ld\n",dinst->getAddr());
+  transientDinst = dinst;
 }

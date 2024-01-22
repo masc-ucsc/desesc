@@ -11,6 +11,7 @@ template <class Data>
 class FastQueue {
 private:
   std::vector<Data> pipe;
+  std::vector<Data> pipe_in_cluster;
 
   uint32_t pipeMask;
   uint32_t start;
@@ -47,15 +48,44 @@ public:
     nElems++;
   }
 
+  
+  void push_pipe_in_cluster(Data d) {
+    pipe_in_cluster.push_back(d);
+  }
+  
+  void pop_pipe_in_cluster() {
+     pipe_in_cluster.pop_back();
+  }
+
+
   Data top() const {
     // I(nElems);
     return pipe[start];
+  }
+
+  Data back_pipe_in_cluster() const {
+    // I(nElems);
+    return pipe_in_cluster.back();
+  }
+  
+  Data end_data() const {
+    // I(nElems);
+    //end is the position where new data 
+    //is added so need to pop existing data by (end-1) position
+    return pipe[end-1];
   }
 
   void pop() {
     nElems--;
     start = (start + 1) & pipeMask;
   }
+  
+  void pop_from_back() {
+    nElems--;
+    //start = (start + 1) & pipeMask;
+    end = (end - 1) & pipeMask;
+  }
+
 
   uint32_t getIDFromTop(uint32_t i) const {
     I(nElems > i);
@@ -75,4 +105,8 @@ public:
 
   std::size_t size() const { return nElems; }
   bool        empty() const { return nElems == 0; }
+  bool  empty_pipe_in_cluster() const { 
+          return pipe_in_cluster.empty();
+  }
+
 };

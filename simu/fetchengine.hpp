@@ -39,6 +39,9 @@ private:
 #ifndef NDEBUG
   Dinst *missDinst;
 #endif
+  
+  //Dinst *transientDinst;
+
   CallbackContainer cbPending;
 
   Time_t lastMissTime;  // FIXME: maybe we need an array
@@ -117,11 +120,18 @@ public:
 
   void dump(const std::string &str) const;
 
+  Dinst *transientDinst;
   bool isBlocked() const { return missInst; }
 #ifndef NDEBUG
   Dinst *getMissDinst() const { return missDinst; }
 #endif
+  
+  Dinst *get_next_transient_dinst() const { return transientDinst +4; }
 
+  Dinst *get_miss_dinst() const { return transientDinst; }
+  void setTransientInst(Dinst *dinst);
+
+  bool is_fetch_next_ready;
   void clearMissInst(Dinst *dinst, Time_t missFetchTime);
   void setMissInst(Dinst *dinst);
 

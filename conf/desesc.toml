@@ -22,7 +22,7 @@ bench      = "conf/dhrystone.riscv"
 start_roi = false
 rabbit    = 1024
 detail    = 1024
-time      = 50000
+time      = 30000
 
 [rand_emu]
 type = "random"  # Generate random instructions (coverage testing?)
@@ -132,6 +132,7 @@ smt = 1 # Number of STM context
 
 # Memory Parameters
 caches        = true  # set true to enable caches...
+#caches        = false
 scb_size      = 16
 memory_replay = true
 st_fwd_delay  = 2

@@ -16,6 +16,7 @@
 #include "oooprocessor.hpp"
 #include "port.hpp"
 #include "resource.hpp"
+#include "tracer.hpp"
 
 // late allocation flag
 #define USE_PNR
@@ -50,7 +51,7 @@ Resource::Resource(Opcode type, std::shared_ptr<Cluster> cls, PortGeneric *aGen,
 /* }}} */
 
 void Resource::setStats(const Dinst *dinst) {
-  if (!dinst->has_stats()) {
+  if (!dinst->has_stats() || dinst->isTransient()) {
     return;
   }
 
@@ -425,6 +426,14 @@ bool FULoad::retire(Dinst *dinst, [[maybe_unused]] bool flushing)
 }
 /* }}} */
 
+bool FULoad::flushed(Dinst *dinst)
+/* flushing {{{1 */
+{
+  printf("Resource::FUALU::FLUSHING Transient Inst %ld\n", dinst->getID());
+  return true;
+}
+/* }}} */
+
 void FULoad::performed(Dinst *dinst) {
   /* memory operation was globally performed {{{1 */
   dinst->markPerformed();
@@ -523,6 +532,12 @@ void FUStore::executed(Dinst *dinst) {
 
 bool FUStore::preretire(Dinst *dinst, bool flushing) {
   /* retire {{{1 */
+   /* if(dinst->getCluster()->get_reg_pool() >= dinst->getCluster()->get_nregs()-2) {
+      return false;
+        }
+   if( dinst->getCluster()->get_window_size() == dinst->getCluster()->get_window_maxsize()){
+      return false;
+   }*/
 
   if (!dinst->isExecuted()) {
     return false;
@@ -531,6 +546,7 @@ bool FUStore::preretire(Dinst *dinst, bool flushing) {
     return true;
   }
   if (flushing) {
+    printf("Resource::FUStore_Preretire Perfomred dinst %ld and addr %lx\n",dinst->getID(), dinst->getAddr());
     performed(dinst);
     return true;
   }
@@ -542,6 +558,7 @@ bool FUStore::preretire(Dinst *dinst, bool flushing) {
     return false;
   }
 
+  printf("Resource::FUStore_preretire sening to SCB  dinst %ld and addr %lx\n",dinst->getID(), dinst->getAddr());
   scb->add_st(dinst);
 
   if (enableDcache) {
@@ -551,11 +568,20 @@ bool FUStore::preretire(Dinst *dinst, bool flushing) {
                              dinst->getPC(),
                              performedCB::create(this, dinst));
   } else {
+    printf("Resource::FUStore_preretire Perfomred dinst %ld and addr %lx\n",dinst->getID(), dinst->getAddr());
     performed(dinst);
   }
 
   freeEntries++;
 
+  return true;
+}
+/* }}} */
+
+bool FUStore::flushed(Dinst *dinst)
+/* flushing {{{1 */
+{
+  printf("Resource::FUStore::FLUSHING Transient Inst %ld\n", dinst->getID());
   return true;
 }
 /* }}} */
@@ -654,6 +680,14 @@ bool FUGeneric::retire(Dinst *dinst, bool flushing)
 }
 /* }}} */
 
+bool FUGeneric::flushed(Dinst *dinst)
+/* flushing {{{1 */
+{
+  printf("Resource::FUGeneric::FLUSHING Transient Inst %ld\n", dinst->getID());
+  return true;
+}
+/* }}} */
+
 void FUGeneric::performed(Dinst *dinst) {
   /* memory operation was globally performed {{{1 */
   dinst->markPerformed();
@@ -678,7 +712,7 @@ StallCause FUBranch::canIssue(Dinst *dinst) {
   if (freeBranches == 0) {
     return OutsBranchesStall;
   }
-
+// take out a branch from the branchpool
   freeBranches--;
 
   return NoStall;
@@ -702,6 +736,7 @@ void FUBranch::executed(Dinst *dinst) {
   }
 
   // NOTE: assuming that once the branch is executed the entry can be recycled
+  //recycle the branches to branch pool as the branch inst is executed
   freeBranches++;
 }
 /* }}} */
@@ -721,6 +756,13 @@ bool FUBranch::retire(Dinst *dinst, [[maybe_unused]] bool flushing)
 /* retire {{{1 */
 {
   setStats(dinst);
+  return true;
+}
+/* }}} */
+bool FUBranch::flushed(Dinst *dinst)
+/* flushing {{{1 */
+{
+  printf("Resource::FUBranch::FLUSHING Transient Inst %ld\n", dinst->getID());
   return true;
 }
 /* }}} */
@@ -745,7 +787,9 @@ FURALU::FURALU(Opcode type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, Tim
 
 StallCause FURALU::canIssue(Dinst *dinst)
 /* canIssue {{{1 */
-{
+{  if(dinst->isTransient())
+    printf("Resource:::FUALU::CanIssue Transient Inst\n");
+
   I(dinst->getPC() != 0xf00df00d);  // It used to be a Syspend, but not longer true
 
   if (dinst->getPC() == 0xdeaddead) {
@@ -783,6 +827,15 @@ StallCause FURALU::canIssue(Dinst *dinst)
 void FURALU::executing(Dinst *dinst)
 /* executing {{{1 */
 {
+  if(dinst->is_flush_transient()) {
+      
+      
+      
+      }
+
+
+  if(dinst->isTransient())
+    printf("Resource:::FUALU::Executing Transient Inst %ld\n", dinst->getID());
   cluster->executing(dinst);
   executedCB::scheduleAbs(gen->nextSlot(dinst->has_stats()) + lat, this, dinst);
 
@@ -793,22 +846,65 @@ void FURALU::executing(Dinst *dinst)
 void FURALU::executed(Dinst *dinst)
 /* executed {{{1 */
 {
+  if(dinst->is_flush_transient()) {
+      
+      } 
+      
+  if(dinst->isTransient())
+    printf("Resource::FURALU::Executed Transient Inst%ld\n", dinst->getID());
   cluster->executed(dinst);
   dinst->markPerformed();
 }
 /* }}} */
 
 bool FURALU::preretire(Dinst *dinst, [[maybe_unused]] bool flushing)
-/* preretire {{{1 */
-{
+/* preretire ensures the inst is  executed {{{1 */
+{ 
+    //if(dinst->getCluster()->get_reg_pool() >= dinst->getCluster()->get_nregs()-2) {
+      //return false;
+        //}
+   //if( dinst->getCluster()->get_window_size() == dinst->getCluster()->get_window_maxsize()){
+     // return false;
+  // }
+  if(dinst->isTransient()) {
+    printf("Resource::FUALU::PreRetire Transient Inst %ld\n", dinst->getID());
+  }
   return dinst->isExecuted();
 }
 /* }}} */
 
 bool FURALU::retire(Dinst *dinst, [[maybe_unused]] bool flushing)
-/* retire {{{1 */
+/* retire always true{{{1 */
 {
-  setStats(dinst);
+    //if(dinst->getCluster()->get_reg_pool() >= dinst->getCluster()->get_nregs()-2) {
+      //return false;
+        //}
+   //if( dinst->getCluster()->get_window_size() == dinst->getCluster()->get_window_maxsize()){
+     // return false;
+   //}
+  printf("Resource::FUALU::retire Entering Inst %ld\n", dinst->getID());
+  if(dinst->isTransient()) {
+    dinst->mark_retired();
+  }
+  if(!dinst->isTransient())
+    setStats(dinst);
+  
+  printf("Resource::FUALU::retire Leaving Inst %ld\n", dinst->getID());
+  return true;
+}
+/* }}} */
+
+bool FURALU::flushed(Dinst *dinst)
+/* flushing {{{1 */
+{
+  //cluster->flushed(dinst);
+  if (!dinst->isExecuted()) {
+    dinst->markExecutedTransient();
+    dinst->clearRATEntry();
+    Tracer::stage(dinst, "TR");
+
+  }  
+  printf("Resource::FUALU::FLUSHING Transient Inst %ld\n", dinst->getID());
   return true;
 }
 /* }}} */

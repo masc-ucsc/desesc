@@ -30,21 +30,18 @@ StallCause DepWindow::canIssue(Dinst *dinst) const {
 void DepWindow::add_inst(Dinst *dinst) {
   I(dinst->getCluster() != 0);  // Resource::schedule must set the resource field
 
-  printf("DepWindow::add_inst before dinst->hasDeps() %ld  and transient is %b\n",
-      dinst->getID(),dinst->isTransient());
+  //printf("DepWindow::add_inst before dinst->hasDeps() %ld  and transient is %b\n", dinst->getID(),dinst->isTransient());
   
   if (!dinst->hasDeps()) {
     preSelect(dinst);
   } else {
-    printf("DepWindow::add_inst dinst->hasDeps() is true for  %ld  and transient is %b\n",
-        dinst->getID(), dinst->isTransient());
+    //printf("DepWindow::add_inst dinst->hasDeps() is true for  %ld  and transient is %b\n", dinst->getID(), dinst->isTransient());
   }
 }
 
 void DepWindow::preSelect(Dinst *dinst) {
   // At the end of the wakeUp, we can start to read the register file
-  printf("DepWindow::::preSelect  Inst %ld and Transient is %b\n", 
-      dinst->getID(), dinst->isTransient());
+  //printf("DepWindow::::preSelect  Inst %ld and Transient is %b\n", dinst->getID(), dinst->isTransient());
   I(!dinst->hasDeps());
 
   dinst->markIssued();
@@ -122,8 +119,7 @@ void DepWindow::executed(Dinst *dinst) {
 
     I(!dstReady->isExecuted());
 
-    printf("DepWindow::::Executed Inst is %ld and Pending Inst is %ld and Pending :isTransient is %b\n",
-        dinst->getID(),dstReady->getID(),dstReady->isTransient());
+    //printf("DepWindow::::Executed Inst is %ld and Pending Inst is %ld and Pending :isTransient is %b\n", dinst->getID(),dstReady->getID(),dstReady->isTransient());
     if (!dstReady->hasDeps()) {
       // Check dstRes because dstReady may not be issued
         I(dstReady->getCluster());

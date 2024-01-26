@@ -883,7 +883,7 @@ void FetchEngine::clearMissInst(Dinst *dinst, Time_t missFetchTime) {
 void FetchEngine::setMissInst(Dinst *dinst) {
   (void)dinst;
   //if(!dinst->isTransient())
-  printf("fetchengine:: setMIss Dinst %ld and bool is %b\n",dinst->getAddr(), missInst);
+  //printf("fetchengine:: setMIss Dinst %ld and bool is %b\n",dinst->getAddr(), missInst);
    I(!missInst);
 
   missInst = true;

@@ -841,8 +841,7 @@ public:
   bool isPerformed() const { return performed; }
   void markPerformed() {
     // Loads get performed first, and then executed
-    printf("Dinst ::markPerformed Insit %ld and isTransient is %b\n",
-        getID(), isTransient());
+    //printf("Dinst ::markPerformed Insit %ld and isTransient is %b\n", getID(), isTransient());
     
     GI(!inst.isLoad(), executed != 0);
     

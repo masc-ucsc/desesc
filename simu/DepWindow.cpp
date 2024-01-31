@@ -32,13 +32,26 @@ void DepWindow::add_inst(Dinst *dinst) {
 
   printf("DepWindow::add_inst before dinst->hasDeps() %ld  and transient is %b\n",
       dinst->getID(),dinst->isTransient());
-  
-  if (!dinst->hasDeps()) {
+  //while (!dinst->hasDeps()) { //makesure hasdeps==0)lima 
+ if (!dinst->hasDeps()) {
+    dinst->set_in_cluster();
     preSelect(dinst);
-  } else {
-    printf("DepWindow::add_inst dinst->hasDeps() is true for  %ld  and transient is %b\n",
+  } 
+  else {
+    printf("2024::688::DepWindow::add_inst dinst->hasDeps() is true for  %ld  and transient is %b\n",
         dinst->getID(), dinst->isTransient());
+    //while (!dinst->hasDeps()){
+      //preSelect(dinst);
+    //}
   }
+
+
+
+ //lima while (!dinst->hasDeps()) {
+    //preSelect(dinst);
+// }
+
+
 }
 
 void DepWindow::preSelect(Dinst *dinst) {
@@ -101,7 +114,7 @@ void DepWindow::executed(Dinst *dinst) {
   printf("DepWindow::::Executed stage WB Inst %ld\n", dinst->getID());
 
  //if (!dinst->hasPending() || dinst->isTransient()) {
-  if (!dinst->hasPending()) {
+  if (!dinst->hasPending()) { //(dinst->first !=0)
     printf("DepWindow::::Executed Inst %ld has !dinst->hasPending\n", dinst->getID());
     return;
   }
@@ -113,17 +126,31 @@ void DepWindow::executed(Dinst *dinst) {
   I(src_cluster_id == dinst->getCluster()->get_id());
  
   I(dinst->isIssued());
-
+  /*if(dinst->isTransient()){
+    while (dinst->hasPending()){
+      Dinst *dstReady = dinst->getNextPending();
+      I(dstReady);
+    }
+    return;
+  }*/
 
 
   while (dinst->hasPending()) {
     Dinst *dstReady = dinst->getNextPending();
     I(dstReady);
-
+    
     I(!dstReady->isExecuted());
+    /*if( dinst->isTransient() && !dstReady->isTransient()){
+      continue;
+    }*/
+
 
     printf("DepWindow::::Executed Inst is %ld and Pending Inst is %ld and Pending :isTransient is %b\n",
         dinst->getID(),dstReady->getID(),dstReady->isTransient());
+    std::cout<<"Depwindow:: Executed::hasPending():: iexecuted_dinst Inst asm is "<<dinst->getInst()->get_asm()<<std::endl;
+    std::cout<<"Depwindow:: executed::dstReady Inst asm is "<<dstReady->getInst()->get_asm()<<std::endl;
+    printf("Depwindow:: executed::dstReady has ndeps is: %d\n",(int)dstReady->getnDeps());
+
     if (!dstReady->hasDeps()) {
       // Check dstRes because dstReady may not be issued
         I(dstReady->getCluster());

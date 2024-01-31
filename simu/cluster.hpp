@@ -87,6 +87,12 @@ public:
     I(regPool <= nRegs);
   }
 
+  void add_inst_retry( Dinst *dinst) {
+    if(!dinst->is_in_cluster()) {
+      window.add_inst(dinst);
+    }
+  }
+
   int32_t get_reg_pool() {
    return  regPool;
   }

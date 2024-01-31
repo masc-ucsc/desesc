@@ -849,10 +849,14 @@ void FURALU::executed(Dinst *dinst)
   if(dinst->is_flush_transient()) {
       
       } 
-      
+  bool pend = dinst->hasPending();
+  printf("Resource::FURALU::Executed  Inst%ld haspending is%b\n", dinst->getID(), pend);
+  
   if(dinst->isTransient())
     printf("Resource::FURALU::Executed Transient Inst%ld\n", dinst->getID());
+  
   cluster->executed(dinst);
+  printf("Resource::FURALU::markperformed  Inst%ld\n", dinst->getID());
   dinst->markPerformed();
 }
 /* }}} */

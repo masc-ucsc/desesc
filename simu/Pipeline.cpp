@@ -19,6 +19,7 @@ void IBucket::markFetched() {
     //      MSG("@%lld: markFetched Bucket[%p]",(long long int)globalClock, this);
   }
 
+  printf("Pipeline::readyitem::markfetched() complete\n"); 
   pipeLine->readyItem(this);
 }
 
@@ -79,6 +80,7 @@ void Pipeline::readyItem(IBucket *b) {
     doneItem(b);
   } else {
     buffer.push(b);
+    printf("Pipeline::readyitem::buffersize is %lu\n",buffer.size()); 
   }
 
   clearItems();  // Try to insert on minItem reveiced (OoO) buckets
@@ -181,9 +183,11 @@ void Pipeline::doneItem(IBucket *b) {
   }
 IBucket *Pipeline::next_item_transient() {
   printf("Pipeline::nextItemtran::buffer.top()  \n"); 
+  //I(!buffer.empty());
+  //I(buffer.top() != 0);
   IBucket *b = buffer.top();
+  I(!buffer.empty());
   buffer.pop();
-    //fprintf(stderr,"@%lld: Popping Bucket[%p]\n",(long long int)globalClock ,b);
   I(!b->empty());
   I(!b->cleanItem);
 
@@ -191,8 +195,13 @@ IBucket *Pipeline::next_item_transient() {
   I(b->top() != 0);
 
   printf("Pipeline::buffer->nextItem()::returns! \n"); 
-  return b;
+  if(b) {
+    return b;
+  } else {
+    printf(" Pipeline::next_item_transient return no buffer.top \n");
+    return 0;
   }
+}
 
 
 

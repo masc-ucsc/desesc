@@ -30,6 +30,8 @@
 #include "store_buffer.hpp"
 #include "wavesnap.hpp"
 
+#include <random>
+
 class BPredictor;
 
 struct SMT_fetch {
@@ -147,7 +149,9 @@ public:
   void flush_transient_inst_from_inst_queue();
   void flush_transient_from_rob();
   void report(const std::string &str);
-
+  
+  Addr_t random_addr_Gen();
+  
   std::shared_ptr<StoreSet>     ref_SS() { return storeset; }
   std::shared_ptr<Prefetcher>   ref_prefetcher() { return prefetcher; }
   std::shared_ptr<Store_buffer> ref_SCB() { return scb; }

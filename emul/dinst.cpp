@@ -15,10 +15,12 @@ Dinst::Dinst()
     : inst(Instruction(Opcode::iOpInvalid, RegType::LREG_R0, RegType::LREG_R0, RegType::LREG_InvalidOutput,
                        RegType::LREG_InvalidOutput)) {
   pend[0].init(this);
+  //printf("Dinst::Dinst()::pend[0].init:: is %ld and isTransient is %b\n", this->getID(), this->isTransient());
+  //std::cout<<"Dinst::Dinst()::pend[0]::asm is "<<this->getInst()->get_asm()<<std::endl;
   pend[1].init(this);
   pend[2].init(this);
   I(MAX_PENDING_SOURCES == 3);
-  nDeps = 0;
+  //nDeps = 0;
 }
 
 void Dinst::dump(std::string_view str) {
@@ -111,6 +113,9 @@ void Dinst::clearRATEntry() {
       *serializeEntry = 0;
     }
   }
+//if(isTransient()){
+  //first = 0;
+//}
 }
 
 #ifdef ESESC_TRACE_DATA
@@ -237,7 +242,6 @@ void Dinst::destroy() {
 
   resource = nullptr;  // Needed to have GC
   cluster  = nullptr;
-
   dInstPool.in(this);
 }
 void Dinst::destroyTransientInst() {

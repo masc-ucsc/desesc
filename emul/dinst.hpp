@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "callback.hpp"
+#include <iostream>
 #include "iassert.hpp"
 #include "instruction.hpp"
 #include "opcode.hpp"
@@ -30,10 +31,19 @@ private:
   Dinst *parentDinst;
 #endif
 public:
-  DinstNext() { dinst = 0; }
+  DinstNext() { 
+    printf("Setting DinstNext\n");
+    dinst       = 0; 
+    //nextDep     = 0;
+    //isUsed      = 0;
+    //parentDinst = 0;  
+  
+  }
 
   DinstNext *nextDep;
   bool       isUsed;  // true while non-satisfied RAW dependence
+                      // fasle when no RAW dependence
+                      // true  when RAW dependence
 
   const DinstNext *getNext() const { return nextDep; }
   DinstNext       *getNext() { return nextDep; }
@@ -46,6 +56,7 @@ public:
   }
 
   Dinst *getDinst() const { return dinst; }
+  //void  set_dinst(Dinst *d) {  dinst = d; }
 
 #ifdef DINST_PARENT
   Dinst *getParentDinst() const { return parentDinst; }
@@ -160,6 +171,7 @@ private:
   bool is_rrob;
   bool present_in_rob;
   bool flush_transient;
+  bool in_cluster;
   // END Boolean flags
 
   SSID_t      SSID;
@@ -211,7 +223,7 @@ private:
 #ifndef NDEBUG
     mreq_id = 0;
 #endif
-    first = 0;
+    //first = 0; 
 
     RAT1Entry           = 0;
     RAT2Entry           = 0;
@@ -262,6 +274,7 @@ private:
     is_rrob          = false;
     flush_transient  = false;
     present_in_rob   = false;
+    in_cluster       = false;
 
 #ifdef DINST_PARENT
     pend[0].setParentDinst(0);
@@ -269,9 +282,23 @@ private:
     pend[2].setParentDinst(0);
 #endif
 
-    pend[0].isUsed = false;
-    pend[1].isUsed = false;
-    pend[2].isUsed = false;
+    first          = 0;
+    last           = 0;
+    nDeps          = 0;
+    pend[0].isUsed = false; //false when no RAW dependence
+    pend[1].isUsed = false; //true when RAW dependence 
+    pend[2].isUsed = false;  
+  
+    pend[0].setNextDep(0);
+    pend[1].setNextDep(0);
+    pend[2].setNextDep(0);
+    
+    //last->setNextDep(0);
+    //first->setNextDep(0);
+    //first->init(0);
+    //pend[1].init(0);
+    //pend[2].init(0);
+
   }
 
 protected:
@@ -316,6 +343,16 @@ public:
   void mark_rrob() { 
     is_rrob = true; 
     printf("Setting mark_rrob  ::dinst %ld\n", ID);
+  }
+  bool is_in_cluster() const { 
+    //printf("checking transient Inst %B", transient);
+    return in_cluster;
+  }
+  void set_in_cluster() { 
+    in_cluster = true;
+    //ID = currentID_trans++;
+      
+    printf("Setting  incluster true ::dinst %ld\n", ID);
   }
 
 
@@ -525,19 +562,23 @@ public:
 
 #ifdef DINST_PARENT
   Dinst *getParentSrc1() const {
-    if (pend[0].isUsed) {
+    if (pend[0].isUsed) { //true when RAW dependence
+      printf("Dinst::getparentsrc1:parent inst src1 is %ld and isTransient is %b\n", pend[0].getParentDinst()->getID(), isTransient());
+      std::cout<<"Dinst::getparentsrc1:: parentscr1 asm is "<<pend[0].getParentDinst()->getInst()->get_asm()<<std::endl;
       return pend[0].getParentDinst();
     }
     return 0;
   }
   Dinst *getParentSrc2() const {
-    if (pend[1].isUsed) {
+    if (pend[1].isUsed) { //true when RAW dependence
+      printf("Dinst::getparentsrc2:Inst is %ld and isTransient is %b\n", pend[1].getParentDinst()->getID(), isTransient());
+      std::cout<<"Dinst::getparentsrc2:: asm is "<<pend[1].getParentDinst()->getInst()->get_asm()<<std::endl;
       return pend[1].getParentDinst();
     }
     return 0;
   }
   Dinst *getParentSrc3() const {
-    if (pend[2].isUsed) {
+    if (pend[2].isUsed) { //true when RAW dependence
       return pend[2].getParentDinst();
     }
     return 0;
@@ -655,33 +696,57 @@ public:
     I(first);
     Dinst *n = first->getDinst();
 
+    printf("Dinst::getnextPending :: current inst is %ld and isTransient is %b\n", this->getID(), this->isTransient());
+    std::cout<<"Dinst::getNextPending:: current inst ::asm is "<<this->getInst()->get_asm()<<std::endl;
+    printf("Dinst::getnextPending :: pending inst is %ld and isTransient is %b\n", n->getID(), n->isTransient());
+    std::cout<<"Dinst::getNextPending::first->getDinst():: pending inst ::asm is "<<n->getInst()->get_asm()<<std::endl;
     I(n);
 
+    printf("Dinst::getNextPending:: Before ndeps is: first->getDinst()->ndeps is %d\n",(int)n->getnDeps());
     I(n->nDeps > 0);
     n->nDeps--;
-
-    first->isUsed = false;
-    first->setParentDinst(0);
-    first = first->getNext();
-
+    printf("Dinst::getNextPending::Now ndeps--:: ndeps is:first->getDinst()->ndeps-- is  %d\n",(int)n->getnDeps());
+    first->isUsed = false; //isUsed==false : No RAW dependence
+    first->setParentDinst(0); //setParent =0 ::reset
+    
+    first = first->getNext();// first <=  
+    //I(first);
+    if (first) {
+      printf("Dinst::getnextPending Setting new first as ::inst is %ld and isTransient is %b\n", 
+      first->getDinst()->getID(), first->getDinst()->isTransient());
+    } else {      
+      first=0;
+      printf("Dinst::getnextPending Setting new first =0 as ::inst is %ld and isTransient is %b\n",this->getID(), this->isTransient());
+    }
     return n;
   }
 
   void addSrc1(Dinst *d) {
     I(d->nDeps < MAX_PENDING_SOURCES);
     
+    printf("Dinst::addSrc1::Current RAT Inst is %ld and isTransient is %b\n", getID(), isTransient());
+    std::cout<<"Dinst::addScr1::Current RAT dinst Inst asm is "<<getInst()->get_asm()<<std::endl;
+    printf("Dinst::addSrc1::Addsrc_Inst is %ld and isTransient is %b\n", d->getID(), isTransient());
+    std::cout<<"Dinst::addScr1::addsrc_dinst Inst asm is "<<d->getInst()->get_asm()<<std::endl;
+    printf("Dinst::addsrc1:: Before ndeps is: first->getDinst()->ndeps is %d\n",(int)d->getnDeps());
     d->nDeps++;
-
+    printf("Dinst::addsrc1::ndeps++ is: first->getDinst()->ndeps is %d\n",(int)d->getnDeps());
+    
     I(executed == 0);
     I(d->executed == 0);
     DinstNext *n = &d->pend[0];
+    printf("Dinst::addSrc1:::&d->pend[0]::  is %ld and isTransient is %b\n", n->getDinst()->getID(), n->getDinst()->isTransient());
+    std::cout<<"Dinst::addScr1::&d->pend[0]::  asm is "<<n->getDinst()->getInst()->get_asm()<<std::endl;
     I(!n->isUsed);
-    n->isUsed = true;
+    n->isUsed = true; // isUsed ==true:: RAW dependence
     n->setParentDinst(this);
+    printf("Dinst::Set parent  Inst is %ld and isTransient is %b for Inst %ld\n", 
+        getID(), isTransient(), n->getDinst()->getID());
 
     I(n->getDinst() == d);
     if (first == 0) {
       first = n;
+    printf("Dinst::addscr1:: setting first is %ld \n", n->getDinst()->getID());
     } else {
       last->nextDep = n;
     }
@@ -691,27 +756,40 @@ public:
 
   void addSrc2(Dinst *d) {
     I(d->nDeps < MAX_PENDING_SOURCES);
-    
+     
+    printf("Dinst::addSrc2::Current RAT Inst is %ld and isTransient is %b\n", getID(), isTransient());
+    std::cout<<"Dinst::addScr2::Current RAT  dinst Inst asm is "<<getInst()->get_asm()<<std::endl;
+    printf("Dinst::addSrc2::Addsrc2 Inst inst is %ld and isTransient is %b\n", d->getID(), isTransient());
+    std::cout<<"Dinst::addScr2::addsrc2 inst asm is "<<d->getInst()->get_asm()<<std::endl;
     d->nDeps++;
     I(executed == 0);
     I(d->executed == 0);
 
+    printf("Dinst::addsrc2::  ndeps++ is: first->getDinst()->ndeps is %d\n",(int)d->getnDeps());
     DinstNext *n = &d->pend[1];
+    printf("Dinst::addSrc2::&d->pend[1] ::is %ld and isTransient is %b\n", n->getDinst()->getID(), n->getDinst()->isTransient());
+    std::cout<<"Dinst::addScr2::&d->pend[1]::  asm is "<<n->getDinst()->getInst()->get_asm()<<std::endl;
     I(!n->isUsed);
-    n->isUsed = true;
+    n->isUsed = true; //isUsed ==true: RAW dependence
     n->setParentDinst(this);
+    printf("Dinst::addscr2::Set parent  Inst is %ld and isTransient is %b for Inst %ld\n", 
+        this->getID(), this->isTransient(), n->getDinst()->getID());
 
     I(n->getDinst() == d);
     if (first == 0) {
       first = n;
+    printf("Dinst::first ==0::so setting first = is %ld \n", n->getDinst()->getID());
     } else {
       last->nextDep = n;
+       printf("Dinst::addsrc2::first is %ld \n", first->getDinst()->getID());
     }
     n->nextDep = 0;
     last       = n;
   }
 
   void addSrc3(Dinst *d) {
+    printf("Dinst::addSrc3::Inst is %ld and isTransient is %b\n", getID(), isTransient());
+    std::cout<<"Dinst::addScr3::dinst Inst asm is "<<getInst()->get_asm()<<std::endl;
     I(d->nDeps < MAX_PENDING_SOURCES);
     d->nDeps++;
     I(executed == 0);
@@ -719,12 +797,15 @@ public:
 
     DinstNext *n = &d->pend[2];
     I(!n->isUsed);
-    n->isUsed = true;
+    printf("Dinst::addSrc3::dinstNextRAW is %ld and isTransient is %b\n", n->getDinst()->getID(), n->getDinst()->isTransient());
+    std::cout<<"Dinst::addScr3::dinstNextRAW n asm is "<<n->getDinst()->getInst()->get_asm()<<std::endl;
+    n->isUsed = true; //isUsed ==true: RAW dependence
     n->setParentDinst(this);
 
     I(n->getDinst() == d);
     if (first == 0) {
       first = n;
+      printf("Dinst::first is %ld \n", n->getDinst()->getID());
     } else {
       last->nextDep = n;
     }
@@ -743,13 +824,37 @@ public:
   Hartid_t getFlowId() const { return fid; }
 
   char getnDeps() const { return nDeps; }
-  bool isSrc1Ready() const { return !pend[0].isUsed; }
+  bool isSrc1Ready() const { return !pend[0].isUsed; } //isUsed ==true ::RAW dependence
   bool isSrc2Ready() const { return !pend[1].isUsed; }
   bool isSrc3Ready() const { return !pend[2].isUsed; }
-  bool hasPending() const { return first != 0; }
+  void flush_first() { first =0;}
+  bool hasPending() const { 
+   if(first) 
+     printf("Dinst::haspending:: Current Inst %ld has pending first ==%ld\n",
+          ID, first->getDinst()->getID());
+   else
+      printf("Dinst::haspending:: Current Inst %ld has pending first== 0 \n", ID);
+
+    GI(!pend[0].isUsed && !pend[1].isUsed && !pend[2].isUsed, nDeps == 0);
+    return first != 0; 
+  }//first !=0 means has pending Inst!!!
 
   bool hasDeps() const {
-    printf("Dinst:: Inst %ld\n",ID);
+   if(first) 
+      printf("Dinst::hasDeps:: Current Inst %ld has pending first %ld\n",
+          ID, first->getDinst()->getID());
+   else
+      printf("Dinst::hasDeps:: Current Inst %ld has pending first== 0 \n", ID);
+
+    printf("Dinst::hasdeps current  Inst %ld\n",ID);
+    printf("Dinst::hasdeps::ndeps is %d\n",(int)getnDeps());
+    if(!pend[0].isUsed )
+      printf("Dinst::hasdeps:: Pend[0]Inst %ld\n",pend[0].getDinst()->getID());
+    if(!pend[1].isUsed )  
+      printf("Dinst:: hasdeps::Pend[1] Inst %ld\n",pend[1].getDinst()->getID());
+    if(!pend[2].isUsed) 
+      printf("Dinst:: hasdeps::Pend[2] Inst %ld\n",pend[2].getDinst()->getID());
+
     if(!isTransient())
       GI(!pend[0].isUsed && !pend[1].isUsed && !pend[2].isUsed, nDeps == 0);
     return nDeps != 0;

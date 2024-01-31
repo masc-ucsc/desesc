@@ -251,6 +251,10 @@ void Cluster::add_inst(Dinst *dinst) {
   newEntry();
 
   window.add_inst(dinst);
+  if(!dinst->is_in_cluster()) {
+    window.add_inst(dinst);
+  }
+
   printf("Cluster::add_inst leaving dinstID %ld\n", dinst->getID());
 }
 
@@ -325,8 +329,12 @@ bool ExecutingCluster::retire(Dinst *dinst, bool reply) {
 }
 
 //************ Executed Cluster Class
-
+//Only this Executed cluster is used in desesc now
 void ExecutedCluster::executing(Dinst *dinst) {
+  //if(!dinst->is_in_cluster() && !dinst->isIssued()) {
+    //window.add_inst(dinst);
+  //lima}
+
   printf("ClusterExecuted::executing Entering Insit %ld\n",dinst->getID());
   nready--;
 

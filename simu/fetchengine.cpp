@@ -101,6 +101,7 @@ FetchEngine::FetchEngine(Hartid_t id, std::shared_ptr<Gmemory_system> gms_, std:
 FetchEngine::~FetchEngine() {}
 
 bool FetchEngine::processBranch(Dinst *dinst, uint16_t n2Fetch) {
+  printf("FetchEngine::processbranch entering dinstID %ld\n", dinst->getID());
   (void)n2Fetch;
   I(dinst->getInst()->isControl());  // getAddr is target only for br/jmp
 
@@ -157,6 +158,7 @@ bool FetchEngine::processBranch(Dinst *dinst, uint16_t n2Fetch) {
     // printf(" bad brpc:%llx\n",dinst->getPC());
     dinst->lockFetch(this);
   }
+  printf("FetchEngine::processbranch return true dinstID %ld\n", dinst->getID());
 
   return true;
 }
@@ -183,10 +185,8 @@ void FetchEngine::chainLoadDone(Dinst *dinst) {
 }
 
 void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Hartid_t fid, int32_t n2Fetch) {
+  printf("FetchEngine::::Entering real fetch !!!\n");
   Addr_t lastpc = 0;
-  /*if (fid->isBlocked()){
-  Addr_t pc = ifid->getMissDinst()->getAddr() + 4;
-  }*/
 
 #ifdef USE_FUSE
   RegType last_dest = LREG_R0;
@@ -336,6 +336,7 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
       }
 
       if (predictable) {
+        printf("FetchEngine::OracleDataRAT Fetched Inst is %ld \n", dinst->getID());
         oracleDataRAT[dinst->getInst()->getDst1()].depth = 0;
         oracleDataRAT[dinst->getInst()->getDst1()].ldpc  = dinst->getPC();
         lastPredictable_ldpc                             = dinst->getPC();
@@ -343,12 +344,14 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
         lastPredictable_data                             = dinst->getData();
         oracleDataLast[dinst->getPC()].set(dinst->getData(), dinst->getAddr());
       } else {
+        printf("FetchEngine::OracleDataRAT Fetched Inst is %ld \n", dinst->getID());
         oracleDataRAT[dinst->getInst()->getDst1()].depth = 32;
         oracleDataRAT[dinst->getInst()->getDst1()].ldpc  = 0;
         oracleDataLast[dinst->getPC()].clear(dinst->getData(), dinst->getAddr());
       }
 
       if (oracleDataLast[dinst->getPC()].isChained()) {
+        printf("FetchEngine::OracleDataRAT Fetched Inst is %ld \n", dinst->getID());
         dinst->setChain(this, oracleDataLast[dinst->getPC()].inc_chain());
       }
     }
@@ -357,6 +360,7 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
     if (!dinst->getInst()->isLoad() && dinst->getInst()->isBranch()) {  // Not for LD-LD chain
       // this loop tracks LD-BR dependency for now
       //  Copy Other
+      printf("Fetchengine::realfetch oracleDATARAT branch() instID %ld\n", dinst->getID());  
       int    d = 32768;
       Addr_t ldpc;
       int    d1          = oracleDataRAT[dinst->getInst()->getSrc1()].depth;
@@ -512,6 +516,7 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
 #ifdef ENABLE_LDBP
     if (dinst->getInst()->isBranch()) {
       // NEW INTERFACE  !!!!!!
+      printf("FetchEngine::LDBP Fetched Inst is %ld \n", dinst->getID());
 
       // check if BR PC is present in BOT
       int  bot_idx        = DL1->return_bot_index(dinst->getPC());
@@ -650,20 +655,11 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
 
     eint->execute(fid);
     Tracer::stage(dinst, "IF");
+    printf("FetchEngine::::Fetched Inst is %ld \n", dinst->getID());
+    std::cout<< "FetchEngine:::Fetched Inst Opcode is "<<dinst->getInst()->getOpcodeName()<<"and asm is "
+      <<dinst->getInst()->get_asm()<<std::endl;
     dinst->setFetchTime();
-    /*if (fid->isBlocked()){
-      auto  *alu_dinst = Dinst::create(Instruction(Opcode::iAALU, RegType::LREG_R3, RegType::LREG_R3, RegType::LREG_R3, RegType::LREG_R3)
-                                    ,pc
-                                    ,0
-                                    ,0
-                                    ,true);
-         
-         alu_dinst->setTransient();
-         bucket->push(alu_dinst);
-         pc = pc + 4;
-    } else {*/
-      bucket->push(dinst);
-    //}
+    bucket->push(dinst);
 
 #ifdef USE_FUSE
     if (dinst->getInst()->isControl()) {
@@ -683,6 +679,7 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
 #endif
 
     if (dinst->getInst()->isControl()) {
+      printf("FetchEngine::realfetch instID before processbranch %ld\n", dinst->getID());  
       bool stall_fetch = processBranch(dinst, n2Fetch);
       if (stall_fetch) {
 #ifdef FETCH_TRACE
@@ -839,6 +836,7 @@ void FetchEngine::fetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Hartid
 void FetchEngine::dump(const std::string &str) const { bpred->dump(str + "_FE"); }
 
 void FetchEngine::unBlockFetchBPredDelay(Dinst *dinst, Time_t missFetchTime) {
+  printf("FetchEngine::unBlockFetchBpreddelay entering dinstID %ld\n", dinst->getID());
   clearMissInst(dinst, missFetchTime);
 
   Time_t n = (globalClock - missFetchTime);
@@ -850,6 +848,7 @@ void FetchEngine::unBlockFetchBPredDelay(Dinst *dinst, Time_t missFetchTime) {
 }
 
 void FetchEngine::unBlockFetch(Dinst *dinst, Time_t missFetchTime) {
+  printf("FetchEngine::unBlockFetch  entering dinstID %ld\n", dinst->getID());
   clearMissInst(dinst, missFetchTime);
   is_fetch_next_ready = true;
 

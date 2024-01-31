@@ -1,5 +1,5 @@
+//BISMILLAH HIR RAHMAR NIR RAHIM
 // See LICENSE for details.
-
 #include "gprocessor.hpp"
 
 #include <sys/time.h>
@@ -151,6 +151,7 @@ void GProcessor::fetch() {
   if (bucket) {
     ifid->fetch(bucket, eint, smt_hid);
     if (!bucket->empty()) {
+      printf("gprocessor::fetch:: completed bucket size is %ld\n",bucket->size());
       avgFetchWidth.sample(bucket->size(), bucket->top()->has_stats());
       busy = true;
     }
@@ -205,6 +206,7 @@ void GProcessor::flush_transient_from_rob() {
           printf("GPROCCESOR::flush_Rob :: isRetired()  regpool++ destroying for instID %ld\n", dinst->getID());  
           dinst->getCluster()->add_reg_pool();
         }
+        dinst->clearRATEntry();
         dinst->destroyTransientInst();
     } else if (dinst->isExecuting() || dinst->isIssued()) {
         dinst->mark_flush_transient();
@@ -229,7 +231,7 @@ void GProcessor::flush_transient_from_rob() {
         }
         printf("GPROCCESOR::flush_Rob : isRenamed instID %ld\n", dinst->getID());  
         dinst->markExecutedTransient();
-        dinst->clearRATEntry();
+        //dinst->clearRATEntry();
         printf("GPROCCESOR::flush_Rob : clear RAT entry instID %ld\n", dinst->getID());  
         while (dinst->hasPending()) {
           Dinst *dstReady = dinst->getNextPending();
@@ -243,6 +245,15 @@ void GProcessor::flush_transient_from_rob() {
           dinst->getCluster()->add_reg_pool();
         }
 
+        dinst->clearRATEntry();
+        Dinst* dinst1 = dinst->getParentSrc1();
+        if(dinst1) {
+          dinst1->flush_first();
+        }
+        Dinst* dinst2 = dinst->getParentSrc2();
+        if(dinst2) {
+          dinst2->flush_first();
+        }
         dinst->getCluster()->delEntry();
         dinst->destroyTransientInst();
     }
@@ -357,6 +368,7 @@ void GProcessor::flush_transient_inst_from_inst_queue() {
         if (dinst->isTransient() && !dinst->is_present_in_rob()) {
          printf("Gprocess::flush_inst_queue::instqueue.size is %lu and  destroying transient instID %ld\n",bucket->size(), 
          dinst->getID());  
+        // noneed:dinst->clearRATEntry();
          dinst->destroyTransientInst();
         }
       }
@@ -371,7 +383,14 @@ void GProcessor::flush_transient_inst_from_inst_queue() {
   }
 
 
-
+Addr_t GProcessor::random_addr_Gen(){
+      Addr_t addr = 0x200;
+      std::random_device rd;
+      std::mt19937 gen(rd());
+      std::uniform_int_distribution<> dis(1, 100);
+      int randomNumber = dis(gen);
+      return addr+(uint64_t)randomNumber;
+}
 
 
 void GProcessor:: add_inst_transient_on_branch_miss(IBucket *bucket, Addr_t pc) {
@@ -381,27 +400,130 @@ void GProcessor:: add_inst_transient_on_branch_miss(IBucket *bucket, Addr_t pc) 
        //while (i< 3) {
          //printf("gProcessor:: Entering transient Inst\n");
          //auto  *alu_dinst = Dinst::create(Instruction(Opcode::iAALU, RegType::LREG_R3, RegType::LREG_R3, RegType::LREG_R3, RegType::LREG_R3)
-         auto  *alu_dinst = Dinst::create(Instruction(Opcode::iAALU, RegType::LREG_R31, RegType::LREG_R30, RegType::LREG_R29, RegType::LREG_R31)
+         /*auto  *alu_dinst = Dinst::create(Instruction(Opcode::iAALU, RegType::LREG_R31, RegType::LREG_R30, RegType::LREG_R29, RegType::LREG_R31)
+                                    ,pc
+                                    ,0
+                                    ,0
+                                    ,true);*/
+       
+                                    
+         
+       //Addr_t addr    = random_addr_Gen();
+       /*auto *alu_dinst= Dinst::create(Instruction(Opcode::iSALU_ST, RegType::LREG_R5, RegType::LREG_R6, RegType::LREG_R7, RegType::LREG_R8)
+                      ,pc
+                      ,addr
+                      ,0
+                      ,true);*/
+    
+       /*auto *alu_dinst= Dinst::create(Instruction(Opcode::iLALU_LD, RegType::LREG_R5, RegType::LREG_R6, RegType::LREG_R7, RegType::LREG_R8)
+                      ,pc
+                      ,addr
+                      ,0
+                      ,true);*/
+       /*auto *alu_dinst= Dinst::create(Instruction(Opcode::iCALU_FPALU, RegType::LREG_FP3, RegType::LREG_FP4, RegType::LREG_FP7, RegType::LREG_FP9)
+                      ,pc
+                      ,0
+                      ,0
+                      ,true);*/
+        /* auto  *alu_dinst = Dinst::create(Instruction(Opcode::iBALU_LBRANCH, RegType::LREG_R31, RegType::LREG_R30, RegType::LREG_R29, RegType::LREG_R31)
+                                    ,pc
+                                    ,0
+                                    ,0
+                                    ,true);*/
+         /*auto  *alu_dinst = Dinst::create(Instruction(Opcode::iBALU_LBRANCH, RegType::LREG_R17, RegType::LREG_R14, RegType::LREG_R19, RegType::LREG_R25)
+                                    ,pc
+                                    ,addr
+                                    ,0
+                                    ,true);*/
+       
+      /*Dinst *alu_dinst;                             
+       if(rand() & 1){
+          alu_dinst = Dinst::create(Instruction(Opcode::iAALU, RegType::LREG_R31, RegType::LREG_R30, RegType::LREG_R29, RegType::LREG_R31)
                                     ,pc
                                     ,0
                                     ,0
                                     ,true);
-        /*auto  *alu_dinst = Dinst::create(Instruction(Opcode::iBALU_RBRANCH, RegType::LREG_R17, RegType::LREG_R14, RegType::LREG_R16, RegType::LREG_R19)
+      } else if  (rand() & 1){
+           Addr_t addr    = random_addr_Gen();
+           alu_dinst= Dinst::create(Instruction(Opcode::iSALU_ST, RegType::LREG_R5, RegType::LREG_R6, RegType::LREG_R7, RegType::LREG_R8)
+                      ,pc
+                      ,addr
+                      ,0
+                      ,true);
+       } else if (rand() & 1){
+           
+           Addr_t addr    = random_addr_Gen();
+           alu_dinst= Dinst::create(Instruction(Opcode::iLALU_LD, RegType::LREG_R5, RegType::LREG_R6, RegType::LREG_R7, RegType::LREG_R8)
+                      ,pc
+                      ,addr
+                      ,0
+                      ,true);
+       } else if(rand() & 1){
+           alu_dinst= Dinst::create(Instruction(Opcode::iCALU_FPALU, RegType::LREG_FP3, RegType::LREG_FP4, RegType::LREG_FP7, RegType::LREG_FP9)
+                      ,pc
+                      ,0
+                      ,0
+                      ,true);
+       } else if(rand() & 1){
+           alu_dinst = Dinst::create(Instruction(Opcode::iBALU_LBRANCH, RegType::LREG_R31, RegType::LREG_R30, RegType::LREG_R29, RegType::LREG_R31)
+                                    ,pc
+                                    ,0
+                                    ,0
+                                    ,true);
+       } else {
+           alu_dinst = Dinst::create(Instruction(Opcode::iAALU, RegType::LREG_R3, RegType::LREG_R3, RegType::LREG_R3, RegType::LREG_R3)
+                                    ,pc
+                                    ,0
+                                    ,0
+                                    ,true);
+       }*/
+       Dinst *alu_dinst;                             
+       if(rand() & 1){
+          alu_dinst = Dinst::create(Instruction(Opcode::iAALU, RegType::LREG_R11, RegType::LREG_R31, RegType::LREG_R0, RegType::LREG_R21)
+                                    ,pc
+                                    ,0
+                                    ,0
+                                    ,true);
+       } else if(rand() & 1) {
+
+           Addr_t addr    = random_addr_Gen();
+           //alu_dinst= Dinst::create(Instruction(Opcode::iLALU_LD, RegType::LREG_R5, RegType::LREG_R6, RegType::LREG_R7, RegType::LREG_R0)
+           alu_dinst= Dinst::create(Instruction(Opcode::iLALU_LD, RegType::LREG_R5, RegType::LREG_R6, RegType::LREG_R0, RegType::LREG_R7)
+                      ,pc
+                      ,addr
+                      ,0
+                      ,true);
+       //} else if(rand() & 1){
+         } else if(rand() & 1){
+           alu_dinst= Dinst::create(Instruction(Opcode::iCALU_FPALU, RegType::LREG_FP3, RegType::LREG_FP4, RegType::LREG_FP7, RegType::LREG_FP0)
+                      ,pc
+                      ,0
+                      ,0
+                      ,true);
+         } else if(rand() & 1) {
+           Addr_t addr    = random_addr_Gen();
+           //alu_dinst= Dinst::create(Instruction(Opcode::iLALU_LD, RegType::LREG_R5, RegType::LREG_R6, RegType::LREG_R7, RegType::LREG_R0)
+           alu_dinst= Dinst::create(Instruction(Opcode::iSALU_ST, RegType::LREG_R5, RegType::LREG_R6, RegType::LREG_R0, RegType::LREG_R7)
+                      ,pc
+                      ,addr
+                      ,0
+                      ,true);
+      /* } else if(rand() & 1){
+           //Addr_t addr    = random_addr_Gen();
+           alu_dinst = Dinst::create(Instruction(Opcode::iBALU_LBRANCH, RegType::LREG_R17, RegType::LREG_R14, RegType::LREG_R0, RegType::LREG_R25)
                                     ,pc
                                     ,0
                                     ,0
                                     ,true);*/
 
-
-
-       /*Addr_t addr    = 0x200;
-       auto *alu_dinst= Dinst::create(Instruction(Opcode::iSALU_ST, RegType::LREG_R5, RegType::LREG_R6, RegType::LREG_R7, RegType::LREG_R8)
-                      ,pc
-                      ,addr
-                      ,0
-                      ,true);*/
-
-         
+       } else {
+           alu_dinst = Dinst::create(Instruction(Opcode::iAALU, RegType::LREG_R13, RegType::LREG_R13, RegType::LREG_R0, RegType::LREG_R3)
+                                    ,pc
+                                    ,0
+                                    ,0
+                                    ,true);
+       }
+   
          if(alu_dinst)
            std::cout<<std::endl<< "gProcessor::Yahoo!!Transient  Inst Created Opcode is "<<alu_dinst->getInst()->getOpcodeName()<<std::endl;
          alu_dinst->setTransient();
@@ -512,7 +634,7 @@ int32_t GProcessor::issue() {
       else 
         printf("gProc::Issue  bucketsize %ld \n",bucket->size());
 
-
+      printf("pProcessor::Issue Inst is %ld \n", dinst->getID());
 
       std::cout<< "gProcessor:: issueYahoo!!!Inst issued Opcode"<< dinst->getInst()->getOpcodeName()<<std::endl;
       StallCause c = add_inst(dinst);

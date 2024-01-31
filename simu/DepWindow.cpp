@@ -153,16 +153,16 @@ void DepWindow::executed(Dinst *dinst) {
     }*/
 
 
-<<<<<<< HEAD
+//<<<<<<< HEAD
     printf("DepWindow::::Executed Inst is %ld and Pending Inst is %ld and Pending :isTransient is %b\n",
         dinst->getID(),dstReady->getID(),dstReady->isTransient());
     std::cout<<"Depwindow:: Executed::hasPending():: iexecuted_dinst Inst asm is "<<dinst->getInst()->get_asm()<<std::endl;
     std::cout<<"Depwindow:: executed::dstReady Inst asm is "<<dstReady->getInst()->get_asm()<<std::endl;
     printf("Depwindow:: executed::dstReady has ndeps is: %d\n",(int)dstReady->getnDeps());
 
-=======
+//=======
     //printf("DepWindow::::Executed Inst is %ld and Pending Inst is %ld and Pending :isTransient is %b\n", dinst->getID(),dstReady->getID(),dstReady->isTransient());
->>>>>>> upstream/main
+//>>>>>>> upstream/main
     if (!dstReady->hasDeps()) {
       // Check dstRes because dstReady may not be issued
         I(dstReady->getCluster());

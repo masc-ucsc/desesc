@@ -30,6 +30,7 @@ StallCause DepWindow::canIssue(Dinst *dinst) const {
 void DepWindow::add_inst(Dinst *dinst) {
   I(dinst->getCluster() != 0);  // Resource::schedule must set the resource field
 
+//<<<<<<< HEAD
   printf("DepWindow::add_inst before dinst->hasDeps() %ld  and transient is %b\n",
       dinst->getID(),dinst->isTransient());
   //while (!dinst->hasDeps()) { //makesure hasdeps==0)lima 
@@ -43,6 +44,14 @@ void DepWindow::add_inst(Dinst *dinst) {
     //while (!dinst->hasDeps()){
       //preSelect(dinst);
     //}
+/*=======
+  //printf("DepWindow::add_inst before dinst->hasDeps() %ld  and transient is %b\n", dinst->getID(),dinst->isTransient());
+  
+  if (!dinst->hasDeps()) {
+    preSelect(dinst);
+  } else {
+    //printf("DepWindow::add_inst dinst->hasDeps() is true for  %ld  and transient is %b\n", dinst->getID(), dinst->isTransient());
+>>>>>>> upstream/main*/
   }
 
 
@@ -56,8 +65,7 @@ void DepWindow::add_inst(Dinst *dinst) {
 
 void DepWindow::preSelect(Dinst *dinst) {
   // At the end of the wakeUp, we can start to read the register file
-  printf("DepWindow::::preSelect  Inst %ld and Transient is %b\n", 
-      dinst->getID(), dinst->isTransient());
+  //printf("DepWindow::::preSelect  Inst %ld and Transient is %b\n", dinst->getID(), dinst->isTransient());
   I(!dinst->hasDeps());
 
   dinst->markIssued();
@@ -145,12 +153,16 @@ void DepWindow::executed(Dinst *dinst) {
     }*/
 
 
+<<<<<<< HEAD
     printf("DepWindow::::Executed Inst is %ld and Pending Inst is %ld and Pending :isTransient is %b\n",
         dinst->getID(),dstReady->getID(),dstReady->isTransient());
     std::cout<<"Depwindow:: Executed::hasPending():: iexecuted_dinst Inst asm is "<<dinst->getInst()->get_asm()<<std::endl;
     std::cout<<"Depwindow:: executed::dstReady Inst asm is "<<dstReady->getInst()->get_asm()<<std::endl;
     printf("Depwindow:: executed::dstReady has ndeps is: %d\n",(int)dstReady->getnDeps());
 
+=======
+    //printf("DepWindow::::Executed Inst is %ld and Pending Inst is %ld and Pending :isTransient is %b\n", dinst->getID(),dstReady->getID(),dstReady->isTransient());
+>>>>>>> upstream/main
     if (!dstReady->hasDeps()) {
       // Check dstRes because dstReady may not be issued
         I(dstReady->getCluster());

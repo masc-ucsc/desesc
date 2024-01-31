@@ -24,16 +24,19 @@ Emul_dromajo::Emul_dromajo() : Emul_base() {
       rabbit = Config::get_integer(section, "rabbit");
       detail = Config::get_integer(section, "detail");
       time   = Config::get_integer(section, "time");
-      bench  = Config::get_string(section, "bench");
+      if (Config::has_entry(section,"bench"))
+        bench  = Config::get_string(section, "bench");
     }
     ++num;
   }
-  std::vector<std::string> bench_split = absl::StrSplit(bench, ' ');
-  if (bench_split.empty() || !std::filesystem::exists(bench_split[0])) {
-    Config::add_error(fmt::format("could not open dromajo bench={}\n", bench));
-    if (!std::filesystem::exists(bench_split[0])) {
-      std::string path{std::filesystem::current_path().generic_string()};
-      Config::add_error(fmt::format("file {} not accessible from {} path\n", bench, path));
+  if (!bench.empty()) {
+    std::vector<std::string> bench_split = absl::StrSplit(bench, ' ');
+    if (bench_split.empty() || !std::filesystem::exists(bench_split[0])) {
+      Config::add_error(fmt::format("could not open dromajo bench={}\n", bench));
+      if (!std::filesystem::exists(bench_split[0])) {
+        std::string path{std::filesystem::current_path().generic_string()};
+        Config::add_error(fmt::format("file {} not accessible from {} path\n", bench, path));
+      }
     }
   }
   Config::exit_on_error();
@@ -282,7 +285,7 @@ Dinst *Emul_dromajo::peek(Hartid_t fid) {
       // TO-DO: the rest of floating point insns
       switch (insn_raw & 0x7F) {
         case 0x03:
-          if (funct3 < 6) {
+          if (funct3 <= 6) {
             opcode  = Opcode::iLALU_LD;
             src1    = (RegType)(rs1);
             src2    = RegType::LREG_NoDependence;
@@ -348,6 +351,11 @@ Dinst *Emul_dromajo::peek(Hartid_t fid) {
           }
           src1 = (RegType)(rs1);
           src2 = (RegType)(rs2);
+          dst1 = (RegType)(rd);
+          break;
+        case 0x37: // LUI
+          src1 = RegType::LREG_NoDependence;
+          src2 = RegType::LREG_NoDependence;
           dst1 = (RegType)(rd);
           break;
         case 0x3b:
@@ -480,9 +488,10 @@ bool Emul_dromajo::is_sleeping(Hartid_t fid) const {
 void Emul_dromajo::init_dromajo_machine() {
   assert(type == "dromajo");
 
-  std::vector<const char *> dromajo_args;
-  dromajo_args.push_back("desesc_drom");
-  dromajo_args.push_back(bench.c_str());
+  std::vector<char *> dromajo_args;
+  dromajo_args.push_back(strdup("desesc_drom"));
+  if (!bench.empty())
+    dromajo_args.push_back(strdup(bench.c_str()));
 
   std::vector<std::string> list_args = {"cmdline",
                                         "ncpus",
@@ -505,18 +514,26 @@ void Emul_dromajo::init_dromajo_machine() {
                                         "gdbinit",
                                         "clear_ids"};
 
-  dromajo_args.reserve(list_args.size());
-
   for (auto &&item : list_args) {
     if (Config::has_entry(section, item)) {
       std::string arg = "--" + item + "=" + Config::get_string(section, item);
-      dromajo_args.push_back(arg.c_str());
+      dromajo_args.push_back(strdup(arg.c_str()));
     }
   }
   char *argv[dromajo_args.size()];
   for (auto i = 0u; i < dromajo_args.size(); ++i) {
-    argv[i] = const_cast<char *>(dromajo_args[i]);
+    argv[i] = dromajo_args[i];
   }
 
+  fmt::print("\ndromajo arguments:");
+  for (const auto *str : dromajo_args) {
+    fmt::print(" {}", str);
+  }
+  fmt::print("\n");
+
   machine = virt_machine_main(dromajo_args.size(), argv);
+
+  for(auto *ptr:dromajo_args) {
+    free(ptr);
+  }
 }

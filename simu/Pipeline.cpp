@@ -157,8 +157,7 @@ void Pipeline::doneItem(IBucket *b) {
       while(!bucket->empty()) {
         auto *dinst = bucket->top();
         if(dinst) { 
-          printf("Pipeline::flush::bucket.size is  %lu and instID %ld and Transient is %b\n",bucket->size(), 
-            dinst->getID(), dinst->isTransient()); 
+          //printf("Pipeline::flush::bucket.size is  %lu and instID %ld and Transient is %b\n",bucket->size(), dinst->getID(), dinst->isTransient()); 
         }
         bucket->pop();
         //I(dinst->isTransient());

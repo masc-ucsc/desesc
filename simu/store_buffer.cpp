@@ -11,7 +11,14 @@ Store_buffer::Store_buffer(Hartid_t hid, std::shared_ptr<Gmemory_system> ms) {
   std::vector<std::string> v      = absl::StrSplit(Config::get_string("soc", "core", hid, "il1"), ' ');
   auto                     l1_sec = v[0];
   line_size                       = Config::get_power2(l1_sec, "line_size");
-  dl1 = ms->getDL1();
+
+  bool enableDcache = Config::get_bool("soc", "core", hid, "caches");
+  if (enableDcache) {
+    dl1 = ms->getDL1();
+  } else {
+    dl1 = nullptr;
+  }
+
   scb_clean_lines     = 0;
   line_size_addr_bits = log2i(line_size);
   line_size_mask      = line_size - 1;
@@ -40,16 +47,16 @@ void Store_buffer::remove_clean() {
     return false;
   });
 
-  scb_clean_lines -= num;
+  scb_clean_lines = num;
 }
 
 void Store_buffer::add_st(Dinst *dinst) {
-  printf("Store_buffer::Entering add_st on dinst id %ld and addr %lx\n",dinst->getID(),dinst->getAddr());
-  Addr_t st_addr = dinst->getAddr();
+
+  auto st_addr = dinst->getAddr();
+  // printf("Store_buffer::Entering add_st on dinst id %ld and addr %lx\n",dinst->getID(),dinst->getAddr());
   I(can_accept_st(st_addr));
 
   auto st_addr_line = calc_line(st_addr);
-
   auto it = lines.find(st_addr_line);
   if (it == lines.end()) {
     printf("Store_buffer: add_st lines.end()on search for dinst id %ld and addr %lx\n",dinst->getID(),dinst->getAddr());
@@ -74,11 +81,14 @@ void Store_buffer::add_st(Dinst *dinst) {
       cb->schedule(1);
     }
 
+    // fmt::print("scb::add_st {} no pending st for addr 0x{}\n", dinst->getID(), st_addr);
+
     return;
   }
 
   it->second.add_st(calc_offset(st_addr));
   if (it->second.is_waiting_wb()) {
+    // fmt::print("scb::add_st {} with pending WB for addr 0x{}\n", dinst->getID(), st_addr);
     return;  // DONE
   }
 //FIX
@@ -97,6 +107,8 @@ void Store_buffer::add_st(Dinst *dinst) {
     printf("Store_buffer:: add_st sent ownership_doneCB on dinst id %ld and addr %lx\n",dinst->getID(),dinst->getAddr());
     ownership_doneCB::schedule(1, this, st_addr);
   }
+
+  // fmt::print("scb::add_st {} clean WB for addr 0x{}\n", dinst->getID(), st_addr);
 }
 
 void Store_buffer::ownership_done(Addr_t st_addr) {
@@ -109,7 +121,6 @@ void Store_buffer::ownership_done(Addr_t st_addr) {
 
   ++scb_clean_lines;
   it->second.set_clean();
-  printf("Store_buffer::ownershipdone Leaving  addr %lx\n",st_addr);
 }
 
 bool Store_buffer::is_ld_forward(Addr_t addr) const {
@@ -120,4 +131,3 @@ bool Store_buffer::is_ld_forward(Addr_t addr) const {
 
   return it->second.is_ld_forward(calc_offset(addr));
 }
-

@@ -14,7 +14,10 @@ emul = ["drom_emu"]
 
 [drom_emu]
 type      = "dromajo"
-#load      = "linux_checkpoint_1"
+# Load a Checkpoint option
+#load      = "ck1"
+#bench      = "boot.cfg"
+# Load a Binary
 bench      = "conf/dhrystone.riscv"
 start_roi = false
 rabbit    = 1024

@@ -23,7 +23,7 @@ MemXBar::MemXBar(Memory_system *current, const std::string &sec, const std::stri
   lower_level_banks = new MemObj *[num_banks];
   XBar_rw_req       = new Stats_cntr *[num_banks];
 
-  std::vector<std::string_view> vPars = absl::StrSplit(Config::get_string(section, "lower_level"), ' ');
+  std::vector<std::string> vPars = absl::StrSplit(Config::get_string(section, "lower_level"), ' ');
   if (vPars.empty()) {
     Config::add_error(fmt::format("invalid lower_level pointer in section:{}", section));
     return;

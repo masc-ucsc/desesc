@@ -629,12 +629,17 @@ int32_t GProcessor::issue() {
       I(!bucket->empty());
       
       Dinst *dinst = bucket->top();
+//<<<<<<< HEAD
       if(dinst->isTransient())
         printf("gProc::Issue Transient  gets from bucketsize %ld \n",bucket->size());
       else 
         printf("gProc::Issue  bucketsize %ld \n",bucket->size());
 
       printf("pProcessor::Issue Inst is %ld \n", dinst->getID());
+//=======
+
+      dinst->setGProc(this);
+//>>>>>>> upstream/main
 
       std::cout<< "gProcessor:: issueYahoo!!!Inst issued Opcode"<< dinst->getInst()->getOpcodeName()<<std::endl;
       StallCause c = add_inst(dinst);
@@ -646,7 +651,6 @@ int32_t GProcessor::issue() {
           printf("gProc::Issue  Sorry only  stall added  %d %d\n",i, RealisticWidth);
         return i;
       }
-      dinst->setGProc(this);
       i++;
 
       bucket->pop();

@@ -91,7 +91,10 @@ public:
   Dinst *getMissDinst() const { return missDinst; }
 #endif
 
-  Dinst *get_next_transient_dinst() const { return transientDinst + 4; }
+  Dinst *get_next_transient_dinst() const {
+    I(0);
+    return transientDinst + 4;  // BAD BAD CODE!!!. It should get a new dinst with PC+4 not pointer+4
+  }
 
   Dinst *get_miss_dinst() const { return transientDinst; }
   void   setTransientInst(Dinst *dinst);

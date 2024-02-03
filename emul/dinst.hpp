@@ -206,12 +206,12 @@ private:
 #ifndef NDEBUG
     mreq_id = 0;
 #endif
-    first = 0;
+    first = nullptr;
 
-    RAT1Entry           = 0;
-    RAT2Entry           = 0;
-    serializeEntry      = 0;
-    fetch               = 0;
+    RAT1Entry           = nullptr;
+    RAT2Entry           = nullptr;
+    serializeEntry      = nullptr;
+    fetch               = nullptr;
     cluster             = nullptr;
     resource            = nullptr;
     branchMiss          = false;
@@ -226,7 +226,7 @@ private:
     branchMiss_level3   = false;
     level3_NoPrediction = false;
     imli_highconf       = false;
-    gproc               = 0;
+    gproc               = nullptr;
     SSID                = -1;
     conflictStorePC     = 0;
 

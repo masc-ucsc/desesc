@@ -129,7 +129,8 @@ void GProcessor::fetch() {
   IBucket *bucket  = pipeQ.pipeLine.newItem();
 
   if (ifid->isBlocked()) {
-    Addr_t pc = ifid->getMissDinst()->getAddr() + 4;
+    I(0);  // This code should be ONLY if TRANSIENT
+    Addr_t pc = ifid->get_miss_dinst()->getAddr() + 4;
 
     /*auto *dinst_br= ifid->getMissDinst();
     if(dinst_br->getCluster()->get_reg_pool() >= dinst_br->getCluster()->get_nregs()-7) {

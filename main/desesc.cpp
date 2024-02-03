@@ -1,7 +1,8 @@
 // See LICENSE.txt for details
 
-#include <signal.h>
 #include <sys/types.h>
+
+#include <string_view>
 
 #include "bootloader.hpp"
 #include "iassert.hpp"

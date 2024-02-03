@@ -171,12 +171,6 @@ void MemReplay::replayManage(Dinst *dinst) {
 
     if (pos != -3) {
       pos = -2;
-#if 0
-      printf("1.merging %d and %d : pc %x and %x : addr %x and %x : %dx%d : data %x and %x : id %d and %d (%d) : %x\n"
-             ,lf[i].ssid, did, lf[i].pc, dinst->getPC(), lf[i].addr, dinst->getAddr()
-             ,lf[i].op, dinst->getInst()->getOpcode()
-             ,lf[i].data, dinst->getData(), lf[i].id, dinst->getID(), dinst->getID() - lf[i].id, dinst->getConflictStorePC());
-#endif
 
       SSID_t newid = storeset->mergeset(lf[i].ssid, did);
       did          = newid;
@@ -191,15 +185,8 @@ void MemReplay::replayManage(Dinst *dinst) {
 
   static int rand = 0;
   rand++;
-#if 1
   if (pos >= 0 && (rand & 7) == 0) {
-    int i = pos;
-#if 0
-      printf("2.merging %d and %d : pc %x and %x : addr %x and %x : %dx%d : data %x and %x : id %d and %d (%d) : %x\n"
-          ,lf[i].ssid, dinst->getSSID(), lf[i].pc, dinst->getPC(), lf[i].addr, dinst->getAddr()
-          , lf[i].op, dinst->getInst()->getOpcode()
-          , lf[i].data, dinst->getData(), lf[i].id, dinst->getID(), dinst->getID() - lf[i].id, dinst->getConflictStorePC());
-#endif
+    int    i     = pos;
     SSID_t newid = storeset->mergeset(lf[i].ssid, dinst->getSSID());
     lf[i].ssid   = newid;
     lf[i].id     = dinst->getID();
@@ -207,7 +194,6 @@ void MemReplay::replayManage(Dinst *dinst) {
     lf[i].addr   = dinst->getAddr();
     updated      = true;
   }
-#endif
 
   if (!updated) {
     int i = pos2;
@@ -429,7 +415,7 @@ bool FULoad::retire(Dinst *dinst, [[maybe_unused]] bool flushing)
 bool FULoad::flushed(Dinst *dinst)
 /* flushing {{{1 */
 {
-  printf("Resource::FUALU::FLUSHING Transient Inst %ld\n", dinst->getID());
+  (void)dinst;
   return true;
 }
 /* }}} */
@@ -532,12 +518,12 @@ void FUStore::executed(Dinst *dinst) {
 
 bool FUStore::preretire(Dinst *dinst, bool flushing) {
   /* retire {{{1 */
-   /* if(dinst->getCluster()->get_reg_pool() >= dinst->getCluster()->get_nregs()-2) {
-      return false;
-        }
-   if( dinst->getCluster()->get_window_size() == dinst->getCluster()->get_window_maxsize()){
-      return false;
-   }*/
+  /* if(dinst->getCluster()->get_reg_pool() >= dinst->getCluster()->get_nregs()-2) {
+     return false;
+       }
+  if( dinst->getCluster()->get_window_size() == dinst->getCluster()->get_window_maxsize()){
+     return false;
+  }*/
 
   if (!dinst->isExecuted()) {
     return false;
@@ -546,7 +532,6 @@ bool FUStore::preretire(Dinst *dinst, bool flushing) {
     return true;
   }
   if (flushing) {
-    printf("Resource::FUStore_Preretire Perfomred dinst %ld and addr %lx\n",dinst->getID(), dinst->getAddr());
     performed(dinst);
     return true;
   }
@@ -558,7 +543,6 @@ bool FUStore::preretire(Dinst *dinst, bool flushing) {
     return false;
   }
 
-  printf("Resource::FUStore_preretire sening to SCB  dinst %ld and addr %lx\n",dinst->getID(), dinst->getAddr());
   scb->add_st(dinst);
 
   if (enableDcache) {
@@ -568,7 +552,6 @@ bool FUStore::preretire(Dinst *dinst, bool flushing) {
                              dinst->getPC(),
                              performedCB::create(this, dinst));
   } else {
-    printf("Resource::FUStore_preretire Perfomred dinst %ld and addr %lx\n",dinst->getID(), dinst->getAddr());
     performed(dinst);
   }
 
@@ -581,7 +564,7 @@ bool FUStore::preretire(Dinst *dinst, bool flushing) {
 bool FUStore::flushed(Dinst *dinst)
 /* flushing {{{1 */
 {
-  printf("Resource::FUStore::FLUSHING Transient Inst %ld\n", dinst->getID());
+  (void)dinst;
   return true;
 }
 /* }}} */
@@ -683,7 +666,7 @@ bool FUGeneric::retire(Dinst *dinst, bool flushing)
 bool FUGeneric::flushed(Dinst *dinst)
 /* flushing {{{1 */
 {
-  printf("Resource::FUGeneric::FLUSHING Transient Inst %ld\n", dinst->getID());
+  (void)dinst;
   return true;
 }
 /* }}} */
@@ -712,7 +695,7 @@ StallCause FUBranch::canIssue(Dinst *dinst) {
   if (freeBranches == 0) {
     return OutsBranchesStall;
   }
-// take out a branch from the branchpool
+  // take out a branch from the branchpool
   freeBranches--;
 
   return NoStall;
@@ -736,7 +719,7 @@ void FUBranch::executed(Dinst *dinst) {
   }
 
   // NOTE: assuming that once the branch is executed the entry can be recycled
-  //recycle the branches to branch pool as the branch inst is executed
+  // recycle the branches to branch pool as the branch inst is executed
   freeBranches++;
 }
 /* }}} */
@@ -762,7 +745,7 @@ bool FUBranch::retire(Dinst *dinst, [[maybe_unused]] bool flushing)
 bool FUBranch::flushed(Dinst *dinst)
 /* flushing {{{1 */
 {
-  printf("Resource::FUBranch::FLUSHING Transient Inst %ld\n", dinst->getID());
+  (void)dinst;
   return true;
 }
 /* }}} */
@@ -787,9 +770,7 @@ FURALU::FURALU(Opcode type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, Tim
 
 StallCause FURALU::canIssue(Dinst *dinst)
 /* canIssue {{{1 */
-{  if(dinst->isTransient())
-    printf("Resource:::FUALU::CanIssue Transient Inst\n");
-
+{
   I(dinst->getPC() != 0xf00df00d);  // It used to be a Syspend, but not longer true
 
   if (dinst->getPC() == 0xdeaddead) {
@@ -827,15 +808,9 @@ StallCause FURALU::canIssue(Dinst *dinst)
 void FURALU::executing(Dinst *dinst)
 /* executing {{{1 */
 {
-  if(dinst->is_flush_transient()) {
-      
-      
-      
-      }
+  if (dinst->is_flush_transient()) {
+  }
 
-
-  if(dinst->isTransient())
-    printf("Resource:::FUALU::Executing Transient Inst %ld\n", dinst->getID());
   cluster->executing(dinst);
   executedCB::scheduleAbs(gen->nextSlot(dinst->has_stats()) + lat, this, dinst);
 
@@ -846,12 +821,9 @@ void FURALU::executing(Dinst *dinst)
 void FURALU::executed(Dinst *dinst)
 /* executed {{{1 */
 {
-  if(dinst->is_flush_transient()) {
-      
-      } 
-      
-  if(dinst->isTransient())
-    printf("Resource::FURALU::Executed Transient Inst%ld\n", dinst->getID());
+  if (dinst->is_flush_transient()) {
+  }
+
   cluster->executed(dinst);
   dinst->markPerformed();
 }
@@ -859,16 +831,13 @@ void FURALU::executed(Dinst *dinst)
 
 bool FURALU::preretire(Dinst *dinst, [[maybe_unused]] bool flushing)
 /* preretire ensures the inst is  executed {{{1 */
-{ 
-    //if(dinst->getCluster()->get_reg_pool() >= dinst->getCluster()->get_nregs()-2) {
-      //return false;
-        //}
-   //if( dinst->getCluster()->get_window_size() == dinst->getCluster()->get_window_maxsize()){
-     // return false;
+{
+  // if(dinst->getCluster()->get_reg_pool() >= dinst->getCluster()->get_nregs()-2) {
+  // return false;
   // }
-  if(dinst->isTransient()) {
-    printf("Resource::FUALU::PreRetire Transient Inst %ld\n", dinst->getID());
-  }
+  // if( dinst->getCluster()->get_window_size() == dinst->getCluster()->get_window_maxsize()){
+  //  return false;
+  // }
   return dinst->isExecuted();
 }
 /* }}} */
@@ -876,20 +845,19 @@ bool FURALU::preretire(Dinst *dinst, [[maybe_unused]] bool flushing)
 bool FURALU::retire(Dinst *dinst, [[maybe_unused]] bool flushing)
 /* retire always true{{{1 */
 {
-    //if(dinst->getCluster()->get_reg_pool() >= dinst->getCluster()->get_nregs()-2) {
-      //return false;
-        //}
-   //if( dinst->getCluster()->get_window_size() == dinst->getCluster()->get_window_maxsize()){
-     // return false;
-   //}
-  printf("Resource::FUALU::retire Entering Inst %ld\n", dinst->getID());
-  if(dinst->isTransient()) {
+  // if(dinst->getCluster()->get_reg_pool() >= dinst->getCluster()->get_nregs()-2) {
+  // return false;
+  // }
+  // if( dinst->getCluster()->get_window_size() == dinst->getCluster()->get_window_maxsize()){
+  //  return false;
+  //}
+  if (dinst->isTransient()) {
     dinst->mark_retired();
   }
-  if(!dinst->isTransient())
+  if (!dinst->isTransient()) {
     setStats(dinst);
-  
-  printf("Resource::FUALU::retire Leaving Inst %ld\n", dinst->getID());
+  }
+
   return true;
 }
 /* }}} */
@@ -897,14 +865,12 @@ bool FURALU::retire(Dinst *dinst, [[maybe_unused]] bool flushing)
 bool FURALU::flushed(Dinst *dinst)
 /* flushing {{{1 */
 {
-  //cluster->flushed(dinst);
+  // cluster->flushed(dinst);
   if (!dinst->isExecuted()) {
     dinst->markExecutedTransient();
     dinst->clearRATEntry();
     Tracer::stage(dinst, "TR");
-
-  }  
-  printf("Resource::FUALU::FLUSHING Transient Inst %ld\n", dinst->getID());
+  }
   return true;
 }
 /* }}} */

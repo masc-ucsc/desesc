@@ -25,15 +25,15 @@ class GProcessor;
 
 class DinstNext {
 private:
-  Dinst *dinst;
+  Dinst *dinst{nullptr};
 #ifdef DINST_PARENT
-  Dinst *parentDinst;
+  Dinst *parentDinst{};
 #endif
 public:
-  DinstNext() { dinst = 0; }
+  DinstNext() = default;
 
-  DinstNext *nextDep;
-  bool       isUsed;  // true while non-satisfied RAW dependence
+  DinstNext *nextDep{};
+  bool       isUsed{};  // true while non-satisfied RAW dependence
 
   const DinstNext *getNext() const { return nextDep; }
   DinstNext       *getNext() { return nextDep; }
@@ -137,11 +137,6 @@ private:
   bool branchMiss_level2;
   bool branchMiss_level3;
   bool level3_NoPrediction;
-  int  trig_ld_status;  // TL timeliness, (-1)->no LDBP; 0->on time; 1->late
-  bool trig_ld1_pred;
-  bool trig_ld1_unpred;
-  bool trig_ld2_pred;
-  bool trig_ld2_unpred;
 
   bool performed;
 
@@ -200,7 +195,7 @@ private:
 
   char nDeps;  // 0, 1 or 2 for RISC processors
 
-  static inline Time_t currentID = 0;
+  static inline Time_t currentID       = 0;
   static inline Time_t currentID_trans = 1000000;
   Time_t               ID;  // static ID, increased every create (currentID). pointer to the
 #ifndef NDEBUG
@@ -221,10 +216,6 @@ private:
     resource            = nullptr;
     branchMiss          = false;
     use_level3          = false;
-    trig_ld1_pred       = false;
-    trig_ld1_unpred     = false;
-    trig_ld2_pred       = false;
-    trig_ld2_unpred     = false;
     branch_hit2_miss3   = false;
     branch_hit3_miss2   = false;
     branchHit_level1    = false;
@@ -234,7 +225,6 @@ private:
     branchMiss_level2   = false;
     branchMiss_level3   = false;
     level3_NoPrediction = false;
-    trig_ld_status      = -1;
     imli_highconf       = false;
     gproc               = 0;
     SSID                = -1;
@@ -256,12 +246,12 @@ private:
     dispatched   = false;
     fullMiss     = false;
     speculative  = true;
-    
-    transient        = false;
-    del_entry        = false;
-    is_rrob          = false;
-    flush_transient  = false;
-    present_in_rob   = false;
+
+    transient       = false;
+    del_entry       = false;
+    is_rrob         = false;
+    flush_transient = false;
+    present_in_rob  = false;
 
 #ifdef DINST_PARENT
     pend[0].setParentDinst(0);
@@ -287,40 +277,19 @@ public:
   bool is_safe() const { return !speculative; }
   bool is_spec() const { return speculative; }
   void mark_safe() { speculative = false; }
-  
-  bool isTransient() const { 
-    //printf("checking transient Inst %B", transient);
-    return transient;
-  }
-  void setTransient() { 
+
+  bool isTransient() const { return transient; }
+  void setTransient() {
     transient = true;
-    //ID = currentID_trans++;
-      
-    printf("Setting transient in ::dinst %ld\n", ID);
-  }
- 
-  void mark_flush_transient() { 
-    flush_transient = true; 
-    printf("Setting flush_transient in ::dinst %ld\n", ID);
+    // ID = currentID_trans++;
   }
 
-  void mark_del_entry() { 
-    del_entry = true; 
-    printf("Setting mark_del_entry  ::dinst %ld\n", ID);
-  }
-  
-  void unmark_del_entry() { 
-    del_entry = false; 
-    printf("Setting mark_del_entry  ::dinst %ld\n", ID);
-  }
-  void mark_rrob() { 
-    is_rrob = true; 
-    printf("Setting mark_rrob  ::dinst %ld\n", ID);
-  }
+  void mark_flush_transient() { flush_transient = true; }
 
+  void mark_del_entry() { del_entry = true; }
 
-
-
+  void unmark_del_entry() { del_entry = false; }
+  void mark_rrob() { is_rrob = true; }
 
   bool is_present_in_rob() { return present_in_rob; }
   void set_present_in_rob() { present_in_rob = true; }
@@ -328,23 +297,6 @@ public:
   bool has_stats() const { return keep_stats; }
   bool is_del_entry() { return del_entry; }
   bool is_present_rrob() { return is_rrob; }
-
-#if 0
-  void setLdCache() { isLdCache = true; }
-  bool getLdCache() { return isLdCache; }
-  void resetLdCache() { isLdCache = false; }
-
-  void setMemReqTimeL1(Time_t time) {
-    // printf("DINST::seting time for L1 req  at time %lld\n",time);
-    memReqTimeL1 = time;
-  }
-  Time_t        getMemReqTimeL1() { return memReqTimeL1; }
-
-  void          setSpec() { isSpec = true; }
-  void          clearSpec() { isSpec = false; }
-  void          setSafe() { isSafe = true; }
-  void          clearSafe() { isSafe = false; }
-#endif
 
   static Dinst *create(Instruction &&inst, Addr_t pc, Addr_t address, Hartid_t fid, bool keep_stats) {
     Dinst *i = dInstPool.out();
@@ -491,7 +443,6 @@ public:
   void destroy();
   void destroyTransientInst();
 
-
   void set(std::shared_ptr<Cluster> cls, std::shared_ptr<Resource> res) {
     cluster  = cls;
     resource = res;
@@ -566,71 +517,31 @@ public:
 
   void setInflight(uint64_t _inf) { inflight = _inf; }
 
-  void setUseLevel3() { use_level3 = true; }
-
   bool isUseLevel3() const { return use_level3; }
 
-  void setTrig_ld1_pred() { trig_ld1_pred = true; }
-
-  bool isTrig_ld1_pred() const { return trig_ld1_pred; }
-
-  void setTrig_ld1_unpred() { trig_ld1_unpred = true; }
-
-  bool isTrig_ld1_unpred() const { return trig_ld1_unpred; }
-
-  void setTrig_ld2_pred() { trig_ld2_pred = true; }
-
-  bool isTrig_ld2_pred() const { return trig_ld2_pred; }
-
-  void setTrig_ld2_unpred() { trig_ld2_unpred = true; }
-
-  bool isTrig_ld2_unpred() const { return trig_ld2_unpred; }
+  void setUseLevel3() { use_level3 = true; }
 
   void setBranch_hit2_miss3() { branch_hit2_miss3 = true; }
-
-  bool isBranch_hit2_miss3() const { return branch_hit2_miss3; }
-
   void setBranch_hit3_miss2() { branch_hit3_miss2 = true; }
 
+  bool isBranch_hit2_miss3() const { return branch_hit2_miss3; }
   bool isBranch_hit3_miss2() const { return branch_hit3_miss2; }
 
   void setBranchHit_level1() { branchHit_level1 = true; }
-
-  bool isBranchHit_level1() const { return branchHit_level1; }
-
   void setBranchHit_level2() { branchHit_level2 = true; }
-
-  bool isBranchHit_level2() const { return branchHit_level2; }
-
   void setBranchHit_level3() { branchHit_level3 = true; }
 
+  bool isBranchHit_level1() const { return branchHit_level1; }
+  bool isBranchHit_level2() const { return branchHit_level2; }
   bool isBranchHit_level3() const { return branchHit_level3; }
 
   void setBranchMiss_level1() { branchMiss_level1 = true; }
-
-  bool isBranchMiss_level1() const { return branchMiss_level1; }
-
   void setBranchMiss_level2() { branchMiss_level2 = true; }
-
-  bool isBranchMiss_level2() const { return branchMiss_level2; }
-
   void setBranchMiss_level3() { branchMiss_level3 = true; }
 
+  bool isBranchMiss_level1() const { return branchMiss_level1; }
+  bool isBranchMiss_level2() const { return branchMiss_level2; }
   bool isBranchMiss_level3() const { return branchMiss_level3; }
-
-  void set_trig_ld_status() {  // set to 0
-    if (trig_ld_status == -1) {
-      trig_ld_status = 0;
-    }
-  }
-
-  void inc_trig_ld_status() {  // inc on late TL
-    if (trig_ld_status == 0) {
-      trig_ld_status = 1;
-    }
-  }
-
-  int get_trig_ld_status() const { return trig_ld_status; }
 
   void setLevel3_NoPrediction() { level3_NoPrediction = true; }
 
@@ -669,7 +580,7 @@ public:
 
   void addSrc1(Dinst *d) {
     I(d->nDeps < MAX_PENDING_SOURCES);
-    
+
     d->nDeps++;
 
     I(executed == 0);
@@ -691,7 +602,7 @@ public:
 
   void addSrc2(Dinst *d) {
     I(d->nDeps < MAX_PENDING_SOURCES);
-    
+
     d->nDeps++;
     I(executed == 0);
     I(d->executed == 0);
@@ -749,9 +660,9 @@ public:
   bool hasPending() const { return first != 0; }
 
   bool hasDeps() const {
-    printf("Dinst:: Inst %ld\n",ID);
-    if(!isTransient())
+    if (!isTransient()) {
       GI(!pend[0].isUsed && !pend[1].isUsed && !pend[2].isUsed, nDeps == 0);
+    }
     return nDeps != 0;
   }
 
@@ -788,12 +699,11 @@ public:
   }
 
   void markIssuedTransient() {
-   // I(issued == 0);
-    //I(executing == 0);
-    //I(executed == 0);
+    // I(issued == 0);
+    // I(executing == 0);
+    // I(executed == 0);
     issued = globalClock;
   }
-
 
   bool isExecuted() const { return executed; }
   void markExecuted() {
@@ -802,11 +712,10 @@ public:
     executed = globalClock;
   }
   void markExecutedTransient() {
-   // I(issued != 0);
-    //I(executed == 0);
+    // I(issued != 0);
+    // I(executed == 0);
     executed = globalClock;
   }
-
 
   bool isExecuting() const { return executing; }
   void markExecuting() {
@@ -815,8 +724,8 @@ public:
     executing = globalClock;
   }
   void markExecutingTransient() {
-   // I(issued != 0);
-    //I(executing == 0);
+    // I(issued != 0);
+    // I(executing == 0);
     executing = globalClock;
   }
 
@@ -840,11 +749,8 @@ public:
 
   bool isPerformed() const { return performed; }
   void markPerformed() {
-    // Loads get performed first, and then executed
-    //printf("Dinst ::markPerformed Insit %ld and isTransient is %b\n", getID(), isTransient());
-    
     GI(!inst.isLoad(), executed != 0);
-    
+
     performed = true;
   }
 
@@ -853,9 +759,7 @@ public:
     I(inst.isStore());
     retired = true;
   }
-  void mark_retired() {
-    retired = true;
-  }
+  void mark_retired() { retired = true; }
 
   bool isPrefetch() const { return prefetch; }
   void markPrefetch() { prefetch = true; }

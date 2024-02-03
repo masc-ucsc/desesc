@@ -213,66 +213,50 @@ void Cluster::select(Dinst *dinst) {
 }
 
 StallCause Cluster::canIssue(Dinst *dinst) const {
-  printf("Cluster::can issue Entering dinstID %ld\n", dinst->getID());
   if (regPool <= 0) {
-    printf("Cluster::can issue reg stall:regPool <0 dinstID %ld\n", dinst->getID());
     return SmallREGStall;
   }
 
   if (windowSize <= 0) {
-    printf("Cluster::can issue window size stall windowsize <0 dinstID %ld and windowsize<0  is %d\n", dinst->getID(), windowSize);
     return SmallWinStall;
   }
 
   StallCause sc = window.canIssue(dinst);
   if (sc != NoStall) {
-    printf("Cluster::canissue window cannot isuue stall dinstID %ld\n", dinst->getID());
     return sc;
   }
 
-  printf("Cluster::can issue Leaving dinstID %ld\n", dinst->getID());
   return dinst->getClusterResource()->canIssue(dinst);
 }
 
 void Cluster::add_inst(Dinst *dinst) {
-  printf("Cluster::add_inst Entering dinstID %ld\n", dinst->getID());
   rdRegPool.add(2, dinst->has_stats());  // 2 reads
 
   if (!lateAlloc && dinst->getInst()->hasDstRegister()) {
     wrRegPool.inc(dinst->has_stats());
     I(regPool > 0);
     regPool--;
-    printf("Cluster::add_inst so regPool-- %d and %d nRegs and Inst id %ld\n",
-        regPool, nRegs,dinst->getID()) ;  
-
   }
   // dinst->dump("add");
 
   newEntry();
 
   window.add_inst(dinst);
-  printf("Cluster::add_inst leaving dinstID %ld\n", dinst->getID());
 }
 
 //************ Executing Cluster Class
 
 void ExecutingCluster::executing(Dinst *dinst) {
-  printf("ClusterExecuting ::executing Entering Insit %ld\n",dinst->getID());
   nready--;
 
   if (lateAlloc && dinst->getInst()->hasDstRegister()) {
     wrRegPool.inc(dinst->has_stats());
     I(regPool > 0);
     regPool--;
-    printf("ExecutingCluster::executing added so regPool-- %d and %d nRegs and Inst id %ld\n",
-        regPool, nRegs,dinst->getID()) ;  
   }
-  printf("ClusterExecuting ::executing Insit %ld\n",dinst->getID());
   dinst->getGProc()->executing(dinst);
 
-  printf("ClusterExecuting ::executing delete Entry Insit %ld\n",dinst->getID());
   delEntry();
-  printf("ClusterExecuting ::executing Leaving Insit %ld\n",dinst->getID());
 }
 void ExecutingCluster::flushed(Dinst *dinst) {
   nready--;
@@ -281,32 +265,21 @@ void ExecutingCluster::flushed(Dinst *dinst) {
     wrRegPool.inc(dinst->has_stats());
     I(regPool > 0);
     regPool--;
-    printf("Cluster::executingCluster added so regPool-- %d and %d nRegs and Inst id %ld\n",
-        regPool, nRegs,dinst->getID()) ;  
   }
-  printf("ClusterExecuting ::executing Insit %ld\n",dinst->getID());
   dinst->getGProc()->flushed(dinst);
 
-  printf("ClusterExecuting ::flushed delete Entry Insit %ld\n",dinst->getID());
-  //delEntry();
+  // delEntry();
 }
 
-
 void ExecutingCluster::executed(Dinst *dinst) {
-  printf("ClusterExecuting ::executed  Entering Insit %ld\n",dinst->getID());
   window.executed(dinst);
-  printf("ClusterExecuting ::executed Insit %ld\n",dinst->getID());
   dinst->getGProc()->executed(dinst);
-  printf("ClusterExecuting ::executed  Leaving Insit %ld\n",dinst->getID());
 }
 
 bool ExecutingCluster::retire(Dinst *dinst, bool reply) {
-  printf("ClusterExecuting ::retire  Entering  Insit %ld\n",dinst->getID());
   bool done = dinst->getClusterResource()->retire(dinst, reply);
 
-  printf("ClusterExecuting ::retire Inst %ld\n",dinst->getID());
   if (!done) {
-    printf("ClusterExecuting ::retire Inst getClusterResource()->retire(dinst) !done : FALSE not RETURN %ld\n",dinst->getID());
     return false;
   }
 
@@ -314,12 +287,10 @@ bool ExecutingCluster::retire(Dinst *dinst, bool reply) {
 
   if (hasDest) {
     regPool++;
-    printf("Cluster::ExecutingCluster retire :: regpool++ Inst reg Pool %d  %ld\n",regPool,  dinst->getID());
     I(regPool <= nRegs);
   }
 
   winNotUsed.sample(windowSize, dinst->has_stats());
-  printf("ClusterExecuting ::retire Inst getClusterResource()->retire(dinst) TRUE RETURN %ld\n",dinst->getID());
 
   return true;
 }
@@ -327,120 +298,82 @@ bool ExecutingCluster::retire(Dinst *dinst, bool reply) {
 //************ Executed Cluster Class
 
 void ExecutedCluster::executing(Dinst *dinst) {
-  printf("ClusterExecuted::executing Entering Insit %ld\n",dinst->getID());
   nready--;
 
   if (lateAlloc && dinst->getInst()->hasDstRegister()) {
     wrRegPool.inc(dinst->has_stats());
     I(regPool > 0);
     regPool--;
-    printf("ExecutedCluster::executing  added so regPool-- %d and %d nRegs and Inst id %ld\n",
-        regPool, nRegs,dinst->getID()) ;  
   }
-  printf("ClusterExecuted ::executing Insit %ld\n",dinst->getID());
   dinst->getGProc()->executing(dinst);
-  printf("ClusterExecuted::executing Leaving Insit %ld\n",dinst->getID());
 }
 
 void ExecutedCluster::executed(Dinst *dinst) {
-  printf("ClusterExecuted::executed Entering Insit %ld\n",dinst->getID());
   window.executed(dinst);
   dinst->getGProc()->executed(dinst);
-  if(!dinst->isTransient())
+  if (!dinst->isTransient()) {
     I(!dinst->hasPending());
-  printf("ClusterExecuted ::executed delete Entry Insit %ld\n",dinst->getID());
-  //if(
+  }
+  // if(
   dinst->mark_del_entry();
   delEntry();
-  printf("ClusterExecuted::executed Leaving Insit %ld\n",dinst->getID());
 }
 void ExecutedCluster::flushed(Dinst *dinst) {
   window.executed_flushed(dinst);
-  printf("ClusterExecuted ::executed Insit %ld\n",dinst->getID());
-  dinst->getGProc()->flushed(dinst); 
-  //I(!dinst->hasPending());
-  printf("ClusterExecuted ::flushed delete Entry Insit %ld\n",dinst->getID());
-  //if(Executed cluster ) then delentry else return//TODO
-  //delEntry();
+  dinst->getGProc()->flushed(dinst);
+  // I(!dinst->hasPending());
+  // if(Executed cluster ) then delentry else return//TODO
+  // delEntry();
 }
 
-
 bool ExecutedCluster::retire(Dinst *dinst, bool reply) {
-  printf("ClusterExecuted ::retire  Entering  Insit %ld\n",dinst->getID());
-  if(dinst->is_del_entry()) {
-    printf("ClusterExecuted ::retire  del_entry Entering  Insit %ld\n",dinst->getID());
-    //delEntry();
-    printf("ClusterExecuted ::retire  del_entry Leaving  Insit %ld\n",dinst->getID());
+  if (dinst->is_del_entry()) {
+    // delEntry();
     dinst->unmark_del_entry();
-    printf("ClusterExecuted ::retire  del_entry Insit %ld\n",dinst->getID());
   }
-  //always return true from resource::retire()
+  // always return true from resource::retire()
   bool done = dinst->getClusterResource()->retire(dinst, reply);
-  printf("ClusterExecuted ::retire Insit %ld\n",dinst->getID());
   if (!done) {
-    printf("ClusterExecuted ::retire  return false : !done resource::retire Insit %ld\n",dinst->getID());
     return false;
   }
-  if(regPool >= nRegs){
-    printf("ClusterExecuted ::retire :regPool > nregs is %d Insit %ld\n",regPool, dinst->getID());
-    //return false;
-  }
-  /*if(windowSize >= MaxWinSize){
-    printf("ClusterExecuted ::retire  return false: Window Size is %d Inst %ld\n",windowSize, dinst->getID());
-    return false;
-  }*/
-  //delEntry();
+  I(regPool <= nRegs);
+
   bool hasDest = (dinst->getInst()->hasDstRegister());
   if (hasDest) {
-    printf("ExecutedCluster::retire ::regPool:: Inst regPool %d  nd nRegs is %d and Inst is %ld\n",
-        regPool, nRegs, dinst->getID());
     regPool++;
-    //if(!dinst->is_present_rrob()){
-      //regPool++;
+    // if(!dinst->is_present_rrob()){
+    // regPool++;
     //}
-    printf("ExecutedCluster::retire ::regPool++:: Inst regPool %d  nd nRegs is %d and Inst is %ld\n",
-        regPool, nRegs, dinst->getID());
     I(regPool <= nRegs);
   }
   // dinst->dump("ret");
 
-  //delEntry();
+  // delEntry();
   winNotUsed.sample(windowSize, dinst->has_stats());
 
-  printf("ClusterExecuted ::retire  return TRUE Insit %ld\n",dinst->getID());
   return true;
 }
 
 //************ RetiredCluster Class
 
 void RetiredCluster::executing(Dinst *dinst) {
-  printf("ClusterRetired ::executing Entering Insit %ld\n",dinst->getID());
   nready--;
 
   if (lateAlloc && dinst->getInst()->hasDstRegister()) {
     wrRegPool.inc(dinst->has_stats());
     regPool--;
-    printf("RetiredCluster::executing added so  regPool-- %d and %d nRegs and Inst id %ld\n",
-        regPool, nRegs,dinst->getID()) ;  
   }
-  printf("ClusterRetired ::executing  Insit %ld\n",dinst->getID());
   dinst->getGProc()->executing(dinst);
-  printf("ClusterRetired ::executing Leaving Insit %ld\n",dinst->getID());
 }
 
 void RetiredCluster::executed(Dinst *dinst) {
-  printf("ClusterRetired ::executed Entering Insit %ld\n",dinst->getID());
   window.executed(dinst);
-  printf("ClusterRetired ::executed Insit %ld\n",dinst->getID());
   dinst->getGProc()->executed(dinst);
-  printf("ClusterRetired ::executed Leaving Insit %ld\n",dinst->getID());
 }
 
 bool RetiredCluster::retire(Dinst *dinst, bool reply) {
-  printf("ClusterRetired ::retire Entering Insit %ld\n",dinst->getID());
   bool done = dinst->getClusterResource()->retire(dinst, reply);
   if (!done) {
-  printf("ClusterREtired ::retire  return false Insit %ld\n",dinst->getID());
     return false;
   }
 
@@ -450,23 +383,19 @@ bool RetiredCluster::retire(Dinst *dinst, bool reply) {
 
   if (hasDest) {
     regPool++;
-  printf("Cluster::Retired  retire :: regPool++: Inst reg Pool %d and nRegs is %d and Inst is  %ld\n",
-      regPool,nRegs , dinst->getID());
     I(regPool <= nRegs);
   }
 
   winNotUsed.sample(windowSize, dinst->has_stats());
 
-  printf("ClusterRetired ::retire delete Entry Insit %ld\n",dinst->getID());
   delEntry();
-  printf("ClusterREtired ::retire  return TRUE Insit %ld\n",dinst->getID());
 
   return true;
 }
 void RetiredCluster::flushed(Dinst *dinst) {
   bool done = dinst->getClusterResource()->flushed(dinst);
   if (!done) {
-    //return false;
+    // return false;
   }
 
   I(dinst->getGProc()->get_hid() == dinst->getFlowId());
@@ -475,14 +404,8 @@ void RetiredCluster::flushed(Dinst *dinst) {
 
   if (hasDest) {
     regPool++;
-    printf("Cluster::Retired  retire :: regPool++: Inst reg Pool %d  %ld\n",regPool,  dinst->getID());
     I(regPool <= nRegs);
   }
 
   winNotUsed.sample(windowSize, dinst->has_stats());
-
-  printf("ClusterRetired ::retire delete Entry Insit %ld\n",dinst->getID());
- // delEntry();
-
-  //return true;
 }

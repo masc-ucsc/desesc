@@ -1,20 +1,21 @@
 // See LICENSE for details.
 
+#include "bootloader.hpp"
+
 #include <pthread.h>
 #include <signal.h>
 #include <stdlib.h>
 
 #include "accprocessor.hpp"
-#include "drawarch.hpp"
-#include "memory_system.hpp"
-#include "gmemory_system.hpp"
-#include "gpusmprocessor.hpp"
-#include "gprocessor.hpp"
-#include "inorderprocessor.hpp"
-#include "oooprocessor.hpp"
-#include "bootloader.hpp"
 #include "config.hpp"
+#include "drawarch.hpp"
 #include "emul_dromajo.hpp"
+#include "gmemory_system.hpp"
+#include "gprocessor.hpp"
+#include "gpusmprocessor.hpp"
+#include "inorderprocessor.hpp"
+#include "memory_system.hpp"
+#include "oooprocessor.hpp"
 #include "report.hpp"
 #include "taskhandler.hpp"
 
@@ -67,7 +68,7 @@ void BootLoader::reportOnTheFly() {
   // pwrmodel->stopDump();
 }
 
-void BootLoader::report(const std::string &str) {
+void BootLoader::report(std::string_view str) {
   timeval endTime;
   gettimeofday(&endTime, 0);
 
@@ -115,10 +116,10 @@ void BootLoader::plug_simus() {
 
   for (auto i = 0u; i < ncores; i++) {
     std::shared_ptr<Gmemory_system> gm;
-    auto caches = Config::get_bool("soc", "core", i, "caches");
+    auto                            caches = Config::get_bool("soc", "core", i, "caches");
     if (caches) {
       gm = std::make_shared<Memory_system>(i);
-    }else {
+    } else {
       gm = std::make_shared<Dummy_memory_system>(i);
     }
 

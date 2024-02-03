@@ -53,8 +53,6 @@ void Tracer::stage(const Dinst *dinst, const std::string ev) {
   if (ev == "WB" || ev == "RN" || ev == "PNR") {
     pending_end.emplace_back(fmt::format("E\t{}\t0\t{}\n", id, ev));
   }
-  if(ev == "CO")
-    printf("Tracer:: Stage Commit  CO Inst %ld \n", dinst->getID());
 }
 
 void Tracer::event(const Dinst *dinst, const std::string ev) {

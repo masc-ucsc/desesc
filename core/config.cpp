@@ -60,38 +60,41 @@ std::string Config::get_string(const std::string &block, const std::string &name
     return "INVALID";
   }
 
+  bool env_used = false;
+  std::string val;
+
   {
     std::string env_var = fmt::format("DESESC_{}_{}", block, name);
 
     const char *e = getenv(env_var.c_str());
     if (e) {
-      std::string v{e};
-
-      std::transform(v.begin(), v.end(), v.begin(), [](unsigned char c) { return std::tolower(c); });
-      return v;
+      val = e;
     }
   }
 
-  auto ent = toml::find(data, block, name);
-  if (!ent.is_string()) {
-    errors.emplace_back(fmt::format("conf:{} section:{} field:{} is not a string\n", filename, block, name));
-    return "INVALID";
-  }
+  if (!env_used) {
 
-  std::string val{ent.as_string()};
-  if (!allowed.empty()) {
-    for (auto e : allowed) {
-      auto same = std::equal(e.cbegin(), e.cend(), val.cbegin(), val.cend(), [](auto c1, auto c2) {
-        return std::toupper(c1) == std::toupper(c2);
-      });
-      if (same) {
-        std::transform(e.begin(), e.end(), e.begin(), [](unsigned char c) { return std::tolower(c); });
-        return e;
+    auto ent = toml::find(data, block, name);
+    if (!ent.is_string()) {
+      errors.emplace_back(fmt::format("conf:{} section:{} field:{} is not a string\n", filename, block, name));
+      return "INVALID";
+    }
+
+    val = ent.as_string();
+    if (!allowed.empty()) {
+      for (auto e : allowed) {
+        auto same = std::equal(e.cbegin(), e.cend(), val.cbegin(), val.cend(), [](auto c1, auto c2) {
+          return std::toupper(c1) == std::toupper(c2);
+        });
+        if (same) {
+          std::transform(e.begin(), e.end(), e.begin(), [](unsigned char c) { return std::tolower(c); });
+          return e;
+        }
       }
-    }
 
-    errors.emplace_back(fmt::format("conf:{} section:{} field:{} value:{} is not allowed\n", filename, block, name, val));
-    return "INVALID";
+      errors.emplace_back(fmt::format("conf:{} section:{} field:{} value:{} is not allowed\n", filename, block, name, val));
+      return "INVALID";
+    }
   }
 
   std::transform(val.begin(), val.end(), val.begin(), [](unsigned char c) { return std::tolower(c); });
@@ -178,6 +181,7 @@ int Config::get_integer(const std::string &block, const std::string &name, int f
   }
 
   int val = 0;
+  bool env_used = false;
 
   {
     std::string env_var = fmt::format("DESESC_{}_{}", block, name);
@@ -185,19 +189,22 @@ int Config::get_integer(const std::string &block, const std::string &name, int f
     const char *e = getenv(env_var.c_str());
     if (e) {
       val = std::atoi(e);
+      env_used = true;
     }
   }
 
-  auto ent = toml::find(data, block, name);
-  if (!ent.is_integer() && !ent.is_floating()) {
-    errors.emplace_back(fmt::format("conf:{} section:{} field:{} is not a integer\n", filename, block, name));
-    return 0;
-  }
+  if (!env_used) {
+    auto ent = toml::find(data, block, name);
+    if (!ent.is_integer() && !ent.is_floating()) {
+      errors.emplace_back(fmt::format("conf:{} section:{} field:{} is not a integer\n", filename, block, name));
+      return 0;
+    }
 
-  if (ent.is_integer()) {
-    val = ent.as_integer();
-  } else {
-    val = ent.as_floating();
+    if (ent.is_integer()) {
+      val = ent.as_integer();
+    } else {
+      val = ent.as_floating();
+    }
   }
 
   if (val < from || val > to) {
@@ -223,25 +230,29 @@ int Config::get_integer(const std::string &block, const std::string &name, size_
   }
 
   int val = 0;
+  bool env_used = false;
   {
     std::string env_var = fmt::format("DESESC_{}_{}", block2, name2);
 
     const char *e = getenv(env_var.c_str());
     if (e) {
-      val = std::atoi(e);
+      val      = std::atoi(e);
+      env_used = true;
     }
   }
 
-  auto ent2 = toml::find(data, block2, name2);
-  if (!ent2.is_integer() && !ent2.is_floating()) {
-    errors.emplace_back(fmt::format("conf:{} section:{} field:{} is not a integer\n", filename, block2, name2));
-    return 0;
-  }
+  if (!env_used) {
+    auto ent2 = toml::find(data, block2, name2);
+    if (!ent2.is_integer() && !ent2.is_floating()) {
+      errors.emplace_back(fmt::format("conf:{} section:{} field:{} is not a integer\n", filename, block2, name2));
+      return 0;
+    }
 
-  if (ent2.is_integer()) {
-    val = ent2.as_integer();
-  } else {
-    val = ent2.as_floating();
+    if (ent2.is_integer()) {
+      val = ent2.as_integer();
+    } else {
+      val = ent2.as_floating();
+    }
   }
 
   if (val < from || val > to) {
@@ -392,22 +403,28 @@ bool Config::get_bool(const std::string &block, const std::string &name) {
     return false;
   }
 
+  bool env_used = false;
+  bool val=false;
+
   {
     std::string env_var = fmt::format("DESESC_{}_{}", block, name);
 
     const char *e = getenv(env_var.c_str());
     if (e) {
-      return strcasecmp(e, "true") == 0;
+      val = strcasecmp(e, "true") == 0;
+      env_used = true;
     }
   }
 
-  auto ent = toml::find(data, block, name);
-  if (!ent.is_boolean()) {
-    errors.emplace_back(fmt::format("conf:{} section:{} field:{} is not a boolean\n", filename, block, name));
-    return false;
-  }
+  if (!env_used) {
+    auto ent = toml::find(data, block, name);
+    if (!ent.is_boolean()) {
+      errors.emplace_back(fmt::format("conf:{} section:{} field:{} is not a boolean\n", filename, block, name));
+      return false;
+    }
 
-  auto val = ent.as_boolean();
+    val = ent.as_boolean();
+  }
 
   add_used(block, name, 0, val ? "true" : "false");
 
@@ -440,22 +457,28 @@ bool Config::get_bool(const std::string &block, const std::string &name, size_t 
   }
 
   std::string block2{t_block2.as_string()};
+
+  bool env_used = false;
+  bool val      = false;
   {
     std::string env_var = fmt::format("DESESC_{}_{}", block, name);
 
     const char *e = getenv(env_var.c_str());
     if (e) {
-      return strcasecmp(e, "true") == 0;
+      val      = strcasecmp(e, "true") == 0;
+      env_used = true;
     }
   }
 
-  auto ent2 = toml::find(data, block2, name2);
-  if (!ent2.is_boolean()) {
-    errors.emplace_back(fmt::format("conf:{} section:{} field:{} is not a boolean\n", filename, block2, name2));
-    return false;
-  }
+  if (!env_used) {
+    auto ent2 = toml::find(data, block2, name2);
+    if (!ent2.is_boolean()) {
+      errors.emplace_back(fmt::format("conf:{} section:{} field:{} is not a boolean\n", filename, block2, name2));
+      return false;
+    }
 
-  auto val = ent2.as_boolean();
+    val = ent2.as_boolean();
+  }
 
   add_used(block2, name2, pos, val ? "true" : "false");
 

@@ -2,6 +2,7 @@
 
 #include "tracer.hpp"
 
+#include "absl/strings/str_cat.h"
 #include "config.hpp"
 #include "fmt/format.h"
 #include "iassert.hpp"

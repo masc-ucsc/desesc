@@ -87,7 +87,7 @@ public:
   virtual bool       preretire(Dinst *dinst, bool flushing) = 0;
   virtual bool       retire(Dinst *dinst, bool flushing)    = 0;
   virtual void       performed(Dinst *dinst)                = 0;
-  virtual bool       flushed(Dinst *dinst)                 = 0;
+  virtual bool       flushed(Dinst *dinst)                  = 0;
 
   using executingCB = CallbackMember1<Resource, Dinst *, &Resource::executing>;
   using executedCB  = CallbackMember1<Resource, Dinst *, &Resource::executed>;
@@ -163,7 +163,7 @@ public:
   bool       preretire(Dinst *dinst, bool flushing) final;
   bool       retire(Dinst *dinst, bool flushing) final;
   void       performed(Dinst *dinst) final;
-  bool       flushed(Dinst *dinst)  final;
+  bool       flushed(Dinst *dinst) final;
 };
 
 class FUStore : public MemResource {
@@ -182,7 +182,7 @@ public:
   bool       preretire(Dinst *dinst, bool flushing) final;
   bool       retire(Dinst *dinst, bool flushing) final;
   void       performed(Dinst *dinst) final;
-  bool       flushed(Dinst *dinst)  final;
+  bool       flushed(Dinst *dinst) final;
 };
 
 class FUGeneric : public Resource {
@@ -197,7 +197,7 @@ public:
   bool       preretire(Dinst *dinst, bool flushing) final;
   bool       retire(Dinst *dinst, bool flushing) final;
   void       performed(Dinst *dinst) final;
-  bool       flushed(Dinst *dinst)  final;
+  bool       flushed(Dinst *dinst) final;
 };
 
 class FUBranch : public Resource {
@@ -215,7 +215,7 @@ public:
   bool       preretire(Dinst *dinst, bool flushing) final;
   bool       retire(Dinst *dinst, bool flushing) final;
   void       performed(Dinst *dinst) final;
-  bool       flushed(Dinst *dinst)  final;
+  bool       flushed(Dinst *dinst) final;
 };
 
 class FURALU : public Resource {
@@ -234,5 +234,5 @@ public:
   bool       preretire(Dinst *dinst, bool flushing) final;
   bool       retire(Dinst *dinst, bool flushing) final;
   void       performed(Dinst *dinst) final;
-  bool       flushed(Dinst *dinst)  final;
+  bool       flushed(Dinst *dinst) final;
 };

@@ -227,7 +227,7 @@ int8_t *SGEHL[SNB];
 int Tm[TNB] = {17, 14};
 #else
 #define TNB 3
-int     Tm[TNB] = {22, 17, 14};
+int Tm[TNB] = {22, 17, 14};
 #endif
 // effective local history size +11: we use IMLIcount + (LH) << 11
 int8_t  TGEHLA[TNB][(1 << LOGTNB)];
@@ -839,8 +839,8 @@ public:
       STORAGESIZE += x;
     }
 
-    STORAGESIZE += 2 * (SIZEUSEALT)*4;
-    fprintf(stderr, " altna size=%d log2entries=%d\n", 2 * (SIZEUSEALT)*4, LOGSIZEUSEALT);
+    STORAGESIZE += 2 * (SIZEUSEALT) * 4;
+    fprintf(stderr, " altna size=%d log2entries=%d\n", 2 * (SIZEUSEALT) * 4, LOGSIZEUSEALT);
 
     inter = bwidth * (1 << (log2fetchwidth + blogb));
     fprintf(stderr, " bimodal table size=%d log2entries=%d\n", inter, blogb);
@@ -863,7 +863,7 @@ public:
 
       inter += 16;                   // global histories for SC
       inter = 8 * (1 << LOGSIZEUP);  // the update threshold counters
-      inter += (PERCWIDTH)*4 * (1 << (LOGBIAS));
+      inter += (PERCWIDTH) * 4 * (1 << (LOGBIAS));
       inter += (GNB - 2) * (1 << (LOGGNB)) * (PERCWIDTH - 1) + (1 << (LOGGNB - 1)) * (2 * PERCWIDTH - 1);
 
       inter += (PNB - 2) * (1 << (LOGPNB)) * (PERCWIDTH - 1) + (1 << (LOGPNB - 1)) * (2 * PERCWIDTH - 1);
@@ -1598,8 +1598,8 @@ public:
       J[i].set(sign2);  // Not used in DOLC
     }
 #else
-    int T            = ((PC) << 1) + taken;
-    int PATH         = PC;
+    int T    = ((PC) << 1) + taken;
+    int PATH = PC;
 #endif
 
     for (int t = 0; t < maxt; t++) {

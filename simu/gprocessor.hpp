@@ -59,6 +59,7 @@ protected:
   const int32_t RealisticWidth;
   const int32_t InstQueueSize;
   const size_t  MaxROBSize;
+  const bool    do_random_transients;
 
   size_t                          smt_size;
   std::shared_ptr<Gmemory_system> memorySystem;
@@ -122,7 +123,7 @@ public:
 
   virtual void   executing(Dinst *dinst) = 0;
   virtual void   executed(Dinst *dinst)  = 0;
-  virtual void   flushed(Dinst *dinst)  = 0;
+  virtual void   flushed(Dinst *dinst)   = 0;
   virtual LSQ   *getLSQ()                = 0;
   virtual bool   is_nuking()             = 0;
   virtual bool   isReplayRecovering()    = 0;

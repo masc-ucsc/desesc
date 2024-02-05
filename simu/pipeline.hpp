@@ -54,7 +54,6 @@ public:
   IBucket *nextItem();
   IBucket *next_item_transient();
 
-
   size_t size() const { return buffer.size(); }
 };
 
@@ -96,5 +95,4 @@ public:
 
   Pipeline             pipeLine;
   FastQueue<IBucket *> instQueue;
- 
 };

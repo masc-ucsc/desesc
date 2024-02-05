@@ -10,7 +10,6 @@ typedef CallbackFunction0<&counter_fsm>       counter2_fsmCB;
 int total = 0;
 
 void counter_fsm() {
-
   if (total & 1) {
     counter2_fsmCB::create()->schedule(1);  // +1cycle
   } else {

@@ -7,6 +7,8 @@
 #include "config.hpp"
 #include "memrequest.hpp"
 
+using ownership_doneCB = CallbackMember1<Store_buffer, Addr_t, &Store_buffer::ownership_done>;
+
 Store_buffer::Store_buffer(Hartid_t hid, std::shared_ptr<Gmemory_system> ms) {
   std::vector<std::string> v      = absl::StrSplit(Config::get_string("soc", "core", hid, "il1"), ' ');
   auto                     l1_sec = v[0];
@@ -96,7 +98,8 @@ void Store_buffer::add_st(Dinst *dinst) {
   }
   --scb_clean_lines;
   if (dl1) {
-    MemRequest::sendReqWrite(dl1, dinst->has_stats(), st_addr, dinst->getPC(), ownership_doneCB::create(this, st_addr));
+    auto *cb = ownership_doneCB::create(this, st_addr);
+    MemRequest::sendReqWrite(dl1, dinst->has_stats(), st_addr, dinst->getPC(), cb);
   } else {
     ownership_doneCB::schedule(1, this, st_addr);
   }

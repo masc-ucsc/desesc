@@ -453,9 +453,6 @@ void OoOProcessor::retire() {
         }
       }
 
-      std::cout << "OOOProc:: retire mark_flush_transient before Destroy " << dinst->getID() << "and Addr " << dinst->getAddr()
-                << "and Opcode " << dinst->getInst()->getOpcodeName() << std::endl;
-
       if (dinst->getInst()->hasDstRegister()) {
         nTotalRegs++;
       }
@@ -487,8 +484,6 @@ void OoOProcessor::retire() {
         I(dstReady->isTransient());
       }
 
-      std::cout << "OOOProc:: retire Inst before Destroy " << dinst->getID() << "and Addr " << dinst->getAddr() << "and Opcode "
-                << dinst->getInst()->getOpcodeName() << std::endl;
       Tracer::event(dinst, "PNR");
       dinst->destroyTransientInst();
       ROB.pop();
@@ -594,10 +589,6 @@ void OoOProcessor::retire() {
 
     I(dinst->getCluster());
 
-    if (dinst->getInst()->isStore()) {
-      std::cout << "OOOProc::Store retire Inst entering  rRob " << dinst->getID() << "and Addr " << dinst->getAddr()
-                << "and Opcode " << dinst->getInst()->getOpcodeName() << std::endl;
-    }
     bool done = dinst->getCluster()->retire(dinst, flushing);
     if (!done) {
       break;
@@ -683,9 +674,6 @@ void OoOProcessor::retire() {
 
     if (dinst->isPerformed()) {  // Stores can perform after retirement
       dinst->destroy();
-      std::cout << "Opcode is :" << dinst->getInst()->getOpcodeName() << std::endl;
-    } else {
-      std::cout << "Not Performed Opcode is :" << dinst->getInst()->getOpcodeName() << std::endl;
     }
 
     rROB.pop();

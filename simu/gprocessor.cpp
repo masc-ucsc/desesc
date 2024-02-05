@@ -21,6 +21,7 @@ GProcessor::GProcessor(std::shared_ptr<Gmemory_system> gm, Hartid_t i)
     , RealisticWidth(RetireWidth < IssueWidth ? RetireWidth : IssueWidth)
     , InstQueueSize(Config::get_integer("soc", "core", i, "instq_size"))
     , MaxROBSize(Config::get_integer("soc", "core", i, "rob_size", 4))
+    , do_random_transients(Config::get_bool("soc", "core", i, "do_random_transients"))
     , memorySystem(gm)
     , rROB(Config::get_integer("soc", "core", i, "rob_size"))
     , ROB(MaxROBSize)
@@ -118,12 +119,9 @@ void GProcessor::fetch() {
 
   auto ifid = smt_fetch.fetch_next();
   // must be before *bucket
-  /*
-  if (ifid->isBlocked()) {
-    // fmt::print("fetch on {}\n", ifid->getMissDinst()->getID());
-     return;
+  if (ifid->isBlocked() && !do_random_transients) {
+    return;
   }
-*/
 
   auto     smt_hid = hid;  // FIXME: do SMT fetch
   IBucket *bucket  = pipeQ.pipeLine.newItem();
@@ -350,10 +348,6 @@ void GProcessor::add_inst_transient_on_branch_miss(IBucket *bucket, Addr_t pc) {
     auto *alu_dinst= Dinst::create(Instruction(Opcode::iSALU_ST, RegType::LREG_R5, RegType::LREG_R6, RegType::LREG_R7,
     RegType::LREG_R8) ,pc ,addr ,0 ,true);*/
 
-    if (alu_dinst) {
-      std::cout << std::endl
-                << "gProcessor::Yahoo!!Transient  Inst Created Opcode is " << alu_dinst->getInst()->getOpcodeName() << std::endl;
-    }
     alu_dinst->setTransient();
     if (bucket) {
       // alu_dinst->setFetchTime();
@@ -453,7 +447,6 @@ int32_t GProcessor::issue() {
 
       dinst->setGProc(this);
 
-      std::cout << "gProcessor:: issueYahoo!!!Inst issued Opcode" << dinst->getInst()->getOpcodeName() << std::endl;
       StallCause c = add_inst(dinst);
       if (c != NoStall) {
         if (i < RealisticWidth) {
@@ -489,7 +482,6 @@ bool GProcessor::decode_stage() {
     IBucket *bucket = pipeQ.pipeLine.nextItem();
     if (bucket) {
       I(!bucket->empty());
-      std::cout << "gProcessor:: decode Yahoo!!!Inst Opcode " << bucket->top()->getInst()->getOpcodeName() << std::endl;
       spaceInInstQueue -= bucket->size();
       pipeQ.instQueue.push(bucket);
 

@@ -226,7 +226,10 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
     lastpc = dinst->getPC();
 
     eint->execute(fid);
+
+    // dinst->dump("TR");
     Tracer::stage(dinst, "IF");
+
     dinst->setFetchTime();
     /*if (fid->isBlocked()){
       auto  *alu_dinst = Dinst::create(Instruction(Opcode::iAALU, RegType::LREG_R3, RegType::LREG_R3, RegType::LREG_R3,

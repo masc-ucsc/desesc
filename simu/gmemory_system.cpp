@@ -85,7 +85,7 @@ void Gmemory_system::build_memory_system() {
   std::string def_block = Config::get_string("soc", "core", coreId);
 
   IL1 = declareMemoryObj(def_block, "il1");
-  if (IL1==nullptr) {
+  if (IL1 == nullptr) {
     Config::add_error("Could not find valid il1 cache");
     return;
   }
@@ -165,7 +165,8 @@ MemObj *Gmemory_system::finishDeclareMemoryObj(const std::vector<std::string> &v
   std::string shared_arg  = (vPars.size() > 2) ? vPars[2] : "";
 
   if (device_name == "shared" || device_name == "sharedby") {
-    Config::add_error(fmt::format("lower_levels has {} as name, more likely a missing name like \"lowerl3 NAME shared\"", device_name));
+    Config::add_error(
+        fmt::format("lower_levels has {} as name, more likely a missing name like \"lowerl3 NAME shared\"", device_name));
     return nullptr;
   }
 

@@ -59,7 +59,9 @@ public:
   //void  set_dinst(Dinst *d) {  dinst = d; }
 
 #ifdef DINST_PARENT
-  Dinst *getParentDinst() const { return parentDinst; }
+  Dinst *getParentDinst() const { 
+    
+    return parentDinst; }
   void   setParentDinst(Dinst *d) {
     GI(d, isUsed);
     parentDinst = d;
@@ -171,6 +173,7 @@ private:
   bool is_rrob;
   bool present_in_rob;
   bool flush_transient;
+  bool to_be_destroyed_transient;
   bool in_cluster;
   // END Boolean flags
 
@@ -269,12 +272,13 @@ private:
     fullMiss     = false;
     speculative  = true;
     
-    transient        = false;
-    del_entry        = false;
-    is_rrob          = false;
-    flush_transient  = false;
-    present_in_rob   = false;
-    in_cluster       = false;
+    transient                   = false;
+    del_entry                   = false;
+    is_rrob                     = false;
+    flush_transient             = false;
+    to_be_destroyed_transient   = false;
+    present_in_rob              = false;
+    in_cluster                  = false;
 
 #ifdef DINST_PARENT
     pend[0].setParentDinst(0);
@@ -330,6 +334,15 @@ public:
     flush_transient = true; 
     printf("Setting flush_transient in ::dinst %ld\n", ID);
   }
+  void mark_to_be_destroyed_transient () {  
+    to_be_destroyed_transient = true; 
+    printf("Setting mark_to_be_destroyed_transient ::dinst %ld\n", ID);
+  } 
+  
+  void clear_to_be_destroyed_transient () {  
+    to_be_destroyed_transient = false; 
+    printf("Clearing is_to_be_destroyed_transient to false ::dinst %ld\n", ID);
+  } 
 
   void mark_del_entry() { 
     del_entry = true; 
@@ -365,7 +378,7 @@ public:
   bool has_stats() const { return keep_stats; }
   bool is_del_entry() { return del_entry; }
   bool is_present_rrob() { return is_rrob; }
-
+  bool is_to_be_destroyed_transient () {  return to_be_destroyed_transient; } 
 #if 0
   void setLdCache() { isLdCache = true; }
   bool getLdCache() { return isLdCache; }
@@ -563,7 +576,7 @@ public:
 #ifdef DINST_PARENT
   Dinst *getParentSrc1() const {
     if (pend[0].isUsed) { //true when RAW dependence
-      printf("Dinst::getparentsrc1:parent inst src1 is %ld and isTransient is %b\n", pend[0].getParentDinst()->getID(), isTransient());
+      printf("Dinst::getparentsrc1:parent inst src1 is %ld and current Inst isTransient is %b\n", pend[0].getParentDinst()->getID(), isTransient());
       std::cout<<"Dinst::getparentsrc1:: parentscr1 asm is "<<pend[0].getParentDinst()->getInst()->get_asm()<<std::endl;
       return pend[0].getParentDinst();
     }
@@ -711,6 +724,7 @@ public:
     
     first = first->getNext();// first <=  
     //I(first);
+     
     if (first) {
       printf("Dinst::getnextPending Setting new first as ::inst is %ld and isTransient is %b\n", 
       first->getDinst()->getID(), first->getDinst()->isTransient());
@@ -724,7 +738,7 @@ public:
   void addSrc1(Dinst *d) {
     I(d->nDeps < MAX_PENDING_SOURCES);
     
-    printf("Dinst::addSrc1::Current RAT Inst is %ld and isTransient is %b\n", getID(), isTransient());
+    printf("Entering Dinst::addSrc1::Current RAT Inst is %ld and isTransient is %b\n", getID(), isTransient());
     std::cout<<"Dinst::addScr1::Current RAT dinst Inst asm is "<<getInst()->get_asm()<<std::endl;
     printf("Dinst::addSrc1::Addsrc_Inst is %ld and isTransient is %b\n", d->getID(), isTransient());
     std::cout<<"Dinst::addScr1::addsrc_dinst Inst asm is "<<d->getInst()->get_asm()<<std::endl;
@@ -757,7 +771,7 @@ public:
   void addSrc2(Dinst *d) {
     I(d->nDeps < MAX_PENDING_SOURCES);
      
-    printf("Dinst::addSrc2::Current RAT Inst is %ld and isTransient is %b\n", getID(), isTransient());
+    printf("Entering Dinst::addSrc2::Current RAT Inst is %ld and isTransient is %b\n", getID(), isTransient());
     std::cout<<"Dinst::addScr2::Current RAT  dinst Inst asm is "<<getInst()->get_asm()<<std::endl;
     printf("Dinst::addSrc2::Addsrc2 Inst inst is %ld and isTransient is %b\n", d->getID(), isTransient());
     std::cout<<"Dinst::addScr2::addsrc2 inst asm is "<<d->getInst()->get_asm()<<std::endl;
@@ -824,6 +838,11 @@ public:
   Hartid_t getFlowId() const { return fid; }
 
   char getnDeps() const { return nDeps; }
+  void decrease_deps() {  
+    printf("Dinst::decrease_deps::Now ndeps:: ndeps is:first->ndeps is  %d\n",(int)nDeps);
+    nDeps--;  
+    printf("Dinst::decrease_deps::Now ndeps--:: ndeps is:first->ndeps-- is  %d\n",(int)nDeps);
+  }
   bool isSrc1Ready() const { return !pend[0].isUsed; } //isUsed ==true ::RAW dependence
   bool isSrc2Ready() const { return !pend[1].isUsed; }
   bool isSrc3Ready() const { return !pend[2].isUsed; }
@@ -948,6 +967,8 @@ public:
     // Loads get performed first, and then executed
     //printf("Dinst ::markPerformed Insit %ld and isTransient is %b\n", getID(), isTransient());
     
+    printf("Dinst::markPerformed dinst is %ld and isTransient is %b\n", getID(), isTransient());
+    std::cout<<"Dinst::markperformed:: inst asm is "<<getInst()->get_asm()<<std::endl;
     GI(!inst.isLoad(), executed != 0);
     
     performed = true;

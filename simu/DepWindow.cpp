@@ -39,7 +39,7 @@ void DepWindow::add_inst(Dinst *dinst) {
     preSelect(dinst);
   } 
   else {
-    printf("2024::688::DepWindow::add_inst dinst->hasDeps() is true for  %ld  and transient is %b\n",
+    printf("2024:::DepWindow::add_inst dinst->hasDeps() is true for  %ld  and transient is %b\n",
         dinst->getID(), dinst->isTransient());
     //while (!dinst->hasDeps()){
       //preSelect(dinst);
@@ -146,8 +146,20 @@ void DepWindow::executed(Dinst *dinst) {
   while (dinst->hasPending()) {
     Dinst *dstReady = dinst->getNextPending();
     I(dstReady);
+    std::cout<<"Depwindow:: Executed::hasPending():: executed_dinst dstReadyInst asm is "<<dstReady->getInst()->get_asm()<<std::endl;
+    std::cout<<"Depwindow:: executed::dstReady Inst asm is "<<dstReady->getInst()->get_asm()<<std::endl;
+    printf("DepWindow::::Executed Inst is %ld and Pending dstdReady inst is %ld and Pending :isTransient is %b\n",
+        dinst->getID(),dstReady->getID(),dstReady->isTransient());
+      
+    if(dstReady->is_to_be_destroyed_transient()) {
+      //dstReady->clear_to_be_destroyed_transient();
+      dstReady->destroyTransientInst();
+      continue;
+      } 
+       
     
-    I(!dstReady->isExecuted());
+
+    I(!dstReady->isExecuted());//fails assertion inst 691
     /*if( dinst->isTransient() && !dstReady->isTransient()){
       continue;
     }*/
@@ -177,5 +189,7 @@ void DepWindow::executed(Dinst *dinst) {
       preSelect(dstReady);
     }
   }
+
+  //dinst->flushfirst();//parent->first=0
  printf("DepWindow::::Executed Exiting Transient Inst %ld\n", dinst->getID());
 }

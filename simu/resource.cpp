@@ -260,6 +260,7 @@ FULoad::FULoad(Opcode type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, LSQ
 StallCause FULoad::canIssue(Dinst *dinst) {
   /* canIssue {{{1 */
 
+  printf("Resource::FULoad: :Canissue Entering Inst %ld\n", dinst->getID());
   if (freeEntries <= 0) {
     I(freeEntries == 0);  // Can't be negative
     return OutsLoadsStall;
@@ -286,12 +287,14 @@ StallCause FULoad::canIssue(Dinst *dinst) {
   if (!LSQlateAlloc) {
     freeEntries--;
   }
+  printf("Resource::FULoad::Canissue Leaving Inst %ld\n", dinst->getID());
   return NoStall;
 }
 /* }}} */
 
 void FULoad::executing(Dinst *dinst) {
   /* executing {{{1 */
+  printf("Resource::FULoad:: executing Entering Inst %ld\n", dinst->getID());
 
   if (LSQlateAlloc) {
     freeEntries--;
@@ -320,12 +323,14 @@ void FULoad::executing(Dinst *dinst) {
   } else {
     cacheDispatchedCB::scheduleAbs(when, this, dinst);
   }
+  printf("Resource::FULoad:: executing Leaving Inst %ld\n", dinst->getID());
 }
 
 /* }}} */
 
 void FULoad::cacheDispatched(Dinst *dinst) {
   /* cacheDispatched {{{1 */
+  printf("Resource::FULoad:: CachedDispatched Entering Inst %ld\n", dinst->getID());
 
   I(enableDcache);
   I(!dinst->isLoadForwarded());
@@ -349,11 +354,13 @@ void FULoad::cacheDispatched(Dinst *dinst) {
   }
 
   pref->exe(dinst);
+  printf("Resource::FULoad:: CachedDispatched Leaving Inst %ld\n", dinst->getID());
 }
 /* }}} */
 
 void FULoad::executed(Dinst *dinst) {
   /* executed {{{1 */
+  printf("Resource::FULoad:: executed Entering Inst %ld\n", dinst->getID());
 
   if (dinst->getChained()) {
     I(dinst->getFetchEngine());
@@ -370,12 +377,14 @@ void FULoad::executed(Dinst *dinst) {
   //         dataRATptr[...] = 0 if dataRATotr[...] == dinst
 
   cluster->executed(dinst);
+  printf("Resource::FULoad:: executed Leaving Inst %ld\n", dinst->getID());
 }
 /* }}} */
 
 bool FULoad::preretire(Dinst *dinst, [[maybe_unused]] bool flushing)
 /* retire {{{1 */
 {
+  printf("Resource::FULoad:: preretire Entering Inst %ld\n", dinst->getID());
   bool done = dinst->isDispatched();
   if (!done) {
     return false;
@@ -387,6 +396,7 @@ bool FULoad::preretire(Dinst *dinst, [[maybe_unused]] bool flushing)
 
   pref->ret(dinst);
 
+  printf("Resource::FULoad:: preretire Leaving Inst %ld\n", dinst->getID());
   return true;
 }
 /* }}} */
@@ -394,6 +404,7 @@ bool FULoad::preretire(Dinst *dinst, [[maybe_unused]] bool flushing)
 bool FULoad::retire(Dinst *dinst, [[maybe_unused]] bool flushing)
 /* retire {{{1 */
 {
+  printf("Resource::FULoad:: retire Entering Inst %ld\n", dinst->getID());
   if (!dinst->isPerformed()) {
     return false;
   }
@@ -421,6 +432,7 @@ bool FULoad::retire(Dinst *dinst, [[maybe_unused]] bool flushing)
 #endif
 
   setStats(dinst);
+  printf("Resource::FULoad:: retire Leaving Inst %ld\n", dinst->getID());
 
   return true;
 }
@@ -436,9 +448,11 @@ bool FULoad::flushed(Dinst *dinst)
 
 void FULoad::performed(Dinst *dinst) {
   /* memory operation was globally performed {{{1 */
+  printf("Resource::FULoad::Performed Entering Inst %ld\n", dinst->getID());
   dinst->markPerformed();
 
   executed(dinst);
+  printf("Resource::FULoad::Performed Leaving Inst %ld\n", dinst->getID());
 }
 /* }}} */
 
@@ -456,6 +470,7 @@ FUStore::FUStore(Opcode type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, L
 
 StallCause FUStore::canIssue(Dinst *dinst) {
   /* canIssue {{{1 */
+  printf("Resource::FUStore::CanIssue Entering Inst %ld\n", dinst->getID());
 
   if (dinst->getInst()->isStoreAddress()) {
     return NoStall;
@@ -484,12 +499,14 @@ StallCause FUStore::canIssue(Dinst *dinst) {
   lsq->decFreeEntries();
   freeEntries--;
 
+  printf("Resource::FUStore::CanIssue Leaving Inst %ld\n", dinst->getID());
   return NoStall;
 }
 /* }}} */
 
 void FUStore::executing(Dinst *dinst) {
   /* executing {{{1 */
+  printf("Resource::FUStore::executing Entering Inst %ld\n", dinst->getID());
 
   if (!dinst->getInst()->isStoreAddress()) {
     Dinst *qdinst = lsq->executing(dinst);
@@ -517,17 +534,20 @@ void FUStore::executing(Dinst *dinst) {
   } else {
     executed(dinst);
   }
+  printf("Resource::FUStore::executing Leaving Inst %ld\n", dinst->getID());
 }
 /* }}} */
 
 void FUStore::executed(Dinst *dinst) {
   /* executed */
+  printf("Resource::FUStore::executed Entering Inst %ld\n", dinst->getID());
 
   if (dinst->getInst()->isStore()) {
     storeset->remove(dinst);
   }
 
   cluster->executed(dinst);
+  printf("Resource::FUStore::executed Leaving Inst %ld\n", dinst->getID());
 }
 
 bool FUStore::preretire(Dinst *dinst, bool flushing) {
@@ -539,6 +559,7 @@ bool FUStore::preretire(Dinst *dinst, bool flushing) {
       return false;
    }*/
 
+  printf("Resource::FUStore::preretire Entering Inst %ld\n", dinst->getID());
   if (!dinst->isExecuted()) {
     return false;
   }
@@ -561,7 +582,7 @@ bool FUStore::preretire(Dinst *dinst, bool flushing) {
   printf("Resource::FUStore_preretire sening to SCB  dinst %ld and addr %lx\n",dinst->getID(), dinst->getAddr());
   scb->add_st(dinst);
 
-  if (enableDcache) {
+  if (enableDcache && !dinst->isTransient()) {
     MemRequest::sendReqWrite(firstLevelMemObj,
                              dinst->has_stats(),
                              dinst->getAddr(),
@@ -573,6 +594,7 @@ bool FUStore::preretire(Dinst *dinst, bool flushing) {
   }
 
   freeEntries++;
+  printf("Resource::FUStore::preretire Leaving Inst %ld\n", dinst->getID());
 
   return true;
 }
@@ -588,6 +610,7 @@ bool FUStore::flushed(Dinst *dinst)
 
 void FUStore::performed(Dinst *dinst) {
   /* memory operation was globally performed {{{1 */
+  printf("Resource::FUStore::performed Entering Inst %ld\n", dinst->getID());
 
   setStats(dinst);  // Not retire for stores
 
@@ -596,10 +619,12 @@ void FUStore::performed(Dinst *dinst) {
     dinst->destroy();
   }
   dinst->markPerformed();
+  printf("Resource::FUStore::performed Leaving Inst %ld\n", dinst->getID());
 }
 /* }}} */
 
 bool FUStore::retire(Dinst *dinst, bool flushing) {
+  printf("Resource::FUStore::retire Entering Inst %ld\n", dinst->getID());
   (void)flushing;
 
   if (dinst->getInst()->isStoreAddress()) {
@@ -614,6 +639,7 @@ bool FUStore::retire(Dinst *dinst, bool flushing) {
 
   lsq->remove(dinst);
   lsq->incFreeEntries();
+  printf("Resource::FUStore::retire Leaving Inst %ld\n", dinst->getID());
 
   return true;
 }
@@ -846,6 +872,7 @@ void FURALU::executing(Dinst *dinst)
 void FURALU::executed(Dinst *dinst)
 /* executed {{{1 */
 {
+  printf("Resource::FURALU::Executed_perfomed ::Entering Inst%ld\n", dinst->getID());
   if(dinst->is_flush_transient()) {
       
       } 

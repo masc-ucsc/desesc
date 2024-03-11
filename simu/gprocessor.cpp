@@ -229,7 +229,7 @@ void GProcessor::flush_transient_from_rob() {
         }
           break;
         }
-        printf("GPROCCESOR::flush_Rob : isRenamed instID %ld\n", dinst->getID());  
+        printf("GPROCCESOR::flush_Rob : isRenamed markexecuted transient  instID %ld\n", dinst->getID());  
         dinst->markExecutedTransient();
         //dinst->clearRATEntry();
         printf("GPROCCESOR::flush_Rob : clear RAT entry instID %ld\n", dinst->getID());  
@@ -246,16 +246,44 @@ void GProcessor::flush_transient_from_rob() {
         }
 
         dinst->clearRATEntry();
-        Dinst* dinst1 = dinst->getParentSrc1();
+       /*Dinst* dinst1 = dinst->getParentSrc1();
+        
         if(dinst1) {
-          dinst1->flush_first();
+          //parent->dep--;
+          //if(parent->first==dinst)
+            //flush_first;
+            //else
+
+          //dinst1->flush_first();//WRONG!!!
         }
         Dinst* dinst2 = dinst->getParentSrc2();
         if(dinst2) {
-          dinst2->flush_first();
-        }
+          //dinst2->flush_first();//WRONG!!!
+        }*/
+        
+       //printf("GPROCCESOR::flush_Rob : isRenamed current instID %ld and getParentScr1 ID is: %ld and and getParentScr2 ID is : %ld\n", 
+         //   dinst->getID(),dinst->getParentSrc1()->getID(),dinst->getParentSrc1()->getID() ); 
+       
+       printf("GPROCCESOR::flush_Rob : isRenamed current instID %ld\n", dinst->getID());
+
+       //Dinst* parent_scr1 = dinst->getParentSrc1();
+       //const Dinst* first       =parent_scr1->getFirstPending();
+       //printf("GPROCCESOR::flush_Rob : isRenamed current instID %ld and first ID is: %ld \n", 
+         //   dinst->getID(),first->getID()); 
+       //if(dinst->getID()!= first->getID()){
+         //parent_scr1->decrease_deps();
+
+      // }
+       //if(dinst->getID()== first->getID()){
+         //parent_scr1->flush_first();
+
+       //}
+
+        dinst->markExecutedTransient();
         dinst->getCluster()->delEntry();
-        dinst->destroyTransientInst();
+        //dinst->destroyTransientInst();
+        dinst->mark_to_be_destroyed_transient();
+    
     }
             
     ROB.pop_from_back();
@@ -383,7 +411,7 @@ void GProcessor::flush_transient_inst_from_inst_queue() {
   }
 
 
-Addr_t GProcessor::random_addr_Gen(){
+Addr_t GProcessor::random_addr_gen(){
       Addr_t addr = 0x200;
       std::random_device rd;
       std::mt19937 gen(rd());
@@ -391,6 +419,24 @@ Addr_t GProcessor::random_addr_Gen(){
       int randomNumber = dis(gen);
       return addr+(uint64_t)randomNumber;
 }
+
+uint64_t GProcessor::random_reg_gen( bool reg){
+      std::random_device rd;
+      std::mt19937 gen(rd());
+
+      if(reg) {
+        std::uniform_int_distribution<> dis_reg(1, 25);
+        int randomNumber_reg = dis_reg(gen);
+        return (uint64_t)randomNumber_reg;
+
+      } else {
+        std::uniform_int_distribution<> dis_fp(33, 59);
+        int randomNumber_fp = dis_fp(gen);
+        return (uint64_t)randomNumber_fp;
+      }
+}
+
+
 
 
 void GProcessor:: add_inst_transient_on_branch_miss(IBucket *bucket, Addr_t pc) {
@@ -477,18 +523,30 @@ void GProcessor:: add_inst_transient_on_branch_miss(IBucket *bucket, Addr_t pc) 
                                     ,0
                                     ,true);
        }*/
-       Dinst *alu_dinst;                             
+       Dinst *alu_dinst;  
+       /*RegType  src1    = RegType::LREG_INVALID;
+       RegType  src2    = RegType::LREG_INVALID;
+       RegType  dst1    = RegType::LREG_INVALID;
+       RegType  dst2    = RegType::LREG_InvalidOutput;
+       bool reg = true;
+
+       src1 = (RegType) random_reg_gen(reg);
+       src2 = (RegType) random_reg_gen(reg);
+       dst1 = (RegType) random_reg_gen(reg);
+       dst2 = (RegType) random_reg_gen(reg);*/
+
        if(rand() & 1){
           alu_dinst = Dinst::create(Instruction(Opcode::iAALU, RegType::LREG_R11, RegType::LREG_R31, RegType::LREG_R0, RegType::LREG_R21)
+          //alu_dinst = Dinst::create(Instruction(Opcode::iAALU, src1, src2, dst1, dst2)
                                     ,pc
                                     ,0
                                     ,0
                                     ,true);
        } else if(rand() & 1) {
 
-           Addr_t addr    = random_addr_Gen();
-           //alu_dinst= Dinst::create(Instruction(Opcode::iLALU_LD, RegType::LREG_R5, RegType::LREG_R6, RegType::LREG_R7, RegType::LREG_R0)
+           Addr_t addr    = random_addr_gen();
            alu_dinst= Dinst::create(Instruction(Opcode::iLALU_LD, RegType::LREG_R5, RegType::LREG_R6, RegType::LREG_R0, RegType::LREG_R7)
+           //alu_dinst = Dinst::create(Instruction(Opcode::iLALU_LD, src1, src2, dst1, dst2)
                       ,pc
                       ,addr
                       ,0
@@ -496,25 +554,28 @@ void GProcessor:: add_inst_transient_on_branch_miss(IBucket *bucket, Addr_t pc) 
        //} else if(rand() & 1){
          } else if(rand() & 1){
            alu_dinst= Dinst::create(Instruction(Opcode::iCALU_FPALU, RegType::LREG_FP3, RegType::LREG_FP4, RegType::LREG_FP7, RegType::LREG_FP0)
+           //alu_dinst = Dinst::create(Instruction(Opcode::iCALU_FPALU, src1, src2, dst1, dst2)
                       ,pc
                       ,0
                       ,0
                       ,true);
-         } else if(rand() & 1) {
-           Addr_t addr    = random_addr_Gen();
+        } else if(rand() & 1) {
+           Addr_t addr    = random_addr_gen();
            //alu_dinst= Dinst::create(Instruction(Opcode::iLALU_LD, RegType::LREG_R5, RegType::LREG_R6, RegType::LREG_R7, RegType::LREG_R0)
            alu_dinst= Dinst::create(Instruction(Opcode::iSALU_ST, RegType::LREG_R5, RegType::LREG_R6, RegType::LREG_R0, RegType::LREG_R7)
+           //alu_dinst = Dinst::create(Instruction(Opcode::iSALU_ST, src1, src2, dst1, dst2)
                       ,pc
                       ,addr
                       ,0
                       ,true);
-      /* } else if(rand() & 1){
+       } else if(rand() & 1){
            //Addr_t addr    = random_addr_Gen();
            alu_dinst = Dinst::create(Instruction(Opcode::iBALU_LBRANCH, RegType::LREG_R17, RegType::LREG_R14, RegType::LREG_R0, RegType::LREG_R25)
+           //alu_dinst = Dinst::create(Instruction(Opcode::iBALU_LBRANCH, src1, src2, dst1, dst2)
                                     ,pc
                                     ,0
                                     ,0
-                                    ,true);*/
+                                    ,true);
 
        } else {
            alu_dinst = Dinst::create(Instruction(Opcode::iAALU, RegType::LREG_R13, RegType::LREG_R13, RegType::LREG_R0, RegType::LREG_R3)

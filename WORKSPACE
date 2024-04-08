@@ -56,9 +56,9 @@ http_archive(
 # abseil
 http_archive(
   name = "com_google_absl",
-  strip_prefix = "abseil-cpp-20240116.0",
-  urls = ["https://github.com/abseil/abseil-cpp/archive/refs/tags/20240116.0.zip"],
-  sha256 = "d0f9a580463375978f5ae4e04da39c3664bdaa23724b2f0bf00896a02bf801b9",
+  strip_prefix = "abseil-cpp-20240116.2",
+  urls = ["https://github.com/abseil/abseil-cpp/archive/refs/tags/20240116.2.zip"],
+  sha256 = "69909dd729932cbbabb9eeaff56179e8d124515f5d3ac906663d573d700b4c7d",
 )
 
 # Perfetto

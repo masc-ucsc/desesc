@@ -106,9 +106,10 @@ void DepWindow::executed(Dinst *dinst) {
   //  MSG("execute [0x%x] @%lld",dinst, globalClock);
  
   if(dinst->isTransient())
-    printf("DepWindow::::Executed Transient Inst %ld\n", dinst->getID());
-  if(!dinst->isTransient())
+    printf("DepWindow::::Executed Entering Transient Inst %ld\n", dinst->getID());
+  if(!dinst->isTransient()){
     I(!dinst->hasDeps());
+  }
 
   if(dinst->isTransient())
     dinst->markExecutedTransient();
@@ -150,8 +151,12 @@ void DepWindow::executed(Dinst *dinst) {
     std::cout<<"Depwindow:: executed::dstReady Inst asm is "<<dstReady->getInst()->get_asm()<<std::endl;
     printf("DepWindow::::Executed Inst is %ld and Pending dstdReady inst is %ld and Pending :isTransient is %b\n",
         dinst->getID(),dstReady->getID(),dstReady->isTransient());
-      
-    if(dstReady->is_to_be_destroyed_transient()) {
+     
+    //if(dstReady->hasPending()) {
+      //ibreak;
+    //}
+
+    if(dstReady->is_to_be_destroyed_transient() && !dstReady->hasDeps()) {
       //dstReady->clear_to_be_destroyed_transient();
       dstReady->destroyTransientInst();
       continue;

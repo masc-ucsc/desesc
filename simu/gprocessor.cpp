@@ -112,17 +112,18 @@ void GProcessor::fetch() {
   I(is_power_up());
 
   if (spaceInInstQueue < FetchWidth) {
+    printf("gprocessor::No_new_fetch:: spaceInInstQueue < FetchWidth!!!\n");
     return;
   }
 
   auto ifid = smt_fetch.fetch_next();
  //must be before *bucket 
-  /*
+  //SpecPower_turns_off
   if (ifid->isBlocked()) {
     // fmt::print("fetch on {}\n", ifid->getMissDinst()->getID());
      return;
   }
-*/
+
 
   auto     smt_hid = hid;  // FIXME: do SMT fetch
   IBucket *bucket  = pipeQ.pipeLine.newItem();
@@ -144,9 +145,16 @@ void GProcessor::fetch() {
   }
     //enable only when !ifid->isblocked() to flush transient before every new fetch 
     //after a branch miss-prediction resolved at execute stage
-    if(ifid->is_fetch_next_ready) {
-      flush_transient_inst_on_fetch_ready();
+   // if(ifid->is_fetch_next_ready) {
+     // flush_transient_inst_on_fetch_ready();
+   // }
+    if(!ifid->isBlocked()) {
+     flush_transient_inst_on_fetch_ready();
     }
+
+
+
+
       
   if (bucket) {
     ifid->fetch(bucket, eint, smt_hid);
@@ -158,6 +166,7 @@ void GProcessor::fetch() {
   }
 }
 void GProcessor::flush_transient_inst_on_fetch_ready() {
+  printf("gprocessor::flush_transient_pipeline_instq_rob on before new fetch!!!\n");
  
   pipeQ.pipeLine.flush_transient_inst_from_buffer();
   flush_transient_inst_from_inst_queue();
@@ -193,7 +202,7 @@ void GProcessor::flush_transient_from_rob() {
       continue;
     }*/
 
-    printf("GPROCCESOR::flush_Rob :: before checking status  instID %ld\n", dinst->getID());  
+    printf("GPROCCESOR::flush_Rob ::Entering  instID %ld\n", dinst->getID());  
     if(!dinst->isRetired() && dinst->isExecuted()) {
        // dinst->clearRATEntry();
         while (dinst->hasPending()) {
@@ -208,17 +217,19 @@ void GProcessor::flush_transient_from_rob() {
         }
         dinst->clearRATEntry();
         dinst->destroyTransientInst();
-    } else if (dinst->isExecuting() || dinst->isIssued()) {
-        dinst->mark_flush_transient();
-        printf("GPROCCESOR::flush_Rob ::mark flush isExecuting || isIssued instID %ld\n", dinst->getID()); 
-        while (dinst->hasPending()) {
+   // } else if (dinst->isExecuting() || dinst->isIssued()) {
+  } else {
+         dinst->mark_flush_transient();
+        printf("GPROCCESOR::flush_Rob ::mark flush:: isExecuting || isIssued instID %ld\n", dinst->getID()); 
+        /*latterwhile (dinst->hasPending()) {
           printf("GPROCCESOR::flush_Rob mark flush  Pending for instID %ld\n", dinst->getID());  
           Dinst *dstReady = dinst->getNextPending();
           I(dstReady->isTransient());
-        }
+        }*/
 
         ROB.push_pipe_in_cluster(dinst);
-    } else if (dinst->isRenamed()) {
+    }
+    /*} else if (dinst->isRenamed()) {
         printf("GPROCCESOR::flush_Rob :: isTransient and (dinst->isRenamed()  instID %ld\n", dinst->getID());  
         //Rename :RN  
         if( dinst->getCluster()->get_reg_pool() >= dinst->getCluster()->get_nregs()-3){
@@ -246,45 +257,23 @@ void GProcessor::flush_transient_from_rob() {
         }
 
         dinst->clearRATEntry();
-       /*Dinst* dinst1 = dinst->getParentSrc1();
-        
-        if(dinst1) {
-          //parent->dep--;
-          //if(parent->first==dinst)
-            //flush_first;
-            //else
-
-          //dinst1->flush_first();//WRONG!!!
-        }
-        Dinst* dinst2 = dinst->getParentSrc2();
-        if(dinst2) {
-          //dinst2->flush_first();//WRONG!!!
-        }*/
-        
+               
        //printf("GPROCCESOR::flush_Rob : isRenamed current instID %ld and getParentScr1 ID is: %ld and and getParentScr2 ID is : %ld\n", 
-         //   dinst->getID(),dinst->getParentSrc1()->getID(),dinst->getParentSrc1()->getID() ); 
+         //   dinst->getID(),dinst->getParenmSrc1()->getID(),dinst->getParentSrc1()->getID() ); 
        
        printf("GPROCCESOR::flush_Rob : isRenamed current instID %ld\n", dinst->getID());
 
-       //Dinst* parent_scr1 = dinst->getParentSrc1();
-       //const Dinst* first       =parent_scr1->getFirstPending();
-       //printf("GPROCCESOR::flush_Rob : isRenamed current instID %ld and first ID is: %ld \n", 
-         //   dinst->getID(),first->getID()); 
-       //if(dinst->getID()!= first->getID()){
-         //parent_scr1->decrease_deps();
 
-      // }
-       //if(dinst->getID()== first->getID()){
-         //parent_scr1->flush_first();
 
-       //}
 
         dinst->markExecutedTransient();
         dinst->getCluster()->delEntry();
-        //dinst->destroyTransientInst();
+        if(!dinst->hasDeps()){
+        dinst->destroyTransientInst();
+        } else {
         dinst->mark_to_be_destroyed_transient();
-    
-    }
+        }
+    }//if_renamed*/
             
     ROB.pop_from_back();
     }
@@ -292,20 +281,7 @@ void GProcessor::flush_transient_from_rob() {
     auto *dinst = ROB.back_pipe_in_cluster();//get last element from vector:back()
     printf("GPROCCESOR::flush_Rob : Reading  ROB_pipe_in_cluster instID %ld\n", dinst->getID());  
 
-    /*if(dinst->getCluster()->get_reg_pool() >= dinst->getCluster()->get_nregs()-7) {
-          ROB.push(dinst);//push in the end of ROB
-          ROB.pop_pipe_in_cluster();//pop last element from buffer_ROB
-          printf("GPROCCESOR::flush_Rob : ROB_pipe_in_cluster regpool >nregs instID %ld\n", dinst->getID());  
-          continue;
-        }*/
-
-    /*if(dinst->getCluster()->get_reg_pool() >= dinst->getCluster()->get_nregs()-2) {
-          ROB.push(dinst);//push in the end of ROB
-          ROB.pop_pipe_in_cluster();//pop last element from buffer_ROB
-          printf("GPROCCESOR::flush_Rob : ROB_pipe_in_cluster regpool >nregs instID %ld\n", dinst->getID());  
-          continue;
-    }*/
-
+    
 
     if(dinst->is_flush_transient() && dinst->isExecuted() && !dinst->hasDeps() && !dinst->hasPending()) { 
       if( dinst->getCluster()->get_window_size() < dinst->getCluster()->get_window_maxsize()-1) {
@@ -332,51 +308,6 @@ void GProcessor::flush_transient_from_rob() {
 }
 
 
-/*void GProcessor::flush_transient_from_rob() {
-//try the for loop scan
-  while(!ROB.empty()) {
-    //auto *dinst = ROB.top();
-    printf("GPROCCESOR::ROB FLUSHING  ENTERING \n");  
-    auto *dinst = ROB.end_data();
-    //if (!dinst->isTransient())
-      //break;
-    printf("GPROCCESOR::ROB FLUSHING :: instID %ld\n", dinst->getID());  
-    //makes sure isExecuted in preretire()
-    bool  done  = dinst->getClusterResource()->preretire(dinst, false);
-    if (!done) {
-      //break;//FIXME
-      //ROB.pop();
-      ROB.push_pipe_in_cluster(dinst);
-      ROB.pop_from_back();
-      continue;
-    }
-
-    bool done_cluster = dinst->getCluster()->retire(dinst, false);
-
-    if (!done_cluster) {
-      //break;
-      //ROB.pop(); 
-      ROB.push_pipe_in_cluster(dinst);
-      ROB.pop_from_back();
-      continue;
-    }
-    if (dinst->isTransient()) {
-         printf("GPROCCESOR::ROB FLUSHING destroying_ROB transient instID %ld\n", dinst->getID());  
-         dinst->destroyTransientInst();
-    } 
-
-  ROB.pop_from_back();    
-  }
-
-  while(!ROB.empty_pipe_in_cluster()) {
-    auto *dinst = ROB.back_pipe_in_cluster();//get last element from vector:back()
-    ROB.pop_pipe_in_cluster();//pop last element
-    ROB.push(dinst);//push in the end
-  }
-
-
-}
-*/
 
 void GProcessor::flush_transient_inst_from_inst_queue() {
     
@@ -425,12 +356,12 @@ uint64_t GProcessor::random_reg_gen( bool reg){
       std::mt19937 gen(rd());
 
       if(reg) {
-        std::uniform_int_distribution<> dis_reg(1, 25);
+        std::uniform_int_distribution<> dis_reg(1, 31);
         int randomNumber_reg = dis_reg(gen);
         return (uint64_t)randomNumber_reg;
 
       } else {
-        std::uniform_int_distribution<> dis_fp(33, 59);
+        std::uniform_int_distribution<> dis_fp(33, 63);
         int randomNumber_fp = dis_fp(gen);
         return (uint64_t)randomNumber_fp;
       }
@@ -524,7 +455,7 @@ void GProcessor:: add_inst_transient_on_branch_miss(IBucket *bucket, Addr_t pc) 
                                     ,true);
        }*/
        Dinst *alu_dinst;  
-       /*RegType  src1    = RegType::LREG_INVALID;
+       RegType  src1    = RegType::LREG_INVALID;
        RegType  src2    = RegType::LREG_INVALID;
        RegType  dst1    = RegType::LREG_INVALID;
        RegType  dst2    = RegType::LREG_InvalidOutput;
@@ -533,11 +464,10 @@ void GProcessor:: add_inst_transient_on_branch_miss(IBucket *bucket, Addr_t pc) 
        src1 = (RegType) random_reg_gen(reg);
        src2 = (RegType) random_reg_gen(reg);
        dst1 = (RegType) random_reg_gen(reg);
-       dst2 = (RegType) random_reg_gen(reg);*/
-
+       
        if(rand() & 1){
-          alu_dinst = Dinst::create(Instruction(Opcode::iAALU, RegType::LREG_R11, RegType::LREG_R31, RegType::LREG_R0, RegType::LREG_R21)
-          //alu_dinst = Dinst::create(Instruction(Opcode::iAALU, src1, src2, dst1, dst2)
+          //alu_dinst = Dinst::create(Instruction(Opcode::iAALU, RegType::LREG_R11, RegType::LREG_R31, RegType::LREG_R0, RegType::LREG_R21)
+          alu_dinst = Dinst::create(Instruction(Opcode::iAALU, src1, src2, dst1, dst2)
                                     ,pc
                                     ,0
                                     ,0
@@ -545,16 +475,26 @@ void GProcessor:: add_inst_transient_on_branch_miss(IBucket *bucket, Addr_t pc) 
        } else if(rand() & 1) {
 
            Addr_t addr    = random_addr_gen();
-           alu_dinst= Dinst::create(Instruction(Opcode::iLALU_LD, RegType::LREG_R5, RegType::LREG_R6, RegType::LREG_R0, RegType::LREG_R7)
-           //alu_dinst = Dinst::create(Instruction(Opcode::iLALU_LD, src1, src2, dst1, dst2)
+           //src2    = RegType::LREG_NoDependence;
+
+           //alu_dinst= Dinst::create(Instruction(Opcode::iLALU_LD, RegType::LREG_R5, RegType::LREG_R6, RegType::LREG_R0, RegType::LREG_R7)
+           alu_dinst = Dinst::create(Instruction(Opcode::iLALU_LD, src1, src2, dst1, dst2)
                       ,pc
                       ,addr
                       ,0
                       ,true);
        //} else if(rand() & 1){
          } else if(rand() & 1){
-           alu_dinst= Dinst::create(Instruction(Opcode::iCALU_FPALU, RegType::LREG_FP3, RegType::LREG_FP4, RegType::LREG_FP7, RegType::LREG_FP0)
-           //alu_dinst = Dinst::create(Instruction(Opcode::iCALU_FPALU, src1, src2, dst1, dst2)
+             reg  = false;
+             src1 = (RegType) random_reg_gen(reg);
+             src2 = (RegType) random_reg_gen(reg);
+             dst1 = (RegType) random_reg_gen(reg);
+
+
+
+          // alu_dinst= Dinst::create(Instruction(Opcode::iCALU_FPALU, RegType::LREG_FP3, RegType::LREG_FP4, RegType::LREG_FP7, RegType::LREG_FP0)
+           //alu_dinst= Dinst::create(Instruction(Opcode::iCALU_FPALU, RegType::LREG_FP3, RegType::LREG_FP4, RegType::LREG_FP7, RegType::LREG_InvalidOutput)
+           alu_dinst = Dinst::create(Instruction(Opcode::iCALU_FPALU, src1, src2, dst1, dst2)
                       ,pc
                       ,0
                       ,0
@@ -562,23 +502,25 @@ void GProcessor:: add_inst_transient_on_branch_miss(IBucket *bucket, Addr_t pc) 
         } else if(rand() & 1) {
            Addr_t addr    = random_addr_gen();
            //alu_dinst= Dinst::create(Instruction(Opcode::iLALU_LD, RegType::LREG_R5, RegType::LREG_R6, RegType::LREG_R7, RegType::LREG_R0)
-           alu_dinst= Dinst::create(Instruction(Opcode::iSALU_ST, RegType::LREG_R5, RegType::LREG_R6, RegType::LREG_R0, RegType::LREG_R7)
-           //alu_dinst = Dinst::create(Instruction(Opcode::iSALU_ST, src1, src2, dst1, dst2)
+           //goodalu_dinst= Dinst::create(Instruction(Opcode::iSALU_ST, RegType::LREG_R5, RegType::LREG_R6, RegType::LREG_R0, RegType::LREG_R7)
+           dst1 = RegType::LREG_InvalidOutput;
+           dst2 = RegType::LREG_InvalidOutput;
+           
+           alu_dinst = Dinst::create(Instruction(Opcode::iSALU_ST, src1, src2, dst1, dst2)
                       ,pc
                       ,addr
                       ,0
                       ,true);
        } else if(rand() & 1){
-           //Addr_t addr    = random_addr_Gen();
-           alu_dinst = Dinst::create(Instruction(Opcode::iBALU_LBRANCH, RegType::LREG_R17, RegType::LREG_R14, RegType::LREG_R0, RegType::LREG_R25)
-           //alu_dinst = Dinst::create(Instruction(Opcode::iBALU_LBRANCH, src1, src2, dst1, dst2)
+           //alu_dinst = Dinst::create(Instruction(Opcode::iBALU_LBRANCH, RegType::LREG_R17, RegType::LREG_R14, RegType::LREG_R0, RegType::LREG_InvalidOutput)
+           alu_dinst = Dinst::create(Instruction(Opcode::iBALU_LBRANCH, src1, src2, dst1, dst2)
                                     ,pc
                                     ,0
                                     ,0
                                     ,true);
 
        } else {
-           alu_dinst = Dinst::create(Instruction(Opcode::iAALU, RegType::LREG_R13, RegType::LREG_R13, RegType::LREG_R0, RegType::LREG_R3)
+           alu_dinst = Dinst::create(Instruction(Opcode::iAALU, RegType::LREG_R13, RegType::LREG_R13, RegType::LREG_R0, RegType::LREG_InvalidOutput)
                                     ,pc
                                     ,0
                                     ,0

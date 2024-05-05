@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <string>
+
 #include "absl/container/flat_hash_map.h"
 #include "stats.hpp"
 
@@ -9,51 +11,29 @@ class Stats_code : public Stats {
 private:
   class ProfEntry {
   public:
-    ProfEntry() {
-      n                   = 0;
-      sum_cpi             = 0;
-      sum_wt              = 0;
-      sum_et              = 0;
-      sum_flush           = 0;
-      ldbr                = 0;
-      sum_bp1_hit         = 0;
-      sum_bp2_hit         = 0;
-      sum_bp3_hit         = 0;
-      sum_bp1_miss        = 0;
-      sum_bp2_miss        = 0;
-      sum_bp3_miss        = 0;
-      sum_hit2_miss3      = 0;
-      sum_hit3_miss2      = 0;
-      sum_no_tl           = 0;
-      sum_late_tl         = 0;
-      sum_on_time_tl      = 0;
-      sum_trig_ld1_pred   = 0;
-      sum_trig_ld1_unpred = 0;
-      sum_trig_ld2_pred   = 0;
-      sum_trig_ld2_unpred = 0;
-    }
-    double   n;
-    double   sum_cpi;
-    double   sum_wt;
-    double   sum_et;
-    uint64_t sum_flush;
-    int      ldbr;
-    uint64_t sum_bp1_hit;
-    uint64_t sum_bp2_hit;
-    uint64_t sum_bp3_hit;
-    uint64_t sum_bp1_miss;
-    uint64_t sum_bp2_miss;
-    uint64_t sum_bp3_miss;
-    uint64_t sum_hit2_miss3;
-    uint64_t sum_hit3_miss2;
-    uint64_t sum_no_tl;
-    uint64_t sum_late_tl;
-    uint64_t sum_on_time_tl;
-    uint64_t sum_trig_ld1_pred;
-    uint64_t sum_trig_ld1_unpred;
-    uint64_t sum_trig_ld2_pred;
-    uint64_t sum_trig_ld2_unpred;
-    uint64_t sum_prefetch;
+    ProfEntry() = default;
+    double   n{0};
+    double   sum_cpi{0};
+    double   sum_wt{0};
+    double   sum_et{0};
+    uint64_t sum_flush{0};
+    int      ldbr{0};
+    uint64_t sum_bp1_hit{0};
+    uint64_t sum_bp2_hit{0};
+    uint64_t sum_bp3_hit{0};
+    uint64_t sum_bp1_miss{0};
+    uint64_t sum_bp2_miss{0};
+    uint64_t sum_bp3_miss{0};
+    uint64_t sum_hit2_miss3{0};
+    uint64_t sum_hit3_miss2{0};
+    uint64_t sum_no_tl{0};
+    uint64_t sum_late_tl{0};
+    uint64_t sum_on_time_tl{0};
+    uint64_t sum_trig_ld1_pred{0};
+    uint64_t sum_trig_ld1_unpred{0};
+    uint64_t sum_trig_ld2_pred{0};
+    uint64_t sum_trig_ld2_unpred{0};
+    uint64_t sum_prefetch{0};
   };
 
   absl::flat_hash_map<uint64_t, ProfEntry> prof;

@@ -50,7 +50,7 @@ void Stats::reset_all() {
 
 Stats_pwr::Stats_pwr(const std::string &str) : Stats(str) { subscribe(); }
 
-void Stats_pwr::report() const { Report::field(fmt::format("{}:real={} tran={}\n", name, cntr_real, cntr_tran)); }
+void Stats_pwr::report() const { Report::field(fmt::format("pwr_{}:real={} tran={}\n", name, cntr_real, cntr_tran)); }
 
 void Stats_pwr::reset() {
   cntr_tran = 0;

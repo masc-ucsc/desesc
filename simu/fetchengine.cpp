@@ -36,15 +36,6 @@ FetchEngine::FetchEngine(Hartid_t id, std::shared_ptr<Gmemory_system> gms_, std:
     , nDelayInst3(fmt::format("({})_FetchEngine:nDelayInst3", id))
     , nBTAC(fmt::format("({})_FetchEngine:nBTAC", id))  // BTAC corrections to BTB
     , zeroDinst(fmt::format("({})_zeroDinst:nBTAC", id))
-#ifdef ESESC_TRACE_DATA
-    , dataHist(fmt::format("({})_dataHist", id))
-    , dataSignHist(fmt::format("({})_dataSignHist", id))
-    , lastData(fmt::format("({})_lastData", 2048, 4))
-    , nbranchMissHist(fmt::format("({})_nbranchMissHist", id))
-    , nLoadAddr_per_branch(fmt::format("({})_nLoadAddr_per_branch", id))
-    , nLoadData_per_branch(fmt::format("({})_nLoadData_per_branch", id))
-
-#endif
 //  ,szBB("FetchEngine(%d):szBB", id)
 //  ,szFB("FetchEngine(%d):szFB", id)
 //  ,szFS("FetchEngine(%d):szFS", id)
@@ -73,7 +64,7 @@ FetchEngine::FetchEngine(Hartid_t id, std::shared_ptr<Gmemory_system> gms_, std:
   }
 
   missInst = false;
-  //for flushing transient from pipeline
+  // for flushing transient from pipeline
   is_fetch_next_ready = false;
   // Move to libmem/Prefetcher.cpp ; it can be stride or DVTAGE
   // FIXME: use AddressPredictor::create()
@@ -90,12 +81,6 @@ FetchEngine::FetchEngine(Hartid_t id, std::shared_ptr<Gmemory_system> gms_, std:
   il1_hit_delay = Config::get_integer(isection, "delay");
 
   lastMissTime = 0;
-
-#ifdef ENABLE_LDBP
-  DL1            = gms->getDL1();
-  dep_pc         = 0;
-  fetch_br_count = 0;
-#endif
 }
 
 FetchEngine::~FetchEngine() {}
@@ -108,36 +93,13 @@ bool FetchEngine::processBranch(Dinst *dinst, uint16_t n2Fetch) {
   bool        fastfix;
   TimeDelta_t delay = bpred->predict(dinst, &fastfix);
 
-#if 0
-#ifdef ENABLE_LDBP
-  //update TYPE14 and TYPE15 Br's data after a flip outcome
-  int idx = DL1->hit_on_bot(dinst->getPC());
-  if(idx != -1) {
-    if(dinst->isTaken() == DL1->cir_queue[idx].br_mv_outcome - 1) {
-      if(DL1->cir_queue[idx].ldbr == 13 || DL1->cir_queue[idx].ldbr2 == 13 || DL1->cir_queue[idx].ldbr == 15 || DL1->cir_queue[idx].ldbr2 == 15) {
-        DL1->cir_queue[idx].br_data1 = dinst->getData2();
-      }else if(DL1->cir_queue[idx].ldbr == 12 || DL1->cir_queue[idx].ldbr2 == 12 || DL1->cir_queue[idx].ldbr == 14 || DL1->cir_queue[idx].ldbr2 == 14) {
-        DL1->cir_queue[idx].br_data2 = dinst->getData();
-      }
-    }
-  }
-#endif
-#endif
-
-#ifdef ESESC_TRACE_DATA
-  if (dinst->getDataSign() != DS_NoData) {
-    oracleDataLast[dinst->getLDPC()].chain();  // getLDPC only works (hash otherwise) when there is a single ldpc
-  }
-#endif
   if (delay == 0) {
-    // printf(" good\n");
     return false;
   }
 
   setMissInst(dinst);
   is_fetch_next_ready = false;
   setTransientInst(dinst);
-  printf(" fetch::setting br transient miss addr:%ld\n",dinst->getAddr());
 
   Time_t n = (globalClock - lastMissTime);
   avgFetchTime.sample(n, dinst->has_stats());
@@ -153,9 +115,7 @@ bool FetchEngine::processBranch(Dinst *dinst, uint16_t n2Fetch) {
   if (fastfix) {
     I(globalClock);
     unBlockFetchBPredDelayCB::schedule(delay, this, dinst, globalClock);
-    // printf(" good\n");
   } else {
-    // printf(" bad brpc:%llx\n",dinst->getPC());
     dinst->lockFetch(this);
   }
   printf("FetchEngine::processbranch return true dinstID %ld\n", dinst->getID());
@@ -176,13 +136,7 @@ void FetchEngine::chainPrefDone(Addr_t pc, int distance, Addr_t addr) {
 #endif
 }
 
-void FetchEngine::chainLoadDone(Dinst *dinst) {
-  (void)dinst;
-
-#ifdef ESESC_TRACE_DATA
-  oracleDataLast[dinst->getPC()].dec_chain();
-#endif
-}
+void FetchEngine::chainLoadDone(Dinst *dinst) { (void)dinst; }
 
 void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Hartid_t fid, int32_t n2Fetch) {
   printf("FetchEngine::::Entering real fetch !!!\n");
@@ -201,6 +155,7 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
       break;
     }
 
+//<<<<<<< HEAD
 #ifdef ESESC_TRACE_DATA
     bool predictable = false;
 
@@ -583,6 +538,8 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
 
 #endif
 
+//=======
+//>>>>>>> upstream/main
 #ifdef ENABLE_FAST_WARMUP
     if (dinst->getPC() == 0) {  // FIXME: W mode, counter, not this
       do {
@@ -654,7 +611,10 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
     lastpc = dinst->getPC();
 
     eint->execute(fid);
+
+    // dinst->dump("TR");
     Tracer::stage(dinst, "IF");
+//<<<<<<< HEAD
     printf("FetchEngine::::Fetched Inst is %ld \n", dinst->getID());
     std::cout<< "FetchEngine:::Fetched Inst Opcode is "<<dinst->getInst()->getOpcodeName()<<"and asm is "
       <<dinst->getInst()->get_asm()<<std::endl;
@@ -721,7 +681,7 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
 
   /*if(fid->isBlocked()) {
    pipeQ.pipeLine.readyItem(bucket);//must bucket-> markedfetch()
-   return; 
+   return;
   }*/
   bpred->fetchBoundaryEnd();
 
@@ -736,93 +696,6 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
     bucket->markFetchedCB.schedule(il1_hit_delay);
   }
 }
-
-#ifdef ENABLE_LDBP
-#if 0
-Dinst* FetchEngine::init_ldbp(Dinst *dinst, Data_t dd, Addr_t ldpc) {
-  if(dinst->getLBType() == 1) {  //R1 -> LD->BR, R2 -> 0
-    dinst->setBrData1(dinst->getData());
-    dinst->setBrData2(0);
-  }else if(dinst->getLBType() == 2) { //R1 -> 0, R2 -> LD->BR
-    dinst->setBrData1(0);
-    dinst->setBrData2(dinst->getData2());
-  }else if(dinst->getLBType() == 3) { //R1 -> LD->ALU+->BR, R2 -> 0
-    dinst->setBrData1(dd); //LD data -> not ALU modified LD data
-    dinst->setDataSign(dd, ldpc); //create data signature
-    dinst->setBrData2(0);
-  }else if(dinst->getLBType() == 4) { // R1 -> LD->ALU*->Li->ALU+->BR, R2 -> 0
-    dinst->setBrData1(dd); //LD data -> not ALU modified LD data
-    dinst->setDataSign(dd, ldpc); //create data signature
-    dinst->setBrData2(0);
-  }else if(dinst->getLBType() == 5) { //R1 -> 0, R2 -> LD->ALU+->BR
-    dinst->setBrData1(0);
-    dinst->setBrData2(dd); //LD Data -> not ALU modified LD data
-    dinst->setDataSign(dd, ldpc); //create data signature
-  }else if(dinst->getLBType() == 6) { // R1 -> 0, R2 -> LD->ALU*->Li->ALU+->BR
-    dinst->setBrData1(0);
-    dinst->setBrData2(dd); //LD data -> not ALU modified LD data
-    dinst->setDataSign(dd, ldpc); //create data signature
-  }else if(dinst->getLBType() == 7) { // R1 -> Li, R2 -> 0
-    dinst->setBrData1(dinst->getData());
-    dinst->setBrData2(0);
-  }else if(dinst->getLBType() == 8) { // R1 -> 0, R2 -> Li
-    dinst->setBrData1(0);
-    dinst->setBrData2(dinst->getData2());
-  }else if(dinst->getLBType() == 9) {
-    dinst->setBrData2(dd);
-    dinst->setDataSign(dd, ldpc); //create data signature
-    //BrData1(Li) already set for type 9
-  }else if(dinst->getLBType() == 10) { //R1 -> Li, R2 -> Li
-    dinst->setBrData1(dinst->getData());
-    dinst->setBrData2(dinst->getData2());
-  }else if(dinst->getLBType() == 11) {   //R1 -> Li, R2 -> LD->ALU*->Li->ALU+->BR
-    dinst->setBrData1(dinst->getData());
-    dinst->setBrData2(dd);
-    dinst->setDataSign(dd, ldpc); //create data signature
-  }else if(dinst->getLBType() == 12) {  //R1 -> LD->ALU+->BR, R2 -> Li
-    dinst->setBrData1(dd);
-    dinst->setDataSign(dd, ldpc); //create data signature
-    //BrData2(Li) already set for type 12
-  }else if(dinst->getLBType() == 13) {   //R1 -> LD->ALU*->Li->ALU+->BR, R2 -> Li
-    dinst->setBrData1(dd); //Li data -> not ALU modified Li data
-    dinst->setDataSign(dd, ldpc); //create data signature
-    dinst->setBrData2(dinst->getData2());
-  }else if(dinst->getLBType() == 14) {   //R1 -> LD->BR, R2 -> LD->BR
-    dinst->setBrData1(dinst->getData());
-    dinst->setBrData2(dinst->getData2());
-  }else if(dinst->getLBType() == 15) {   //R1 -> LD->BR, R2 -> LD->ALU+->BR
-    dinst->setBrData1(dinst->getData());
-    dinst->setBrData2(dd); //LD data -> not ALU modified LD data
-    dinst->setDataSign(dd, ldpc); //create data signature
-  }else if(dinst->getLBType() == 16) {   //R1 -> LD, R2 -> LD->ALU*->Li->ALU+->BR
-    dinst->setBrData1(dinst->getData());
-    dinst->setBrData2(dd); //Li data -> not ALU modified Li Data
-    dinst->setDataSign(dd, ldpc); //create data signature
-  }else if(dinst->getLBType() == 17) {   //R1 -> LD, R2 -> Li
-    dinst->setBrData1(dinst->getData());
-    dinst->setBrData2(dd); //Li data
-  }else if(dinst->getLBType() == 18) {   // R1 -> LD->ALU+->BR, R2 -> LD->BR
-    dinst->setBrData1(dd); //LD data -> not ALU modified LD data
-    dinst->setDataSign(dd, ldpc); //create data signature
-    dinst->setBrData2(dinst->getData2());
-  }else if(dinst->getLBType() == 19) {   // R1 -> LD->ALU*->Li->ALU+->BR, R2 -> LD->BR
-    dinst->setBrData1(dd); //Li data -> not ALU modified Li data
-    dinst->setDataSign(dd, ldpc); //create data signature
-    dinst->setBrData2(dinst->getData2());
-  }else if(dinst->getLBType() == 20) {   // R1 -> Li->BR, R2 -> LD->BR
-    dinst->setBrData1(dd); //Li datga
-    dinst->setBrData2(dinst->getData2());
-  }else if(dinst->getLBType() == 21) {   // R1 -> LD, R2 -> mv
-    dinst->setBrData1(dinst->getData());
-    dinst->setBrData2(dd); //mv datga
-  }else if(dinst->getLBType() == 22) {   // R1 -> mv, R2 -> LD
-    dinst->setBrData1(dd); //mv data
-    dinst->setBrData2(dinst->getData2());
-  }
-  return dinst;
-}
-#endif
-#endif
 
 void FetchEngine::fetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Hartid_t fid) {
   // Reset the max number of BB to fetch in this cycle (decreased in processBranch)
@@ -881,9 +754,8 @@ void FetchEngine::clearMissInst(Dinst *dinst, Time_t missFetchTime) {
 
 void FetchEngine::setMissInst(Dinst *dinst) {
   (void)dinst;
-  //if(!dinst->isTransient())
-  //printf("fetchengine:: setMIss Dinst %ld and bool is %b\n",dinst->getAddr(), missInst);
-   I(!missInst);
+  // if(!dinst->isTransient())
+  I(!missInst);
 
   missInst = true;
 #ifndef NDEBUG
@@ -893,6 +765,5 @@ void FetchEngine::setMissInst(Dinst *dinst) {
 
 void FetchEngine::setTransientInst(Dinst *dinst) {
   (void)dinst;
-  printf("fetchengine:: setTransient Dinst %ld\n",dinst->getAddr());
   transientDinst = dinst;
 }

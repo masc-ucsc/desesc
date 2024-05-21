@@ -31,7 +31,7 @@ void MTRACE(Args... args) {
   fmt::print(args...);
   fmt::print("\n");
 }
-    // if (getName() == "DL1(0)") 
+    // if (getName() == "DL1(0)")
 #else
 #define MTRACE(a...)
 #endif
@@ -857,13 +857,6 @@ void CCache::doReq(MemRequest *mreq) {
 
   if (mreq->isDemandCritical()) {
     I(!mreq->isPrefetch());
-#ifdef ENABLE_LDBP
-    if (mreq->isTriggerLoad() && mreq->isHomeNode()) {
-      // mreq->getHomeNode()->find_cir_queue_index(mreq);
-      // mreq->getHomeNode()->lor_find_index(mreq);
-      mreq->getHomeNode()->lor_find_index(mreq->getAddr());
-    }
-#endif
     double lat = mreq->getTimeDelay() + (when - globalClock);
     avgMemLat.sample(lat, mreq->has_stats());
     if (retrying) {
@@ -1040,11 +1033,6 @@ void CCache::doReqAck(MemRequest *mreq) {
 
   if (mreq->isDemandCritical()) {
     I(!mreq->isPrefetch());
-#ifdef ENABLE_LDBP
-    if (mreq->isTriggerLoad() && mreq->isHomeNode()) {
-      mreq->getHomeNode()->lor_find_index(mreq->getAddr());
-    }
-#endif
     double lat = mreq->getTimeDelay(when);
     avgMissLat.sample(lat, mreq->has_stats() && !mreq->isPrefetch());
     avgMemLat.sample(lat, mreq->has_stats() && !mreq->isPrefetch());

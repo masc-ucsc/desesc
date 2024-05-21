@@ -181,7 +181,6 @@ void Dinst::setDataSign(int64_t _data, Addr_t _ldpc) {
   ldpc = _ldpc;
 
   data_sign = calcDataSign(_data);
-  // br_ld_chain_predictable = true; //FIXME - LDBP does prediction only if this flag is set(when load is predictable)
 }
 
 void Dinst::addDataSign(int ds, int64_t _data, Addr_t _ldpc) {
@@ -238,22 +237,19 @@ void Dinst::destroy() {
   I(first == 0);  // no dependent instructions
 
   Tracer::commit(this);
-  printf(" Dinst::DEstroy Commit CO  Inst %ld\n", this->getID());
 
   resource = nullptr;  // Needed to have GC
   cluster  = nullptr;
   dInstPool.in(this);
 }
 void Dinst::destroyTransientInst() {
-
-  //I(nDeps == 0);  // No deps src
-  //I(issued);
-  //I(executed);
+  // I(nDeps == 0);  // No deps src
+  // I(issued);
+  // I(executed);
 
   I(first == 0);  // no dependent instructions
 
   Tracer::commit(this);
-  printf(" Dinst::DEstroy_transient Commit CO transient  Inst %ld\n", this->getID());
   resource = nullptr;  // Needed to have GC
   cluster  = nullptr;
 

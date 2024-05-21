@@ -36,10 +36,10 @@ http_archive(
 http_archive(
     name = "fmt",
     build_file = "fmt.BUILD",
-    sha256 = "3c2e73019178ad72b0614a3124f25de454b9ca3a1afe81d5447b8d3cbdb6d322",
-    strip_prefix = "fmt-10.1.1",
+    sha256 = "d368f9c39a33a3aef800f5be372ec1df1c12ad57ada1f60adc62f24c0e348469",
+    strip_prefix = "fmt-10.2.1",
     urls = [
-        "https://github.com/fmtlib/fmt/archive/refs/tags/10.1.1.zip",
+        "https://github.com/fmtlib/fmt/archive/refs/tags/10.2.1.zip",
     ],
 )
 
@@ -56,28 +56,28 @@ http_archive(
 # abseil
 http_archive(
   name = "com_google_absl",
-  strip_prefix = "abseil-cpp-20230802.1",
-  urls = ["https://github.com/abseil/abseil-cpp/archive/refs/tags/20230802.1.zip"],
-  sha256 = "497ebdc3a4885d9209b9bd416e8c3f71e7a1fb8af249f6c2a80b7cbeefcd7e21",
+  strip_prefix = "abseil-cpp-20240116.0",
+  urls = ["https://github.com/abseil/abseil-cpp/archive/refs/tags/20240116.0.zip"],
+  sha256 = "d0f9a580463375978f5ae4e04da39c3664bdaa23724b2f0bf00896a02bf801b9",
 )
 
 # Perfetto
 http_archive(
     name = "com_google_perfetto",
     build_file = "perfetto.BUILD",
-    sha256 = "bd78f0165e66026c31c8c39221ed2863697a8bba5cd39b12e4b43d0b7f71626f",
-    strip_prefix = "perfetto-40.0/sdk",
-    urls = ["https://github.com/google/perfetto/archive/refs/tags/v40.0.tar.gz"],
+    sha256 = "1c474a0f16cc2f9da826fd3f9e44ffd77785c433e997cdaf0ee390ae3d64b53e",
+    strip_prefix = "perfetto-42.0/sdk",
+    urls = ["https://github.com/google/perfetto/archive/refs/tags/v42.0.tar.gz"],
 )
 
 # toml11
 http_archive(
     name = "toml11",
     build_file = "toml11.BUILD",
-    sha256 = "4124577f989d6a558229ef8f06944ca210e4cf1fe72975eaa2528f1a53f129c4",
-    strip_prefix = "toml11-3.7.1",
+    sha256 = "72e956f42002dd1566c5551a693ec0f6fa3bea3a0e7bcea29bcdace98738da74",
+    strip_prefix = "toml11-3.8.1",
     urls = [
-        "https://github.com/ToruNiina/toml11/archive/v3.7.1.zip",
+        "https://github.com/ToruNiina/toml11/archive/v3.8.1.zip",
     ],
 )
 
@@ -86,10 +86,10 @@ http_archive(
     name = "dromajo",
     build_file = "dromajo.BUILD",
     patches = ["//external:dromajo.patch"],
-    sha256 = "0e4d5df7194628e7c542491f909f19fbf30b230b5579014d3fb83f3acdc06532",
-    strip_prefix = "dromajo-e1bd5e7d0dfb95d8c1a1a108075c1cb160c74f42",
+    sha256 = "07fcabaf6be0a1c2d1f62ccb6ad08c1d86c49887d08967bfcde8028fb206c506",
+    strip_prefix = "dromajo-34598190447d8339b79069277e0f9f1ce59483d7",
     urls = [
-      "https://github.com/masc-ucsc/dromajo/archive/e1bd5e7d0dfb95d8c1a1a108075c1cb160c74f42.zip",
+      "https://github.com/masc-ucsc/dromajo/archive/34598190447d8339b79069277e0f9f1ce59483d7.zip",
     ],
 )
 
@@ -107,10 +107,10 @@ http_archive(
 # clang-tidy
 http_archive(
     name = "bazel_clang_tidy",
-    sha256 = "6de1b53a3b011b8bfc27d6e5e8edf9f31b9c08beeb92d6edd348c7680861e99a",
-    strip_prefix = "bazel_clang_tidy-d2aecc583d14c9554febeab185833c1e8cce5384",
+    sha256 = "ebc23027a2e42035b6797235f6bb1400ddeb7a439c9dda1caa0fa7a06fd615e3",
+    strip_prefix = "bazel_clang_tidy-43bef6852a433f3b2a6b001daecc8bc91d791b92",
     urls = [
-        "https://github.com/erenon/bazel_clang_tidy/archive/d2aecc583d14c9554febeab185833c1e8cce5384.zip"
+        "https://github.com/erenon/bazel_clang_tidy/archive/43bef6852a433f3b2a6b001daecc8bc91d791b92.zip"
     ],
 )
 

@@ -25,7 +25,7 @@ Dinst *LSQFull::executing(Dinst *dinst)
 /* dinst got executed (out-of-order) {{{1 */
 {
   I(dinst->getAddr());
-  //I(!dinst->isTransient());
+  // I(!dinst->isTransient());
 
   Addr_t tag = calcWord(dinst);
 

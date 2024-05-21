@@ -186,7 +186,7 @@ void TaskHandler::plugEnd()
   }
 
   // Tie the emuls to the all maps
-  size_t cpuid     = 0;
+  size_t cpuid = 0;
 
   for (size_t i = 0; i < emuls.size(); i++) {
     allmaps[i].fid  = static_cast<Hartid_t>(i);

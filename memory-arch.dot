@@ -1,0 +1,13 @@
+
+digraph simple_hierarchy {
+
+node [color=Green,fontcolor=Blue,font=Courier,shape=record]
+
+
+"il1(0)"[shape=record,sides=5,peripheries=2,color=darkseagreen,style=filled]
+
+"l2(0)"[shape=record,sides=5,peripheries=2,color=darkseagreen,style=filled]
+"dl1(0)" -> "l2(0)"
+
+"dl1(0)"[shape=record,sides=5,peripheries=2,color=darkseagreen,style=filled]
+}

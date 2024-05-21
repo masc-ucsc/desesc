@@ -30,6 +30,7 @@ StallCause DepWindow::canIssue(Dinst *dinst) const {
 void DepWindow::add_inst(Dinst *dinst) {
   I(dinst->getCluster() != 0);  // Resource::schedule must set the resource field
 
+//newHEAD<<<<<<< HEAD
 //<<<<<<< HEAD
   printf("DepWindow::add_inst before dinst->hasDeps() %ld  and transient is %b\n",
       dinst->getID(),dinst->isTransient());
@@ -52,20 +53,16 @@ void DepWindow::add_inst(Dinst *dinst) {
   } else {
     //printf("DepWindow::add_inst dinst->hasDeps() is true for  %ld  and transient is %b\n", dinst->getID(), dinst->isTransient());
 >>>>>>> upstream/main*/
+/*=======
+  if (!dinst->hasDeps()) {
+    preSelect(dinst);
+>>>>>>> upstream/main*/
   }
-
-
-
- //lima while (!dinst->hasDeps()) {
-    //preSelect(dinst);
-// }
-
-
+ 
 }
 
 void DepWindow::preSelect(Dinst *dinst) {
   // At the end of the wakeUp, we can start to read the register file
-  //printf("DepWindow::::preSelect  Inst %ld and Transient is %b\n", dinst->getID(), dinst->isTransient());
   I(!dinst->hasDeps());
 
   dinst->markIssued();
@@ -92,11 +89,12 @@ void DepWindow::select(Dinst *dinst) {
 void DepWindow::executed_flushed(Dinst *dinst) {
   //  MSG("execute [0x%x] @%lld",dinst, globalClock);
 
-  if(dinst->isTransient())
+  if (dinst->isTransient()) {
     dinst->markExecutedTransient();
-  else
+  } else {
     dinst->markExecuted();
- 
+  }
+
   dinst->clearRATEntry();
   Tracer::stage(dinst, "WB");
 }
@@ -104,18 +102,24 @@ void DepWindow::executed_flushed(Dinst *dinst) {
 // Called when dinst finished execution. Look for dependent to wakeUp
 void DepWindow::executed(Dinst *dinst) {
   //  MSG("execute [0x%x] @%lld",dinst, globalClock);
+//<<<<<<< HEAD
  
   if(dinst->isTransient())
     printf("DepWindow::::Executed Entering Transient Inst %ld\n", dinst->getID());
-  if(!dinst->isTransient()){
+  //if(!dinst->isTransient()){
+//=======
+
+  if (!dinst->isTransient()) {
+//>>>>>>> upstream/main
     I(!dinst->hasDeps());
   }
 
-  if(dinst->isTransient())
+  if (dinst->isTransient()) {
     dinst->markExecutedTransient();
-  else
+  } else {
     dinst->markExecuted();
-  
+  }
+
   printf("DepWindow::::Executed mark_executed Inst %ld\n", dinst->getID());
   dinst->clearRATEntry();
   printf("DepWindow::::Executed clear RAT  Inst %ld\n", dinst->getID());
@@ -128,12 +132,26 @@ void DepWindow::executed(Dinst *dinst) {
     return;
   }
 
-  // NEVER HERE FOR in-order cores
 
-  printf("DepWindow::::Executed Inst %ld has pending\n", dinst->getID());
+/*//<<<<<<< HEAD
+ //if (!dinst->hasPending() || dinst->isTransient()) {
+  if (!dinst->hasPending()) { //(dinst->first !=0)
+    printf("DepWindow::::Executed Inst %ld has !dinst->hasPending\n", dinst->getID());
+//=======
+  dinst->clearRATEntry();
+  Tracer::stage(dinst, "WB");
+
+  // if (!dinst->hasPending() || dinst->isTransient()) {
+  if (!dinst->hasPending()) {
+>>>>>>> upstream/main
+    return;
+  }*/
+
+  // NEVER HERE FOR in-order cores
+ 
   I(dinst->getCluster());
   I(src_cluster_id == dinst->getCluster()->get_id());
- 
+
   I(dinst->isIssued());
   /*if(dinst->isTransient()){
     while (dinst->hasPending()){
@@ -152,10 +170,7 @@ void DepWindow::executed(Dinst *dinst) {
     printf("DepWindow::::Executed Inst is %ld and Pending dstdReady inst is %ld and Pending :isTransient is %b\n",
         dinst->getID(),dstReady->getID(),dstReady->isTransient());
      
-    //if(dstReady->hasPending()) {
-      //ibreak;
-    //}
-
+    
     if(dstReady->is_to_be_destroyed_transient() && !dstReady->hasDeps()) {
       //dstReady->clear_to_be_destroyed_transient();
       dstReady->destroyTransientInst();
@@ -165,10 +180,7 @@ void DepWindow::executed(Dinst *dinst) {
     
 
     I(!dstReady->isExecuted());//fails assertion inst 691
-    /*if( dinst->isTransient() && !dstReady->isTransient()){
-      continue;
-    }*/
-
+    
 
 //<<<<<<< HEAD
     printf("DepWindow::::Executed Inst is %ld and Pending Inst is %ld and Pending :isTransient is %b\n",
@@ -182,7 +194,7 @@ void DepWindow::executed(Dinst *dinst) {
 //>>>>>>> upstream/main
     if (!dstReady->hasDeps()) {
       // Check dstRes because dstReady may not be issued
-        I(dstReady->getCluster());
+      I(dstReady->getCluster());
       auto dst_cluster_id = dstReady->getCluster()->get_id();
       I(dst_cluster_id);
 

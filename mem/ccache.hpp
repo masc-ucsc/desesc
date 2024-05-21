@@ -16,7 +16,6 @@
 #include "stats.hpp"
 
 // #include "Prefetcher.h"
-// #define ENABLE_LDBP
 
 class MemRequest;
 

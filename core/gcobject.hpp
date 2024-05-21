@@ -45,7 +45,7 @@ public:
       ref->delRef();
     }
   }
-     operator T *() const { return ref; }
+  operator T *() const { return ref; }
   T &operator*() const { return *ref; }
   T *operator->() const { return ref; }
   T *operator=(T *ptr) {

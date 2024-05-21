@@ -17,6 +17,14 @@ private:
 
   void init_dromajo_machine();
 
+  struct Last_state {
+    uint32_t insns;
+    uint64_t pc;
+    uint64_t next_pc;
+    uint64_t addr;  // memory address
+  };
+  std::vector<Last_state> last;
+
 public:
   Emul_dromajo();
   Emul_dromajo(const Emul_dromajo &)            = default;
@@ -28,17 +36,12 @@ public:
   void destroy_machine();
 
   Dinst *peek(Hartid_t fid) final;
-  void   execute(Hartid_t fid) final;
+
+  void skip_rabbit(Hartid_t fid, size_t ninst) final;
+  void execute(Hartid_t fid) final;
 
   [[nodiscard]] Hartid_t get_num() const final;
   [[nodiscard]] bool     is_sleeping(Hartid_t fid) const override;
-
-  void skip_rabbit(Hartid_t fid, size_t ninst) final {
-    // TODO(??): do this more efficiently
-    for (size_t i = 0; i < ninst; ++i) {
-      execute(fid);
-    }
-  }
 
   void set_detail(uint64_t ninst) { detail = ninst; }
   void set_time(uint64_t ninst) { time = ninst; }

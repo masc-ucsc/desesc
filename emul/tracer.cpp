@@ -2,6 +2,7 @@
 
 #include "tracer.hpp"
 
+#include "absl/strings/str_cat.h"
 #include "config.hpp"
 #include "fmt/format.h"
 #include "iassert.hpp"
@@ -22,6 +23,7 @@ bool Tracer::open(const std::string &fname) {
   last_clock     = 0;
   track_from     = 0;
   track_to       = UINT64_MAX;
+  //track_to       = 2*UINT64_MAX;
 
   return true;
 }
@@ -53,8 +55,6 @@ void Tracer::stage(const Dinst *dinst, const std::string ev) {
   if (ev == "WB" || ev == "RN" || ev == "PNR") {
     pending_end.emplace_back(fmt::format("E\t{}\t0\t{}\n", id, ev));
   }
-  if(ev == "CO")
-    printf("Tracer:: Stage Commit  CO Inst %ld \n", dinst->getID());
 }
 
 void Tracer::event(const Dinst *dinst, const std::string ev) {

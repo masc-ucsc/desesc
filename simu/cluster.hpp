@@ -61,7 +61,6 @@ protected:
   }*/
   void newEntry() {
     windowSize--;
-    printf("Cluster::newEntry() windowSize-- %d\n", windowSize);  
     I(windowSize >= 0);
   }
 
@@ -78,15 +77,14 @@ public:
 
   void delEntry() {
     windowSize++;
-    printf("Cluster::delEntry() windowSize++ %d and MaxWinSize %d \n", windowSize, MaxWinSize);  
     I(windowSize <= MaxWinSize);
   }
   void add_reg_pool() {
     regPool++;
-    printf("Cluster::add_reg_pool regPool++ %d and %d nRegs is\n", regPool, nRegs);  
     I(regPool <= nRegs);
   }
 
+//<<<<<<< HEAD
   void add_inst_retry( Dinst *dinst) {
     if(!dinst->is_in_cluster()) {
       window.add_inst(dinst);
@@ -96,25 +94,22 @@ public:
   int32_t get_reg_pool() {
    return  regPool;
   }
+//=======
+  //int32_t get_reg_pool() { return regPool; }
 
-  int32_t get_nregs() {
-   return  nRegs;
-  }
-  
-  int32_t get_window_size() {
-   return  windowSize;
-  }
-  
-  int32_t get_window_maxsize() {
-   return MaxWinSize;
-  }
-  
+  int32_t get_nregs() { return nRegs; }
+
+  int32_t get_window_size() { return windowSize; }
+
+  int32_t get_window_maxsize() { return MaxWinSize; }
+//>>>>>>> upstream/main
+
   void select(Dinst *dinst);
 
   virtual void executing(Dinst *dinst)           = 0;
   virtual void executed(Dinst *dinst)            = 0;
   virtual bool retire(Dinst *dinst, bool replay) = 0;
-  virtual void flushed(Dinst *dinst)            = 0;
+  virtual void flushed(Dinst *dinst)             = 0;
 
   static std::pair<std::shared_ptr<Cluster>, Opcode_array<std::shared_ptr<Resource>>> create(const std::string &clusterName,
                                                                                              uint32_t           pos,

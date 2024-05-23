@@ -19,9 +19,9 @@ rules_foreign_cc_dependencies()
 # google benchmark
 http_archive(
     name = "com_google_benchmark",
-    sha256 = "abfc22e33e3594d0edf8eaddaf4d84a2ffc491ad74b6a7edc6e7a608f690e691",
-    strip_prefix = "benchmark-1.8.3",
-    urls = ["https://github.com/google/benchmark/archive/refs/tags/v1.8.3.zip"],
+    sha256 = "84c49c4c07074f36fbf8b4f182ed7d75191a6fa72756ab4a17848455499f4286",
+    strip_prefix = "benchmark-1.8.4",
+    urls = ["https://github.com/google/benchmark/archive/refs/tags/v1.8.4.zip"],
 )
 
 # google tests

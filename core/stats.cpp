@@ -3,6 +3,7 @@
 #include "stats.hpp"
 
 #include "config.hpp"
+#include "fmt/format.h"
 #include "report.hpp"
 
 /*********************** Stats */
@@ -43,6 +44,17 @@ void Stats::reset_all() {
   for (auto &e : store) {
     e.second->reset();
   }
+}
+
+/*********************** Stats_pwr */
+
+Stats_pwr::Stats_pwr(const std::string &str) : Stats(str) { subscribe(); }
+
+void Stats_pwr::report() const { Report::field(fmt::format("pwr_{}:real={} tran={}\n", name, cntr_real, cntr_tran)); }
+
+void Stats_pwr::reset() {
+  cntr_tran = 0;
+  cntr_real = 0;
 }
 
 /*********************** Stats_cntr */

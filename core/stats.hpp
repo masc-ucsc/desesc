@@ -21,7 +21,7 @@ protected:
   void unsubscribe();
 
 public:
-  Stats(const std::string n) : name(n){};
+  Stats(const std::string &n) : name(n){};
   virtual ~Stats();
 
   static void report_all();
@@ -29,6 +29,24 @@ public:
 
   virtual void report() const = 0;
   virtual void reset()        = 0;
+};
+
+class Stats_pwr : public Stats {
+private:
+  uint64_t cntr_tran{0};
+  uint64_t cntr_real{0};
+
+protected:
+public:
+  Stats_pwr(const std::string &format);
+
+  void inc(bool transient) {
+    cntr_tran += transient ? 1 : 0;
+    cntr_real += transient ? 0 : 1;
+  }
+
+  void report() const final;
+  void reset() final;
 };
 
 class Stats_cntr : public Stats {

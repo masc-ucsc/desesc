@@ -56,18 +56,18 @@ http_archive(
 # abseil
 http_archive(
   name = "com_google_absl",
-  strip_prefix = "abseil-cpp-20240116.0",
-  urls = ["https://github.com/abseil/abseil-cpp/archive/refs/tags/20240116.0.zip"],
-  sha256 = "d0f9a580463375978f5ae4e04da39c3664bdaa23724b2f0bf00896a02bf801b9",
+  strip_prefix = "abseil-cpp-20240116.2",
+  urls = ["https://github.com/abseil/abseil-cpp/archive/refs/tags/20240116.2.zip"],
+  sha256 = "69909dd729932cbbabb9eeaff56179e8d124515f5d3ac906663d573d700b4c7d",
 )
 
 # Perfetto
 http_archive(
     name = "com_google_perfetto",
     build_file = "perfetto.BUILD",
-    sha256 = "1c474a0f16cc2f9da826fd3f9e44ffd77785c433e997cdaf0ee390ae3d64b53e",
-    strip_prefix = "perfetto-42.0/sdk",
-    urls = ["https://github.com/google/perfetto/archive/refs/tags/v42.0.tar.gz"],
+    sha256 = "db4162ee6495b1fcc13ba7aca77d67f9fd1766d184743137a04af8b1e3906b9d",
+    strip_prefix = "perfetto-44.0/sdk",
+    urls = ["https://github.com/google/perfetto/archive/refs/tags/v44.0.tar.gz"],
 )
 
 # toml11
@@ -107,10 +107,10 @@ http_archive(
 # clang-tidy
 http_archive(
     name = "bazel_clang_tidy",
-    sha256 = "ebc23027a2e42035b6797235f6bb1400ddeb7a439c9dda1caa0fa7a06fd615e3",
-    strip_prefix = "bazel_clang_tidy-43bef6852a433f3b2a6b001daecc8bc91d791b92",
+    sha256 = "f0e2871f32652b2dbc54739b55b4c2ece88eb8189133f20e7c4327eb893994b2",
+    strip_prefix = "bazel_clang_tidy-bff5c59c843221b05ef0e37cef089ecc9d24e7da",
     urls = [
-        "https://github.com/erenon/bazel_clang_tidy/archive/43bef6852a433f3b2a6b001daecc8bc91d791b92.zip"
+        "https://github.com/erenon/bazel_clang_tidy/archive/bff5c59c843221b05ef0e37cef089ecc9d24e7da.zip"
     ],
 )
 

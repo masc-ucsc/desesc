@@ -101,15 +101,19 @@ void Dinst::dump(std::string_view str) {
 }
 
 void Dinst::clearRATEntry() {
+  printf("Dinst:clearRATEntry :: instID %ld\n", this->getID());  
   I(RAT1Entry);
   if ((*RAT1Entry) == this) {
+    printf("Dinst:clearRATEntry :: setting RAT1entry =0 for instID %ld\n", this->getID());  
     *RAT1Entry = 0;
   }
   if ((*RAT2Entry) == this) {
+    printf("Dinst:clearRATEntry :: setting RAT2entry =0 for instID %ld\n", this->getID());  
     *RAT2Entry = 0;
   }
   if (serializeEntry) {
     if ((*serializeEntry) == this) {
+      printf("Dinst:clearRATEntry :: setting RATSerializedentry =0 for instID %ld\n", this->getID());  
       *serializeEntry = 0;
     }
   }

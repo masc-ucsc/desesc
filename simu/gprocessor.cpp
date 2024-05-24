@@ -180,24 +180,52 @@ void GProcessor::flush_transient_inst_on_fetch_ready() {
   flush_transient_inst_from_inst_queue();
   flush_transient_from_rob();
 }
+void GProcessor::dump_rob()
+// {{{1 Dump rob statistics
+{
+  uint32_t size = ROB.size();
+  printf("dump_ROB: ROB_size:%d\n", size);
+
+  for (uint32_t i = 0; i < size; i++) {
+    uint32_t pos = ROB.getIDFromTop(i);
+
+    Dinst *dinst = ROB.getData(pos);
+    if(dinst->isTransient()) {
+      dinst->clearRATEntry();
+    }
+
+    dinst->dump("");
+  }
+}
 
 void GProcessor::flush_transient_from_rob() {
   // try the for loop scan
-
+  printf("gprocessor::flush_transient_rob on before new fetch!!!\n");
   while (!ROB.empty()) {
     auto *dinst = ROB.end_data();
     // makes sure isExecuted in preretire()
 
     if (!dinst->isTransient()) {
+      printf("GPROCCESOR::flush_Rob ::NON TRANSIENT  instID %ld\n", dinst->getID());  
       ROB.push_pipe_in_cluster(dinst);
       ROB.pop_from_back();
       continue;
     }
-    if (dinst->getCluster()->get_reg_pool() >= dinst->getCluster()->get_nregs() - 2) {
+
+    printf("GPROCCESOR::flush_Rob ::TRANSIENT  instID %ld\n", dinst->getID());  
+    dinst->clearRATEntry();
+    /*if (dinst->getCluster()->get_reg_pool() >= dinst->getCluster()->get_nregs() - 2) {
+      break;
+    }*lima_may*/
+    if (dinst->getCluster()->get_reg_pool() >= dinst->getCluster()->get_nregs() - 7) {
+      printf("GPROCCESOR::flush_Rob ::TRANSIENT get_reg_pool() >= dinst->getCluster()->get_nregs() - 7:: instID %ld\n", dinst->getID());  
+      dump_rob();
       break;
     }
 
     if (dinst->getCluster()->get_window_size() == dinst->getCluster()->get_window_maxsize()) {
+      printf("GPROCCESOR::flush_Rob :::>get_window_size() == dinst->getCluster()->get_window_maxsize( instID %ld\n", dinst->getID());  
+      dump_rob();
       break;
     }
     /*if (dinst->hasDeps() || dinst->hasPending()) {
@@ -206,6 +234,7 @@ void GProcessor::flush_transient_from_rob() {
       continue;
     }*/
 
+      //dinst->clearRATEntry();
 //<<<<<<< HEAD
     printf("GPROCCESOR::flush_Rob ::Entering  instID %ld\n", dinst->getID());  
     if(!dinst->isRetired() && dinst->isExecuted()) {
@@ -222,18 +251,34 @@ void GProcessor::flush_transient_from_rob() {
         }
         dinst->clearRATEntry();
         dinst->destroyTransientInst();
-   // } else if (dinst->isExecuting() || dinst->isIssued()) {
-  } else {
+    } else if (dinst->isExecuting() || dinst->isIssued()) {
+  //} else {
+         //dinst->mark_try_flush_transient();
          dinst->mark_flush_transient();
-        printf("GPROCCESOR::flush_Rob ::mark flush:: isExecuting || isIssued instID %ld\n", dinst->getID()); 
-        /*latterwhile (dinst->hasPending()) {
-          printf("GPROCCESOR::flush_Rob mark flush  Pending for instID %ld\n", dinst->getID());  
-          Dinst *dstReady = dinst->getNextPending();
-          I(dstReady->isTransient());
-        }*/
+         dinst->clearRATEntry();
+        /*/lima_may
+         bool hasDest = (dinst->getInst()->hasDstRegister());
+         if (hasDest) {
+          printf("GPROCCESOR::flush_Rob :: isExecuting || isIssued()  regpool++ destroying for instID %ld at @Clockcycle %ld\n", dinst->getID(),globalClock);  
+          dinst->getCluster()->add_reg_pool();
+        }
+        //lima_may*/
 
+        printf("GPROCCESOR::flush_Rob ::mark flush:: isExecuting || isIssued instID %ld\n", dinst->getID()); 
         ROB.push_pipe_in_cluster(dinst);
-    }
+  } else if (dinst->isRenamed()) {
+      //dinst->mark_try_flush_transient();
+      dinst->clearRATEntry();
+     /*/lima_may
+      bool hasDest = (dinst->getInst()->hasDstRegister());
+      if (hasDest) {
+        printf("GPROCCESOR::flush_Rob :: isExecuting || isIssued()  regpool++ destroying for instID %ld at @Clockcycle %ld\n", dinst->getID(),globalClock);  
+        dinst->getCluster()->add_reg_pool();
+      }
+      //lima_may*/
+      ROB.push_pipe_in_cluster(dinst);
+  }
+  
     ROB.pop_from_back();
   }     
   
@@ -350,7 +395,7 @@ void GProcessor::flush_transient_from_rob() {
       if (dinst->getCluster()->get_window_size() < dinst->getCluster()->get_window_maxsize() - 1) {
 >>>>>>> upstream/main*/
         bool hasDest = (dinst->getInst()->hasDstRegister());
-        if (hasDest) {
+        if (hasDest && !dinst->is_try_flush_transient()) {
           dinst->getCluster()->add_reg_pool();
         }
         dinst->markExecutedTransient();
@@ -363,6 +408,7 @@ void GProcessor::flush_transient_from_rob() {
     }
     ROB.pop_pipe_in_cluster();  // pop last element from buffer_ROB
   }
+  printf("gprocessor::flush_transient_rob Leaving before new fetch!!!\n");
 }
 
 //<<<<<<< HEAD
@@ -413,6 +459,7 @@ void GProcessor::flush_transient_from_rob() {
 //>>>>>>> upstream/main
 
 void GProcessor::flush_transient_inst_from_inst_queue() {
+  printf("gprocessor::flush_transient_inst_queue Entering before new fetch!!!\n");
   while (!pipeQ.instQueue.empty()) {
     auto *bucket = pipeQ.instQueue.top();
     if (bucket) {
@@ -438,6 +485,7 @@ void GProcessor::flush_transient_inst_from_inst_queue() {
     }
     pipeQ.instQueue.pop();
   }
+  printf("gprocessor::flush_transient_inst_queue Leaving  before new fetch!!!\n");
 }
 //<<<<<<< HEADDownward
 
@@ -452,8 +500,9 @@ Addr_t GProcessor::random_addr_gen(){
 }
 
 uint64_t GProcessor::random_reg_gen( bool reg){
-      std::random_device rd;
-      std::mt19937 gen(rd());
+      //std::random_device rd;
+      // std::mt19937 gen(rd());
+      static std::mt19937 gen(55);
 
       if(reg) {
         std::uniform_int_distribution<> dis_reg(1, 31);

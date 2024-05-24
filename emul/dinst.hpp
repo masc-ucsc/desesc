@@ -175,6 +175,7 @@ private:
   bool is_rrob;
   bool present_in_rob;
   bool flush_transient;
+  bool try_flush_transient;
   bool to_be_destroyed_transient;
   bool in_cluster;
   // END Boolean flags
@@ -278,6 +279,7 @@ private:
     del_entry                   = false;
     is_rrob                     = false;
     flush_transient             = false;
+    try_flush_transient         = false;
     to_be_destroyed_transient   = false;
     present_in_rob              = false;
     in_cluster                  = false;
@@ -372,6 +374,7 @@ public:
 
 //=======
   void mark_flush_transient() { flush_transient = true; }
+  void mark_try_flush_transient() { try_flush_transient = true; }
 //>>>>>>> upstream/main
 
   //void mark_del_entry() { del_entry = true; }
@@ -382,6 +385,7 @@ public:
   bool is_present_in_rob() { return present_in_rob; }
   void set_present_in_rob() { present_in_rob = true; }
   bool is_flush_transient() { return flush_transient; }
+  bool is_try_flush_transient() { return try_flush_transient; }
   bool has_stats() const { return keep_stats; }
   bool is_del_entry() { return del_entry; }
   bool is_present_rrob() { return is_rrob; }

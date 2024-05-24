@@ -243,9 +243,9 @@ void Cluster::add_inst(Dinst *dinst) {
 
   window.add_inst(dinst);
 //<<<<<<< HEAD
-  if(!dinst->is_in_cluster()) {
+ /*lima_may if(!dinst->is_in_cluster()) {
     window.add_inst(dinst);
-  }
+  }lima_may*/
 
   printf("Cluster::add_inst leaving dinstID %ld\n", dinst->getID());
 //=======
@@ -304,7 +304,7 @@ bool ExecutingCluster::retire(Dinst *dinst, bool reply) {
 }
 
 //************ Executed Cluster Class
-//Only this Executed cluster is used in desesc now
+//Only this Executed cluster is used in desesc now: desc.toml
 void ExecutedCluster::executing(Dinst *dinst) {
 //<<<<<<< HEAD
   //if(!dinst->is_in_cluster() && !dinst->isIssued()) {
@@ -343,6 +343,8 @@ void ExecutedCluster::flushed(Dinst *dinst) {
 }
 
 bool ExecutedCluster::retire(Dinst *dinst, bool reply) {
+  printf("ClusterExecuted::retire:: Entering Insit %ld regPool is %d and nRegs is %d\n",
+        dinst->getID(), regPool, nRegs);
   if (dinst->is_del_entry()) {
     // delEntry();
     dinst->unmark_del_entry();
@@ -355,7 +357,11 @@ bool ExecutedCluster::retire(Dinst *dinst, bool reply) {
   I(regPool <= nRegs);
 
   bool hasDest = (dinst->getInst()->hasDstRegister());
-  if (hasDest) {
+  //lima_may 
+  if (hasDest && !dinst->is_try_flush_transient()) {
+    printf("ClusterExecuted::retiring  Insit %ld !try_flush_transient and regPool is %d and nRegs is %d\n",
+        dinst->getID(), regPool, nRegs);
+    
     regPool++;
     // if(!dinst->is_present_rrob()){
     // regPool++;

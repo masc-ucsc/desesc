@@ -1,0 +1,430 @@
+
+# TOML is case sensitive, but to avoid issues use lower-case in all the section
+# and field names
+
+[trace]
+#range = [0,2400]
+range = [0,313000]
+
+[soc]
+# FIXME: multicore dromajo/desesc
+#core = ["c0", "c0"]
+#emul = ["drom_emu", "drom_emu"]
+core = ["c0"]
+emul = ["drom_emu"]
+
+[drom_emu]
+type      = "dromajo"
+# Load a Checkpoint option
+#load_orginal_path      = "../benchmarks/gcc_fgcse/gcc_fgcse"
+load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/gcc_fgcse/gcc_fgcse"
+#load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/gcc_fipa-pta/gcc_fipa-pta"
+#load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/exchange2/exchange2"
+#load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/deepsjeng/deepsjeng"
+#load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/omnetpp/omnetpp"
+#load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/mcf/mcf"
+#leela_load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/leela/leela"
+#load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/x264/x264"
+#xalancebk_load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/xalancebmk/xalancebmk"
+#load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/x264/x264"
+#load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/xz_cpu2006docs/xz_cpu2006docs"
+#load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/xz_cld/xz_cld"
+#load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/gcc_fselective-scheduling/gcc_fselective-scheduling"
+#load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/perlbench_checkspam/perlbench_checkspam"
+#load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/perlbench_diffmail/perlbench_diffmail"
+#load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/perlbench_splitmail/perlbench_splitmail"
+
+# Load a Binary
+#bench      = "conf/dhrystone.riscv"
+start_roi = false
+rabbit    = 1024
+detail    = 1024
+time      = 30000
+
+[rand_emu]
+type = "random"  # Generate random instructions (coverage testing?)
+
+[bp0]
+type              = "imli"
+
+bp_addr_shift = 0      # bits shifted by branch predictor PC
+ras_size      = 32
+ras_prefetch  = false
+
+delay             = 1
+fetch_predict     = true   # Not a prediction per instruction
+
+btb_history_size  = 0
+btb_split_il1     = false  # do not cache entries that can be computed by IL1
+btb_size          = 32
+btb_line_size     = 1
+btb_assoc         = 4
+btb_repl_policy   = "LRU"
+
+history_size      = 12
+path_based        = false
+bimodal_size      = 8192
+bimodal_width     = 2
+meta_size  = 1024
+meta_width = 2
+
+# IMLI
+nhist             = 8
+statcorrector     = false
+
+# 2level
+l1_size           = 4
+l2_size           = 2048
+l2_width          = 2
+
+# Hybrid
+global_size  = 2048
+global_width = 2
+local_size   = 2048
+local_width  = 2
+
+# 2BcgSkew
+g0_size           = 2048
+g0_history_size   = 4
+g1_size           = 2048
+g1_history_size   = 8
+meta_history_size = 12
+
+# yags
+#l1_size    = 4096
+#l1_width   = 3
+#l2_size    = 4096
+#l2_width   = 3
+#l_tag_width = 8
+
+# ogehl
+num_tables = 8
+max_history_size = 128
+table_size = 1024
+table_cbits = 4
+table_width = 3
+
+
+
+[bp1]
+type = "imli"
+
+bp_addr_shift = 0      # bits shifted by branch predictor PC
+ras_size      = 32
+ras_prefetch  = false
+
+delay             = 2
+fetch_predict     = true   # Not a prediction per instruction
+
+btb_history_size  = 0
+btb_split_il1     = false  # do not cache entries that can be computed by IL1
+btb_size          = 8192
+btb_line_size     = 1
+btb_assoc         = 4
+btb_repl_policy   = "LRU"
+
+nhist             = 8
+statcorrector     = false
+bimodal_size = 1024
+bimodal_width = 8
+
+[accel_entry]
+caches        = true  # set true to enable caches...
+type = "accel"
+frequency_mhz = 200
+
+[c0]
+type  = "ooo"  # ooo or inorder or accel
+frequency_mhz = 1000
+bpred         = ["bp0", "bp1"]
+#do_random_transients = false
+do_random_transients = true
+
+# Fetch parameters
+fetch_align       = true
+trace_align       = false
+fetch_one_line    = true   # jumps within cacheline do not flush
+max_bb_cycle      = 1
+prefetcher        = "pref_opt"
+
+smt = 1 # Number of STM context
+
+# Memory Parameters
+caches        = true  # set true to enable caches...
+#caches        = false
+scb_size      = 16
+memory_replay = true
+st_fwd_delay  = 2
+ldq_size      = 96
+stq_size      = 64
+stq_late_alloc = false
+ldq_late_alloc = false
+storeset_size = 8192
+il1           = "il1_cache IL1"
+dl1           = "dl1_cache DL1"
+scoore_serialize = true
+
+decode_delay = 4
+rename_delay = 2
+ftq_size     = 12
+instq_size   = 16
+
+fetch_width  = 8
+issue_width  = 8
+retire_width = 8
+rob_size     = 320
+
+# Exe Parameters
+cluster = ["aunit", "bunit", "cunit", "munit"]
+num_regs   = 256
+inter_cluster_lat    = 0
+cluster_scheduler    = "RoundRobin"
+max_branches         = 30
+drain_on_miss        = false
+commit_delay         = 2
+replay_serialize_for = 32
+scoore_serialze      = true
+
+[alu0]
+num = 4
+lat = 2
+occ = 1
+
+[balu]
+num = 2
+lat = 1
+occ = 1
+
+[calu2]
+num = 2
+lat = 1
+occ = 1
+
+[lsu]
+num = 2
+lat = 1
+occ = 1
+
+[aunit]
+win_size   = 16
+sched_num  = 4
+sched_occ  = 1
+sched_lat  = 1
+recycle_at  = "executed"
+num_regs   = 64
+late_alloc = false
+iAALU      = "alu0"
+iRALU      = "alu0"
+
+[bunit]
+win_size   = 16
+sched_num  = 4
+sched_occ  = 1
+sched_lat  = 1
+recycle_at  = "executed"
+num_regs   = 64
+late_alloc = false
+iBALU_LBRANCH = "balu"
+iBALU_LJUMP   = "balu"
+iBALU_LCALL   = "balu"
+iBALU_RBRANCH = "balu"
+iBALU_RJUMP   = "balu"
+iBALU_RCALL   = "balu"
+iBALU_RET     = "balu"
+
+[cunit]
+win_size   = 16
+sched_num  = 4
+sched_occ  = 1
+sched_lat  = 1
+recycle_at  = "executed"
+num_regs   = 64
+late_alloc = false
+iCALU_FPMULT  = "calu2"
+iCALU_FPDIV   = "calu2"
+iCALU_FPALU   = "calu2"
+iCALU_MULT    = "calu2"
+iCALU_DIV     = "calu2"
+
+[munit]
+win_size   = 16
+sched_num  = 4
+sched_occ  = 1
+sched_lat  = 1
+recycle_at  = "executed"
+num_regs   = 64
+late_alloc = false
+iLALU_LD      = "lsu"
+iSALU_ST      = "lsu"
+iSALU_LL      = "lsu"
+iSALU_SC      = "lsu"
+iSALU_ADDR    = "lsu"
+
+[dl1_cache]
+type       = "cache"   # or nice
+cold_misses = true
+size       = 32768
+line_size  = 64
+delay      = 3         # hit delay
+miss_delay = 2
+assoc      = 4
+repl_policy = "lru"
+
+port_occ   = 1
+port_num   = 1
+port_banks = 32
+
+send_port_occ = 1
+send_port_num = 1
+
+max_requests  = 32
+
+allocate_miss = true   # allocate on cache miss
+victim        = false  # victim cache allocation style
+coherent      = true
+inclusive     = true
+directory     = false
+
+nlp_distance = 2
+nlp_degree   = 1       # 0 disabled
+nlp_stride   = 1
+
+drop_prefetch = true
+prefetch_degree = 0    # 0 disabled
+mega_lines1K    = 8    # 8 lines touched, triggers mega/carped prefetch
+
+lower_level = "privl2 L2 sharedby 2"
+
+[il1_cache]
+type       = "nice"   # or nice
+cold_misses = true
+size       = 32768
+line_size  = 64
+delay      = 2         # hit delay
+miss_delay = 8
+assoc      = 4
+repl_policy = "lru"
+
+port_occ   = 1
+port_num   = 1
+port_banks = 32
+
+send_port_occ = 1
+send_port_num = 1
+
+max_requests  = 32
+
+allocate_miss = true   # allocate on cache miss
+victim        = false  # victim cache allocation style
+coherent      = true
+inclusive     = true
+directory     = false
+
+nlp_distance = 2
+nlp_degree   = 1       # 0 disabled
+nlp_stride   = 1
+
+drop_prefetch = true
+prefetch_degree = 0    # 0 disabled
+mega_lines1K    = 8    # 8 lines touched, triggers mega/carped prefetch
+lower_level = "privl2 L2 sharedby 2"
+
+[privl2]
+type       = "nice"   # or nice
+cold_misses = true
+size       = 1048576
+line_size  = 64
+delay      = 10         # hit delay
+miss_delay = 2
+assoc      = 4
+repl_policy = "lru"
+
+port_occ   = 1
+port_num   = 1
+port_banks = 32
+
+send_port_occ = 1
+send_port_num = 1
+
+max_requests  = 32
+
+allocate_miss = true   # allocate on cache miss
+victim        = false  # victim cache allocation style
+coherent      = true
+inclusive     = true
+directory     = false
+
+nlp_distance = 2
+nlp_degree   = 1       # 0 disabled
+nlp_stride   = 1
+
+drop_prefetch = true
+prefetch_degree = 0    # 0 disabled
+mega_lines1K    = 8    # 8 lines touched, triggers mega/carped prefetch
+
+lower_level = "l3 l3 shared"
+
+[l3]
+type = "nice"
+line_size = 64
+delay = 31
+cold_misses = false
+lower_level = ""
+
+
+[pref_opt]
+type       = "stride"
+degree     = 10
+distance   = 0
+
+# vtage entries
+bimodal_size = 1024
+bimodal_width = 8
+ntables      = 4
+
+[SRAM_Small1]
+dynamic ="exp(-4.982+2.196* ln(tech)+0.4961* ln(ports)-0.00986* sqrt(size)+0.5464* ln(size)-0.016961* width+0.4027* sqrt(width))* (10^(-9))"
+
+[SRAM_Large1]
+dynamic = "exp(-5.446+2.094* ln(tech)+0.886* ln(ports)+0.000458* sqrt(size)+0.5296* ln(size)-0.011965* width+0.31001* sqrt(width))* (10^(-9))"
+
+[SRAM_Small2]
+dynamic = "exp(-5.003+1.934* ln(tech)+0.519* ln(ports)+0.009336* sqrt(size)+0.435* ln(size)-0.002029* width+0.17867* sqrt(width))* (10^(-9))"
+
+[SRAM_Large2]
+dynamic = "exp(-6.267+1.776* ln(tech)+0.537* ln(ports)+0.00119* sqrt(size)+0.6389* ln(size)+0.00503* width+0.04* sqrt(width))* (10^(-9))"
+
+[CacheEq_Small]
+dynamic ="exp(25.7681+7.805* ln(tech)-51.032* sqrt(tech)+0.198*ln(assoc)-0.533* (assoc/line_size)+0.4692* ln(size)+0.00395* sqrt(size/(assoc * line_size)))* (10^(-9))"
+
+[CacheEq_Large]
+dynamic = "exp( 32.95+8.997* ln(tech)-63.01* sqrt(tech)+0.456 *ln(assoc)-0.8081* (assoc/line_size)+0.338* ln(size)+0.0062* sqrt(size/(assoc * line_size)))* 10^(-9)"
+
+
+[network1]
+############################################
+# Overall parameters
+fixMessagePath = false   # Packets from A to B always follow the same path
+congestionFree = false   # Do not model the routers, a fix time for each packet (addFixTime)
+addFixDelay    = 1       # Fix delay added to all the packets sent
+type           = 'mesh'  # mesh, hypercube...
+############################################
+# Router parameters
+crossLat       = 1       # Crossing Latency  : Time for a message to go through the router
+############################################
+# Local port parameters
+localNum       = 2       # Number of addressable local ports
+localPort      = 1       # Number of ports for each addressable local port
+localLat       = 1       # Local port Latency
+localOcc       = 1       # Local port Occupancy (0 means unlimited)
+############################################
+# Mesh parameters
+width          = 4       # the width of network (totalNum = width * width)
+linkBits       = 96      # Port width in bits (12=96bits)
+lWireLat       = 1       # Long Wire Latency : Slow port latency (far neighbours)
+sWireLat       = 1       # Short Wire Latency: Fast port latency (close neighbours)
+############################################
+#Hypercube parameters
+hyperNumProcs  = 64	 # the number of processors in the hypercube
+WireLat	       = 1	 # Port latency for hypercube neighbours
+

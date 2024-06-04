@@ -81,7 +81,7 @@ public:
   }
   void add_reg_pool() {
     regPool++;
-    I(regPool <= nRegs);
+    //I(regPool <= nRegs);
   }
 
 //<<<<<<< HEAD

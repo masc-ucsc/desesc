@@ -256,26 +256,26 @@ void GProcessor::flush_transient_from_rob() {
          //dinst->mark_try_flush_transient();
          dinst->mark_flush_transient();
          dinst->clearRATEntry();
-        /*/lima_may
+        /*/lima_june24
          bool hasDest = (dinst->getInst()->hasDstRegister());
          if (hasDest) {
           printf("GPROCCESOR::flush_Rob :: isExecuting || isIssued()  regpool++ destroying for instID %ld at @Clockcycle %ld\n", dinst->getID(),globalClock);  
           dinst->getCluster()->add_reg_pool();
         }
-        //lima_may*/
+        //lima_june24*/
 
         printf("GPROCCESOR::flush_Rob ::mark flush:: isExecuting || isIssued instID %ld\n", dinst->getID()); 
         ROB.push_pipe_in_cluster(dinst);
   } else if (dinst->isRenamed()) {
       //dinst->mark_try_flush_transient();
       dinst->clearRATEntry();
-     /*/lima_may
+     /*/lima_june
       bool hasDest = (dinst->getInst()->hasDstRegister());
       if (hasDest) {
         printf("GPROCCESOR::flush_Rob :: isExecuting || isIssued()  regpool++ destroying for instID %ld at @Clockcycle %ld\n", dinst->getID(),globalClock);  
         dinst->getCluster()->add_reg_pool();
       }
-      //lima_may*/
+      //lima_june*/
       ROB.push_pipe_in_cluster(dinst);
   }
   

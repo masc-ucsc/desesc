@@ -209,12 +209,10 @@ Dinst *Emul_dromajo::peek(Hartid_t fid) {
           }
           break;
         case 0x07:  //   FP Load
-          if (funct3 == 3 || funct3 == 4) {
-            opcode = Opcode::iLALU_LD;
-            src1   = (RegType)(rs1);
-            src2   = RegType::LREG_NoDependence;
-            dst1   = (RegType)(rd + 32);
-          }
+          opcode = Opcode::iLALU_LD;
+          src1   = (RegType)(rs1);
+          src2   = RegType::LREG_NoDependence;
+          dst1   = (RegType)(rd + 32);
           break;
         case 0x0F:
           opcode = Opcode::iRALU;  // XXX - fence and fence.i, is this right??
@@ -238,12 +236,16 @@ Dinst *Emul_dromajo::peek(Hartid_t fid) {
           dst1 = (RegType)(rd);
           break;
         case 0x23:
-          if (funct3 < 4) {
-            opcode = Opcode::iSALU_ST;
-            src1   = (RegType)(rs1);
-            src2   = (RegType)(rs2);
-            dst1   = RegType::LREG_InvalidOutput;
-          }
+          opcode = Opcode::iSALU_ST;
+          src1   = (RegType)(rs1);
+          src2   = (RegType)(rs2);
+          dst1   = RegType::LREG_InvalidOutput;
+          break;
+        case 0x27:  // FP Store
+          opcode = Opcode::iSALU_ST;
+          src1   = (RegType)(rs1);
+          src2   = (RegType)(rs2 + 32);
+          dst1   = RegType::LREG_InvalidOutput;
           break;
         case 0x2F:
           opcode = Opcode::iRALU;
@@ -283,11 +285,17 @@ Dinst *Emul_dromajo::peek(Hartid_t fid) {
           src2 = (RegType)(rs2);
           dst1 = (RegType)(rd);
           break;
-        case 0x47:  // FP Store
-          opcode = Opcode::iSALU_ST;
+        case 0x43: // fmadd fd, fs1, fs2, fs3
+        case 0x47:
+        case 0x4b:
+        case 0x4f:
+          I(false); // add support for R4 format (3 sources)
+          opcode = Opcode::iCALU_FPMULT;
           src1   = (RegType)(rs1);
-          src2   = (RegType)(rs2 + 32);
-          dst1   = RegType::LREG_InvalidOutput;
+          src2   = (RegType)(rs2);
+          // src3   = (RegType)(insn_raw>>27);
+          dst1   = (RegType)(rd);
+
           break;
         case 0x53:  // XXX - this should prob be its own function FP decode
           opcode = Opcode::iCALU_FPALU;

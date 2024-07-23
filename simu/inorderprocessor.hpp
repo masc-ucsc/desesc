@@ -27,6 +27,7 @@ protected:
   void retire();
 
   StallCause add_inst(Dinst *dinst) override final;
+  void try_flush(Dinst *dinst)        override final;
   // END VIRTUAL FUNCTIONS of GProcessor
 
 public:

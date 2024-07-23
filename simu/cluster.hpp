@@ -110,6 +110,7 @@ public:
   virtual void executed(Dinst *dinst)            = 0;
   virtual bool retire(Dinst *dinst, bool replay) = 0;
   virtual void flushed(Dinst *dinst)             = 0;
+  virtual void try_flushed(Dinst *dinst)         = 0;
 
   static std::pair<std::shared_ptr<Cluster>, Opcode_array<std::shared_ptr<Resource>>> create(const std::string &clusterName,
                                                                                              uint32_t           pos,
@@ -142,6 +143,7 @@ public:
   void executed(Dinst *dinst);
   bool retire(Dinst *dinst, bool replay);
   void flushed(Dinst *dinst);
+  void try_flushed(Dinst *dinst);
 };
 
 class ExecutedCluster : public Cluster {
@@ -154,6 +156,7 @@ public:
   void executed(Dinst *dinst);
   bool retire(Dinst *dinst, bool replay);
   void flushed(Dinst *dinst);
+  void try_flushed(Dinst *dinst);
 };
 
 class RetiredCluster : public Cluster {
@@ -165,4 +168,5 @@ public:
   void executed(Dinst *dinst);
   bool retire(Dinst *dinst, bool replay);
   void flushed(Dinst *dinst);
+  void try_flushed(Dinst *dinst);
 };

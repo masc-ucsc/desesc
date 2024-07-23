@@ -45,8 +45,13 @@ Resource::Resource(Opcode type, std::shared_ptr<Cluster> cls, PortGeneric *aGen,
 
   auto core_type = Config::get_string("soc", "core", cpuid, "type", {"inorder", "ooo", "accel"});
   std::transform(core_type.begin(), core_type.end(), core_type.begin(), [](unsigned char c) { return std::toupper(c); });
+  //correct is (core_type != "OOO")
 
-  inorder = (core_type != "ooo");
+  //BUG_was:inorder = (core_type != "ooo");
+  //inorder = (core_type != "ooo");
+  //correct uppercase OOO
+  inorder = (core_type != "OOO");
+  
 }
 /* }}} */
 
@@ -247,29 +252,42 @@ StallCause FULoad::canIssue(Dinst *dinst) {
   /* canIssue {{{1 */
 
   printf("Resource::FULoad: :Canissue Entering Inst %ld\n", dinst->getID());
+
+//FULoad::freeEntries <=0
   if (freeEntries <= 0) {
+    printf("Resource::FULoad::can_issue FreeEntries<0 dinstID %ld\n", dinst->getID());
     I(freeEntries == 0);  // Can't be negative
     return OutsLoadsStall;
   }
+
+//LSQ::freeEntries<0
   if (!lsq->hasFreeEntries()) {
+    printf("Resource::FULoad::can_issue !lsq->hasFreeEntries() dinstID %ld\n", dinst->getID());
     return OutsLoadsStall;
   }
 
+//LSQ::unresloved>0 ; inorder='uppercase OOO"
   if (inorder) {
     if (lsq->hasPendingResolution()) {
-      return OutsLoadsStall;
+    printf("Resource::FULoad::can_issue inorder dinstID %ld\n", dinst->getID());
+    return OutsLoadsStall;
     }
   }
 
+/* Insert dinst in LSQFull (in-order) */
   if (!lsq->insert(dinst)) {
+    printf("Resource::FULoad::can_issue !lsq->insert(dinst) dinstID %ld\n", dinst->getID());
     return OutsLoadsStall;
   }
 
+/*CanIssue starts from here */
   storeset->insert(dinst);
   // call vtage->rename() here????
 
+/*decFreeEntries():: lsq->unresolved++; lsq->freeEntries--;*/
   lsq->decFreeEntries();
 
+//FULoad::freeEntries--
   if (!LSQlateAlloc) {
     freeEntries--;
   }
@@ -282,6 +300,7 @@ void FULoad::executing(Dinst *dinst) {
   /* executing {{{1 */
   printf("Resource::FULoad:: executing Entering Inst %ld\n", dinst->getID());
 
+/*LSQlateAlloc = false*/
   if (LSQlateAlloc) {
     freeEntries--;
   }
@@ -301,7 +320,7 @@ void FULoad::executing(Dinst *dinst) {
     storeset->stldViolation(qdinst, dinst);
   }
 
-  if (dinst->isLoadForwarded() || scb->is_ld_forward(dinst->getAddr()) || !enableDcache) {
+  if (dinst->isLoadForwarded() || scb->is_ld_forward(dinst->getAddr()) || !enableDcache || dinst->is_destroy_transient()) {
     performedCB::scheduleAbs(when + LSDelay, this, dinst);
     dinst->markDispatched();
 
@@ -376,11 +395,13 @@ bool FULoad::preretire(Dinst *dinst, [[maybe_unused]] bool flushing)
     return false;
   }
 
+  if(!dinst->is_try_flush_transient()){
 #ifdef USE_PNR
   freeEntries++;
 #endif
 
   pref->ret(dinst);
+  }
 
   printf("Resource::FULoad:: preretire Leaving Inst %ld\n", dinst->getID());
   return true;
@@ -395,10 +416,12 @@ bool FULoad::retire(Dinst *dinst, [[maybe_unused]] bool flushing)
     return false;
   }
 
-  lsq->incFreeEntries();
+  if(!dinst->is_try_flush_transient()){
+    lsq->incFreeEntries();
 #ifndef USE_PNR
   freeEntries++;
 #endif
+  
 
 #ifdef MEM_TSO2
   if (DL1->Invalid(dinst->getAddr())) {
@@ -408,7 +431,9 @@ bool FULoad::retire(Dinst *dinst, [[maybe_unused]] bool flushing)
   }
 #endif
 
+/*LSQFull ends here*/
   lsq->remove(dinst);
+  
   // VTAGE->updateVtageTables() here ???? vtage validation
 
 #if 0
@@ -416,7 +441,7 @@ bool FULoad::retire(Dinst *dinst, [[maybe_unused]] bool flushing)
   if(dinst->isReplay() && !flushing)
     replayManage(dinst);
 #endif
-
+  }
   setStats(dinst);
   printf("Resource::FULoad:: retire Leaving Inst %ld\n", dinst->getID());
 
@@ -426,11 +451,44 @@ bool FULoad::retire(Dinst *dinst, [[maybe_unused]] bool flushing)
 
 bool FULoad::flushed(Dinst *dinst)
 /* flushing {{{1 */
+
 {
   (void)dinst;
   return true;
 }
 /* }}} */
+
+bool FULoad::try_flushed(Dinst *dinst)
+/* flushing {{{1 */
+{ 
+//unresolved-- in not happening when try_flush
+ dinst->mark_try_flush_transient();
+ if(!dinst->isRetired() && dinst->isExecuted()) {
+      freeEntries++;
+      lsq->incFreeEntries();
+      lsq->remove(dinst);
+      dinst->clearRATEntry();
+  } else if (dinst->isExecuting() || dinst->isIssued()){
+    /* possible lsq->resolved-- is not done here*/
+      freeEntries++;
+      lsq->incFreeEntries();
+      lsq->remove(dinst);
+      storeset->remove(dinst);
+      dinst->clearRATEntry();
+  }
+  else if (dinst->isRenamed()) {
+      freeEntries++;
+      lsq->incFreeEntries();
+      lsq->remove(dinst);
+      storeset->remove(dinst);
+      dinst->clearRATEntry();
+  
+  } 
+  
+  return true;
+}
+/* }}} */
+
 
 void FULoad::performed(Dinst *dinst) {
   /* memory operation was globally performed {{{1 */
@@ -538,13 +596,7 @@ void FUStore::executed(Dinst *dinst) {
 
 bool FUStore::preretire(Dinst *dinst, bool flushing) {
   /* retire {{{1 */
-  /* if(dinst->getCluster()->get_reg_pool() >= dinst->getCluster()->get_nregs()-2) {
-     return false;
-       }
-  if( dinst->getCluster()->get_window_size() == dinst->getCluster()->get_window_maxsize()){
-     return false;
-  }*/
-
+ 
   printf("Resource::FUStore::preretire Entering Inst %ld\n", dinst->getID());
   if (!dinst->isExecuted()) {
     return false;
@@ -591,13 +643,25 @@ bool FUStore::flushed(Dinst *dinst)
 }
 /* }}} */
 
+bool FUStore::try_flushed(Dinst *dinst)
+/* flushing {{{1 */
+{ 
+  freeEntries++;
+  lsq->remove(dinst);
+  lsq->incFreeEntries();
+  storeset->remove(dinst);
+  performed(dinst);
+  return true;
+}
+/* }}} */
 void FUStore::performed(Dinst *dinst) {
   /* memory operation was globally performed {{{1 */
   printf("Resource::FUStore::performed Entering Inst %ld\n", dinst->getID());
 
   setStats(dinst);  // Not retire for stores
-
-  I(!dinst->isPerformed());
+  if(!dinst->isTransient()) {
+    I(!dinst->isPerformed());
+  }
   if (dinst->isRetired()) {
     dinst->destroy();
   }
@@ -697,6 +761,14 @@ bool FUGeneric::flushed(Dinst *dinst)
 }
 /* }}} */
 
+bool FUGeneric::try_flushed(Dinst *dinst)
+/* flushing {{{1 */
+{
+  (void)dinst;
+  return true;
+}
+/* }}} */
+
 void FUGeneric::performed(Dinst *dinst) {
   /* memory operation was globally performed {{{1 */
   dinst->markPerformed();
@@ -775,6 +847,16 @@ bool FUBranch::flushed(Dinst *dinst)
   return true;
 }
 /* }}} */
+
+bool FUBranch::try_flushed(Dinst *dinst)
+/* flushing {{{1 */
+{
+  freeBranches++;
+  (void)dinst;
+  return true;
+}
+/* }}} */
+
 
 void FUBranch::performed(Dinst *dinst) {
   /* memory operation was globally performed {{{1 */
@@ -914,6 +996,15 @@ bool FURALU::flushed(Dinst *dinst)
   return true;
 }
 /* }}} */
+
+bool FURALU::try_flushed(Dinst *dinst)
+/* flushing {{{1 */
+{
+  (void)dinst;
+  return true;
+}
+/* }}} */
+
 
 void FURALU::performed(Dinst *dinst)
 /* memory operation was globally performed {{{1 */

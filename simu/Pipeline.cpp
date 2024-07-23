@@ -165,6 +165,7 @@ void Pipeline::flush_transient_inst_from_buffer() {
             dinst->getID());  
          dinst->destroyTransientInst();
          } else {
+            dinst->mark_destroy_transient();
             printf("Pipeline::flush:: NOT destroying transient bucket ::BCOZ  PRESENT IN ROB ::size is %lu and instID is %ld\n",bucket->size(), 
             dinst->getID());  
          //push to a new buffer_rob_shadow;

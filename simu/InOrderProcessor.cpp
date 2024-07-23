@@ -57,6 +57,7 @@ void InOrderProcessor::executing(Dinst *dinst) { (void)dinst; }
 void InOrderProcessor::executed(Dinst *dinst) { (void)dinst; }
 
 void InOrderProcessor::flushed(Dinst *dinst) { (void)dinst; }
+void InOrderProcessor::try_flush(Dinst *dinst) { (void)dinst; }
 
 StallCause InOrderProcessor::add_inst(Dinst *dinst) {
   const Instruction *inst = dinst->getInst();

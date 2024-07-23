@@ -171,7 +171,7 @@ void DepWindow::executed(Dinst *dinst) {
         dinst->getID(),dstReady->getID(),dstReady->isTransient());
      
     
-    if(dstReady->is_to_be_destroyed_transient() && !dstReady->hasDeps()) {
+    if(dstReady->is_to_be_destroyed() && !dstReady->hasDeps()) {
       //dstReady->clear_to_be_destroyed_transient();
       dstReady->destroyTransientInst();
       continue;
@@ -179,7 +179,7 @@ void DepWindow::executed(Dinst *dinst) {
        
     
 
-    I(!dstReady->isExecuted());//fails assertion inst 691
+    I(!dstReady->isExecuted());
     
 
 //<<<<<<< HEAD

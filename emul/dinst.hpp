@@ -176,7 +176,8 @@ private:
   bool present_in_rob;
   bool flush_transient;
   bool try_flush_transient;
-  bool to_be_destroyed_transient;
+  bool to_be_destroyed;
+  bool destroy_transient;
   bool in_cluster;
   // END Boolean flags
 
@@ -280,17 +281,10 @@ private:
     is_rrob                     = false;
     flush_transient             = false;
     try_flush_transient         = false;
-    to_be_destroyed_transient   = false;
+    to_be_destroyed             = false;
+    destroy_transient           = false;
     present_in_rob              = false;
     in_cluster                  = false;
-/*=======
-
-    transient       = false;
-    del_entry       = false;
-    is_rrob         = false;
-    flush_transient = false;
-    present_in_rob  = false;
->>>>>>> upstream/main*/
 
 #ifdef DINST_PARENT
     pend[0].setParentDinst(0);
@@ -336,14 +330,24 @@ public:
     transient = true;
     // ID = currentID_trans++;
   }
-  void mark_to_be_destroyed_transient () {  
-    to_be_destroyed_transient = true; 
-    printf("Setting mark_to_be_destroyed_transient ::dinst %ld\n", ID);
+  void mark_to_be_destroyed() {  
+    to_be_destroyed = true; 
+    //printf("Setting mark_to_be_destroyed_transient ::dinst %ld\n", this->ID);
   } 
   
-  void clear_to_be_destroyed_transient () {  
-    to_be_destroyed_transient = false; 
+  void clear_to_be_destroyed() {  
+    to_be_destroyed = false; 
     printf("Clearing is_to_be_destroyed_transient to false ::dinst %ld\n", ID);
+  } 
+
+  void mark_destroy_transient() {  
+    destroy_transient = true; 
+    //printf("Setting mark_to_be_destroyed_transient ::dinst %ld\n", this->ID);
+  } 
+  
+  bool is_destroy_transient() {  
+   return  to_be_destroyed; 
+    //printf("Clearing is_to_be_destroyed_transient to false ::dinst %ld\n", ID);
   } 
 
 //<<<<<<< HEAD
@@ -389,8 +393,7 @@ public:
   bool has_stats() const { return keep_stats; }
   bool is_del_entry() { return del_entry; }
   bool is_present_rrob() { return is_rrob; }
-//<<<<<<< HEAD
-  bool is_to_be_destroyed_transient () {  return to_be_destroyed_transient; } 
+  bool is_to_be_destroyed() {  return to_be_destroyed; } 
 #if 0
   void setLdCache() { isLdCache = true; }
   bool getLdCache() { return isLdCache; }
@@ -956,7 +959,9 @@ public:
     std::cout<<"Dinst::markperformed:: inst asm is "<<getInst()->get_asm()<<std::endl;
 //=======
 //>>>>>>> upstream/main
-    GI(!inst.isLoad(), executed != 0);
+    if(!this->isTransient()) {
+      GI(!inst.isLoad(), executed != 0);
+      }
 
     performed = true;
   }

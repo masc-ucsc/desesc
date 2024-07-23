@@ -105,6 +105,7 @@ protected:
   void    fetch();
 
   virtual StallCause add_inst(Dinst *dinst) = 0;
+  virtual void try_flush(Dinst *dinst)      = 0;
 
   bool use_stats;  // Stats mode to use when dinst->has_stats() is not available
 

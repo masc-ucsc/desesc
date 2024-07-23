@@ -88,6 +88,7 @@ public:
   virtual bool       retire(Dinst *dinst, bool flushing)    = 0;
   virtual void       performed(Dinst *dinst)                = 0;
   virtual bool       flushed(Dinst *dinst)                  = 0;
+  virtual bool       try_flushed(Dinst *dinst)              = 0;
 
   using executingCB = CallbackMember1<Resource, Dinst *, &Resource::executing>;
   using executedCB  = CallbackMember1<Resource, Dinst *, &Resource::executed>;
@@ -157,13 +158,14 @@ public:
          std::shared_ptr<Prefetcher> pref, std::shared_ptr<Store_buffer> scb, TimeDelta_t lsdelay, TimeDelta_t l,
          std::shared_ptr<Gmemory_system> ms, int32_t size, int32_t id, const std::string &cad);
 
-  StallCause canIssue(Dinst *dinst) final;
-  void       executing(Dinst *dinst) final;
-  void       executed(Dinst *dinst) final;
+  StallCause canIssue(Dinst *dinst)                 final;
+  void       executing(Dinst *dinst)                final;
+  void       executed(Dinst *dinst)                 final;
   bool       preretire(Dinst *dinst, bool flushing) final;
-  bool       retire(Dinst *dinst, bool flushing) final;
-  void       performed(Dinst *dinst) final;
-  bool       flushed(Dinst *dinst) final;
+  bool       retire(Dinst *dinst, bool flushing)    final;
+  void       performed(Dinst *dinst)                final;
+  bool       flushed(Dinst *dinst)                  final;
+  bool       try_flushed(Dinst *dinst)              final;
 };
 
 class FUStore : public MemResource {
@@ -176,13 +178,14 @@ public:
           std::shared_ptr<Prefetcher> pref, std::shared_ptr<Store_buffer> scb, TimeDelta_t l, std::shared_ptr<Gmemory_system> ms,
           int32_t size, int32_t id, const std::string &cad);
 
-  StallCause canIssue(Dinst *dinst) final;
-  void       executing(Dinst *dinst) final;
-  void       executed(Dinst *dinst) final;
+  StallCause canIssue(Dinst *dinst)                 final;
+  void       executing(Dinst *dinst)                final;
+  void       executed(Dinst *dinst)                 final;
   bool       preretire(Dinst *dinst, bool flushing) final;
-  bool       retire(Dinst *dinst, bool flushing) final;
-  void       performed(Dinst *dinst) final;
-  bool       flushed(Dinst *dinst) final;
+  bool       retire(Dinst *dinst, bool flushing)    final;
+  void       performed(Dinst *dinst)                final;
+  bool       flushed(Dinst *dinst)                  final;
+  bool       try_flushed(Dinst *dinst)              final;
 };
 
 class FUGeneric : public Resource {
@@ -191,13 +194,14 @@ protected:
 public:
   FUGeneric(Opcode type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, TimeDelta_t l, uint32_t cpuid);
 
-  StallCause canIssue(Dinst *dinst) final;
-  void       executing(Dinst *dinst) final;
-  void       executed(Dinst *dinst) final;
+  StallCause canIssue(Dinst *dinst)                 final;
+  void       executing(Dinst *dinst)                final;
+  void       executed(Dinst *dinst)                 final;
   bool       preretire(Dinst *dinst, bool flushing) final;
-  bool       retire(Dinst *dinst, bool flushing) final;
-  void       performed(Dinst *dinst) final;
-  bool       flushed(Dinst *dinst) final;
+  bool       retire(Dinst *dinst, bool flushing)    final;
+  void       performed(Dinst *dinst)                final;
+  bool       flushed(Dinst *dinst)                  final;
+  bool       try_flushed(Dinst *dinst)              final;
 };
 
 class FUBranch : public Resource {
@@ -209,13 +213,14 @@ protected:
 public:
   FUBranch(Opcode type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, TimeDelta_t l, uint32_t cpuid, int32_t mb, bool dom);
 
-  StallCause canIssue(Dinst *dinst) final;
-  void       executing(Dinst *dinst) final;
-  void       executed(Dinst *dinst) final;
+  StallCause canIssue(Dinst *dinst)                 final;
+  void       executing(Dinst *dinst)                final;
+  void       executed(Dinst *dinst)                 final;
   bool       preretire(Dinst *dinst, bool flushing) final;
-  bool       retire(Dinst *dinst, bool flushing) final;
-  void       performed(Dinst *dinst) final;
-  bool       flushed(Dinst *dinst) final;
+  bool       retire(Dinst *dinst, bool flushing)    final;
+  void       performed(Dinst *dinst)                final;
+  bool       flushed(Dinst *dinst)                  final;
+  bool       try_flushed(Dinst *dinst)              final;
 };
 
 class FURALU : public Resource {
@@ -228,11 +233,12 @@ protected:
 public:
   FURALU(Opcode type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, TimeDelta_t l, int32_t id);
 
-  StallCause canIssue(Dinst *dinst) final;
-  void       executing(Dinst *dinst) final;
-  void       executed(Dinst *dinst) final;
+  StallCause canIssue(Dinst *dinst)                 final;
+  void       executing(Dinst *dinst)                final;
+  void       executed(Dinst *dinst)                 final;
   bool       preretire(Dinst *dinst, bool flushing) final;
-  bool       retire(Dinst *dinst, bool flushing) final;
-  void       performed(Dinst *dinst) final;
-  bool       flushed(Dinst *dinst) final;
+  bool       retire(Dinst *dinst, bool flushing)    final;
+  void       performed(Dinst *dinst)                final;
+  bool       flushed(Dinst *dinst)                  final;
+  bool       try_flushed(Dinst *dinst)              final;
 };

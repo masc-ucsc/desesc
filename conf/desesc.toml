@@ -16,31 +16,41 @@ emul = ["drom_emu"]
 [drom_emu]
 type      = "dromajo"
 # Load a Checkpoint option
-#load_orginal_path      = "../benchmarks/gcc_fgcse/gcc_fgcse"
-load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/gcc_fgcse/gcc_fgcse"
+#load_orginal_path_      = "../benchmarks/gcc_fgcse/gcc_fgcse"
+
+#load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/gcc_fgcse/gcc_fgcse"
 #load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/gcc_fipa-pta/gcc_fipa-pta"
+#.01%
 #load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/exchange2/exchange2"
-#load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/deepsjeng/deepsjeng"
+
+#load_FIXME      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/deepsjeng/deepsjeng"
+
 #load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/omnetpp/omnetpp"
 #load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/mcf/mcf"
-#leela_load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/leela/leela"
+
+#leela_load_FIXME 
+#leela     = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/leela/leela"
+#x264_load_FIXME 
 #load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/x264/x264"
-#xalancebk_load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/xalancebmk/xalancebmk"
-#load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/x264/x264"
+#xalancebk_load_FIXME 
+#xalancebk = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/xalancebmk/xalancebmk"
+#xz_cpu2006docs_load_FIXME 
 #load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/xz_cpu2006docs/xz_cpu2006docs"
+
 #load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/xz_cld/xz_cld"
 #load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/gcc_fselective-scheduling/gcc_fselective-scheduling"
 #load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/perlbench_checkspam/perlbench_checkspam"
 #load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/perlbench_diffmail/perlbench_diffmail"
-#load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/perlbench_splitmail/perlbench_splitmail"
+
+load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/perlbench_splitmail/perlbench_splitmail"
 
 # Load a Binary
 #bench      = "conf/dhrystone.riscv"
 start_roi = false
 rabbit    = 1024
 detail    = 1024
-time      = 30000
-
+#time      = 30000
+time      =1000000
 [rand_emu]
 type = "random"  # Generate random instructions (coverage testing?)
 

@@ -97,7 +97,10 @@ bool OoOProcessor::advance_clock_drain() {
   if (replayRecovering) {
     if ((rROB.empty() && ROB.empty())) {
       // Recovering done
-      I(flushing);
+      //july2024_lima_orgI(flushing);
+      //orgI(flushing);
+      //I(flushing);
+
       replayRecovering = false;
       flushing         = false;
 
@@ -238,6 +241,9 @@ void OoOProcessor::flushed(Dinst *dinst)
 }
 
 StallCause OoOProcessor::add_inst(Dinst *dinst) {
+  if(dinst->isTransient()) {
+    printf("OOOProc::add_inst_Transient Entering for  dinstID %ld\n", dinst->getID());
+  }
   if (replayRecovering && dinst->getID() > replayID) {
     Tracer::stage(dinst, "Wrep");
     return ReplaysStall;
@@ -264,6 +270,7 @@ StallCause OoOProcessor::add_inst(Dinst *dinst) {
 
   StallCause sc = cluster->canIssue(dinst);
   if (sc != NoStall) {
+    printf("OOOP::add_inst !cluster->canissue wcls dinstID %ld\n", dinst->getID());
     Tracer::stage(dinst, "Wcls");
     return sc;
   }
@@ -475,6 +482,14 @@ void OoOProcessor::retire_lock_check()
 }
 /* }}} */
 
+void OoOProcessor::try_flush(Dinst *dinst) {
+  printf("OOOProcessor::try_flush for Inst %ld\n", dinst->getID());
+  if (dinst->getInst()->hasDstRegister()) {
+    nTotalRegs++;
+  }
+}
+
+  
 void OoOProcessor::retire() {
 //<<<<<<< HEAD
   printf("\nOOOProc::retire Entering  \n");

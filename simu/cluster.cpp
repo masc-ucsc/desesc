@@ -214,14 +214,17 @@ void Cluster::select(Dinst *dinst) {
 
 StallCause Cluster::canIssue(Dinst *dinst) const {
   if (regPool <= 0) {
+    printf("Cluster::can_issue SmallREGstall dinstID %ld\n", dinst->getID());
     return SmallREGStall;
   }
 
   if (windowSize <= 0) {
+    printf("Cluster::can_issue SmallWinstall dinstID %ld\n", dinst->getID());
     return SmallWinStall;
   }
 
   StallCause sc = window.canIssue(dinst);
+  //always NoStall
   if (sc != NoStall) {
     return sc;
   }
@@ -279,6 +282,13 @@ void ExecutingCluster::flushed(Dinst *dinst) {
   // delEntry();
 }
 
+void ExecutingCluster::try_flushed(Dinst *dinst) {
+  
+  bool done = dinst->getClusterResource()->try_flushed(dinst);
+  if (!done) {
+    printf(" " );
+  }
+}
 void ExecutingCluster::executed(Dinst *dinst) {
   window.executed(dinst);
   dinst->getGProc()->executed(dinst);
@@ -341,6 +351,16 @@ void ExecutedCluster::flushed(Dinst *dinst) {
   // if(Executed cluster ) then delentry else return//TODO
   // delEntry();
 }
+
+
+void ExecutedCluster::try_flushed(Dinst *dinst) {
+  
+  bool done = dinst->getClusterResource()->try_flushed(dinst);
+  if (!done) {
+    printf(" " );
+  }
+}
+
 
 bool ExecutedCluster::retire(Dinst *dinst, bool reply) {
   printf("ClusterExecuted::retire:: Entering Insit %ld regPool is %d and nRegs is %d\n",
@@ -414,6 +434,14 @@ bool RetiredCluster::retire(Dinst *dinst, bool reply) {
 
   return true;
 }
+void RetiredCluster::try_flushed(Dinst *dinst) {
+  
+  bool done = dinst->getClusterResource()->try_flushed(dinst);
+  if (!done) {
+    printf(" " );
+  }
+}
+
 void RetiredCluster::flushed(Dinst *dinst) {
   bool done = dinst->getClusterResource()->flushed(dinst);
   if (!done) {

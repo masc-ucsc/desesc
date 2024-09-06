@@ -16,6 +16,8 @@ cc_library(
     deps = [
         "//core:core",
         "//emul:emul",
+        "@superbp//batage",
+        #"@superbp//emulator:emul",
     ]
 )
 

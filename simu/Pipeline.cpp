@@ -1,7 +1,7 @@
 // See LICENSE for details.
 
 #include "pipeline.hpp"
-
+#include <vector>
 #include "config.hpp"
 #include "gprocessor.hpp"
 
@@ -31,11 +31,14 @@ Pipeline::Pipeline(size_t s, size_t fetch, int32_t maxReqs)
     , MaxIRequests(maxReqs)
     , nIRequests(maxReqs)
     , buffer(s + 1 + maxReqs)
+    , transient_buffer(s + 1 + maxReqs)
+
 
 {
   maxItemCntr = 0;
   minItemCntr = 0;
 
+ 
   bucketPool.reserve(bucketPoolMaxSize);
   I(bucketPool.empty());
 
@@ -113,6 +116,10 @@ void Pipeline::doneItem(IBucket *b) {
 
   bucketPool.push_back(b);
 }
+bool Pipeline::transient_buffer_empty() {
+   return transient_buffer.empty();
+
+}
 
 /*void Pipeline::flush_transient_inst_from_buffer() {
 
@@ -157,36 +164,70 @@ void Pipeline::flush_transient_inst_from_buffer() {
           printf("Pipeline::flush::bucket.size is  %lu and instID %ld and Transient is %b\n",bucket->size(), dinst->getID(), dinst->isTransient()); 
         }
         bucket->pop();
-        // I(dinst->isTransient());
+        I(dinst->isTransient());
         if (dinst->isTransient() && !dinst->is_present_in_rob()) {
 //<<<<<<< HEAD
          I(dinst->isTransient());
          printf("Pipeline::flush:: destroying transient bucket size is %lu and instID is %ld\n",bucket->size(), 
             dinst->getID());  
          dinst->destroyTransientInst();
-         } else {
+         } else if(dinst->isTransient())  {
             dinst->mark_destroy_transient();
             printf("Pipeline::flush:: NOT destroying transient bucket ::BCOZ  PRESENT IN ROB ::size is %lu and instID is %ld\n",bucket->size(), 
             dinst->getID());  
          //push to a new buffer_rob_shadow;
-         }
-/*=======
-          I(dinst->isTransient());
-          dinst->destroyTransientInst();
-        } else {
-          // push to a new buffer_rob_shadow;
-        }
->>>>>>> upstream/main*/
-      }
-      // buffer.pop();
+         } else if (!dinst->isTransient()) {
+            //transient_buffer.push(bucket);
+             
+            //instQ.push(bucket);
+            printf("Pipeline::flush:: NOT destroying NON transient bucket ::::size is %lu and instID is %ld\n",bucket->size(),dinst->getID());  
+                }
+      } // while_!bucket_empty buffer.pop();
       if (bucket->empty()) {
         printf("Pipeline::flush::bucket.empty () \n"); 
         I(bucket->empty());
         bucket->clock = 0;
         bucketPool.push_back(bucket);
       }
-    }
+    } // 
+  }// while_!bucket_empty_upper_loop
+}//func_end
+
+IBucket *Pipeline::next_item_transient_adding_to_rob() {
+  if(transient_buffer.empty()) {
+    clearItems();
+    printf("Pipeline::nextItemtran return 0 ::buffer.top()  \n"); 
+    return 0;
   }
+  printf("Pipeline::nextItemtran adding_to_rob::buffer.top()  \n"); 
+  //I(!buffer.empty());
+  //I(buffer.top() != 0);
+  IBucket *b = transient_buffer.top();
+  printf("Pipeline::nextItemtran after adding_to_rob::buffer.top()  \n"); 
+  I(!transient_buffer.empty());
+  transient_buffer.pop();
+  /*if (b->empty()) {
+    printf("Pipeline::flush::bucket.empty () \n"); 
+   // I(b->empty());
+    b->clock = 0;
+    bucketPool.push_back(b);
+  }*/
+      //clearItems();
+  //I(!b->empty());
+  //I(!b->cleanItem);
+
+  //I(!b->empty());
+  //I(b->top() != 0);
+
+//<<<<<<< HEAD
+  printf("Pipeline::buffer->nextItem()::returns! \n"); 
+  if(b) {
+    return b;
+  } else {
+    printf(" Pipeline::next_item_transient_adding_to_rob return no buffer.top \n");
+    return 0;
+  }
+
 }
 IBucket *Pipeline::next_item_transient() {
   printf("Pipeline::nextItemtran::buffer.top()  \n"); 

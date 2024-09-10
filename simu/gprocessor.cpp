@@ -12,6 +12,8 @@
 #include "gmemory_system.hpp"
 #include "report.hpp"
 #include "tracer.hpp"
+#include "addresspredictor.hpp"
+
 
 GProcessor::GProcessor(std::shared_ptr<Gmemory_system> gm, Hartid_t i)
     : Simu_base(gm, i)
@@ -115,6 +117,7 @@ void GProcessor::fetch() {
 
   if (spaceInInstQueue < FetchWidth) {
     printf("gprocessor::No_new_fetch:: spaceInInstQueue < FetchWidth!!!\n");
+    printf("gprocessor::spaceInInstQueue is %d and FetchWidth is %d \n",spaceInInstQueue, FetchWidth);
     return;
   }
 
@@ -160,9 +163,11 @@ void GProcessor::fetch() {
    // }
 
     //FIXME::if(!ifid->isBlocked() && do_random_transients)
-    if(!ifid->isBlocked()) {
+    /*if(!ifid->isBlocked() && do_random_transients) {
      flush_transient_inst_on_fetch_ready();
-    }
+     //do_random_transients = false;
+    }*/
+
 
 
 
@@ -178,8 +183,9 @@ void GProcessor::fetch() {
 void GProcessor::flush_transient_inst_on_fetch_ready() {
   printf("gprocessor::flush_transient_pipeline_instq_rob on before new fetch!!!\n");
  
-  pipeQ.pipeLine.flush_transient_inst_from_buffer();
+  spaceInInstQueue = InstQueueSize;
   flush_transient_inst_from_inst_queue();
+  pipeQ.pipeLine.flush_transient_inst_from_buffer();
   flush_transient_from_rob();
 }
 void GProcessor::dump_rob()
@@ -496,6 +502,9 @@ void GProcessor::flush_transient_inst_from_inst_queue() {
          // dinst->destroyTransientInst();
 //>>>>>>> upstream/main
         }
+         else if (dinst->isTransient()) {
+            printf("Gprocessor::InstQflush:: NOT destroying NON transient bucket ::::size is %lu and instID is %ld\n",bucket->size(),dinst->getID());  
+      }
       }
       if (bucket->empty()) {  // FIXME
         I(bucket->empty());
@@ -707,6 +716,8 @@ void GProcessor:: add_inst_transient_on_branch_miss(IBucket *bucket, Addr_t pc) 
            //pipeQ.pipeLine.readyItem(bucket);//must bucket-> markedfetch()
            printf("gProcessor::Yahoo!!! Bucket Inst Created %ld and bucket size is %lu\n", 
              alu_dinst->getID(), bucket->size());
+           std::cout<<"Gprocessor::add_inst::Transient :: inst asm is "<<alu_dinst->getInst()->get_asm()<<std::endl;
+
          }
          i++;
          pc = pc + 4;
@@ -816,9 +827,67 @@ void GProcessor::buildInstStats(const std::string &txt) {
   }
 }
 */
+/*void GProcessor:: add_non_flushed_non_transient_inst_back_to_inst_queue() {
+  
+  int32_t i = 0;  // Instructions executed counter
+  IBucket *b = pipeQ.pipeLine.next_item_transient_adding_to_rob();
+  I(!b->empty());
+  do {
+  Dinst *dinst = b->top();
+  if (i >= IssueWidth) {
+    return;
+  }
+  dinst->setGProc(this);
+  StallCause c = add_inst(dinst);
+  if (c != NoStall) {
+    if (i < RealisticWidth) {
+      nStall[c]->add(RealisticWidth - i, dinst->has_stats());
+        }
+        return ;
+      }
+      i++;
+      b->pop();
+    } while (!b->empty());
+
+    pipeQ.pipeLine.doneItem(b);
+}*/
+/*
+  if (bucket) {
+           //alu_dinst->setFetchTime();
+           bucket->push(dinst);
+           //Tracer::stage(alu_dinst, "TIF");
+           //spaceInInstQueue -= bucket->size();
+           //pipeQ.pipeLine.readyItem(bucket);//must bucket-> markedfetch()
+           printf("gProcessor::Yahoo!!! Bucket Inst Created %ld and bucket size is %lu\n", 
+             alu_dinst->getID(), bucket->size());
+           std::cout<<"Gprocessor::add_inst::Transient :: inst asm is "<<alu_dinst->getInst()->get_asm()<<std::endl;
+
+         }
+         
+      pipeQ.pipeLine.readyItem(bucket);
+   }*/
+//must bucket-> markedfetch() after loop
+/*
+      //=======
+  //I(!pipeQ.instQueue.empty());
+  IBucket *b = pipeQ.pipeLine.next_item_transient_adding_to_rob();
+  if(b) {  
+  while (!b->empty()){
+    if (b) {
+        I(!b->empty());
+        pipeQ.instQueue.push(b);
+    }
+    //b->pop();
+    b = pipeQ.pipeLine.next_item_transient_adding_to_rob();
+    //if(b) 
+  }
+  }*/
+
+
 int32_t GProcessor::issue() {
   int32_t i = 0;  // Instructions executed counter
-
+  
+  
   I(!pipeQ.instQueue.empty());
 
   do {
@@ -871,6 +940,20 @@ bool GProcessor::decode_stage() {
     return true;
   }
 
+  /*if(!pipeQ.pipeLine.transient_buffer_empty()) {
+    if (spaceInInstQueue >= FetchWidth) {
+      IBucket *bucket = pipeQ.pipeLine.next_item_transient_adding_to_rob();
+      if (bucket) {
+        I(!bucket->empty());
+        spaceInInstQueue -= bucket->size();
+        pipeQ.instQueue.push(bucket);
+    }else {
+      noFetch2.inc(use_stats);
+    }
+ } else {
+    noFetch.inc(use_stats);
+  }
+  }*/
   // ID Stage (insert to instQueue)
   if (spaceInInstQueue >= FetchWidth) {
     IBucket *bucket = pipeQ.pipeLine.nextItem();

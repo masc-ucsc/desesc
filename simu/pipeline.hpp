@@ -25,6 +25,7 @@ private:
   const int32_t        MaxIRequests;
   int32_t              nIRequests;
   FastQueue<IBucket *> buffer;
+  FastQueue<IBucket *> transient_buffer;
 
   typedef std::vector<IBucket *> IBucketCont;
   IBucketCont                    bucketPool;
@@ -46,13 +47,16 @@ public:
 
   void cleanMark();
 
+  //FastQueue<Dinst *>   transient_buffer;
   IBucket *newItem();
   bool     hasOutstandingItems() const;
   void     readyItem(IBucket *b);
   void     doneItem(IBucket *b);
   void     flush_transient_inst_from_buffer();
+  bool     transient_buffer_empty();
   IBucket *nextItem();
   IBucket *next_item_transient();
+  IBucket *next_item_transient_adding_to_rob();
 
   size_t size() const { return buffer.size(); }
 };
@@ -95,4 +99,5 @@ public:
 
   Pipeline             pipeLine;
   FastQueue<IBucket *> instQueue;
+
 };

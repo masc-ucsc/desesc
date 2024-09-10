@@ -126,7 +126,9 @@ bool OoOProcessor::advance_clock_drain() {
 
   if (!pipeQ.instQueue.empty()) {
     auto n = issue();
+    printf("OOOprocessor:: spaceInInstQueue Before issue is %d !!!\n",spaceInInstQueue);
     spaceInInstQueue += n;
+    printf("OOOprocessor:: spaceInInstQueue after issue is %d !!!\n",spaceInInstQueue);
   } else if (ROB.empty() && rROB.empty() && !pipeQ.pipeLine.hasOutstandingItems()) {
     return false;
   }
@@ -370,35 +372,55 @@ StallCause OoOProcessor::add_inst(Dinst *dinst) {
     // It already has a src2 dep. It means that it is solved at
     // retirement (Memory consistency. coherence issues)
     
-    printf("OOOProc::add_inst !dinst->isSrc2Ready(): :: src2 RAW dep for%ld \n",dinst->getID());
-    if (RAT[inst->getSrc1()]) {
-      RAT[inst->getSrc1()]->addSrc1(dinst);
-      printf("OOOProc::add_inst addSrc1 %ld\n",dinst->getID());
+    printf("OOOProc::add_inst !dinst->isSrc2Ready(): :: src2 RAW dep for Inst %ld \n",dinst->getID());
+    
+    if(TRAT[inst->getSrc1()]) {
+      TRAT[inst->getSrc1()]->addSrc1(dinst);
+      printf("OOOProc::add_inst TRAT[] addSrc1 %ld\n",dinst->getID());
       n++;
       // MSG("addDep0 %8ld->%8lld %lld",RAT[inst->getSrc1()]->getID(), dinst->getID(), globalClock);
+    } else {
+      if (RAT[inst->getSrc1()]) {
+      RAT[inst->getSrc1()]->addSrc1(dinst);
+      printf("OOOProc::add_inst RAT[] addSrc1 %ld\n",dinst->getID());
+      n++;
+      // MSG("addDep0 %8ld->%8lld %lld",RAT[inst->getSrc1()]->getID(), dinst->getID(), globalClock);
+      }
     }
   } else {
-    printf("OOOProc::add_inst dinst->isSrc2Ready():: no src2 dep:: for %ld \n",dinst->getID());
+    printf("OOOProc::add_inst dinst->isSrc2Ready():: no src2 dep:: for Inst  %ld \n",dinst->getID());
     
-    if (RAT[inst->getSrc1()]) {
-      printf("OOOProc::add_inst addSrc1 %ld\n",dinst->getID());
-      RAT[inst->getSrc1()]->addSrc1(dinst);
+    if(TRAT[inst->getSrc1()]) {
+      TRAT[inst->getSrc1()]->addSrc1(dinst);
+      printf("OOOProc::add_inst addSrc1 TART[] %ld\n",dinst->getID());
       n++;
+      // MSG("addDep0 %8ld->%8lld %lld",RAT[inst->getSrc1()]->getID(), dinst->getID(), globalClock);
+    } else {
+        if (RAT[inst->getSrc1()]) {
+        printf("OOOProc::add_inst addSrc1 RAT[] %ld\n",dinst->getID());
+        RAT[inst->getSrc1()]->addSrc1(dinst);
+        n++;
       // MSG("addDep1 %8ld->%8lld %lld",RAT[inst->getSrc1()]->getID(), dinst->getID(), globalClock);
     } else {
        printf("OOOProc::add_inst dinst->isSrc2Ready():: no RAT Src1 entry for %ld \n",dinst->getID());
     }
+    }
 
-
-    if (RAT[inst->getSrc2()]) {
-      printf("OOOProc::add_inst addSrc2 %ld\n",dinst->getID());
+    if(TRAT[inst->getSrc2()]) {
+      TRAT[inst->getSrc2()]->addSrc2(dinst);
+      printf("OOOProc::add_inst TRAT[] addSrc2 %ld\n",dinst->getID());
+      n++;
+      // MSG("addDep0 %8ld->%8lld %lld",RAT[inst->getSrc1()]->getID(), dinst->getID(), globalClock);
+    } else {
+      if (RAT[inst->getSrc2()]) {
+      printf("OOOProc::add_inst addSrc2 RAT[] %ld\n",dinst->getID());
       RAT[inst->getSrc2()]->addSrc2(dinst);
       n++;
       // MSG("addDep2 %8ld->%8lld %lld",RAT[inst->getSrc2()]->getID(), dinst->getID(), globalClock);
      } else {
         printf("OOOProc::add_inst dinst->isSrc2Ready():: no RAT Src2 entry for %ld \n",dinst->getID());
      }
-
+    }
   }
 #ifdef TRACK_FORWARDING
   avgNumSrc.sample(inst->getnsrc(), dinst->has_stats());
@@ -408,16 +430,28 @@ StallCause OoOProcessor::add_inst(Dinst *dinst) {
 #endif
 
   printf("OOOPROCCESOR::add_inst : RAT entry instID %ld\n", dinst->getID());  
-  dinst->setRAT1Entry(&RAT[inst->getDst1()]);
-  dinst->setRAT2Entry(&RAT[inst->getDst2()]);
+  
+  if(dinst->isTransient()){
+    dinst->setRAT1Entry(&TRAT[inst->getDst1()]);
+    dinst->setRAT2Entry(&TRAT[inst->getDst2()]);
+  } else {
+    dinst->setRAT1Entry(&RAT[inst->getDst1()]);
+    dinst->setRAT2Entry(&RAT[inst->getDst2()]);
+  }
 
   I(!dinst->isExecuted());
 
   dinst->getCluster()->add_inst(dinst);
 //printLimas
   if (!dinst->isExecuted()) {
+    if (dinst->isTransient()) {
+      TRAT[inst->getDst1()] = dinst;
+      TRAT[inst->getDst2()] = dinst;
+    } else {
+
     RAT[inst->getDst1()] = dinst;
     RAT[inst->getDst2()] = dinst;
+  }
   }
 
   I(dinst->getCluster());

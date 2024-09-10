@@ -14,7 +14,8 @@
 #include "pipeline.hpp"
 #include "taskhandler.hpp"
 #include "tracer.hpp"
-
+#include "addresspredictor.hpp"
+#include "gprocessor.hpp"
 extern bool MIMDmode;
 
 // #define ENABLE_FAST_WARMUP 1
@@ -724,7 +725,7 @@ void FetchEngine::unBlockFetch(Dinst *dinst, Time_t missFetchTime) {
   printf("FetchEngine::unBlockFetch  entering dinstID %ld\n", dinst->getID());
   clearMissInst(dinst, missFetchTime);
   is_fetch_next_ready = true;
-
+  dinst->getGProc()->flush_transient_inst_on_fetch_ready();
   I(missFetchTime != 0 || globalClock < 1000);  // The first branch can have time zero fetch
 
   I(globalClock > missFetchTime);

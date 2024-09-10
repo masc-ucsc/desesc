@@ -41,6 +41,7 @@ public:
   void push(Data d) {
     I(nElems <= pipeMask);
 
+    printf("fastqueue ::nElem :: Before is %lu and pipemask is %ld\n",nElems,pipeMask); 
     pipe[end] = d;
     I(end == ((start + nElems) & pipeMask));
     end = (end + 1) & pipeMask;

@@ -54,6 +54,7 @@ private:
   Dinst   *last_serializedST;
 
   RegType_array<Dinst *> RAT;
+  RegType_array<Dinst *> TRAT;
   int32_t                nTotalRegs;
 
   RegType_array<Dinst *> serializeRAT;

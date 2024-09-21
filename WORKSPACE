@@ -94,15 +94,12 @@ http_archive(
 )
 
 # superbp
-http_archive(
+new_git_repository(
   name = "superbp",
-  #strip_prefix = "superbp-b27f6a0054624dcb0306aa3384527a93f7df6870",
-  strip_prefix = "superbp-b3f2acc8acb1a14f5294dc65d3ef45c586ce29d3",
-  #urls = ["https://github.com/masc-ucsc/superbp/archive/b27f6a0054624dcb0306aa3384527a93f7df6870.zip"],
-  urls = ["https://github.com/masc-ucsc/superbp/archive/b3f2acc8acb1a14f5294dc65d3ef45c586ce29d3.zip"],
-  #sha256 = "00665951035d9e00fdb83c3a04206bb653f392bdaee3b053432362adcafee225",
-  sha256 = "185ddd189adcaaf0129b28455a5633995c882c1c3a40aa4ebb2035da8c926cf5",
+  remote = "https://github.com/masc-ucsc/superbp.git",
+  branch = "main",  # or the branch you want to track
 )
+
 # libelf (needed by dromajo in OSX)
 http_archive(
     name = "libelf",

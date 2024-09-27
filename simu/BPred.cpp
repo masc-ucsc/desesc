@@ -575,6 +575,101 @@ Outcome BPIMLI::predict(Dinst *dinst, bool doUpdate, bool doStats) {
   return ptaken ? btb.predict(dinst, doUpdate, doStats) : Outcome::Correct;
 }
 
+
+//class PREDICTOR;
+
+BPSuperbp::BPSuperbp(int32_t i, const std::string &section, const std::string &sname): BPred(i, section, sname, "superbp"), btb(i, section, sname), FetchPredict(Config::get_bool(section, "fetch_predict")) {
+// TODO
+  /*
+  int FetchWidth = Config::get_power2("soc", "core", i, "fetch_width", 1);
+  
+  int bimodalSize = Config::get_power2(section, "bimodal_size", 4);
+  int bwidth      = Config::get_integer(section, "bimodal_width");
+    int blogb          = log2(bimodalSize) - log2(FetchWidth);
+
+  int nhist = Config::get_integer(section, "nhist", 1);
+ 
+  int log2fetchwidth = log2(FetchWidth);
+  */
+  
+  /*int SBP_NUMG = Config::get_integer(section, "SBP_NUMG");
+  int LOG2FETCHWIDTH = Config::get_integer(section, "LOG2FETCHWIDTH");
+  int NUM_TAKEN_BRANCHES = Config::get_integer(section, "NUM_TAKEN_BRANCHES");*/
+  
+  //superbp_p = std::make_unique<PREDICTOR>(SBP_NUMG, LOG2FETCHWIDTH, NUM_TAKEN_BRANCHES);
+  superbp_p = std::make_unique<PREDICTOR>();
+}
+
+  void    BPSuperbp::fetchBoundaryBegin(Dinst *dinst) { (void)dinst; }
+  void    BPSuperbp::fetchBoundaryEnd() {}
+  Outcome BPSuperbp::predict(Dinst *dinst, bool doUpdate, bool doStats) {
+    return btb.predict(dinst, doUpdate, doStats);
+  }
+
+/*
+void BPSuperbp::fetchBoundaryBegin(Dinst *dinst) {
+  if (FetchPredict) {
+    batage_p->fetchBoundaryBegin(dinst->getPC());
+  }
+}
+
+void BPSuperbp::fetchBoundaryEnd() {
+  if (FetchPredict) {
+    batage_p->fetchBoundaryEnd();
+  }
+}
+
+Outcome BPSuperbp::predict(Dinst *dinst, bool doUpdate, bool doStats) {
+  if (dinst->getInst()->isJump() || dinst->getInst()->isFuncRet()) {
+    uint64_t branchTarget = 0; // Check, get it somehow
+    superbp_p->TrackOtherInst(dinst->getPC(), true, branchTarget); // Check
+    dinst->setBiasBranch(true);
+    return btb.predict(dinst, doUpdate, doStats);
+  }
+
+  bool taken = dinst->isTaken();
+
+  if (!FetchPredict) {
+    superbp_p->fetchBoundaryBegin(dinst->getPC());
+  }
+
+  bool bias;
+  // bool     bias = false;
+  Addr_t   pc     = dinst->getPC();
+  uint32_t sign   = 0;
+  bool     ptaken = superbp_p->GetPrediction(pc);  // pass taken for statistics
+  dinst->setBiasBranch(bias);
+  dinst->setBranchSignature(sign);
+
+//  bool no_alloc = true;
+ // if (dinst->isUseLevel3()) {
+//    no_alloc = false;
+ // }
+
+  if (doUpdate) {
+  uint64_t fetch_pc = 0; // Check, get somehow
+  uint8_t offset_within_entry = 0; // Check, get somehow
+    superbp_p->Updatetables(pc, fetch_pc, offset_within_entry, taken); // Check - superbp updates tables and history separately
+    uint64_t branchTarget = 0; // Check - Take from btb
+    superbp_p->Updatehistory(taken, branchTarget);
+  }
+
+  if (!FetchPredict) {
+    imli->fetchBoundaryEnd();
+  }
+
+  if (taken != ptaken) {
+    if (doUpdate) {
+      btb.updateOnly(dinst);
+    }
+    return Outcome::Miss;
+  }
+
+  return ptaken ? btb.predict(dinst, doUpdate, doStats) : Outcome::Correct;
+}
+*/
+
+
 /*****************************************
  * BP2level
  */
@@ -1311,6 +1406,8 @@ std::unique_ptr<BPred> BPredictor::getBPred(int32_t id, const std::string &sec, 
     pred = std::make_unique<BPyags>(id, sec, sname);
   } else if (type == "imli") {
     pred = std::make_unique<BPIMLI>(id, sec, sname);
+  } else if (type == "superbp") {
+    pred = std::make_unique<BPSuperbp>(id, sec, sname);
   } else if (type == "tdata") {
     pred = std::make_unique<BPTData>(id, sec, sname);
   } else if (type == "ldbp") {

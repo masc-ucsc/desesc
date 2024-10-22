@@ -65,6 +65,7 @@ void DepWindow::preSelect(Dinst *dinst) {
   // At the end of the wakeUp, we can start to read the register file
   I(!dinst->hasDeps());
 
+  printf("DepWindow::::Preselect WS Inst %ld\n", dinst->getID());
   dinst->markIssued();
   Tracer::stage(dinst, "WS");
 
@@ -165,9 +166,9 @@ void DepWindow::executed(Dinst *dinst) {
   while (dinst->hasPending()) {
     Dinst *dstReady = dinst->getNextPending();
     I(dstReady);
-    std::cout<<"Depwindow:: Executed::hasPending():: executed_dinst dstReadyInst asm is "<<dstReady->getInst()->get_asm()<<std::endl;
-    std::cout<<"Depwindow:: executed::dstReady Inst asm is "<<dstReady->getInst()->get_asm()<<std::endl;
-    printf("DepWindow::::Executed Inst is %ld and Pending dstdReady inst is %ld and Pending :isTransient is %b\n",
+    std::cout<<"Depwindow_Jose:: Executed::hasPending():: executed_dinst dstReadyInst asm is "<<dstReady->getInst()->get_asm()<<std::endl;
+    std::cout<<"Depwindow_Jose:: executed::dstReady Inst asm is "<<dstReady->getInst()->get_asm()<<std::endl;
+    printf("DepWindow_Jose::::Executed Inst is %ld and Pending dstdReady inst is %ld and Pending :isTransient is %b\n",
         dinst->getID(),dstReady->getID(),dstReady->isTransient());
      
     

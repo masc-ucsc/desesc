@@ -97,9 +97,9 @@ bool FetchEngine::processBranch(Dinst *dinst, uint16_t n2Fetch) {
   if (delay == 0) {
     return false;
   }
-
+  //I(dinst->getGProc());
   setMissInst(dinst);
-  is_fetch_next_ready = false;
+  //is_fetch_next_ready = false;
   setTransientInst(dinst);
 
   Time_t n = (globalClock - lastMissTime);
@@ -115,6 +115,7 @@ bool FetchEngine::processBranch(Dinst *dinst, uint16_t n2Fetch) {
 
   if (fastfix) {
     I(globalClock);
+    //dinst->getGProc()->flush_transient_inst_on_fetch_ready();
     unBlockFetchBPredDelayCB::schedule(delay, this, dinst, globalClock);
   } else {
     dinst->lockFetch(this);
@@ -139,7 +140,7 @@ void FetchEngine::chainPrefDone(Addr_t pc, int distance, Addr_t addr) {
 
 void FetchEngine::chainLoadDone(Dinst *dinst) { (void)dinst; }
 
-void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Hartid_t fid, int32_t n2Fetch) {
+void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Hartid_t fid, int32_t n2Fetch, GProcessor *gproc) {
   printf("FetchEngine::::Entering real fetch !!!\n");
   Addr_t lastpc = 0;
 
@@ -613,10 +614,11 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
 
     eint->execute(fid);
 
+    dinst->setGProc(gproc);
     // dinst->dump("TR");
     Tracer::stage(dinst, "IF");
 //<<<<<<< HEAD
-    printf("FetchEngine::::Fetched Inst is %ld \n", dinst->getID());
+    printf("FetchEngine::::Fetched Inst is %ld at clock cycle %ld \n", dinst->getID(), globalClock);
     std::cout<< "FetchEngine:::Fetched Inst Opcode is "<<dinst->getInst()->getOpcodeName()<<"and asm is "
       <<dinst->getInst()->get_asm()<<std::endl;
     dinst->setFetchTime();
@@ -638,9 +640,11 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
     static int bias_firstPC = 0;
     bias_ninst++;
 #endif
+      //I(dinst->getGProc());
 
     if (dinst->getInst()->isControl()) {
       printf("FetchEngine::realfetch instID before processbranch %ld\n", dinst->getID());  
+      //I(dinst->getGProc());
       bool stall_fetch = processBranch(dinst, n2Fetch);
       if (stall_fetch) {
 #ifdef FETCH_TRACE
@@ -698,20 +702,23 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
   }
 }
 
-void FetchEngine::fetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Hartid_t fid) {
+void FetchEngine::fetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Hartid_t fid,GProcessor *gproc ) {
   // Reset the max number of BB to fetch in this cycle (decreased in processBranch)
   maxBB = max_bb_cycle;
 
   // You pass maxBB because there may be many fetches calls to realfetch in one cycle
   // (thanks to the callbacks)
-  realfetch(bucket, eint, fid, fetch_width);
+  realfetch(bucket, eint, fid, fetch_width, gproc);
 }
 
 void FetchEngine::dump(const std::string &str) const { bpred->dump(str + "_FE"); }
 
 void FetchEngine::unBlockFetchBPredDelay(Dinst *dinst, Time_t missFetchTime) {
-  printf("FetchEngine::unBlockFetchBpreddelay entering dinstID %ld\n", dinst->getID());
+  printf("FetchEngine::unBlockFetchBpreddelay entering dinstID %ld at clock cycle %ld\n", dinst->getID(), globalClock);
+  //dinst->getGProc()->flush_transient_inst_on_fetch_ready();
   clearMissInst(dinst, missFetchTime);
+  dinst->getGProc()->flush_transient_inst_on_fetch_ready();
+  is_fetch_next_ready = true;
 
   Time_t n = (globalClock - missFetchTime);
   avgBranchTime2.sample(n, dinst->has_stats());  // Not short branches
@@ -724,7 +731,7 @@ void FetchEngine::unBlockFetchBPredDelay(Dinst *dinst, Time_t missFetchTime) {
 void FetchEngine::unBlockFetch(Dinst *dinst, Time_t missFetchTime) {
   printf("FetchEngine::unBlockFetch  entering dinstID %ld\n", dinst->getID());
   clearMissInst(dinst, missFetchTime);
-  is_fetch_next_ready = true;
+  //is_fetch_next_ready = true;
   dinst->getGProc()->flush_transient_inst_on_fetch_ready();
   I(missFetchTime != 0 || globalClock < 1000);  // The first branch can have time zero fetch
 

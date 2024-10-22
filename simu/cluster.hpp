@@ -55,10 +55,12 @@ protected:
   static inline std::map<std::string, std::shared_ptr<Resource>>                                                    resourceMap;
   static inline std::map<std::string, std::pair<std::shared_ptr<Cluster>, Opcode_array<std::shared_ptr<Resource>>>> clusterMap;
 
-  /*void delEntry() {
+  void delEntry() {
+    printf("Cluster:::delEntry()windowsize is %d\n", windowSize);
     windowSize++;
+    printf("Cluster:::delEntry()windowsize++ is %d: \n", windowSize);
     I(windowSize <= MaxWinSize);
-  }*/
+  }
   void newEntry() {
     windowSize--;
     I(windowSize >= 0);
@@ -75,10 +77,10 @@ public:
     clusterMap.clear();
   }
 
-  void delEntry() {
+  /*void delEntry() {
     windowSize++;
     I(windowSize <= MaxWinSize);
-  }
+  }*/
   void add_reg_pool() {
     regPool++;
     //I(regPool <= nRegs);
@@ -111,6 +113,7 @@ public:
   virtual bool retire(Dinst *dinst, bool replay) = 0;
   virtual void flushed(Dinst *dinst)             = 0;
   virtual void try_flushed(Dinst *dinst)         = 0;
+  virtual void del_entry_flush(Dinst *dinst)     = 0;
 
   static std::pair<std::shared_ptr<Cluster>, Opcode_array<std::shared_ptr<Resource>>> create(const std::string &clusterName,
                                                                                              uint32_t           pos,
@@ -144,6 +147,7 @@ public:
   bool retire(Dinst *dinst, bool replay);
   void flushed(Dinst *dinst);
   void try_flushed(Dinst *dinst);
+  void del_entry_flush(Dinst *dinst);
 };
 
 class ExecutedCluster : public Cluster {
@@ -157,6 +161,7 @@ public:
   bool retire(Dinst *dinst, bool replay);
   void flushed(Dinst *dinst);
   void try_flushed(Dinst *dinst);
+  void del_entry_flush(Dinst *dinst);
 };
 
 class RetiredCluster : public Cluster {
@@ -169,4 +174,5 @@ public:
   bool retire(Dinst *dinst, bool replay);
   void flushed(Dinst *dinst);
   void try_flushed(Dinst *dinst);
+  void del_entry_flush(Dinst *dinst);
 };

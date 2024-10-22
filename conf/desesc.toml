@@ -11,7 +11,7 @@ range = [0,1000000]
 [soc]
 # FIXME: multicore dromajo/desesc
 #core = ["c0", "c0"]
-#emul = ["drom_emu", "drom_emu"]
+#emul = ["drom_emu", "drom_emu"]:w
 core = ["c0"]
 emul = ["drom_emu"]
 
@@ -20,7 +20,7 @@ type      = "dromajo"
 # Load a Checkpoint option
 #load_orginal_path_      = "../benchmarks/gcc_fgcse/gcc_fgcse"
 
-load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/gcc_fgcse/gcc_fgcse"
+#load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/gcc_fgcse/gcc_fgcse"
 #load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/gcc_fipa-pta/gcc_fipa-pta"
 #.01%
 #load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/exchange2/exchange2"
@@ -31,16 +31,16 @@ load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/gcc_fgcse/gcc_fgcs
 #load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/mcf/mcf"
 
 #leela_load_FIXME 
-#leela     = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/leela/leela"
+#load     = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/leela/leela"
  
 #load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/x264/x264"
 
 #xalancebk_load_FIXME 
-#xalancebk = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/xalancebmk/xalancebmk"
+#load = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/xalancebmk/xalancebmk"
 
 #load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/xz_cpu2006docs/xz_cpu2006docs"
 
-#load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/xz_cld/xz_cld"
+load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/xz_cld/xz_cld"
 #load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/gcc_fselective-scheduling/gcc_fselective-scheduling"
 #load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/perlbench_checkspam/perlbench_checkspam"
 #load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/perlbench_diffmail/perlbench_diffmail"
@@ -54,7 +54,10 @@ rabbit    = 1024
 detail    = 1024
 #Number of Insts:
 #time     = 30000
-#time      = 600
+#time      = 700
+#time      = 500
+#time      = 200
+#time      = 100
 time      = 1000
 #time      = 3000
 #time      = 10000
@@ -169,8 +172,8 @@ frequency_mhz = 200
 type  = "ooo"  # ooo or inorder or accel
 frequency_mhz = 1000
 bpred         = ["bp0", "bp1"]
-do_random_transients = false
-#do_random_transients = true
+#do_random_transients = false
+do_random_transients = true
 
 # Fetch parameters
 fetch_align       = true
@@ -183,7 +186,7 @@ smt = 1 # Number of STM context
 
 # Memory Parameters
 caches        = true  # set true to enable caches...
-#caches        = false
+#na caches        = falsm
 scb_size      = 16
 memory_replay = true
 st_fwd_delay  = 2

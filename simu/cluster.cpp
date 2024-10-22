@@ -219,7 +219,7 @@ StallCause Cluster::canIssue(Dinst *dinst) const {
   }
 
   if (windowSize <= 0) {
-    printf("Cluster::can_issue SmallWinstall dinstID %ld\n", dinst->getID());
+    printf("Cluster::can_issue SmallWinstall dinstID %ld and windowsize is %d\n", dinst->getID(), windowSize );
     return SmallWinStall;
   }
 
@@ -242,7 +242,12 @@ void Cluster::add_inst(Dinst *dinst) {
   }
   // dinst->dump("add");
 
-  newEntry();
+  printf("Cluster::add_inst:: Before windowsize is %d: for instID %ld at @Clockcycle %ld\n", 
+              get_window_size(), dinst->getID(), globalClock);  
+  newEntry(); 
+  printf("Cluster::add_inst::After windowsize-- is %d: for instID %ld at @Clockcycle %ld\n", 
+              get_window_size(), dinst->getID(), globalClock);  
+
 
   window.add_inst(dinst);
 //<<<<<<< HEAD
@@ -282,13 +287,24 @@ void ExecutingCluster::flushed(Dinst *dinst) {
   // delEntry();
 }
 
+/*void ExecutingCluster::try_flushed(Dinst *dinst) {
+
+
+}*/
+
 void ExecutingCluster::try_flushed(Dinst *dinst) {
   
+  delEntry();
   bool done = dinst->getClusterResource()->try_flushed(dinst);
   if (!done) {
     printf(" " );
   }
 }
+void ExecutingCluster::del_entry_flush(Dinst *dinst){
+  dinst->mark_del_entry();
+  delEntry();
+}
+
 void ExecutingCluster::executed(Dinst *dinst) {
   window.executed(dinst);
   dinst->getGProc()->executed(dinst);
@@ -335,14 +351,23 @@ void ExecutedCluster::executing(Dinst *dinst) {
 }
 
 void ExecutedCluster::executed(Dinst *dinst) {
+  printf("Cluster::ExecutedCluster::executed: for instID %ld at @Clockcycle %ld\n", 
+               dinst->getID(), globalClock);  
   window.executed(dinst);
   dinst->getGProc()->executed(dinst);
   if (!dinst->isTransient()) {
     I(!dinst->hasPending());
   }
   // if(
-  dinst->mark_del_entry();
-  delEntry();
+  //dinst->mark_del_entry();
+  printf("Cluster::ExecutedCluster::executed::windowsize is %d: for instID %ld at @Clockcycle %ld\n", 
+              get_window_size(), dinst->getID(), globalClock);  
+  if(!dinst->is_del_entry()) {
+    dinst->mark_del_entry();
+    delEntry();
+  }
+  printf("Cluster::ExecutedCluster::executed::windowsize++ is %d: for instID %ld at @Clockcycle %ld\n", 
+              get_window_size(), dinst->getID(), globalClock);  
 }
 void ExecutedCluster::flushed(Dinst *dinst) {
   window.executed_flushed(dinst);
@@ -355,19 +380,37 @@ void ExecutedCluster::flushed(Dinst *dinst) {
 
 void ExecutedCluster::try_flushed(Dinst *dinst) {
   
+  //if (!dinst->isExecuted()) {
+  //delEntry();
+ // }
   bool done = dinst->getClusterResource()->try_flushed(dinst);
   if (!done) {
     printf(" " );
   }
 }
 
+void ExecutedCluster::del_entry_flush(Dinst *dinst){
+  if(!dinst->is_del_entry()) {
+    printf("Cluster::ExecutedCluster::del_entry_flush:: no_del_entry ::windowsize is %d: for instID %ld at @Clockcycle %ld\n", 
+              get_window_size(), dinst->getID(), globalClock);  
+
+    dinst->mark_del_entry();
+    delEntry();
+  } 
+    printf("Cluster::ExecutedCluster::del_entry_flush:: yes_del_entry ::windowsize is %d: for instID %ld at @Clockcycle %ld\n", 
+              get_window_size(), dinst->getID(), globalClock);  
+  //else {
+  //dinst->mark_del_entry();
+  //delEntry();
+ // }
+}
 
 bool ExecutedCluster::retire(Dinst *dinst, bool reply) {
   printf("ClusterExecuted::retire:: Entering Insit %ld regPool is %d and nRegs is %d\n",
         dinst->getID(), regPool, nRegs);
   if (dinst->is_del_entry()) {
     // delEntry();
-    dinst->unmark_del_entry();
+    //dinst->unmark_del_entry();
   }
   // always return true from resource::retire()
   bool done = dinst->getClusterResource()->retire(dinst, reply);
@@ -395,7 +438,7 @@ bool ExecutedCluster::retire(Dinst *dinst, bool reply) {
 
   return true;
 }
-
+//This is done here for desec!!!
 //************ RetiredCluster Class
 
 void RetiredCluster::executing(Dinst *dinst) {
@@ -436,6 +479,7 @@ bool RetiredCluster::retire(Dinst *dinst, bool reply) {
 }
 void RetiredCluster::try_flushed(Dinst *dinst) {
   
+  delEntry();
   bool done = dinst->getClusterResource()->try_flushed(dinst);
   if (!done) {
     printf(" " );
@@ -459,3 +503,8 @@ void RetiredCluster::flushed(Dinst *dinst) {
 
   winNotUsed.sample(windowSize, dinst->has_stats());
 }
+void RetiredCluster::del_entry_flush(Dinst *dinst){
+  dinst->mark_del_entry();
+  delEntry();
+}
+

@@ -153,7 +153,7 @@ bool Pipeline::transient_buffer_empty() {
 }
 
 */
-void Pipeline::flush_transient_inst_from_buffer() {
+/*void Pipeline::flush_transient_inst_from_buffer() {
   while (!buffer.empty()) {
     auto *bucket = next_item_transient();
     if (bucket) {
@@ -192,6 +192,69 @@ void Pipeline::flush_transient_inst_from_buffer() {
     } // 
   }// while_!bucket_empty_upper_loop
 }//func_end
+*/
+
+void Pipeline::flush_transient_inst_from_buffer() {
+  bool break_loop = false;
+  while (!buffer.empty()) {
+    break_loop = false;
+    // There are several buckets in each flush.
+   // So need to go over each bucket to see transient/NT inst 
+    auto *bucket = next_item_transient();
+    if (bucket) {
+      while (!bucket->empty()) {
+       // auto *dinst = bucket->top();
+        auto *dinst = bucket->end_data();
+        if(dinst->getID()== 3205)
+          printf("\nPIPELINE::PRINT 3205\n");
+        I(dinst);
+        if(dinst) { 
+          printf("Pipeline::flush::bucket.size is  %lu and instID %ld and Transient is %b\n",bucket->size(), dinst->getID(), dinst->isTransient()); 
+        }
+        //bucket->pop();
+        //I(dinst->isTransient());
+        if (dinst->isTransient() && !dinst->is_present_in_rob()) {
+//<<<<<<< HEAD
+         I(dinst->isTransient());
+         printf("Pipeline::flush:: destroying transient bucket size is %lu and instID is %ld\n",bucket->size(), 
+            dinst->getID());  
+         dinst->destroyTransientInst();
+         //bucket->pop();
+         bucket->pop_from_back();
+         } else if(dinst->isTransient()) {
+            dinst->mark_destroy_transient();
+            printf("Pipeline::flush:: NOT destroying transient bucket ::BCOZ  PRESENT IN ROB ::size is %lu and instID is %ld\n",bucket->size(), 
+            dinst->getID());  
+         //push to a new buffer_rob_shadow;
+         } else if (!dinst->isTransient()) {
+            //transient_buffer.push(bucket);
+             if(dinst->getID()== 3203)
+              printf("\nPIPELINE::PRINT 3203\n");
+          
+            //instQ.push(bucket);
+            printf("Pipeline::flush:: NOT destroying NON transient bucket ::BREAK LOOP::::size is %lu and instID is %ld\n",bucket->size(),dinst->getID());  
+            //bucket->pop_from_back();
+            // jose: not bucket->pop()
+            break_loop = true;
+            //buffer had transient inst so good to pop
+            buffer.pop_from_back();
+            break;
+            
+         }
+      } // while_!bucket_empty buffer.pop();
+      if (bucket->empty()) {
+        printf("Pipeline::flush::bucket.empty () \n"); 
+        I(bucket->empty());
+        bucket->clock = 0;
+        buffer.pop_from_back();
+        bucketPool.push_back(bucket);
+      }
+      
+    } // 
+    if(break_loop){
+  //break;
+}}// while_!bucket_empty_upper_loop
+}//func_end
 
 IBucket *Pipeline::next_item_transient_adding_to_rob() {
   if(transient_buffer.empty()) {
@@ -229,7 +292,7 @@ IBucket *Pipeline::next_item_transient_adding_to_rob() {
   }
 
 }
-IBucket *Pipeline::next_item_transient() {
+/*IBucket *Pipeline::next_item_transient() {
   printf("Pipeline::nextItemtran::buffer.top()  \n"); 
   //I(!buffer.empty());
   //I(buffer.top() != 0);
@@ -253,11 +316,43 @@ IBucket *Pipeline::next_item_transient() {
   }
 }
 
+*/
+//=======
+  //return b;
+//}
+//>>>>>>> upstream/main
+IBucket *Pipeline::next_item_transient() {
+  printf("Pipeline::nextItemtran::buffer_end_data()  \n"); 
+  //I(!buffer.empty());
+  //I(buffer.top() != 0);
+  IBucket *b = buffer.end_data();
+  
+  I(!buffer.empty());
+  //buffer.pop();
+  //buffer.pop_from_back();
+  I(!b->empty());
+  I(!b->cleanItem);
+
+  I(!b->empty());
+  I(b->top() != 0);
+
+//<<<<<<< HEAD
+  printf("Pipeline::buffer->nextItem()::returns! \n"); 
+  if(b) {
+    return b;
+  } else {
+    printf(" Pipeline::next_item_transient return no buffer.top \n");
+    return 0;
+  }
+}
+
 
 //=======
   //return b;
 //}
 //>>>>>>> upstream/main
+
+
 
 IBucket *Pipeline::nextItem() {
   while (1) {

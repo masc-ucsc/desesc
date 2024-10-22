@@ -41,7 +41,7 @@ public:
   void push(Data d) {
     I(nElems <= pipeMask);
 
-    printf("fastqueue ::nElem :: Before is %lu and pipemask is %ld\n",nElems,pipeMask); 
+    printf("fastqueue ::push:: nElems is  %lu and pipemask is %ld\n",nElems,pipeMask); 
     pipe[end] = d;
     I(end == ((start + nElems) & pipeMask));
     end = (end + 1) & pipeMask;
@@ -64,7 +64,18 @@ public:
 
   Data end_data() const {
     I(nElems);
+    printf("fastqueue ::end_data :: Elements are  %lu and  end position is %ld and new end is %ld\n",nElems,pipeMask, end, end-1); 
     return pipe[end ? end - 1 : pipeMask];
+  }
+
+  Data nilufar_push_to_end_data( Data d)  {
+    I(nElems <= pipeMask);
+
+    printf("fastqueue ::push:: nElems is  %lu and pipemask is %ld\n",nElems,pipeMask); 
+    pipe[end+1] = d;
+    I(end == ((start + nElems) & pipeMask));
+    end = (end + 1) & pipeMask;
+    nElems++;
   }
 
   void pop() {
@@ -75,8 +86,10 @@ public:
 
   void pop_from_back() {
     I(nElems);
+    printf("fastqueue ::pop_from_back ::  Before Elements are  %lu and  end position is %ld\n",nElems, end); 
     nElems--;
     end = (end - 1) & pipeMask;
+    printf("fastqueue ::pop_from_back :: After Elements are  %lu and  end position is %ld\n",nElems, end); 
   }
 
   [[nodiscard]] uint32_t getIDFromTop(uint32_t i) const {

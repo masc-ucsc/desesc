@@ -20,8 +20,8 @@ Cache_port::Cache_port(const std::string &section, const std::string &name) {
   dataDelay = hitDelay - missDelay;
   tagDelay  = hitDelay - dataDelay;
 
-  I(hitDelay>=missDelay);
-  I(hitDelay>=dataDelay);
+  I(hitDelay >= missDelay);
+  I(hitDelay >= dataDelay);
 
   numBanks             = Config::get_power2(section, "port_banks", 0, 1024);
   int32_t log2numBanks = log2i(numBanks);

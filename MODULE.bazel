@@ -4,3 +4,8 @@
 #
 # For more details, please check https://github.com/bazelbuild/bazel/issues/18958
 ###############################################################################
+# MODULE.bazel
+
+# Choose the most recent version available at
+# https://registry.bazel.build/modules/abseil-cpp.
+bazel_dep(name = "abseil-cpp", version = "20240116.0")

@@ -53,7 +53,7 @@ Dinst *LSQFull::executing(Dinst *dinst)
     // inst->dump("Executed");
     Dinst *qdinst = instIt->second;
     if (qdinst == dinst) {
-      printf("LSQFull::executing::NOTunresolve-- :: qdinst==dinst dinstID %ld\n", dinst->getID());
+      // printf("LSQFull::executing::NOTunresolve-- :: qdinst==dinst dinstID %ld\n", dinst->getID());
       continue;
     }
 
@@ -77,9 +77,9 @@ Dinst *LSQFull::executing(Dinst *dinst)
         stldForwarding.inc(dinst->has_stats());
       }
     }
-  }//map_for_loop_end
+  }  // map_for_loop_end
 
-  printf("LSQFull::executing::unresolve-- dinstID %ld\n", dinst->getID());
+  // printf("LSQFull::executing::unresolve-- dinstID %ld\n", dinst->getID());
   unresolved--;
   I(!dinst->isExecuted());  // first clear, then mark executed
   return faulty;
@@ -90,11 +90,11 @@ void LSQFull::remove(Dinst *dinst)
 /* Remove from the LSQ {{{1 (in-order) */
 {
   I(dinst->getAddr());
-  //Jose added this below part::for unresolved--
- /* if (!dinst->isExecuted() && dinst->isTransient()) {
-  //if (!dinst->isExecuted()) {
-    unresolved--;
-  }*/
+  // Jose added this below part::for unresolved--
+  /* if (!dinst->isExecuted() && dinst->isTransient()) {
+   //if (!dinst->isExecuted()) {
+     unresolved--;
+   }*/
   // const Instruction *inst = dinst->getInst();
 
   std::pair<AddrDinstQMap::iterator, AddrDinstQMap::iterator> rangeIt;
@@ -109,7 +109,6 @@ void LSQFull::remove(Dinst *dinst)
     }
     instIt++;
   }
-
 }
 /* }}} */
 
@@ -145,7 +144,7 @@ Dinst *LSQNone::executing(Dinst *dinst)
   I(addrTable[i] == dinst);
   addrTable[i] = 0;
 
-  printf("LSQNone::executing::unresolve-- dinstID %ld\n", dinst->getID());
+  // printf("LSQNone::executing::unresolve-- dinstID %ld\n", dinst->getID());
   unresolved--;
   return 0;
 }
@@ -176,7 +175,7 @@ bool LSQVPC::insert(Dinst *dinst)
 Dinst *LSQVPC::executing(Dinst *dinst) {
   (void)dinst;
   I(0);
-  printf("LSQVPC::executing::unresolve-- dinstID %ld\n", dinst->getID());
+  // printf("LSQVPC::executing::unresolve-- dinstID %ld\n", dinst->getID());
   unresolved--;
   return 0;
 }

@@ -54,12 +54,12 @@ http_archive(
 )
 
 # abseil
-http_archive(
-  name = "com_google_absl",
-  strip_prefix = "abseil-cpp-20240116.2",
-  urls = ["https://github.com/abseil/abseil-cpp/archive/refs/tags/20240116.2.zip"],
-  sha256 = "69909dd729932cbbabb9eeaff56179e8d124515f5d3ac906663d573d700b4c7d",
-)
+# http_archive(
+#   name = "com_google_absl",
+#   strip_prefix = "abseil-cpp-20240116.2",
+#   urls = ["https://github.com/abseil/abseil-cpp/archive/refs/tags/20240116.2.zip"],
+#   sha256 = "69909dd729932cbbabb9eeaff56179e8d124515f5d3ac906663d573d700b4c7d",
+# )
 
 # Perfetto
 http_archive(
@@ -86,10 +86,10 @@ http_archive(
     name = "dromajo",
     build_file = "dromajo.BUILD",
     patches = ["//external:dromajo.patch"],
-    sha256 = "07fcabaf6be0a1c2d1f62ccb6ad08c1d86c49887d08967bfcde8028fb206c506",
-    strip_prefix = "dromajo-34598190447d8339b79069277e0f9f1ce59483d7",
+    sha256 = "25af8ca914f0ca3f41a6250fa6069621e3fcaa3230e1bc95ff813eaec9c7e3dd",
+    strip_prefix = "dromajo-2a9f5bbfbefa92bc0d81bb83e44e6bab963302cb",
     urls = [
-      "https://github.com/masc-ucsc/dromajo/archive/34598190447d8339b79069277e0f9f1ce59483d7.zip",
+      "https://github.com/masc-ucsc/dromajo/archive/2a9f5bbfbefa92bc0d81bb83e44e6bab963302cb.zip",
     ],
 )
 

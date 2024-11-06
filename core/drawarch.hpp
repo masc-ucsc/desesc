@@ -19,8 +19,8 @@ protected:
   std::vector<std::string> rows;
 
 public:
-  DrawArch(){
-      // Constructor
+  DrawArch() {
+    // Constructor
   };
   ~DrawArch() {}
 

@@ -47,7 +47,7 @@ public:
 
   void cleanMark();
 
-  //FastQueue<Dinst *>   transient_buffer;
+  // FastQueue<Dinst *>   transient_buffer;
   IBucket *newItem();
   bool     hasOutstandingItems() const;
   void     readyItem(IBucket *b);
@@ -99,5 +99,4 @@ public:
 
   Pipeline             pipeLine;
   FastQueue<IBucket *> instQueue;
-
 };

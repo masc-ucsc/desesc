@@ -69,7 +69,7 @@ public:
 
   void fetch(IBucket *buffer, std::shared_ptr<Emul_base> eint, Hartid_t fid, GProcessor *gproc);
 
-  typedef CallbackMember4<FetchEngine, IBucket *, std::shared_ptr<Emul_base>, Hartid_t, GProcessor *, &FetchEngine::fetch > fetchCB;
+  typedef CallbackMember4<FetchEngine, IBucket *, std::shared_ptr<Emul_base>, Hartid_t, GProcessor *, &FetchEngine::fetch> fetchCB;
 
   void realfetch(IBucket *buffer, std::shared_ptr<Emul_base> eint, Hartid_t fid, int32_t n2Fetched, GProcessor *gproc);
 
@@ -99,13 +99,9 @@ public:
   Dinst *get_miss_dinst() const { return transientDinst; }
   void   setTransientInst(Dinst *dinst);
 
-  bool is_fetch_next_ready; 
-  bool get_is_fetch_next_ready(){
-    return is_fetch_next_ready;
-  }
-  void reset_is_fetch_next_ready(){
-     is_fetch_next_ready = false;
-  }
+  bool is_fetch_next_ready;
+  bool get_is_fetch_next_ready() { return is_fetch_next_ready; }
+  void reset_is_fetch_next_ready() { is_fetch_next_ready = false; }
 
   void clearMissInst(Dinst *dinst, Time_t missFetchTime);
   void setMissInst(Dinst *dinst);

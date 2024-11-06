@@ -162,9 +162,9 @@ void bench2() {
     }
     EventScheduler::advanceClock();
     if ((i % 32) == 0) {
-               for (int32_t k = 0; k < TIME_BUBBLE; k++) {
-                 EventScheduler::advanceClock();
-               }
+      for (int32_t k = 0; k < TIME_BUBBLE; k++) {
+        EventScheduler::advanceClock();
+      }
     }
   }
 

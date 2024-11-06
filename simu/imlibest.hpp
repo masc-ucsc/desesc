@@ -1155,7 +1155,8 @@ public:
       if (ltable[index].TAG == LTAG) {
         LHIT   = i;
         LVALID = ((ltable[index].confid == CONFLOOP) || (ltable[index].confid * ltable[index].NbIter > 128));
-        {}
+        {
+        }
         if (ltable[index].CurrentIter + 1 == ltable[index].NbIter) {
           return (!(ltable[index].dir));
         } else {

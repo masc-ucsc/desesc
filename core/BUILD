@@ -14,15 +14,15 @@ cc_library(
     includes = ["."],
     visibility = ["//visibility:public"],
     deps = [
-      "@com_google_absl//absl/container:flat_hash_map",
-      "@com_google_absl//absl/container:node_hash_map",
-      "@com_google_absl//absl/container:flat_hash_set",
-      "@com_google_absl//absl/container:node_hash_set",
-      "@com_google_absl//absl/container:btree",
-        "@com_google_absl//absl/strings",
-        "@fmt",
-        "@iassert",
-        "@toml11",
+      "@abseil-cpp//absl/container:flat_hash_map",
+      "@abseil-cpp//absl/container:node_hash_map",
+      "@abseil-cpp//absl/container:flat_hash_set",
+      "@abseil-cpp//absl/container:node_hash_set",
+      "@abseil-cpp//absl/container:btree",
+      "@abseil-cpp//absl/strings",
+      "@fmt",
+      "@iassert",
+      "@toml11",
     ]
 )
 

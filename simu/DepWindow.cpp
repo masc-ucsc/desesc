@@ -30,42 +30,41 @@ StallCause DepWindow::canIssue(Dinst *dinst) const {
 void DepWindow::add_inst(Dinst *dinst) {
   I(dinst->getCluster() != 0);  // Resource::schedule must set the resource field
 
-//newHEAD<<<<<<< HEAD
-//<<<<<<< HEAD
-  printf("DepWindow::add_inst before dinst->hasDeps() %ld  and transient is %b\n",
-      dinst->getID(),dinst->isTransient());
-  //while (!dinst->hasDeps()) { //makesure hasdeps==0)lima 
- if (!dinst->hasDeps()) {
+  // newHEAD<<<<<<< HEAD
+  //<<<<<<< HEAD
+  // printf("DepWindow::add_inst before dinst->hasDeps() %ld  and transient is %b\n", dinst->getID(), dinst->isTransient());
+  // while (!dinst->hasDeps()) { //makesure hasdeps==0)lima
+  if (!dinst->hasDeps()) {
     dinst->set_in_cluster();
     preSelect(dinst);
-  } 
-  else {
-    printf("2024:::DepWindow::add_inst dinst->hasDeps() is true for  %ld  and transient is %b\n",
-        dinst->getID(), dinst->isTransient());
-    //while (!dinst->hasDeps()){
-      //preSelect(dinst);
-    //}
-/*=======
-  //printf("DepWindow::add_inst before dinst->hasDeps() %ld  and transient is %b\n", dinst->getID(),dinst->isTransient());
-  
-  if (!dinst->hasDeps()) {
-    preSelect(dinst);
   } else {
-    //printf("DepWindow::add_inst dinst->hasDeps() is true for  %ld  and transient is %b\n", dinst->getID(), dinst->isTransient());
->>>>>>> upstream/main*/
-/*=======
-  if (!dinst->hasDeps()) {
-    preSelect(dinst);
->>>>>>> upstream/main*/
+    // printf("2024:::DepWindow::add_inst dinst->hasDeps() is true for  %ld  and transient is %b\n",
+    //        dinst->getID(),
+    //        dinst->isTransient());
+    // while (!dinst->hasDeps()){
+    // preSelect(dinst);
+    //}
+    /*=======
+      //printf("DepWindow::add_inst before dinst->hasDeps() %ld  and transient is %b\n", dinst->getID(),dinst->isTransient());
+
+      if (!dinst->hasDeps()) {
+        preSelect(dinst);
+      } else {
+        //printf("DepWindow::add_inst dinst->hasDeps() is true for  %ld  and transient is %b\n", dinst->getID(),
+    dinst->isTransient());
+    >>>>>>> upstream/main*/
+    /*=======
+      if (!dinst->hasDeps()) {
+        preSelect(dinst);
+    >>>>>>> upstream/main*/
   }
- 
 }
 
 void DepWindow::preSelect(Dinst *dinst) {
   // At the end of the wakeUp, we can start to read the register file
   I(!dinst->hasDeps());
 
-  printf("DepWindow::::Preselect WS Inst %ld\n", dinst->getID());
+  // printf("DepWindow::::Preselect WS Inst %ld\n", dinst->getID());
   dinst->markIssued();
   Tracer::stage(dinst, "WS");
 
@@ -103,15 +102,16 @@ void DepWindow::executed_flushed(Dinst *dinst) {
 // Called when dinst finished execution. Look for dependent to wakeUp
 void DepWindow::executed(Dinst *dinst) {
   //  MSG("execute [0x%x] @%lld",dinst, globalClock);
-//<<<<<<< HEAD
- 
-  if(dinst->isTransient())
-    printf("DepWindow::::Executed Entering Transient Inst %ld\n", dinst->getID());
-  //if(!dinst->isTransient()){
-//=======
+  //<<<<<<< HEAD
+
+  // if (dinst->isTransient()) {
+  // printf("DepWindow::::Executed Entering Transient Inst %ld\n", dinst->getID());
+  // }
+  // if(!dinst->isTransient()){
+  //=======
 
   if (!dinst->isTransient()) {
-//>>>>>>> upstream/main
+    //>>>>>>> upstream/main
     I(!dinst->hasDeps());
   }
 
@@ -121,35 +121,34 @@ void DepWindow::executed(Dinst *dinst) {
     dinst->markExecuted();
   }
 
-  printf("DepWindow::::Executed mark_executed Inst %ld\n", dinst->getID());
+  // printf("DepWindow::::Executed mark_executed Inst %ld\n", dinst->getID());
   dinst->clearRATEntry();
-  printf("DepWindow::::Executed clear RAT  Inst %ld\n", dinst->getID());
+  // printf("DepWindow::::Executed clear RAT  Inst %ld\n", dinst->getID());
   Tracer::stage(dinst, "WB");
-  printf("DepWindow::::Executed stage WB Inst %ld\n", dinst->getID());
+  // printf("DepWindow::::Executed stage WB Inst %ld\n", dinst->getID());
 
- //if (!dinst->hasPending() || dinst->isTransient()) {
-  if (!dinst->hasPending()) { //(dinst->first !=0)
-    printf("DepWindow::::Executed Inst %ld has !dinst->hasPending\n", dinst->getID());
+  // if (!dinst->hasPending() || dinst->isTransient()) {
+  if (!dinst->hasPending()) {  //(dinst->first !=0)
+    // printf("DepWindow::::Executed Inst %ld has !dinst->hasPending\n", dinst->getID());
     return;
   }
 
+  /*//<<<<<<< HEAD
+   //if (!dinst->hasPending() || dinst->isTransient()) {
+    if (!dinst->hasPending()) { //(dinst->first !=0)
+      printf("DepWindow::::Executed Inst %ld has !dinst->hasPending\n", dinst->getID());
+  //=======
+    dinst->clearRATEntry();
+    Tracer::stage(dinst, "WB");
 
-/*//<<<<<<< HEAD
- //if (!dinst->hasPending() || dinst->isTransient()) {
-  if (!dinst->hasPending()) { //(dinst->first !=0)
-    printf("DepWindow::::Executed Inst %ld has !dinst->hasPending\n", dinst->getID());
-//=======
-  dinst->clearRATEntry();
-  Tracer::stage(dinst, "WB");
-
-  // if (!dinst->hasPending() || dinst->isTransient()) {
-  if (!dinst->hasPending()) {
->>>>>>> upstream/main
-    return;
-  }*/
+    // if (!dinst->hasPending() || dinst->isTransient()) {
+    if (!dinst->hasPending()) {
+  >>>>>>> upstream/main
+      return;
+    }*/
 
   // NEVER HERE FOR in-order cores
- 
+
   I(dinst->getCluster());
   I(src_cluster_id == dinst->getCluster()->get_id());
 
@@ -162,37 +161,39 @@ void DepWindow::executed(Dinst *dinst) {
     return;
   }*/
 
-
   while (dinst->hasPending()) {
     Dinst *dstReady = dinst->getNextPending();
     I(dstReady);
-    std::cout<<"Depwindow_Jose:: Executed::hasPending():: executed_dinst dstReadyInst asm is "<<dstReady->getInst()->get_asm()<<std::endl;
-    std::cout<<"Depwindow_Jose:: executed::dstReady Inst asm is "<<dstReady->getInst()->get_asm()<<std::endl;
-    printf("DepWindow_Jose::::Executed Inst is %ld and Pending dstdReady inst is %ld and Pending :isTransient is %b\n",
-        dinst->getID(),dstReady->getID(),dstReady->isTransient());
-     
-    
-    if(dstReady->is_to_be_destroyed() && !dstReady->hasDeps()) {
-      //dstReady->clear_to_be_destroyed_transient();
+    // std::cout << "Depwindow_Jose:: Executed::hasPending():: executed_dinst dstReadyInst asm is " <<
+    // dstReady->getInst()->get_asm()
+    //           << std::endl;
+    // std::cout << "Depwindow_Jose:: executed::dstReady Inst asm is " << dstReady->getInst()->get_asm() << std::endl;
+    // printf("DepWindow_Jose::::Executed Inst is %ld and Pending dstdReady inst is %ld and Pending :isTransient is %b\n",
+    //        dinst->getID(),
+    //        dstReady->getID(),
+    //        dstReady->isTransient());
+
+    if (dstReady->is_to_be_destroyed() && !dstReady->hasDeps()) {
+      // dstReady->clear_to_be_destroyed_transient();
       dstReady->destroyTransientInst();
       continue;
-      } 
-       
-    
+    }
 
     I(!dstReady->isExecuted());
-    
 
-//<<<<<<< HEAD
-    printf("DepWindow::::Executed Inst is %ld and Pending Inst is %ld and Pending :isTransient is %b\n",
-        dinst->getID(),dstReady->getID(),dstReady->isTransient());
-    std::cout<<"Depwindow:: Executed::hasPending():: iexecuted_dinst Inst asm is "<<dinst->getInst()->get_asm()<<std::endl;
-    std::cout<<"Depwindow:: executed::dstReady Inst asm is "<<dstReady->getInst()->get_asm()<<std::endl;
-    printf("Depwindow:: executed::dstReady has ndeps is: %d\n",(int)dstReady->getnDeps());
+    //<<<<<<< HEAD
+    // printf("DepWindow::::Executed Inst is %ld and Pending Inst is %ld and Pending :isTransient is %b\n",
+    //        dinst->getID(),
+    //        dstReady->getID(),
+    //        dstReady->isTransient());
+    // std::cout << "Depwindow:: Executed::hasPending():: iexecuted_dinst Inst asm is " << dinst->getInst()->get_asm() << std::endl;
+    // std::cout << "Depwindow:: executed::dstReady Inst asm is " << dstReady->getInst()->get_asm() << std::endl;
+    // printf("Depwindow:: executed::dstReady has ndeps is: %d\n", (int)dstReady->getnDeps());
 
-//=======
-    //printf("DepWindow::::Executed Inst is %ld and Pending Inst is %ld and Pending :isTransient is %b\n", dinst->getID(),dstReady->getID(),dstReady->isTransient());
-//>>>>>>> upstream/main
+    //=======
+    // printf("DepWindow::::Executed Inst is %ld and Pending Inst is %ld and Pending :isTransient is %b\n",
+    // dinst->getID(),dstReady->getID(),dstReady->isTransient());
+    //>>>>>>> upstream/main
     if (!dstReady->hasDeps()) {
       // Check dstRes because dstReady may not be issued
       I(dstReady->getCluster());
@@ -208,6 +209,6 @@ void DepWindow::executed(Dinst *dinst) {
     }
   }
 
-  //dinst->flushfirst();//parent->first=0
- printf("DepWindow::::Executed Exiting Transient Inst %ld\n", dinst->getID());
+  // dinst->flushfirst();//parent->first=0
+  // printf("DepWindow::::Executed Exiting Transient Inst %ld\n", dinst->getID());
 }

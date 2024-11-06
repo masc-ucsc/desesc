@@ -16,7 +16,7 @@ typedef uint16_t TimeDelta_t;
 const uint16_t   MaxDeltaTime = (65535 - 1024);  // -1024 is to give a little bit of margin
 
 // x, y are integers and x,y > 0
-#define CEILDiv(x, y) ((x)-1) / (y) + 1
+#define CEILDiv(x, y) ((x) - 1) / (y) + 1
 
 uint32_t roundUpPower2(uint32_t x);
 int16_t  log2i(uint32_t n);

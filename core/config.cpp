@@ -60,7 +60,7 @@ std::string Config::get_string(const std::string &block, const std::string &name
     return "INVALID";
   }
 
-  bool env_used = false;
+  bool        env_used = false;
   std::string val;
 
   {
@@ -73,7 +73,6 @@ std::string Config::get_string(const std::string &block, const std::string &name
   }
 
   if (!env_used) {
-
     auto ent = toml::find(data, block, name);
     if (!ent.is_string()) {
       errors.emplace_back(fmt::format("conf:{} section:{} field:{} is not a string\n", filename, block, name));
@@ -180,7 +179,7 @@ int Config::get_integer(const std::string &block, const std::string &name, int f
     return 0;
   }
 
-  int val = 0;
+  int  val      = 0;
   bool env_used = false;
 
   {
@@ -188,7 +187,7 @@ int Config::get_integer(const std::string &block, const std::string &name, int f
 
     const char *e = getenv(env_var.c_str());
     if (e) {
-      val = std::atoi(e);
+      val      = std::atoi(e);
       env_used = true;
     }
   }
@@ -229,7 +228,7 @@ int Config::get_integer(const std::string &block, const std::string &name, size_
     return 0;
   }
 
-  int val = 0;
+  int  val      = 0;
   bool env_used = false;
   {
     std::string env_var = fmt::format("DESESC_{}_{}", block2, name2);
@@ -404,14 +403,14 @@ bool Config::get_bool(const std::string &block, const std::string &name) {
   }
 
   bool env_used = false;
-  bool val=false;
+  bool val      = false;
 
   {
     std::string env_var = fmt::format("DESESC_{}_{}", block, name);
 
     const char *e = getenv(env_var.c_str());
     if (e) {
-      val = strcasecmp(e, "true") == 0;
+      val      = strcasecmp(e, "true") == 0;
       env_used = true;
     }
   }

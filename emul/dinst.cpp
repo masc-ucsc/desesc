@@ -15,12 +15,12 @@ Dinst::Dinst()
     : inst(Instruction(Opcode::iOpInvalid, RegType::LREG_R0, RegType::LREG_R0, RegType::LREG_InvalidOutput,
                        RegType::LREG_InvalidOutput)) {
   pend[0].init(this);
-  //printf("Dinst::Dinst()::pend[0].init:: is %ld and isTransient is %b\n", this->getID(), this->isTransient());
-  //std::cout<<"Dinst::Dinst()::pend[0]::asm is "<<this->getInst()->get_asm()<<std::endl;
+  // printf("Dinst::Dinst()::pend[0].init:: is %ld and isTransient is %b\n", this->getID(), this->isTransient());
+  // std::cout<<"Dinst::Dinst()::pend[0]::asm is "<<this->getInst()->get_asm()<<std::endl;
   pend[1].init(this);
   pend[2].init(this);
   I(MAX_PENDING_SOURCES == 3);
-  //nDeps = 0;
+  // nDeps = 0;
 }
 
 void Dinst::dump(std::string_view str) {
@@ -101,25 +101,25 @@ void Dinst::dump(std::string_view str) {
 }
 
 void Dinst::clearRATEntry() {
-  printf("Dinst:clearRATEntry :: instID %ld\n", this->getID());  
+  // printf("Dinst:clearRATEntry :: instID %ld\n", this->getID());
   I(RAT1Entry);
   if ((*RAT1Entry) == this) {
-    printf("Dinst:clearRATEntry :: setting RAT1entry =0 for instID %ld\n", this->getID());  
+    // printf("Dinst:clearRATEntry :: setting RAT1entry =0 for instID %ld\n", this->getID());
     *RAT1Entry = 0;
   }
   if ((*RAT2Entry) == this) {
-    printf("Dinst:clearRATEntry :: setting RAT2entry =0 for instID %ld\n", this->getID());  
+    // printf("Dinst:clearRATEntry :: setting RAT2entry =0 for instID %ld\n", this->getID());
     *RAT2Entry = 0;
   }
   if (serializeEntry) {
     if ((*serializeEntry) == this) {
-      printf("Dinst:clearRATEntry :: setting RATSerializedentry =0 for instID %ld\n", this->getID());  
+      // printf("Dinst:clearRATEntry :: setting RATSerializedentry =0 for instID %ld\n", this->getID());
       *serializeEntry = 0;
     }
   }
-//if(isTransient()){
-  //first = 0;
-//}
+  // if(isTransient()){
+  // first = 0;
+  //}
 }
 
 #ifdef ESESC_TRACE_DATA

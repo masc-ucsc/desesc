@@ -98,7 +98,7 @@ public:
   void   executing(Dinst *dinst) override final;
   void   executed(Dinst *dinst) override final;
   void   flushed(Dinst *dinst) override final;
-  void   try_flush(Dinst *dinst);
+  void   try_flush(Dinst *dinst) override final;
   LSQ   *getLSQ() override final { return &lsq; }
   void   replay(Dinst *target) override final;
   bool   is_nuking() override final { return flushing; }
@@ -106,28 +106,27 @@ public:
   Time_t getReplayID() override final { return replayID; }
 
   void dump_rat() {
-    //auto rat_max= static_cast <int> ( RegType::LREG_MAX);
-    
-    auto rat_max= RegType::LREG_FP31;
-    RegType i = RegType::LREG_R0;
-    int n=0;
-    while(i <= rat_max) {
-      {
-     // auto reg = static_cast <RegType> (i);
-      //RegType reg = static_cast <RegType> (i);
-      if(RAT[i]){
-        std::cout << "RATENTRY: "<<RAT[i]->getID()<< std::endl;
-        bool pend = RAT[i]->hasPending();
-        std::cout << "RATENTRY: "<<RAT[i]->getID()<< "has Pending :is "<< pend<<std::endl;
-      }
+    // auto rat_max= static_cast <int> ( RegType::LREG_MAX);
 
-      n++;
-      i = (RegType) n;
-      //break;
+    auto    rat_max = RegType::LREG_FP31;
+    RegType i       = RegType::LREG_R0;
+    int     n       = 0;
+    while (i <= rat_max) {
+      {
+        // auto reg = static_cast <RegType> (i);
+        // RegType reg = static_cast <RegType> (i);
+        if (RAT[i]) {
+          std::cout << "RATENTRY: " << RAT[i]->getID() << std::endl;
+          bool pend = RAT[i]->hasPending();
+          std::cout << "RATENTRY: " << RAT[i]->getID() << "has Pending :is " << pend << std::endl;
+        }
+
+        n++;
+        i = (RegType)n;
+        // break;
+      }
     }
   }
-  }
-
 
   void dumpROB();
   bool loadIsSpec();

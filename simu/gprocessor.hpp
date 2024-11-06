@@ -12,6 +12,8 @@
 // design for Traditional and SMT processors in mind. That's the
 // reason why it manages the execution engine (RDEX).
 
+#include <random>
+
 #include "callback.hpp"
 #include "cluster.hpp"
 #include "clustermanager.hpp"
@@ -29,8 +31,6 @@
 #include "stats.hpp"
 #include "store_buffer.hpp"
 #include "wavesnap.hpp"
-
-#include <random>
 
 class BPredictor;
 
@@ -104,8 +104,8 @@ protected:
   int32_t issue();
   void    fetch();
 
-  virtual StallCause add_inst(Dinst *dinst) = 0;
-  virtual void try_flush(Dinst *dinst)      = 0;
+  virtual StallCause add_inst(Dinst *dinst)  = 0;
+  virtual void       try_flush(Dinst *dinst) = 0;
 
   bool use_stats;  // Stats mode to use when dinst->has_stats() is not available
 
@@ -154,10 +154,10 @@ public:
   void flush_transient_from_rob();
   void dump_rob();
   void report(const std::string &str);
-  
+
   Addr_t   random_addr_gen();
-  uint64_t random_reg_gen( bool reg);
-  
+  uint64_t random_reg_gen(bool reg);
+
   std::shared_ptr<StoreSet>     ref_SS() { return storeset; }
   std::shared_ptr<Prefetcher>   ref_prefetcher() { return prefetcher; }
   std::shared_ptr<Store_buffer> ref_SCB() { return scb; }

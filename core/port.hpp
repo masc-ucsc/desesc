@@ -2,30 +2,11 @@
 
 #pragma once
 
-// Clean and Fast interface to implement any kind of contention for a
-// bus.  This resource is typically used to model the number of ports
-// in a cache, or the occupancy of a functional unit.
-//
-// A real example of utilization is in Resource.cpp, but this example
-// gives you a quick idea:
-//
-// You want to model the contention for a bus. The bus has an
-// occupancy of 2 cycles. To create the port:
-//
-// PortGeneric *bus = PortGeneric::create("portName",1,2);
-// 1 is for the number of busses, 2 for the occupancy.
-//
-// At any time, you can get queued for the bus, and this structure
-// tells you the next cycle when your request would be satisfied.
-// Time_t atWhatCycle = bus->nextSlot();
-//
-// Enjoy!
-
 #include "callback.hpp"
 #include "iassert.hpp"
 #include "stats.hpp"
 
-typedef uint16_t NumUnits_t;
+using NumUnits_t = uint16_t;
 
 //! Generic Port used to model contention
 //! Based on the PortGeneric there are several types of ports.
@@ -38,7 +19,7 @@ protected:
   Stats_avg avgTime;
 
 public:
-  PortGeneric(const std::string &name);
+  explicit PortGeneric(const std::string &name);
   virtual ~PortGeneric();
 
   void subscribe() { nUsers++; }
@@ -61,38 +42,36 @@ public:
   virtual void occupyUntil(Time_t t);
 
   //! returns when the next slot can be free without occupying any slot
-  virtual Time_t calcNextSlot() const = 0;
+  [[nodiscard]] virtual bool is_busy_for(TimeDelta_t clk) const = 0;
 
-  static PortGeneric *create(const std::string &name, NumUnits_t nUnits, TimeDelta_t occ);
+  static PortGeneric *create(const std::string &name, NumUnits_t nUnits);
   void                destroy();
 };
 
 class PortUnlimited : public PortGeneric {
-protected:
+private:
 public:
-  PortUnlimited(const std::string &name);
+  explicit PortUnlimited(const std::string &name);
 
-  void   occupyUntil(Time_t t);
-  Time_t nextSlot(bool en);
-  Time_t calcNextSlot() const;
+  void               occupyUntil(Time_t t) override;
+  Time_t             nextSlot(bool en) override;
+  [[nodiscard]] bool is_busy_for(TimeDelta_t clk) const override;
 };
 
 class PortFullyPipe : public PortGeneric {
 private:
-protected:
   // lTime is the cycle in which the latest use began
   Time_t lTime;
 
 public:
-  PortFullyPipe(const std::string &name);
+  explicit PortFullyPipe(const std::string &name);
 
-  Time_t nextSlot(bool en);
-  Time_t calcNextSlot() const;
+  Time_t             nextSlot(bool en) override;
+  [[nodiscard]] bool is_busy_for(TimeDelta_t clk) const override;
 };
 
 class PortFullyNPipe : public PortGeneric {
 private:
-protected:
   const NumUnits_t nUnitsMinusOne;
   NumUnits_t       freeUnits;
   Time_t           lTime;
@@ -100,35 +79,6 @@ protected:
 public:
   PortFullyNPipe(const std::string &name, NumUnits_t nFU);
 
-  Time_t nextSlot(bool en);
-  Time_t calcNextSlot() const;
-};
-
-class PortPipe : public PortGeneric {
-private:
-protected:
-  const TimeDelta_t ocp;
-  Time_t            lTime;
-
-public:
-  PortPipe(const std::string &name, TimeDelta_t occ);
-
-  Time_t nextSlot(bool en);
-  Time_t calcNextSlot() const;
-};
-
-class PortNPipe : public PortGeneric {
-private:
-protected:
-  const TimeDelta_t   ocp;
-  const NumUnits_t    nUnits;
-  std::vector<Time_t> portBusyUntil;
-
-public:
-  PortNPipe(const std::string &name, NumUnits_t nFU, TimeDelta_t occ);
-  virtual ~PortNPipe();
-
-  Time_t nextSlot(bool en);
-  Time_t nextSlot(int32_t occupancy, bool en);
-  Time_t calcNextSlot() const;
+  Time_t             nextSlot(bool en) override;
+  [[nodiscard]] bool is_busy_for(TimeDelta_t clk) const override;
 };

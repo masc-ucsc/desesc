@@ -13,8 +13,7 @@ DepWindow::DepWindow(uint32_t cpuid, int src_id, const std::string &clusterName,
     : src_cluster_id(src_id), inter_cluster_fwd(fmt::format("P({})_{}{}_inter_cluster_fwd", cpuid, clusterName, pos)) {
   auto cadena    = fmt::format("P(P{}_{}{}_sched", cpuid, clusterName, pos);
   auto sched_num = Config::get_integer(clusterName, "sched_num");
-  auto sched_occ = Config::get_integer(clusterName, "sched_occ");
-  schedPort      = PortGeneric::create(cadena, sched_num, sched_occ);
+  schedPort      = PortGeneric::create(cadena, sched_num);
 
   sched_lat         = Config::get_integer(clusterName, "sched_lat", 0, 32);
   inter_cluster_lat = Config::get_integer("soc", "core", cpuid, "inter_cluster_lat");

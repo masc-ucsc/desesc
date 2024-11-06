@@ -232,7 +232,7 @@ public:
     gproc   = new OoOProcessor(global_mem_sys_p0, 0);
     cls     = std::make_shared<ExecutingCluster>(clusterName, 0, 0);
     lsdelay = 0;
-    aGen    = PortGeneric::create("ld_alu_0", 2, 1);
+    aGen    = PortGeneric::create("ld_alu_0", 2);
     lsq     = gproc->getLSQ();
     scb     = gproc->ref_SCB();
     pref    = gproc->ref_prefetcher();

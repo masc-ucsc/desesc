@@ -6,11 +6,10 @@
 
 Bus::Bus(Memory_system *current, const std::string &sec, const std::string &n)
     : MemObj(sec, n), delay(Config::get_integer(sec, "delay")) {
-  NumUnits_t  num = Config::get_integer(section, "port_num");
-  TimeDelta_t occ = Config::get_integer(section, "port_occ");
+  NumUnits_t num = Config::get_integer(section, "port_num");
 
-  dataPort = PortGeneric::create(name + "_data", num, occ);
-  cmdPort  = PortGeneric::create(name + "_cmd", num, 1);
+  dataPort = PortGeneric::create(name + "_data", num);
+  cmdPort  = PortGeneric::create(name + "_cmd", num);
 
   I(current);
   MemObj *lower_level = current->declareMemoryObj(section, "lower_level");

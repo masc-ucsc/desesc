@@ -53,9 +53,8 @@ std::shared_ptr<Resource> Cluster::buildUnit(const std::string &clusterName, uin
   } else {
     UnitEntry e;
     e.num = Config::get_integer(sUnitName, "num", 0, 1024);
-    e.occ = Config::get_integer(sUnitName, "occ", 0, 1024);
 
-    e.gen = PortGeneric::create(unitName, e.num, e.occ);
+    e.gen = PortGeneric::create(unitName, e.num);
     gen   = e.gen;
 
     unitMap[unitName] = e;

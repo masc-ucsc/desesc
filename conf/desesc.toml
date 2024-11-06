@@ -243,7 +243,6 @@ occ = 1
 [aunit]
 win_size   = 16
 sched_num  = 4
-sched_occ  = 1
 sched_lat  = 1
 recycle_at  = "executed"
 num_regs   = 64
@@ -254,7 +253,6 @@ iRALU      = "alu0"
 [bunit]
 win_size   = 16
 sched_num  = 4
-sched_occ  = 1
 sched_lat  = 1
 recycle_at  = "executed"
 num_regs   = 64
@@ -270,7 +268,6 @@ iBALU_RET     = "balu"
 [cunit]
 win_size   = 16
 sched_num  = 4
-sched_occ  = 1
 sched_lat  = 1
 recycle_at  = "executed"
 num_regs   = 64
@@ -284,7 +281,6 @@ iCALU_DIV     = "calu2"
 [munit]
 win_size   = 16
 sched_num  = 4
-sched_occ  = 1
 sched_lat  = 1
 recycle_at  = "executed"
 num_regs   = 64
@@ -305,11 +301,9 @@ miss_delay = 2
 assoc      = 4
 repl_policy = "lru"
 
-port_occ   = 1
 port_num   = 1
 port_banks = 32
 
-send_port_occ = 1
 send_port_num = 1
 
 max_requests  = 32
@@ -340,11 +334,9 @@ miss_delay = 8
 assoc      = 4
 repl_policy = "lru"
 
-port_occ   = 1
 port_num   = 1
 port_banks = 32
 
-send_port_occ = 1
 send_port_num = 1
 
 max_requests  = 32
@@ -374,11 +366,9 @@ miss_delay = 2
 assoc      = 4
 repl_policy = "lru"
 
-port_occ   = 1
 port_num   = 1
 port_banks = 32
 
-send_port_occ = 1
 send_port_num = 1
 
 max_requests  = 32
@@ -451,7 +441,6 @@ crossLat       = 1       # Crossing Latency  : Time for a message to go through 
 localNum       = 2       # Number of addressable local ports
 localPort      = 1       # Number of ports for each addressable local port
 localLat       = 1       # Local port Latency
-localOcc       = 1       # Local port Occupancy (0 means unlimited)
 ############################################
 # Mesh parameters
 width          = 4       # the width of network (totalNum = width * width)

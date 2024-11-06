@@ -48,7 +48,6 @@ protected:
   struct UnitEntry {
     PortGeneric *gen;
     int32_t      num;
-    int32_t      occ;
   };
 
   static inline std::map<std::string, UnitEntry>                                                                    unitMap;

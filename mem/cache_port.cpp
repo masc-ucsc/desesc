@@ -6,7 +6,6 @@
 
 Cache_port::Cache_port(const std::string &section, const std::string &name) {
   int numPorts = Config::get_integer(section, "port_num");
-  int portOccp = Config::get_integer(section, "port_occ");
 
   hitDelay  = Config::get_integer(section, "delay", 1, 1024);
   missDelay = Config::get_integer(section, "miss_delay", 1, hitDelay);
@@ -33,18 +32,16 @@ Cache_port::Cache_port(const std::string &section, const std::string &name) {
 
   bkPort = new PortGeneric *[numBanks];
   for (uint32_t i = 0; i < numBanks; i++) {
-    bkPort[i] = PortGeneric::create(fmt::format("{}_bk({})", name, i), numPorts, portOccp);
+    bkPort[i] = PortGeneric::create(fmt::format("{}_bk({})", name, i), numPorts);
     I(bkPort[i]);
   }
   I(bkPort[0]);
   {
-    int send_port_occ = 1;
     int send_port_num = 1;
     if (Config::has_entry(section, "send_port_occ")) {
       send_port_num = Config::get_integer(section, "send_port_num");
-      send_port_occ = Config::get_integer(section, "send_port_occ");
     }
-    sendFillPort = PortGeneric::create(fmt::format("{}_sendFill", name), send_port_num, send_port_occ);
+    sendFillPort = PortGeneric::create(fmt::format("{}_sendFill", name), send_port_num);
   }
 
   maxRequests = Config::get_integer(section, "max_requests");
@@ -87,12 +84,6 @@ Time_t Cache_port::nextBankSlot(Addr_t addr, bool en) {
   return bkPort[bank]->nextSlot(en);
 }
 
-Time_t Cache_port::calcNextBankSlot(Addr_t addr) {
-  int32_t bank = (addr >> bankShift) & numBanksMask;
-
-  return bkPort[bank]->calcNextSlot();
-}
-
 void Cache_port::nextBankSlotUntil(Addr_t addr, Time_t until, bool en) {
   (void)en;  // no stats tracking
   uint32_t bank = (addr >> bankShift) & numBanksMask;
@@ -105,7 +96,7 @@ Time_t Cache_port::reqDone(MemRequest *mreq, bool retrying) {
     return globalClock + 1;
   }
 
-  if (dropPrefetchFill && mreq->isPrefetch() && sendFillPort->calcNextSlot() > (globalClock + 8)) {
+  if (dropPrefetchFill && mreq->isPrefetch() && sendFillPort->is_busy_for(8)) {
     mreq->setDropped();
     return globalClock + 1;
   }
@@ -124,7 +115,7 @@ Time_t Cache_port::reqAckDone(MemRequest *mreq) {
     return globalClock + 1;
   }
 
-  if (dropPrefetchFill && mreq->isPrefetch() && sendFillPort->calcNextSlot() > (globalClock + 8)) {
+  if (dropPrefetchFill && mreq->isPrefetch() && sendFillPort->is_busy_for(8)) {
     mreq->setDropped();
     return globalClock + 1;
   }

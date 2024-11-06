@@ -664,13 +664,6 @@ FUGeneric::FUGeneric(Opcode type, std::shared_ptr<Cluster> cls, PortGeneric *aGe
 
 StallCause FUGeneric::canIssue(Dinst *dinst) {
   (void)dinst;
-#if 0
-  if (inorder) {
-    Time_t t = gen->calcNextSlot();
-    if (t>globalClock)
-      return DivergeStall;
-  }
-#endif
   return NoStall;
 }
 

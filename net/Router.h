@@ -4,7 +4,7 @@
 #include <list>
 #include <vector>
 
-//#include "EnergyMgr.h"  No reference to EnergyMgr.h appears anywhere else in esesc
+// #include "EnergyMgr.h"  No reference to EnergyMgr.h appears anywhere else in esesc
 #include "Port.h"
 #include "ProtocolCB.h"
 #include "RoutingTable.h"
@@ -34,20 +34,19 @@ private:
   const RouterID_t myID;
 
   // Begin Configuration parameters
-  const TimeDelta_t crossLat; //!< Router crossing latency [0..32700)
+  const TimeDelta_t crossLat;  //!< Router crossing latency [0..32700)
 
-  const unsigned short localNum;  //!< Number of addressable local ports [1..MAX_PORTS-LOCAL_PORT1)
-  const TimeDelta_t    localLat;  //!< Local port latency [0..32700)
-  const TimeDelta_t    localOcc;  //!< Local port occupancy [0..32700)
-  const unsigned short localPort; //!< Number of ports for each addressable local port [0..32700)
+  const unsigned short localNum;   //!< Number of addressable local ports [1..MAX_PORTS-LOCAL_PORT1)
+  const TimeDelta_t    localLat;   //!< Local port latency [0..32700)
+  const unsigned short localPort;  //!< Number of ports for each addressable local port [0..32700)
 
-  const bool        congestionFree; //!< Skip the router modeling (just local ports)
-  const TimeDelta_t addFixDelay;    //!< fix delay to add to the network forwarding
+  const bool        congestionFree;  //!< Skip the router modeling (just local ports)
+  const TimeDelta_t addFixDelay;     //!< fix delay to add to the network forwarding
   // End Configuration parameters
 
   PortID_t maxLocalPort;
 
-  InterConnection *net; //!< The network where the router is mapped
+  InterConnection *net;  //!< The network where the router is mapped
 
   RoutingTable *rTable;
 
@@ -55,9 +54,9 @@ private:
 
   ProtHandlersType localPortProtocol;
 
-  std::vector<PortGeneric *> l2rPort; //!< ports from local device to router
-  std::vector<PortGeneric *> r2lPort; //!< ports from router to local device
-  std::vector<PortGeneric *> r2rPort; //!< ports from router to router (output)
+  std::vector<PortGeneric *> l2rPort;  //!< ports from local device to router
+  std::vector<PortGeneric *> r2lPort;  //!< ports from router to local device
+  std::vector<PortGeneric *> r2rPort;  //!< ports from router to router (output)
 
 protected:
   unsigned short calcNumFlits(Message *msg) const;
@@ -66,19 +65,17 @@ public:
   Router(const char *section, RouterID_t id, InterConnection *n, RoutingTable *rt);
   virtual ~Router();
 
-  void launchMsg(Message *msg);  //!< Called when a new message is injected in the router.
-  void forwardMsg(Message *msg); //!< Called to forward a message from router to router
-  void receiveMsg(Message *msg); //!< Called when the first flit can arrive to the destination
-  void notifyMsg(Message *msg);  //!< Called when the notification flit arrives to the destination
+  void launchMsg(Message *msg);   //!< Called when a new message is injected in the router.
+  void forwardMsg(Message *msg);  //!< Called to forward a message from router to router
+  void receiveMsg(Message *msg);  //!< Called when the first flit can arrive to the destination
+  void notifyMsg(Message *msg);   //!< Called when the notification flit arrives to the destination
 
   //!< Register a protocol callback with unique id in the portID
   void registerProtocol(ProtocolCBBase *pcb, PortID_t pID, int32_t id);
 
   void dump();
 
-  RouterID_t getMyID() const {
-    return myID;
-  }
+  RouterID_t getMyID() const { return myID; }
 };
 
-#endif //_ROUTER_H
+#endif  //_ROUTER_H

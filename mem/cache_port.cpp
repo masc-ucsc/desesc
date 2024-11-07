@@ -30,7 +30,7 @@ Cache_port::Cache_port(const std::string &section, const std::string &name) {
     numBanksMask = 0;
   }
 
-  bkPort = new PortGeneric *[numBanks];
+  bkPort.resize(numBanks);
   for (uint32_t i = 0; i < numBanks; i++) {
     bkPort[i] = PortGeneric::create(fmt::format("{}_bk({})", name, i), numPorts);
     I(bkPort[i]);

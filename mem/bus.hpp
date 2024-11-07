@@ -13,8 +13,8 @@ protected:
   TimeDelta_t delay;
   // Time_t busyUpto;
 
-  PortGeneric *dataPort;
-  PortGeneric *cmdPort;
+  std::shared_ptr<PortGeneric> dataPort;
+  std::shared_ptr<PortGeneric> cmdPort;
 
 public:
   Bus(Memory_system *current, const std::string &device_descr_section, const std::string &device_name = NULL);

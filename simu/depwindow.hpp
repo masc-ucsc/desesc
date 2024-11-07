@@ -19,7 +19,7 @@ private:
 
   Stats_cntr inter_cluster_fwd;
 
-  PortGeneric *schedPort;
+  std::shared_ptr<PortGeneric> schedPort;
 
 protected:
   void preSelect(Dinst *dinst);

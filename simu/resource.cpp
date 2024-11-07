@@ -24,7 +24,7 @@
 
 /* }}} */
 
-Resource::Resource(Opcode type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, TimeDelta_t l, uint32_t cpuid)
+Resource::Resource(Opcode type, std::shared_ptr<Cluster> cls, std::shared_ptr<PortGeneric> aGen, TimeDelta_t l, uint32_t cpuid)
     /* constructor {{{1 */
     : cluster(cls)
     , gen(aGen)
@@ -39,9 +39,6 @@ Resource::Resource(Opcode type, std::shared_ptr<Cluster> cls, PortGeneric *aGen,
     , coreid(cpuid)
     , usedTime(0) {
   I(cls);
-  if (gen) {
-    gen->subscribe();
-  }
 
   auto core_type = Config::get_string("soc", "core", cpuid, "type", {"inorder", "ooo", "accel"});
   std::transform(core_type.begin(), core_type.end(), core_type.begin(), [](unsigned char c) { return std::toupper(c); });
@@ -80,18 +77,14 @@ Resource::~Resource()
   if (EventScheduler::size() > 10) {
     fmt::print("Resources destroyed with {} pending instructions (small is OK)\n", EventScheduler::size());
   }
-
-  if (gen) {
-    gen->unsubscribe();
-  }
 }
 /* }}} */
 
 /***********************************************/
 
-MemResource::MemResource(Opcode type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, LSQ *_lsq, std::shared_ptr<StoreSet> ss,
-                         std::shared_ptr<Prefetcher> _pref, std::shared_ptr<Store_buffer> _scb, TimeDelta_t l,
-                         std::shared_ptr<Gmemory_system> ms, int32_t id, const std::string &cad)
+MemResource::MemResource(Opcode type, std::shared_ptr<Cluster> cls, std::shared_ptr<PortGeneric> aGen, LSQ *_lsq,
+                         std::shared_ptr<StoreSet> ss, std::shared_ptr<Prefetcher> _pref, std::shared_ptr<Store_buffer> _scb,
+                         TimeDelta_t l, std::shared_ptr<Gmemory_system> ms, int32_t id, const std::string &cad)
     /* constructor {{{1 */
     : MemReplay(type, cls, aGen, ss, l, id)
     , firstLevelMemObj(ms->getDL1())
@@ -116,8 +109,8 @@ MemResource::MemResource(Opcode type, std::shared_ptr<Cluster> cls, PortGeneric 
 
 /* }}} */
 
-MemReplay::MemReplay(Opcode type, std::shared_ptr<Cluster> cls, PortGeneric *_gen, std::shared_ptr<StoreSet> ss, TimeDelta_t l,
-                     uint32_t cpuid)
+MemReplay::MemReplay(Opcode type, std::shared_ptr<Cluster> cls, std::shared_ptr<PortGeneric> _gen, std::shared_ptr<StoreSet> ss,
+                     TimeDelta_t l, uint32_t cpuid)
     : Resource(type, cls, _gen, l, cpuid), lfSize(8), storeset(ss) {
   lf.resize(lfSize);
 }
@@ -229,9 +222,10 @@ void MemReplay::replayManage(Dinst *dinst) {
 
 /***********************************************/
 
-FULoad::FULoad(Opcode type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, LSQ *_lsq, std::shared_ptr<StoreSet> ss,
-               std::shared_ptr<Prefetcher> _pref, std::shared_ptr<Store_buffer> _scb, TimeDelta_t lsdelay, TimeDelta_t l,
-               std::shared_ptr<Gmemory_system> ms, int32_t size, int32_t id, const std::string &cad)
+FULoad::FULoad(Opcode type, std::shared_ptr<Cluster> cls, std::shared_ptr<PortGeneric> aGen, LSQ *_lsq,
+               std::shared_ptr<StoreSet> ss, std::shared_ptr<Prefetcher> _pref, std::shared_ptr<Store_buffer> _scb,
+               TimeDelta_t lsdelay, TimeDelta_t l, std::shared_ptr<Gmemory_system> ms, int32_t size, int32_t id,
+               const std::string &cad)
     /* Constructor {{{1 */
     : MemResource(type, cls, aGen, _lsq, ss, _pref, _scb, l, ms, id, cad)
 #ifdef MEM_TSO2
@@ -478,8 +472,8 @@ void FULoad::performed(Dinst *dinst) {
 
 /***********************************************/
 
-FUStore::FUStore(Opcode type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, LSQ *_lsq, std::shared_ptr<StoreSet> ss,
-                 std::shared_ptr<Prefetcher> _pref, std::shared_ptr<Store_buffer> _scb, TimeDelta_t l,
+FUStore::FUStore(Opcode type, std::shared_ptr<Cluster> cls, std::shared_ptr<PortGeneric> aGen, LSQ *_lsq,
+                 std::shared_ptr<StoreSet> ss, std::shared_ptr<Prefetcher> _pref, std::shared_ptr<Store_buffer> _scb, TimeDelta_t l,
                  std::shared_ptr<Gmemory_system> ms, int32_t size, int32_t id, const std::string &cad)
     /* constructor {{{1 */
     : MemResource(type, cls, aGen, _lsq, ss, _pref, _scb, l, ms, id, cad), freeEntries(size) {
@@ -657,7 +651,7 @@ bool FUStore::retire(Dinst *dinst, bool flushing) {
 
 /***********************************************/
 
-FUGeneric::FUGeneric(Opcode type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, TimeDelta_t l, uint32_t cpuid)
+FUGeneric::FUGeneric(Opcode type, std::shared_ptr<Cluster> cls, std::shared_ptr<PortGeneric> aGen, TimeDelta_t l, uint32_t cpuid)
     /* constructor {{{1 */
     : Resource(type, cls, aGen, l, cpuid) {}
 /* }}} */
@@ -735,8 +729,8 @@ void FUGeneric::performed(Dinst *dinst) {
 
 /***********************************************/
 
-FUBranch::FUBranch(Opcode type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, TimeDelta_t l, uint32_t cpuid, int32_t mb,
-                   bool dom)
+FUBranch::FUBranch(Opcode type, std::shared_ptr<Cluster> cls, std::shared_ptr<PortGeneric> aGen, TimeDelta_t l, uint32_t cpuid,
+                   int32_t mb, bool dom)
     /* constructor {{{1 */
     : Resource(type, cls, aGen, l, cpuid), freeBranches(mb), drainOnMiss(dom) {
   I(freeBranches > 0);
@@ -823,7 +817,7 @@ void FUBranch::performed(Dinst *dinst) {
 
 /***********************************************/
 
-FURALU::FURALU(Opcode type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, TimeDelta_t l, int32_t id)
+FURALU::FURALU(Opcode type, std::shared_ptr<Cluster> cls, std::shared_ptr<PortGeneric> aGen, TimeDelta_t l, int32_t id)
     /* constructor {{{1 */
     : Resource(type, cls, aGen, l, id)
     , dmemoryBarrier(fmt::format("P({})_{}_dmemoryBarrier", id, cls->getName()))

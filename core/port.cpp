@@ -2,37 +2,29 @@
 
 #include "port.hpp"
 
-PortGeneric::PortGeneric(const std::string &name) : avgTime(name) { nUsers = 0; }
+PortGeneric::PortGeneric(const std::string &name) : avgTime(name) {}
 
-PortGeneric::~PortGeneric() {
-  if (nUsers) {
-    fmt::print("ERROR: Not enough destroys for FUGenUnit\n");
-  }
-}
-
-PortGeneric *PortGeneric::create(const std::string &unitName, NumUnits_t nUnits) {
+std::shared_ptr<PortGeneric> PortGeneric::create(const std::string &unitName, NumUnits_t nUnits) {
   // Search for the configuration with the best performance. In theory
   // everything can be solved with PortNPipe, but it is the slowest.
   // Sorry, but I'm a performance freak!
 
   auto name = fmt::format("{}_occ", unitName);
 
-  PortGeneric *gen;
+  std::shared_ptr<PortGeneric> gen;
 
   if (nUnits == 0) {
-    gen = new PortUnlimited(name);
+    gen = std::make_shared<PortUnlimited>(name);
   } else {
     if (nUnits == 1) {
-      gen = new PortFullyPipe(name);
+      gen = std::make_shared<PortFullyPipe>(name);
     } else {
-      gen = new PortFullyNPipe(name, nUnits);
+      gen = std::make_shared<PortFullyNPipe>(name, nUnits);
     }
   }
 
   return gen;
 }
-
-void PortGeneric::destroy() { delete this; }
 
 PortUnlimited::PortUnlimited(const std::string &name) : PortGeneric(name) {}
 

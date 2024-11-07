@@ -13,38 +13,22 @@ using NumUnits_t = uint16_t;
 //! Each has a different algorithm, so that is quite fast.
 class PortGeneric {
 private:
-  int32_t nUsers;
-
 protected:
   Stats_avg avgTime;
 
 public:
   explicit PortGeneric(const std::string &name);
-  virtual ~PortGeneric();
-
-  void subscribe() { nUsers++; }
-  void unsubscribe() { nUsers--; }
+  virtual ~PortGeneric() = default;
 
   TimeDelta_t nextSlotDelta(bool en) { return nextSlot(en) - globalClock; }
   //! occupy a time slot in the port.
   //! Returns when the slot started to be occupied
   virtual Time_t nextSlot(bool en) = 0;
 
-  //! occupy the port for a number of slots.
-  //! Returns the time that the first slot was allocated.
-  //!
-  //! This function is equivalent to:
-  //! Time_t t = nextSlot();
-  //! for(int32_t i=1;i<nSlots;i++) {
-  //!  nextSlot();
-  //! }
-  //! return t;
-
   //! returns when the next slot can be free without occupying any slot
   [[nodiscard]] virtual bool is_busy_for(TimeDelta_t clk) const = 0;
 
-  static PortGeneric *create(const std::string &name, NumUnits_t nUnits);
-  void                destroy();
+  static std::shared_ptr<PortGeneric> create(const std::string &name, NumUnits_t nUnits);
 };
 
 class PortUnlimited : public PortGeneric {

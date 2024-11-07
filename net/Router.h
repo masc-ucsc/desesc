@@ -54,9 +54,9 @@ private:
 
   ProtHandlersType localPortProtocol;
 
-  std::vector<PortGeneric *> l2rPort;  //!< ports from local device to router
-  std::vector<PortGeneric *> r2lPort;  //!< ports from router to local device
-  std::vector<PortGeneric *> r2rPort;  //!< ports from router to router (output)
+  std::vector<std::shared_ptr<PortGeneric>> l2rPort;  //!< ports from local device to router
+  std::vector<std::shared_ptr<PortGeneric>> r2lPort;  //!< ports from router to local device
+  std::vector<std::shared_ptr<PortGeneric>> r2rPort;  //!< ports from router to router (output)
 
 protected:
   unsigned short calcNumFlits(Message *msg) const;

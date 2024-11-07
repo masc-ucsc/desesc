@@ -43,8 +43,8 @@ std::shared_ptr<Resource> Cluster::buildUnit(const std::string &clusterName, uin
   int smt     = Config::get_integer("soc", "core", id, "smt", 1, 1024);
   int smt_ctx = id - (id % smt);
 
-  TimeDelta_t  lat = Config::get_integer(sUnitName, "lat", 0, 1024);
-  PortGeneric *gen;
+  TimeDelta_t                  lat = Config::get_integer(sUnitName, "lat", 0, 1024);
+  std::shared_ptr<PortGeneric> gen;
 
   auto unitName = fmt::format("P({})_{}{}_{}", smt_ctx, clusterName, pos, sUnitName);
   auto it       = unitMap.find(unitName);

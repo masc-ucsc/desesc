@@ -10,8 +10,8 @@
 class Cache_port {
 private:
 protected:
-  PortGeneric **bkPort;
-  PortGeneric  *sendFillPort;
+  std::vector<std::shared_ptr<PortGeneric>> bkPort;
+  std::shared_ptr<PortGeneric>              sendFillPort;
 
   bool    dupPrefetchTag;
   bool    dropPrefetchFill;

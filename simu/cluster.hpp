@@ -46,8 +46,8 @@ protected:
   int               cluster_id;
 
   struct UnitEntry {
-    PortGeneric *gen;
-    int32_t      num;
+    std::shared_ptr<PortGeneric> gen;
+    int32_t                      num;
   };
 
   static inline std::map<std::string, UnitEntry>                                                                    unitMap;

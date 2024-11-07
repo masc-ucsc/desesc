@@ -43,7 +43,6 @@ protected:
   Time_t snoopFillBankUse(MemRequest *mreq);
 
   Time_t nextBankSlot(Addr_t addr, bool en);
-  void   nextBankSlotUntil(Addr_t addr, Time_t until, bool en);
   void   req2(MemRequest *mreq);
 
 public:

@@ -39,7 +39,6 @@ public:
   //!  nextSlot();
   //! }
   //! return t;
-  virtual void occupyUntil(Time_t t);
 
   //! returns when the next slot can be free without occupying any slot
   [[nodiscard]] virtual bool is_busy_for(TimeDelta_t clk) const = 0;
@@ -53,7 +52,6 @@ private:
 public:
   explicit PortUnlimited(const std::string &name);
 
-  void               occupyUntil(Time_t t) override;
   Time_t             nextSlot(bool en) override;
   [[nodiscard]] bool is_busy_for(TimeDelta_t clk) const override;
 };

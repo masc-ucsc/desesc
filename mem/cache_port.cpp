@@ -84,13 +84,6 @@ Time_t Cache_port::nextBankSlot(Addr_t addr, bool en) {
   return bkPort[bank]->nextSlot(en);
 }
 
-void Cache_port::nextBankSlotUntil(Addr_t addr, Time_t until, bool en) {
-  (void)en;  // no stats tracking
-  uint32_t bank = (addr >> bankShift) & numBanksMask;
-
-  bkPort[bank]->occupyUntil(until);
-}
-
 Time_t Cache_port::reqDone(MemRequest *mreq, bool retrying) {
   if (mreq->isWarmup() || mreq->isDropped()) {
     return globalClock + 1;
@@ -239,17 +232,6 @@ Time_t Cache_port::snoopFillBankUse(MemRequest *mreq) {
     }
     max_fc++;
   }
-
-#if 0
-  // Make sure that all the banks are busy until the max time
-  Time_t cur_fc = 0;
-  for(int fc = 0; fc<lineSize ;  fc += fill_line_size) {
-    cur_fc++;
-    for(int i = 0;i<fill_line_size;i += bankSize) {
-      nextBankSlotUntil(mreq->getAddr()+fc+i,max-max_fc+cur_fc, mreq->has_stats());
-    }
-  }
-#endif
 
   return max;
 }

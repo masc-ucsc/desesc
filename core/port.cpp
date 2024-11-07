@@ -34,22 +34,12 @@ PortGeneric *PortGeneric::create(const std::string &unitName, NumUnits_t nUnits)
 
 void PortGeneric::destroy() { delete this; }
 
-void PortGeneric::occupyUntil(Time_t u) {
-  Time_t t = globalClock;
-
-  while (t < u) {
-    t = nextSlot(false);
-  }
-}
-
 PortUnlimited::PortUnlimited(const std::string &name) : PortGeneric(name) {}
 
 Time_t PortUnlimited::nextSlot(bool en) {
   avgTime.sample(0, en);  // Just to keep usage statistics
   return globalClock;
 }
-
-void PortUnlimited::occupyUntil(Time_t u) { (void)u; }
 
 bool PortUnlimited::is_busy_for(TimeDelta_t clk) const {
   (void)clk;

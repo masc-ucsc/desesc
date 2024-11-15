@@ -241,7 +241,7 @@ public:
 class BPSuperbp : public BPred {
 private:
   BPBTB btb;
-
+  enum class insn_t { non_cti, jump, branch, call, ret };
   std::unique_ptr<PREDICTOR> superbp_p;
 
   const bool FetchPredict;

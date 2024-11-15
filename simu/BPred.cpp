@@ -600,25 +600,55 @@ BPSuperbp::BPSuperbp(int32_t i, const std::string &section, const std::string &s
   superbp_p = std::make_unique<PREDICTOR>();
 }
 
-  void    BPSuperbp::fetchBoundaryBegin(Dinst *dinst) { (void)dinst; }
-  void    BPSuperbp::fetchBoundaryEnd() {}
-  Outcome BPSuperbp::predict(Dinst *dinst, bool doUpdate, bool doStats) {
+void BPSuperbp::fetchBoundaryBegin (Dinst *dinst) {
+  if (FetchPredict) {
+    superbp_p->fetchBoundaryBegin(dinst->getPC());
+  }
+}
+
+void BPSuperbp::fetchBoundaryEnd () {
+  if (FetchPredict) {
+    superbp_p->fetchBoundaryEnd();
+  }
+}
+/*
+
+*/
+  Outcome BPSuperbp::predict (Dinst *dinst, bool doUpdate, bool doStats) {
+    //return btb.predict(dinst, doUpdate, doStats);
+    uint64_t pc = dinst->getPC();
+    uint8_t insn_raw = 0; //dinst->getInst();
+    
+    superbp_p->handle_insn(pc, insn_raw);
+    
+      if (dinst->getInst()->isJump()) {
     return btb.predict(dinst, doUpdate, doStats);
   }
 
+  bool taken = dinst->isTaken();
+  bool ptaken = false;
+  
 /*
-void BPSuperbp::fetchBoundaryBegin(Dinst *dinst) {
-  if (FetchPredict) {
-    batage_p->fetchBoundaryBegin(dinst->getPC());
+ if (doUpdate) {
+    ptaken = table.predict(calcHist(dinst->getPC()), taken);
+  } else {
+    ptaken = table.predict(calcHist(dinst->getPC()));
   }
+  */
+  
+  if (taken != ptaken) {
+    if (doUpdate) {
+      btb.updateOnly(dinst);
+    }
+    return Outcome::Miss;
+  }
+
+  return ptaken ? btb.predict(dinst, doUpdate, doStats) : Outcome::Correct;
+
 }
 
-void BPSuperbp::fetchBoundaryEnd() {
-  if (FetchPredict) {
-    batage_p->fetchBoundaryEnd();
-  }
-}
 
+/*
 Outcome BPSuperbp::predict(Dinst *dinst, bool doUpdate, bool doStats) {
   if (dinst->getInst()->isJump() || dinst->getInst()->isFuncRet()) {
     uint64_t branchTarget = 0; // Check, get it somehow

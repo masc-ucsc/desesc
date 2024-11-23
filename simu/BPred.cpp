@@ -611,30 +611,24 @@ void BPSuperbp::fetchBoundaryEnd () {
     superbp_p->fetchBoundaryEnd();
   }
 }
-/*
 
-*/
   Outcome BPSuperbp::predict (Dinst *dinst, bool doUpdate, bool doStats) {
     //return btb.predict(dinst, doUpdate, doStats);
     uint64_t pc = dinst->getPC();
-    uint8_t insn_raw = 0; //dinst->getInst();
+    uint8_t insn_type = 	dinst->getInst()->isJump() 		? 1 /*insn_t::jump*/ : \
+    								dinst->getInst()->	isBranch()		? 2 /*insn_t::branch*/ : \
+    								dinst->getInst()->isFuncCall()		? 3 /*insn_t::call*/ : \
+    								dinst->getInst()->isFuncRet	()		? 4 /*insn_t::ret*/ : \
+    								0; /*insn_t::non_cti;*/
     
-    superbp_p->handle_insn(pc, insn_raw);
+    bool taken = dinst->isTaken();
+    bool ptaken = superbp_p->handle_insn_t(pc, insn_type, taken);
+    // superbp in sync (must be done for all instructions), prediction made, also ftq updated as per previous resolution info
     
+    // for jump - may just return btb target
       if (dinst->getInst()->isJump()) {
     return btb.predict(dinst, doUpdate, doStats);
   }
-
-  bool taken = dinst->isTaken();
-  bool ptaken = false;
-  
-/*
- if (doUpdate) {
-    ptaken = table.predict(calcHist(dinst->getPC()), taken);
-  } else {
-    ptaken = table.predict(calcHist(dinst->getPC()));
-  }
-  */
   
   if (taken != ptaken) {
     if (doUpdate) {
@@ -644,9 +638,8 @@ void BPSuperbp::fetchBoundaryEnd () {
   }
 
   return ptaken ? btb.predict(dinst, doUpdate, doStats) : Outcome::Correct;
-
+	
 }
-
 
 /*
 Outcome BPSuperbp::predict(Dinst *dinst, bool doUpdate, bool doStats) {

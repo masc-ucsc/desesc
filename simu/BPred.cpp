@@ -615,11 +615,11 @@ void BPSuperbp::fetchBoundaryEnd () {
   Outcome BPSuperbp::predict (Dinst *dinst, bool doUpdate, bool doStats) {
     //return btb.predict(dinst, doUpdate, doStats);
     uint64_t pc = dinst->getPC();
-    uint8_t insn_type = 	dinst->getInst()->isJump() 		? 1 /*insn_t::jump*/ : \
-    								dinst->getInst()->	isBranch()		? 2 /*insn_t::branch*/ : \
-    								dinst->getInst()->isFuncCall()		? 3 /*insn_t::call*/ : \
-    								dinst->getInst()->isFuncRet	()		? 4 /*insn_t::ret*/ : \
-    								0; /*insn_t::non_cti;*/
+    uint8_t insn_type = 	dinst->getInst()->isFuncRet	()		? 4 /*insn_t::ret*/ : \
+    									dinst->getInst()->isFuncCall()		? 3 /*insn_t::call*/ : \
+    									dinst->getInst()->	isBranch()		? 2 /*insn_t::branch*/ : \
+    									dinst->getInst()->isJump() 		? 1 /*insn_t::jump*/ : \
+    									0; /*insn_t::non_cti;*/
     
     bool taken = dinst->isTaken();
     bool ptaken = superbp_p->handle_insn_t(pc, insn_type, taken);

@@ -7,9 +7,9 @@ load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
 
 http_archive(
     name = "rules_foreign_cc",
-    sha256 = "c905d5ba97d102153b7b8cacc8fa1f1c29623a710264c992cd2cddcb9d616527",
-    strip_prefix = "rules_foreign_cc-0.10.1",
-    url = "https://github.com/bazelbuild/rules_foreign_cc/archive/0.10.1.zip",
+    sha256 = "952fb22638d608f8eb9dc6b905e92641469d50333b5618cc367ee6bde6c6f011",
+    strip_prefix = "rules_foreign_cc-0.13.0",
+    url = "https://github.com/bazelbuild/rules_foreign_cc/archive/0.13.0.zip",
 )
 
 load("@rules_foreign_cc//foreign_cc:repositories.bzl", "rules_foreign_cc_dependencies")

@@ -143,6 +143,7 @@ table_width = 3
 
 [bp1]
 type = "imli"
+#type = "superbp"
 
 bp_addr_shift = 0      # bits shifted by branch predictor PC
 ras_size      = 32
@@ -162,6 +163,39 @@ nhist             = 8
 statcorrector     = false
 bimodal_size = 1024
 bimodal_width = 8
+
+
+# SuperBP parameters
+SBP_NUMG = 12
+LOG2FETCHWIDTH = 4
+NUM_TAKEN_BRANCHES = 1
+
+ORIG_ENTRIES_PER_TABLE_00 = 784
+ORIG_ENTRIES_PER_TABLE_01 = 208
+ORIG_ENTRIES_PER_TABLE_02 = 400
+ORIG_ENTRIES_PER_TABLE_03 = 1168
+ORIG_ENTRIES_PER_TABLE_04 = 976
+ORIG_ENTRIES_PER_TABLE_05 = 592
+ORIG_ENTRIES_PER_TABLE_06 = 784
+ORIG_ENTRIES_PER_TABLE_07 = 1744
+ORIG_ENTRIES_PER_TABLE_08 = 2895
+ORIG_ENTRIES_PER_TABLE_09 = 1936
+ORIG_ENTRIES_PER_TABLE_10 = 1360
+ORIG_ENTRIES_PER_TABLE_11 = 976
+    
+INFO_PER_ENTRY_00 = 2
+INFO_PER_ENTRY_01 = 1
+INFO_PER_ENTRY_02 = 1
+INFO_PER_ENTRY_03 = 4
+INFO_PER_ENTRY_04 = 1
+INFO_PER_ENTRY_05 = 1
+INFO_PER_ENTRY_06 = 2
+INFO_PER_ENTRY_07 = 2
+INFO_PER_ENTRY_08 = 2
+INFO_PER_ENTRY_09 = 1
+INFO_PER_ENTRY_10 = 1
+INFO_PER_ENTRY_11 = 1
+
 
 [accel_entry]
 caches        = true  # set true to enable caches...

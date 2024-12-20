@@ -611,14 +611,14 @@ Addr_t GProcessor::random_addr_gen(){
 
 uint64_t GProcessor::random_reg_gen( bool reg){
 */
-Addr_t GProcessor::random_addr_gen() {
-  Addr_t                          addr = 0x200;
-  std::random_device              rd;
-  std::mt19937                    gen(rd());
-  std::uniform_int_distribution<> dis(1, 100);
-  int                             randomNumber = dis(gen);
-  return addr + (uint64_t)randomNumber;
-}
+// Addr_t GProcessor::random_addr_gen() {
+//   Addr_t                          addr = 0x200;
+//   std::random_device              rd;
+//   std::mt19937                    gen(rd());
+//   std::uniform_int_distribution<> dis(1, 100);
+//   int                             randomNumber = dis(gen);
+//   return addr + (uint64_t)randomNumber;
+// }
 
 uint64_t GProcessor::random_reg_gen(bool reg) {
   // std::random_device rd;

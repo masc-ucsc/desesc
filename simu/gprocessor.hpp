@@ -155,7 +155,7 @@ public:
   void dump_rob();
   void report(const std::string &str);
 
-  Addr_t   random_addr_gen();
+  // Addr_t   random_addr_gen();
   uint64_t random_reg_gen(bool reg);
 
   std::shared_ptr<StoreSet>     ref_SS() { return storeset; }

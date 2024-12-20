@@ -11,7 +11,6 @@ Router::Router(const char *section, RouterID_t id, InterConnection *n, RoutingTa
     , crossLat(SescConf->getInt(section, "crossLat"))
     , localNum(SescConf->getInt(section, "localNum"))
     , localLat(SescConf->getInt(section, "localLat"))
-    , localOcc(SescConf->getInt(section, "localOcc"))
     , localPort(SescConf->getInt(section, "localPort"))
     , congestionFree(SescConf->getBool(section, "congestionFree"))
     , addFixDelay(SescConf->getBool(section, "addFixDelay"))
@@ -23,7 +22,6 @@ Router::Router(const char *section, RouterID_t id, InterConnection *n, RoutingTa
 
   SescConf->isBetween(section, "localNum", 1, MAX_PORTS - LOCAL_PORT1);
   SescConf->isBetween(section, "localLat", 0, 32700);
-  SescConf->isBetween(section, "localOcc", 0, 32700);
   SescConf->isBetween(section, "localPort", 0, 32700);
 
   SescConf->isInt(section, "addFixDelay");
@@ -45,18 +43,18 @@ Router::Router(const char *section, RouterID_t id, InterConnection *n, RoutingTa
     char    name[256];
     int32_t ret = snprintf(name, 127, "l2rPort(%d-%d)", myID, i);
     I(ret > 0);
-    l2rPort[i] = PortGeneric::create(name, localPort, localOcc);
+    l2rPort[i] = PortGeneric::create(name, localPort);
 
     ret = snprintf(name, 127, "r2lPort(%d-%d)", myID, i);
     I(ret > 0);
-    r2lPort[i] = PortGeneric::create(name, localPort, localOcc);
+    r2lPort[i] = PortGeneric::create(name, localPort);
   }
   for (PortID_t i = DISABLED_PORT; i < rTable->getnPorts(); i++) {
     char    name[256];
     int32_t ret = snprintf(name, 127, "r2rPort(%d-%d)", myID, i + 1);
     I(ret > 0);
 
-    r2rPort[i + 1] = PortGeneric::create(name, 1, 1);
+    r2rPort[i + 1] = PortGeneric::create(name, 1);
   }
 
 #ifdef DEBUG

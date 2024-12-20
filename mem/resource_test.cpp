@@ -11,9 +11,9 @@
 #include "gtest/gtest.h"
 #include "memory_system.hpp"
 #include "oooprocessor.hpp"
+#include "port.hpp"
 
 class LSQ;
-class PortGeneric;
 class Dinst;
 class MemObj;
 class Cluster;
@@ -214,7 +214,7 @@ protected:
   std::shared_ptr<Cluster>      cls;
   std::shared_ptr<StoreSet>     ss;
   Opcode                        type;
-  PortGeneric                  *aGen;
+  std::shared_ptr<PortGeneric>  aGen;
   TimeDelta_t                   lsdelay;
   TimeDelta_t                   l;
   int32_t                       size;
@@ -232,7 +232,7 @@ public:
     gproc   = new OoOProcessor(global_mem_sys_p0, 0);
     cls     = std::make_shared<ExecutingCluster>(clusterName, 0, 0);
     lsdelay = 0;
-    aGen    = PortGeneric::create("ld_alu_0", 2, 1);
+    aGen    = PortGeneric::create("ld_alu_0", 2);
     lsq     = gproc->getLSQ();
     scb     = gproc->ref_SCB();
     pref    = gproc->ref_prefetcher();

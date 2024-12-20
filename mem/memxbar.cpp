@@ -6,11 +6,7 @@
 #include "config.hpp"
 #include "memory_system.hpp"
 
-MemXBar::MemXBar(const std::string &sec, const std::string &n) : GXBar(sec, n) { /*{{{*/
-
-  init();
-
-} /*}}}*/
+MemXBar::MemXBar(const std::string &sec, const std::string &n) : GXBar(sec, n) { /*{{{*/ init(); } /*}}}*/
 
 MemXBar::MemXBar(Memory_system *current, const std::string &sec, const std::string n)
     /* {{{ constructor */

@@ -285,16 +285,16 @@ Dinst *Emul_dromajo::peek(Hartid_t fid) {
           src2 = (RegType)(rs2);
           dst1 = (RegType)(rd);
           break;
-        case 0x43: // fmadd fd, fs1, fs2, fs3
+        case 0x43:  // fmadd fd, fs1, fs2, fs3
         case 0x47:
         case 0x4b:
         case 0x4f:
-          I(false); // add support for R4 format (3 sources)
+          I(false);  // add support for R4 format (3 sources)
           opcode = Opcode::iCALU_FPMULT;
           src1   = (RegType)(rs1);
           src2   = (RegType)(rs2);
           // src3   = (RegType)(insn_raw>>27);
-          dst1   = (RegType)(rd);
+          dst1 = (RegType)(rd);
 
           break;
         case 0x53:  // XXX - this should prob be its own function FP decode

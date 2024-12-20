@@ -46,19 +46,20 @@ protected:
   int               cluster_id;
 
   struct UnitEntry {
-    PortGeneric *gen;
-    int32_t      num;
-    int32_t      occ;
+    std::shared_ptr<PortGeneric> gen;
+    int32_t                      num;
   };
 
   static inline std::map<std::string, UnitEntry>                                                                    unitMap;
   static inline std::map<std::string, std::shared_ptr<Resource>>                                                    resourceMap;
   static inline std::map<std::string, std::pair<std::shared_ptr<Cluster>, Opcode_array<std::shared_ptr<Resource>>>> clusterMap;
 
-  /*void delEntry() {
+  void delEntry() {
+    printf("Cluster:::delEntry()windowsize is %d\n", windowSize);
     windowSize++;
+    printf("Cluster:::delEntry()windowsize++ is %d: \n", windowSize);
     I(windowSize <= MaxWinSize);
-  }*/
+  }
   void newEntry() {
     windowSize--;
     I(windowSize >= 0);
@@ -75,22 +76,32 @@ public:
     clusterMap.clear();
   }
 
-  void delEntry() {
+  /*void delEntry() {
     windowSize++;
     I(windowSize <= MaxWinSize);
-  }
+  }*/
   void add_reg_pool() {
     regPool++;
-    I(regPool <= nRegs);
+    // I(regPool <= nRegs);
+  }
+
+  //<<<<<<< HEAD
+  void add_inst_retry(Dinst *dinst) {
+    if (!dinst->is_in_cluster()) {
+      window.add_inst(dinst);
+    }
   }
 
   int32_t get_reg_pool() { return regPool; }
+  //=======
+  // int32_t get_reg_pool() { return regPool; }
 
   int32_t get_nregs() { return nRegs; }
 
   int32_t get_window_size() { return windowSize; }
 
   int32_t get_window_maxsize() { return MaxWinSize; }
+  //>>>>>>> upstream/main
 
   void select(Dinst *dinst);
 
@@ -98,6 +109,8 @@ public:
   virtual void executed(Dinst *dinst)            = 0;
   virtual bool retire(Dinst *dinst, bool replay) = 0;
   virtual void flushed(Dinst *dinst)             = 0;
+  virtual void try_flushed(Dinst *dinst)         = 0;
+  virtual void del_entry_flush(Dinst *dinst)     = 0;
 
   static std::pair<std::shared_ptr<Cluster>, Opcode_array<std::shared_ptr<Resource>>> create(const std::string &clusterName,
                                                                                              uint32_t           pos,
@@ -130,6 +143,8 @@ public:
   void executed(Dinst *dinst);
   bool retire(Dinst *dinst, bool replay);
   void flushed(Dinst *dinst);
+  void try_flushed(Dinst *dinst);
+  void del_entry_flush(Dinst *dinst);
 };
 
 class ExecutedCluster : public Cluster {
@@ -142,6 +157,8 @@ public:
   void executed(Dinst *dinst);
   bool retire(Dinst *dinst, bool replay);
   void flushed(Dinst *dinst);
+  void try_flushed(Dinst *dinst);
+  void del_entry_flush(Dinst *dinst);
 };
 
 class RetiredCluster : public Cluster {
@@ -153,4 +170,6 @@ public:
   void executed(Dinst *dinst);
   bool retire(Dinst *dinst, bool replay);
   void flushed(Dinst *dinst);
+  void try_flushed(Dinst *dinst);
+  void del_entry_flush(Dinst *dinst);
 };

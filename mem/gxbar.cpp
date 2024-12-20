@@ -5,5 +5,4 @@
 #include "config.hpp"
 #include "memory_system.hpp"
 
-GXBar::GXBar(const std::string &sec, const std::string &n)
-    : MemObj(sec, n) {}
+GXBar::GXBar(const std::string &sec, const std::string &n) : MemObj(sec, n) {}

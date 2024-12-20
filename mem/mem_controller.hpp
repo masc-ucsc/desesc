@@ -43,7 +43,7 @@ protected:
     ACCESSING,
     INIT  // Added LNB 5/31/2014
   };
-  PortGeneric *cmdPort;
+  std::shared_ptr<PortGeneric> cmdPort;
 
   uint32_t rowMask;
   uint32_t columnMask;

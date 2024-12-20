@@ -151,7 +151,7 @@ protected:
     (void)total;
   };
   void dump_calledge(TimeDelta_t lat) { (void)lat; }
-  void upce(){};
+  void upce() {};
 #endif
   static MemRequest *create(MemObj *m, Addr_t addr, bool keep_stats, CallbackBase *cb);
 

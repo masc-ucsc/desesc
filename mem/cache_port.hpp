@@ -10,8 +10,8 @@
 class Cache_port {
 private:
 protected:
-  PortGeneric **bkPort;
-  PortGeneric  *sendFillPort;
+  std::vector<std::shared_ptr<PortGeneric>> bkPort;
+  std::shared_ptr<PortGeneric>              sendFillPort;
 
   bool    dupPrefetchTag;
   bool    dropPrefetchFill;
@@ -42,9 +42,7 @@ protected:
 
   Time_t snoopFillBankUse(MemRequest *mreq);
 
-  Time_t calcNextBankSlot(Addr_t addr);
   Time_t nextBankSlot(Addr_t addr, bool en);
-  void   nextBankSlotUntil(Addr_t addr, Time_t until, bool en);
   void   req2(MemRequest *mreq);
 
 public:

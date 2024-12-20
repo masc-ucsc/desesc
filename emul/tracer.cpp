@@ -23,6 +23,7 @@ bool Tracer::open(const std::string &fname) {
   last_clock     = 0;
   track_from     = 0;
   track_to       = UINT64_MAX;
+  // track_to       = 2*UINT64_MAX;
 
   return true;
 }

@@ -72,6 +72,6 @@ public:
   // move violating load to qdinst load's store set, stores will migrate as violations occur.
   void merge_sets(Dinst *m_dinst, Dinst *d_dinst);
 #else
-  void merge_sets(Dinst *m_dinst, Dinst *d_dinst){};
+  void merge_sets(Dinst *m_dinst, Dinst *d_dinst) {};
 #endif
 };

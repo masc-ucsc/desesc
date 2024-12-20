@@ -21,7 +21,7 @@ protected:
   void unsubscribe();
 
 public:
-  Stats(const std::string &n) : name(n){};
+  Stats(const std::string &n) : name(n) {};
   virtual ~Stats();
 
   static void report_all();

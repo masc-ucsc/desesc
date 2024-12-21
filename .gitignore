@@ -1,3 +1,6 @@
+# bazel
+*.lock
+
 # Prerequisites
 *.d
 

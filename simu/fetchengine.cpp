@@ -115,7 +115,6 @@ bool FetchEngine::processBranch(Dinst *dinst, uint16_t n2Fetch) {
 #endif
 
   if (fastfix) {
-    I(globalClock);
     // dinst->getGProc()->flush_transient_inst_on_fetch_ready();
     unBlockFetchBPredDelayCB::schedule(delay, this, dinst, globalClock);
   } else {

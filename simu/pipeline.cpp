@@ -21,7 +21,7 @@ void IBucket::markFetched() {
     //      MSG("@%lld: markFetched Bucket[%p]",(long long int)globalClock, this);
   }
 
-  printf("Pipeline::readyitem::markfetched() complete\n");
+  //printf("Pipeline::readyitem::markfetched() complete\n");
   pipeLine->readyItem(this);
 }
 
@@ -83,7 +83,7 @@ void Pipeline::readyItem(IBucket *b) {
     doneItem(b);
   } else {
     buffer.push(b);
-    printf("Pipeline::readyitem::buffersize is %lu\n", buffer.size());
+    //printf("Pipeline::readyitem::buffersize is %lu\n", buffer.size());
   }
 
   clearItems();  // Try to insert on minItem reveiced (OoO) buckets
@@ -204,9 +204,6 @@ void Pipeline::flush_transient_inst_from_buffer() {
       while (!bucket->empty()) {
         // auto *dinst = bucket->top();
         auto *dinst = bucket->end_data();
-        if (dinst->getID() == 3205) {
-          printf("\nPIPELINE::PRINT 3205\n");
-        }
         I(dinst);
         // if (dinst) {
         // printf("Pipeline::flush::bucket.size is  %lu and instID %ld and Transient is %b\n",
@@ -249,7 +246,7 @@ void Pipeline::flush_transient_inst_from_buffer() {
         }
       }  // while_!bucket_empty buffer.pop();
       if (bucket->empty()) {
-        printf("Pipeline::flush::bucket.empty () \n");
+        //printf("Pipeline::flush::bucket.empty () \n");
         I(bucket->empty());
         bucket->clock = 0;
         buffer.pop_from_back();
@@ -266,14 +263,14 @@ void Pipeline::flush_transient_inst_from_buffer() {
 IBucket *Pipeline::next_item_transient_adding_to_rob() {
   if (transient_buffer.empty()) {
     clearItems();
-    printf("Pipeline::nextItemtran return 0 ::buffer.top()  \n");
+    //printf("Pipeline::nextItemtran return 0 ::buffer.top()  \n");
     return 0;
   }
-  printf("Pipeline::nextItemtran adding_to_rob::buffer.top()  \n");
+  // printf("Pipeline::nextItemtran adding_to_rob::buffer.top()  \n");
   // I(!buffer.empty());
   // I(buffer.top() != 0);
   IBucket *b = transient_buffer.top();
-  printf("Pipeline::nextItemtran after adding_to_rob::buffer.top()  \n");
+  // printf("Pipeline::nextItemtran after adding_to_rob::buffer.top()  \n");
   I(!transient_buffer.empty());
   transient_buffer.pop();
   /*if (b->empty()) {
@@ -290,16 +287,16 @@ IBucket *Pipeline::next_item_transient_adding_to_rob() {
   // I(b->top() != 0);
 
   //<<<<<<< HEAD
-  printf("Pipeline::buffer->nextItem()::returns! \n");
+  // printf("Pipeline::buffer->nextItem()::returns! \n");
   if (b) {
     return b;
   } else {
-    printf(" Pipeline::next_item_transient_adding_to_rob return no buffer.top \n");
+    // printf(" Pipeline::next_item_transient_adding_to_rob return no buffer.top \n");
     return 0;
   }
 }
 /*IBucket *Pipeline::next_item_transient() {
-  printf("Pipeline::nextItemtran::buffer.top()  \n");
+  // printf("Pipeline::nextItemtran::buffer.top()  \n");
   //I(!buffer.empty());
   //I(buffer.top() != 0);
   IBucket *b = buffer.top();
@@ -313,11 +310,11 @@ IBucket *Pipeline::next_item_transient_adding_to_rob() {
   I(b->top() != 0);
 
 //<<<<<<< HEAD
-  printf("Pipeline::buffer->nextItem()::returns! \n");
+  // printf("Pipeline::buffer->nextItem()::returns! \n");
   if(b) {
     return b;
   } else {
-    printf(" Pipeline::next_item_transient return no buffer.top \n");
+    // printf(" Pipeline::next_item_transient return no buffer.top \n");
     return 0;
   }
 }
@@ -328,7 +325,7 @@ IBucket *Pipeline::next_item_transient_adding_to_rob() {
 //}
 //>>>>>>> upstream/main
 IBucket *Pipeline::next_item_transient() {
-  printf("Pipeline::nextItemtran::buffer_end_data()  \n");
+  // printf("Pipeline::nextItemtran::buffer_end_data()  \n");
   // I(!buffer.empty());
   // I(buffer.top() != 0);
   IBucket *b = buffer.end_data();
@@ -343,11 +340,11 @@ IBucket *Pipeline::next_item_transient() {
   I(b->top() != 0);
 
   //<<<<<<< HEAD
-  printf("Pipeline::buffer->nextItem()::returns! \n");
+  // printf("Pipeline::buffer->nextItem()::returns! \n");
   if (b) {
     return b;
   } else {
-    printf(" Pipeline::next_item_transient return no buffer.top \n");
+    // printf(" Pipeline::next_item_transient return no buffer.top \n");
     return 0;
   }
 }

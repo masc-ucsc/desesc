@@ -605,7 +605,6 @@ private:
   Stats_cntr nFixes2;
   Stats_cntr nFixes3;
   Stats_cntr nUnFixes;
-  Stats_cntr nAgree3;
 
 protected:
   Outcome predict1(Dinst *dinst);

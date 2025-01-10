@@ -592,12 +592,14 @@ BPSuperbp::BPSuperbp(int32_t i, const std::string &section, const std::string &s
   int log2fetchwidth = log2(FetchWidth);
   */
   
-  /*int SBP_NUMG = Config::get_integer(section, "SBP_NUMG");
-  int LOG2FETCHWIDTH = Config::get_integer(section, "LOG2FETCHWIDTH");
-  int NUM_TAKEN_BRANCHES = Config::get_integer(section, "NUM_TAKEN_BRANCHES");*/
   
-  //superbp_p = std::make_unique<PREDICTOR>(SBP_NUMG, LOG2FETCHWIDTH, NUM_TAKEN_BRANCHES);
-  superbp_p = std::make_unique<PREDICTOR>();
+  int SBP_NUMG = Config::get_integer(section, "SBP_NUMG");
+  int LOG2FETCHWIDTH = Config::get_integer(section, "LOG2FETCHWIDTH");
+  int NUM_TAKEN_BRANCHES = Config::get_integer(section, "NUM_TAKEN_BRANCHES");
+  
+  superbp_p = std::make_unique<PREDICTOR>(SBP_NUMG, LOG2FETCHWIDTH, NUM_TAKEN_BRANCHES);
+  
+  //superbp_p = std::make_unique<PREDICTOR>();
 }
 
 void BPSuperbp::fetchBoundaryBegin (Dinst *dinst) {
@@ -622,7 +624,7 @@ void BPSuperbp::fetchBoundaryEnd () {
     									0; /*insn_t::non_cti;*/
     
     bool taken = dinst->isTaken();
-    bool ptaken = superbp_p->handle_insn_t(pc, insn_type, taken);
+    bool ptaken = superbp_p->handle_insn_desesc(pc, insn_type, taken);
     // superbp in sync (must be done for all instructions), prediction made, also ftq updated as per previous resolution info
     
     // for jump - may just return btb target
@@ -640,58 +642,6 @@ void BPSuperbp::fetchBoundaryEnd () {
   return ptaken ? btb.predict(dinst, doUpdate, doStats) : Outcome::Correct;
 	
 }
-
-/*
-Outcome BPSuperbp::predict(Dinst *dinst, bool doUpdate, bool doStats) {
-  if (dinst->getInst()->isJump() || dinst->getInst()->isFuncRet()) {
-    uint64_t branchTarget = 0; // Check, get it somehow
-    superbp_p->TrackOtherInst(dinst->getPC(), true, branchTarget); // Check
-    dinst->setBiasBranch(true);
-    return btb.predict(dinst, doUpdate, doStats);
-  }
-
-  bool taken = dinst->isTaken();
-
-  if (!FetchPredict) {
-    superbp_p->fetchBoundaryBegin(dinst->getPC());
-  }
-
-  bool bias;
-  // bool     bias = false;
-  Addr_t   pc     = dinst->getPC();
-  uint32_t sign   = 0;
-  bool     ptaken = superbp_p->GetPrediction(pc);  // pass taken for statistics
-  dinst->setBiasBranch(bias);
-  dinst->setBranchSignature(sign);
-
-//  bool no_alloc = true;
- // if (dinst->isUseLevel3()) {
-//    no_alloc = false;
- // }
-
-  if (doUpdate) {
-  uint64_t fetch_pc = 0; // Check, get somehow
-  uint8_t offset_within_entry = 0; // Check, get somehow
-    superbp_p->Updatetables(pc, fetch_pc, offset_within_entry, taken); // Check - superbp updates tables and history separately
-    uint64_t branchTarget = 0; // Check - Take from btb
-    superbp_p->Updatehistory(taken, branchTarget);
-  }
-
-  if (!FetchPredict) {
-    imli->fetchBoundaryEnd();
-  }
-
-  if (taken != ptaken) {
-    if (doUpdate) {
-      btb.updateOnly(dinst);
-    }
-    return Outcome::Miss;
-  }
-
-  return ptaken ? btb.predict(dinst, doUpdate, doStats) : Outcome::Correct;
-}
-*/
-
 
 /*****************************************
  * BP2level

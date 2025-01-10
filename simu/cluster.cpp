@@ -43,8 +43,8 @@ std::shared_ptr<Resource> Cluster::buildUnit(const std::string &clusterName, uin
   int smt     = Config::get_integer("soc", "core", id, "smt", 1, 1024);
   int smt_ctx = id - (id % smt);
 
-  TimeDelta_t  lat = Config::get_integer(sUnitName, "lat", 0, 1024);
-  PortGeneric *gen;
+  TimeDelta_t                  lat = Config::get_integer(sUnitName, "lat", 0, 1024);
+  std::shared_ptr<PortGeneric> gen;
 
   auto unitName = fmt::format("P({})_{}{}_{}", smt_ctx, clusterName, pos, sUnitName);
   auto it       = unitMap.find(unitName);
@@ -53,9 +53,8 @@ std::shared_ptr<Resource> Cluster::buildUnit(const std::string &clusterName, uin
   } else {
     UnitEntry e;
     e.num = Config::get_integer(sUnitName, "num", 0, 1024);
-    e.occ = Config::get_integer(sUnitName, "occ", 0, 1024);
 
-    e.gen = PortGeneric::create(unitName, e.num, e.occ);
+    e.gen = PortGeneric::create(unitName, e.num);
     gen   = e.gen;
 
     unitMap[unitName] = e;
@@ -214,14 +213,17 @@ void Cluster::select(Dinst *dinst) {
 
 StallCause Cluster::canIssue(Dinst *dinst) const {
   if (regPool <= 0) {
+    // printf("Cluster::can_issue SmallREGstall dinstID %ld\n", dinst->getID());
     return SmallREGStall;
   }
 
   if (windowSize <= 0) {
+    // printf("Cluster::can_issue SmallWinstall dinstID %ld and windowsize is %d\n", dinst->getID(), windowSize);
     return SmallWinStall;
   }
 
   StallCause sc = window.canIssue(dinst);
+  // always NoStall
   if (sc != NoStall) {
     return sc;
   }
@@ -239,9 +241,25 @@ void Cluster::add_inst(Dinst *dinst) {
   }
   // dinst->dump("add");
 
+  // printf("Cluster::add_inst:: Before windowsize is %d: for instID %ld at @Clockcycle %ld\n",
+  // get_window_size(),
+  // dinst->getID(),
+  // globalClock);
   newEntry();
+  // printf("Cluster::add_inst::After windowsize-- is %d: for instID %ld at @Clockcycle %ld\n",
+  //        get_window_size(),
+  //        dinst->getID(),
+  //        globalClock);
 
   window.add_inst(dinst);
+  //<<<<<<< HEAD
+  /*lima_may if(!dinst->is_in_cluster()) {
+     window.add_inst(dinst);
+   }lima_may*/
+
+  // printf("Cluster::add_inst leaving dinstID %ld\n", dinst->getID());
+  //=======
+  //>>>>>>> upstream/main
 }
 
 //************ Executing Cluster Class
@@ -271,6 +289,23 @@ void ExecutingCluster::flushed(Dinst *dinst) {
   // delEntry();
 }
 
+/*void ExecutingCluster::try_flushed(Dinst *dinst) {
+
+
+}*/
+
+void ExecutingCluster::try_flushed(Dinst *dinst) {
+  delEntry();
+  bool done = dinst->getClusterResource()->try_flushed(dinst);
+  if (!done) {
+    printf(" ");
+  }
+}
+void ExecutingCluster::del_entry_flush(Dinst *dinst) {
+  dinst->mark_del_entry();
+  delEntry();
+}
+
 void ExecutingCluster::executed(Dinst *dinst) {
   window.executed(dinst);
   dinst->getGProc()->executed(dinst);
@@ -296,8 +331,16 @@ bool ExecutingCluster::retire(Dinst *dinst, bool reply) {
 }
 
 //************ Executed Cluster Class
-
+// Only this Executed cluster is used in desesc now: desc.toml
 void ExecutedCluster::executing(Dinst *dinst) {
+  //<<<<<<< HEAD
+  // if(!dinst->is_in_cluster() && !dinst->isIssued()) {
+  // window.add_inst(dinst);
+  // lima}
+
+  // printf("ClusterExecuted::executing Entering Insit %ld\n", dinst->getID());
+  //=======
+  //>>>>>>> upstream/main
   nready--;
 
   if (lateAlloc && dinst->getInst()->hasDstRegister()) {
@@ -309,14 +352,26 @@ void ExecutedCluster::executing(Dinst *dinst) {
 }
 
 void ExecutedCluster::executed(Dinst *dinst) {
+  // printf("Cluster::ExecutedCluster::executed: for instID %ld at @Clockcycle %ld\n", dinst->getID(), globalClock);
   window.executed(dinst);
   dinst->getGProc()->executed(dinst);
   if (!dinst->isTransient()) {
     I(!dinst->hasPending());
   }
   // if(
-  dinst->mark_del_entry();
-  delEntry();
+  // dinst->mark_del_entry();
+  // printf("Cluster::ExecutedCluster::executed::windowsize is %d: for instID %ld at @Clockcycle %ld\n",
+  //        get_window_size(),
+  //        dinst->getID(),
+  //        globalClock);
+  if (!dinst->is_del_entry()) {
+    dinst->mark_del_entry();
+    delEntry();
+  }
+  // printf("Cluster::ExecutedCluster::executed::windowsize++ is %d: for instID %ld at @Clockcycle %ld\n",
+  //        get_window_size(),
+  //        dinst->getID(),
+  //        globalClock);
 }
 void ExecutedCluster::flushed(Dinst *dinst) {
   window.executed_flushed(dinst);
@@ -326,10 +381,41 @@ void ExecutedCluster::flushed(Dinst *dinst) {
   // delEntry();
 }
 
+void ExecutedCluster::try_flushed(Dinst *dinst) {
+  // if (!dinst->isExecuted()) {
+  // delEntry();
+  // }
+  bool done = dinst->getClusterResource()->try_flushed(dinst);
+  if (!done) {
+    printf(" ");
+  }
+}
+
+void ExecutedCluster::del_entry_flush(Dinst *dinst) {
+  if (!dinst->is_del_entry()) {
+    // printf("Cluster::ExecutedCluster::del_entry_flush:: no_del_entry ::windowsize is %d: for instID %ld at @Clockcycle %ld\n",
+    //        get_window_size(),
+    //        dinst->getID(),
+    //        globalClock);
+
+    dinst->mark_del_entry();
+    delEntry();
+  }
+  // printf("Cluster::ExecutedCluster::del_entry_flush:: yes_del_entry ::windowsize is %d: for instID %ld at @Clockcycle %ld\n",
+  //        get_window_size(),
+  //        dinst->getID(),
+  //        globalClock);
+  // else {
+  // dinst->mark_del_entry();
+  // delEntry();
+  // }
+}
+
 bool ExecutedCluster::retire(Dinst *dinst, bool reply) {
+  // printf("ClusterExecuted::retire:: Entering Insit %ld regPool is %d and nRegs is %d\n", dinst->getID(), regPool, nRegs);
   if (dinst->is_del_entry()) {
     // delEntry();
-    dinst->unmark_del_entry();
+    // dinst->unmark_del_entry();
   }
   // always return true from resource::retire()
   bool done = dinst->getClusterResource()->retire(dinst, reply);
@@ -339,7 +425,13 @@ bool ExecutedCluster::retire(Dinst *dinst, bool reply) {
   I(regPool <= nRegs);
 
   bool hasDest = (dinst->getInst()->hasDstRegister());
-  if (hasDest) {
+  // lima_may
+  if (hasDest && !dinst->is_try_flush_transient()) {
+    // printf("ClusterExecuted::retiring  Insit %ld !try_flush_transient and regPool is %d and nRegs is %d\n",
+    //        dinst->getID(),
+    //        regPool,
+    //        nRegs);
+
     regPool++;
     // if(!dinst->is_present_rrob()){
     // regPool++;
@@ -353,7 +445,7 @@ bool ExecutedCluster::retire(Dinst *dinst, bool reply) {
 
   return true;
 }
-
+// This is done here for desec!!!
 //************ RetiredCluster Class
 
 void RetiredCluster::executing(Dinst *dinst) {
@@ -392,6 +484,14 @@ bool RetiredCluster::retire(Dinst *dinst, bool reply) {
 
   return true;
 }
+void RetiredCluster::try_flushed(Dinst *dinst) {
+  delEntry();
+  bool done = dinst->getClusterResource()->try_flushed(dinst);
+  if (!done) {
+    printf(" ");
+  }
+}
+
 void RetiredCluster::flushed(Dinst *dinst) {
   bool done = dinst->getClusterResource()->flushed(dinst);
   if (!done) {
@@ -408,4 +508,8 @@ void RetiredCluster::flushed(Dinst *dinst) {
   }
 
   winNotUsed.sample(windowSize, dinst->has_stats());
+}
+void RetiredCluster::del_entry_flush(Dinst *dinst) {
+  dinst->mark_del_entry();
+  delEntry();
 }

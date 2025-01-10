@@ -14,7 +14,7 @@
 class LSQ {
 private:
 protected:
-  int32_t freeEntries;
+  int32_t freeEntries;  // has_pool
   int32_t unresolved;
 
   LSQ(int32_t size) {

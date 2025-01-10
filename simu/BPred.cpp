@@ -1577,6 +1577,8 @@ TimeDelta_t BPredictor::predict(Dinst *dinst, bool *fastfix) {
   Outcome outcome3 = Outcome::None;
   dinst->setBiasBranch(false);
 
+  // FIXME: Even if RAS has none, it should call predict (and ignore it) to
+  // update histories (it helps to build better history)
   outcome1 = ras->doPredict(dinst);
   if (outcome1 == Outcome::None) {
     outcome1 = predict1(dinst);

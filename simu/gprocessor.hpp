@@ -12,6 +12,8 @@
 // design for Traditional and SMT processors in mind. That's the
 // reason why it manages the execution engine (RDEX).
 
+#include <random>
+
 #include "callback.hpp"
 #include "cluster.hpp"
 #include "clustermanager.hpp"
@@ -102,7 +104,8 @@ protected:
   int32_t issue();
   void    fetch();
 
-  virtual StallCause add_inst(Dinst *dinst) = 0;
+  virtual StallCause add_inst(Dinst *dinst)  = 0;
+  virtual void       try_flush(Dinst *dinst) = 0;
 
   bool use_stats;  // Stats mode to use when dinst->has_stats() is not available
 
@@ -144,10 +147,16 @@ public:
   size_t get_smt_size() const override { return smt_size; }
 
   void add_inst_transient_on_branch_miss(IBucket *bucket, Addr_t pc);
+  void flush_transient_inst_on_fetch_ready_delay();
   void flush_transient_inst_on_fetch_ready();
   void flush_transient_inst_from_inst_queue();
+  void add_non_flushed_non_transient_inst_back_to_inst_queue();
   void flush_transient_from_rob();
+  void dump_rob();
   void report(const std::string &str);
+
+  // Addr_t   random_addr_gen();
+  uint64_t random_reg_gen(bool reg);
 
   std::shared_ptr<StoreSet>     ref_SS() { return storeset; }
   std::shared_ptr<Prefetcher>   ref_prefetcher() { return prefetcher; }

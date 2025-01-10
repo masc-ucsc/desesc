@@ -82,7 +82,12 @@ OoOProcessor::~OoOProcessor()
 /* }}} */
 
 bool OoOProcessor::advance_clock_drain() {
+  printf("OOOProc::advance_clock_drain ::decode_stage() is called\n");
+  printf("OOOProc::advance_clock_drain ::decode_stage()::dump_rat is called\n");
+
+  dump_rat();
   bool abort = decode_stage();
+
   if (abort || !busy) {
     return busy;
   }
@@ -91,7 +96,10 @@ bool OoOProcessor::advance_clock_drain() {
   if (replayRecovering) {
     if ((rROB.empty() && ROB.empty())) {
       // Recovering done
-      I(flushing);
+      // july2024_lima_orgI(flushing);
+      // orgI(flushing);
+      // I(flushing);
+
       replayRecovering = false;
       flushing         = false;
 
@@ -117,7 +125,9 @@ bool OoOProcessor::advance_clock_drain() {
 
   if (!pipeQ.instQueue.empty()) {
     auto n = issue();
+    printf("OOOprocessor:: spaceInInstQueue Before issue is %d !!!\n", spaceInInstQueue);
     spaceInInstQueue += n;
+    printf("OOOprocessor:: spaceInInstQueue after issue is %d !!!\n", spaceInInstQueue);
   } else if (ROB.empty() && rROB.empty() && !pipeQ.pipeLine.hasOutstandingItems()) {
     return false;
   }
@@ -134,7 +144,15 @@ bool OoOProcessor::advance_clock() {
 
   Tracer::advance_clock();
 
+  //<<<<<<< HEAD
+  printf("\nOOOProc::advance_clock() Leaving with pipeQ.InstQ.bucket size %ld\n", pipeQ.instQueue.size());
+  printf("OOOProc::advance_clock ::fetch()::dump_rat is called\n");
   fetch();
+  dump_rat();
+  printf("OOOProc::advance_clock ::fetch() is called\n");
+  /*=======
+    fetch();
+  >>>>>>> upstream/main*/
 
   return advance_clock_drain();
 }
@@ -143,10 +161,15 @@ void OoOProcessor::executing(Dinst *dinst)
 // {{{1 Called when the instruction starts to execute
 {
   if (dinst->isTransient()) {
+    // printf("OOOProc::executing  Transient starts to dinstID %ld\n", dinst->getID());
     dinst->markExecutingTransient();
   } else {
     dinst->markExecuting();
   }
+
+  // printf("OOOProc::Executing::dump_rat is called\n");
+  dump_rat();
+
   Tracer::stage(dinst, "EX");
 
 #ifdef LATE_ALLOC_REGISTER
@@ -199,6 +222,14 @@ void OoOProcessor::executing(Dinst *dinst)
 // 1}}}
 //
 void OoOProcessor::executed([[maybe_unused]] Dinst *dinst) {
+  // printf("OOOProc::Executed::dump_rat is called\n");
+  dump_rat();
+  // if (dinst->isTransient()) {
+  //   printf("OOOProc::executed Transientinst starts to executed\n");
+  // } else {
+  //   printf("OOOProc::executed  starts to dinstID %ld\n", dinst->getID());
+  // }
+
 #ifdef TRACK_FORWARDING
   fwdDone[dinst->getInst()->getDst1()] = globalClock;
   fwdDone[dinst->getInst()->getDst2()] = globalClock;
@@ -211,6 +242,9 @@ void OoOProcessor::flushed(Dinst *dinst)
 }
 
 StallCause OoOProcessor::add_inst(Dinst *dinst) {
+  // if (dinst->isTransient()) {
+  //   printf("OOOProc::add_inst_Transient Entering for  dinstID %ld\n", dinst->getID());
+  // }
   if (replayRecovering && dinst->getID() > replayID) {
     Tracer::stage(dinst, "Wrep");
     return ReplaysStall;
@@ -237,6 +271,7 @@ StallCause OoOProcessor::add_inst(Dinst *dinst) {
 
   StallCause sc = cluster->canIssue(dinst);
   if (sc != NoStall) {
+    // printf("OOOP::add_inst !cluster->canissue wcls dinstID %ld\n", dinst->getID());
     Tracer::stage(dinst, "Wcls");
     return sc;
   }
@@ -253,6 +288,7 @@ StallCause OoOProcessor::add_inst(Dinst *dinst) {
 #endif
 
   if (!scooreMemory) {  // no dynamic serialization for tradcore
+    // printf("ooop::add_inst !scooreMemory dinstID %ld\n", dinst->getID());
     if (serialize_for > 0 && !replayRecovering) {
       serialize_for--;
       if (inst->isMemory() && dinst->isSrc3Ready()) {
@@ -313,6 +349,7 @@ StallCause OoOProcessor::add_inst(Dinst *dinst) {
             dinst->setSerializeEntry(&serializeRAT[last_serializeLogical]);
             serializeRAT[last_serializeLogical] = dinst;
           } else {
+            // printf("ooop::add_inst serializeRAT  dinstID %ld\n", dinst->getID());
             serializeRAT[inst->getDst1()] = nullptr;
             serializeRAT[inst->getDst2()] = nullptr;
           }
@@ -327,26 +364,61 @@ StallCause OoOProcessor::add_inst(Dinst *dinst) {
   dinst->set_present_in_rob();
   I(dinst->getCluster() != 0);  // Resource::schedule must set the resource field
 
+  // printf("OOOProc::add_inst and dumprat before adding in RAT%ld\n", dinst->getID());
+  dump_rat();
   int n = 0;
   if (!dinst->isSrc2Ready()) {
     // It already has a src2 dep. It means that it is solved at
     // retirement (Memory consistency. coherence issues)
-    if (RAT[inst->getSrc1()]) {
-      RAT[inst->getSrc1()]->addSrc1(dinst);
+
+    // printf("OOOProc::add_inst !dinst->isSrc2Ready(): :: src2 RAW dep for Inst %ld \n", dinst->getID());
+
+    if (TRAT[inst->getSrc1()]) {
+      TRAT[inst->getSrc1()]->addSrc1(dinst);
+      // printf("OOOProc::add_inst TRAT[] addSrc1 %ld\n", dinst->getID());
       n++;
       // MSG("addDep0 %8ld->%8lld %lld",RAT[inst->getSrc1()]->getID(), dinst->getID(), globalClock);
+    } else {
+      if (RAT[inst->getSrc1()]) {
+        RAT[inst->getSrc1()]->addSrc1(dinst);
+        // printf("OOOProc::add_inst RAT[] addSrc1 %ld\n", dinst->getID());
+        n++;
+        // MSG("addDep0 %8ld->%8lld %lld",RAT[inst->getSrc1()]->getID(), dinst->getID(), globalClock);
+      }
     }
   } else {
-    if (RAT[inst->getSrc1()]) {
-      RAT[inst->getSrc1()]->addSrc1(dinst);
+    // printf("OOOProc::add_inst dinst->isSrc2Ready():: no src2 dep:: for Inst  %ld \n", dinst->getID());
+
+    if (TRAT[inst->getSrc1()]) {
+      TRAT[inst->getSrc1()]->addSrc1(dinst);
+      // printf("OOOProc::add_inst addSrc1 TART[] %ld\n", dinst->getID());
       n++;
-      // MSG("addDep1 %8ld->%8lld %lld",RAT[inst->getSrc1()]->getID(), dinst->getID(), globalClock);
+      // MSG("addDep0 %8ld->%8lld %lld",RAT[inst->getSrc1()]->getID(), dinst->getID(), globalClock);
+    } else {
+      if (RAT[inst->getSrc1()]) {
+        // printf("OOOProc::add_inst addSrc1 RAT[] %ld\n", dinst->getID());
+        RAT[inst->getSrc1()]->addSrc1(dinst);
+        n++;
+        // MSG("addDep1 %8ld->%8lld %lld",RAT[inst->getSrc1()]->getID(), dinst->getID(), globalClock);
+      } else {
+        // printf("OOOProc::add_inst dinst->isSrc2Ready():: no RAT Src1 entry for %ld \n", dinst->getID());
+      }
     }
 
-    if (RAT[inst->getSrc2()]) {
-      RAT[inst->getSrc2()]->addSrc2(dinst);
+    if (TRAT[inst->getSrc2()]) {
+      TRAT[inst->getSrc2()]->addSrc2(dinst);
+      // printf("OOOProc::add_inst TRAT[] addSrc2 %ld\n", dinst->getID());
       n++;
-      // MSG("addDep2 %8ld->%8lld %lld",RAT[inst->getSrc2()]->getID(), dinst->getID(), globalClock);
+      // MSG("addDep0 %8ld->%8lld %lld",RAT[inst->getSrc1()]->getID(), dinst->getID(), globalClock);
+    } else {
+      if (RAT[inst->getSrc2()]) {
+        // printf("OOOProc::add_inst addSrc2 RAT[] %ld\n", dinst->getID());
+        RAT[inst->getSrc2()]->addSrc2(dinst);
+        n++;
+        // MSG("addDep2 %8ld->%8lld %lld",RAT[inst->getSrc2()]->getID(), dinst->getID(), globalClock);
+      } else {
+        // printf("OOOProc::add_inst dinst->isSrc2Ready():: no RAT Src2 entry for %ld \n", dinst->getID());
+      }
     }
   }
 #ifdef TRACK_FORWARDING
@@ -356,23 +428,42 @@ StallCause OoOProcessor::add_inst(Dinst *dinst) {
   (void)n;
 #endif
 
-  dinst->setRAT1Entry(&RAT[inst->getDst1()]);
-  dinst->setRAT2Entry(&RAT[inst->getDst2()]);
+  // printf("OOOPROCCESOR::add_inst : RAT entry instID %ld\n", dinst->getID());
+
+  if (dinst->isTransient()) {
+    dinst->setRAT1Entry(&TRAT[inst->getDst1()]);
+    dinst->setRAT2Entry(&TRAT[inst->getDst2()]);
+  } else {
+    dinst->setRAT1Entry(&RAT[inst->getDst1()]);
+    dinst->setRAT2Entry(&RAT[inst->getDst2()]);
+  }
 
   I(!dinst->isExecuted());
 
   dinst->getCluster()->add_inst(dinst);
-
+  // printLimas
   if (!dinst->isExecuted()) {
-    RAT[inst->getDst1()] = dinst;
-    RAT[inst->getDst2()] = dinst;
+    if (dinst->isTransient()) {
+      TRAT[inst->getDst1()] = dinst;
+      TRAT[inst->getDst2()] = dinst;
+    } else {
+      RAT[inst->getDst1()] = dinst;
+      RAT[inst->getDst2()] = dinst;
+    }
   }
 
   I(dinst->getCluster());
 
   dinst->markRenamed();
   Tracer::stage(dinst, "RN");
+  //<<<<<<< HEAD
+  // printf("OOOPROCCESOR::add_inst :  done rename instID %ld\n", dinst->getID());
 
+  // printf("OOOProc::add_inst and dumprat after adding in RAT%ld\n", dinst->getID());
+  dump_rat();
+//=======
+
+//>>>>>>> upstream/main
 #ifdef WAVESNAP_EN
   // add instruction to wavesnap
   if (!SINGLE_WINDOW) {
@@ -386,6 +477,14 @@ StallCause OoOProcessor::add_inst(Dinst *dinst) {
   }
 #endif
 
+  //<<<<<<< HEAD
+  // if(!dinst->is_in_cluster()) {
+  // dinst->getCluster()->add_inst_retry(dinst);
+  // lima}
+
+  // printf("OOOProc::add_inst %ld Exiting add_inst with NoStall \n", dinst->getID());
+  //=======
+  //>>>>>>> upstream/main
   return NoStall;
 }
 /* }}} */
@@ -415,7 +514,38 @@ void OoOProcessor::retire_lock_check()
 }
 /* }}} */
 
+void OoOProcessor::try_flush(Dinst *dinst) {
+  // printf("OOOProcessor::try_flush for Inst %ld\n", dinst->getID());
+  if (dinst->getInst()->hasDstRegister()) {
+    nTotalRegs++;
+  }
+}
+
 void OoOProcessor::retire() {
+  //<<<<<<< HEAD
+  printf("\nOOOProc::retire Entering  \n");
+  printf("\nOOOProc::retire dump_rat starting  \n");
+  dump_rat();
+#ifdef ENABLE_LDBP
+  int64_t gclock = int64_t(clockTicks.getDouble());
+  if (gclock != power_clock) {
+    power_clock = gclock;
+    if (power_save_mode_ctr <= (MAX_POWER_SAVE_MODE_CTR + 1)) {
+      power_save_mode_ctr++;
+    }
+    if (power_save_mode_ctr >= MAX_POWER_SAVE_MODE_CTR) {
+      // reset tables and power off
+      ldbp_power_save_cycles.inc(true);
+      tmp_power_clock++;
+      // MSG("global=%d tmp_power_clock=%d", gclock, tmp_power_clock);
+      if (power_save_mode_ctr == MAX_POWER_SAVE_MODE_CTR) {
+        power_save_mode_table_reset();
+      }
+    }
+  }
+#endif
+  //=======
+  //>>>>>>> upstream/main
   // Pass all the ready instructions to the rrob
   while (!ROB.empty()) {
     auto *dinst = ROB.top();
@@ -677,7 +807,15 @@ void OoOProcessor::retire() {
     }
 
     rROB.pop();
+    //<<<<<<< HEAD
   }  // !rROB.empty()_loop_ends
+
+  printf("OOOProcessor::retire  Exiting from retire \n");
+  printf("\nOOOProc::retire dump_rat Leaving \n");
+  dump_rat();
+  //=======
+  //}  // !rROB.empty()_loop_ends
+  //>>>>>>> upstream/main
 }
 
 void OoOProcessor::replay(Dinst *target)

@@ -24,7 +24,7 @@
 
 /* }}} */
 
-Resource::Resource(Opcode type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, TimeDelta_t l, uint32_t cpuid)
+Resource::Resource(Opcode type, std::shared_ptr<Cluster> cls, std::shared_ptr<PortGeneric> aGen, TimeDelta_t l, uint32_t cpuid)
     /* constructor {{{1 */
     : cluster(cls)
     , gen(aGen)
@@ -39,14 +39,15 @@ Resource::Resource(Opcode type, std::shared_ptr<Cluster> cls, PortGeneric *aGen,
     , coreid(cpuid)
     , usedTime(0) {
   I(cls);
-  if (gen) {
-    gen->subscribe();
-  }
 
   auto core_type = Config::get_string("soc", "core", cpuid, "type", {"inorder", "ooo", "accel"});
   std::transform(core_type.begin(), core_type.end(), core_type.begin(), [](unsigned char c) { return std::toupper(c); });
+  // correct is (core_type != "OOO")
 
-  inorder = (core_type != "ooo");
+  // BUG_was:inorder = (core_type != "ooo");
+  // inorder = (core_type != "ooo");
+  // correct uppercase OOO
+  inorder = (core_type != "OOO");
 }
 /* }}} */
 
@@ -76,18 +77,14 @@ Resource::~Resource()
   if (EventScheduler::size() > 10) {
     fmt::print("Resources destroyed with {} pending instructions (small is OK)\n", EventScheduler::size());
   }
-
-  if (gen) {
-    gen->unsubscribe();
-  }
 }
 /* }}} */
 
 /***********************************************/
 
-MemResource::MemResource(Opcode type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, LSQ *_lsq, std::shared_ptr<StoreSet> ss,
-                         std::shared_ptr<Prefetcher> _pref, std::shared_ptr<Store_buffer> _scb, TimeDelta_t l,
-                         std::shared_ptr<Gmemory_system> ms, int32_t id, const std::string &cad)
+MemResource::MemResource(Opcode type, std::shared_ptr<Cluster> cls, std::shared_ptr<PortGeneric> aGen, LSQ *_lsq,
+                         std::shared_ptr<StoreSet> ss, std::shared_ptr<Prefetcher> _pref, std::shared_ptr<Store_buffer> _scb,
+                         TimeDelta_t l, std::shared_ptr<Gmemory_system> ms, int32_t id, const std::string &cad)
     /* constructor {{{1 */
     : MemReplay(type, cls, aGen, ss, l, id)
     , firstLevelMemObj(ms->getDL1())
@@ -112,8 +109,8 @@ MemResource::MemResource(Opcode type, std::shared_ptr<Cluster> cls, PortGeneric 
 
 /* }}} */
 
-MemReplay::MemReplay(Opcode type, std::shared_ptr<Cluster> cls, PortGeneric *_gen, std::shared_ptr<StoreSet> ss, TimeDelta_t l,
-                     uint32_t cpuid)
+MemReplay::MemReplay(Opcode type, std::shared_ptr<Cluster> cls, std::shared_ptr<PortGeneric> _gen, std::shared_ptr<StoreSet> ss,
+                     TimeDelta_t l, uint32_t cpuid)
     : Resource(type, cls, _gen, l, cpuid), lfSize(8), storeset(ss) {
   lf.resize(lfSize);
 }
@@ -225,9 +222,10 @@ void MemReplay::replayManage(Dinst *dinst) {
 
 /***********************************************/
 
-FULoad::FULoad(Opcode type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, LSQ *_lsq, std::shared_ptr<StoreSet> ss,
-               std::shared_ptr<Prefetcher> _pref, std::shared_ptr<Store_buffer> _scb, TimeDelta_t lsdelay, TimeDelta_t l,
-               std::shared_ptr<Gmemory_system> ms, int32_t size, int32_t id, const std::string &cad)
+FULoad::FULoad(Opcode type, std::shared_ptr<Cluster> cls, std::shared_ptr<PortGeneric> aGen, LSQ *_lsq,
+               std::shared_ptr<StoreSet> ss, std::shared_ptr<Prefetcher> _pref, std::shared_ptr<Store_buffer> _scb,
+               TimeDelta_t lsdelay, TimeDelta_t l, std::shared_ptr<Gmemory_system> ms, int32_t size, int32_t id,
+               const std::string &cad)
     /* Constructor {{{1 */
     : MemResource(type, cls, aGen, _lsq, ss, _pref, _scb, l, ms, id, cad)
 #ifdef MEM_TSO2
@@ -246,29 +244,37 @@ FULoad::FULoad(Opcode type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, LSQ
 StallCause FULoad::canIssue(Dinst *dinst) {
   /* canIssue {{{1 */
 
+  // FULoad::freeEntries <=0
   if (freeEntries <= 0) {
     I(freeEntries == 0);  // Can't be negative
     return OutsLoadsStall;
   }
+
+  // LSQ::freeEntries<0
   if (!lsq->hasFreeEntries()) {
     return OutsLoadsStall;
   }
 
+  // LSQ::unresloved>0 ; inorder='uppercase OOO"
   if (inorder) {
     if (lsq->hasPendingResolution()) {
       return OutsLoadsStall;
     }
   }
 
+  /* Insert dinst in LSQFull (in-order) */
   if (!lsq->insert(dinst)) {
     return OutsLoadsStall;
   }
 
+  /*CanIssue starts from here */
   storeset->insert(dinst);
   // call vtage->rename() here????
 
+  /*decFreeEntries():: lsq->unresolved++; lsq->freeEntries--;*/
   lsq->decFreeEntries();
 
+  // FULoad::freeEntries--
   if (!LSQlateAlloc) {
     freeEntries--;
   }
@@ -279,6 +285,7 @@ StallCause FULoad::canIssue(Dinst *dinst) {
 void FULoad::executing(Dinst *dinst) {
   /* executing {{{1 */
 
+  /*LSQlateAlloc = false*/
   if (LSQlateAlloc) {
     freeEntries--;
   }
@@ -298,7 +305,7 @@ void FULoad::executing(Dinst *dinst) {
     storeset->stldViolation(qdinst, dinst);
   }
 
-  if (dinst->isLoadForwarded() || scb->is_ld_forward(dinst->getAddr()) || !enableDcache) {
+  if (dinst->isLoadForwarded() || scb->is_ld_forward(dinst->getAddr()) || !enableDcache || dinst->is_destroy_transient()) {
     performedCB::scheduleAbs(when + LSDelay, this, dinst);
     dinst->markDispatched();
 
@@ -367,11 +374,13 @@ bool FULoad::preretire(Dinst *dinst, [[maybe_unused]] bool flushing)
     return false;
   }
 
+  if (!dinst->is_try_flush_transient()) {
 #ifdef USE_PNR
-  freeEntries++;
+    freeEntries++;
 #endif
 
-  pref->ret(dinst);
+    pref->ret(dinst);
+  }
 
   return true;
 }
@@ -384,28 +393,31 @@ bool FULoad::retire(Dinst *dinst, [[maybe_unused]] bool flushing)
     return false;
   }
 
-  lsq->incFreeEntries();
+  if (!dinst->is_try_flush_transient()) {
+    lsq->incFreeEntries();
 #ifndef USE_PNR
-  freeEntries++;
+    freeEntries++;
 #endif
 
 #ifdef MEM_TSO2
-  if (DL1->Invalid(dinst->getAddr())) {
-    // MSG("Sync head/tail @%lld",globalClock);
-    tso2Replay.inc(dinst->has_stats());
-    dinst->getGProc()->replay(dinst);
-  }
+    if (DL1->Invalid(dinst->getAddr())) {
+      // MSG("Sync head/tail @%lld",globalClock);
+      tso2Replay.inc(dinst->has_stats());
+      dinst->getGProc()->replay(dinst);
+    }
 #endif
 
-  lsq->remove(dinst);
-  // VTAGE->updateVtageTables() here ???? vtage validation
+    /*LSQFull ends here*/
+    lsq->remove(dinst);
+
+    // VTAGE->updateVtageTables() here ???? vtage validation
 
 #if 0
   // Merging for tradcore
   if(dinst->isReplay() && !flushing)
     replayManage(dinst);
 #endif
-
+  }
   setStats(dinst);
 
   return true;
@@ -414,8 +426,38 @@ bool FULoad::retire(Dinst *dinst, [[maybe_unused]] bool flushing)
 
 bool FULoad::flushed(Dinst *dinst)
 /* flushing {{{1 */
+
 {
   (void)dinst;
+  return true;
+}
+/* }}} */
+
+bool FULoad::try_flushed(Dinst *dinst)
+/* flushing {{{1 */
+{
+  // unresolved-- in not happening when try_flush
+  dinst->mark_try_flush_transient();
+  if (!dinst->isRetired() && dinst->isExecuted()) {
+    freeEntries++;
+    lsq->incFreeEntries();
+    lsq->remove(dinst);
+    dinst->clearRATEntry();
+  } else if (dinst->isExecuting() || dinst->isIssued()) {
+    /* possible lsq->resolved-- is not done here*/
+    freeEntries++;
+    lsq->incFreeEntries();
+    lsq->remove(dinst);
+    storeset->remove(dinst);
+    dinst->clearRATEntry();
+  } else if (dinst->isRenamed()) {
+    freeEntries++;
+    lsq->incFreeEntries();
+    lsq->remove(dinst);
+    storeset->remove(dinst);
+    dinst->clearRATEntry();
+  }
+
   return true;
 }
 /* }}} */
@@ -430,8 +472,8 @@ void FULoad::performed(Dinst *dinst) {
 
 /***********************************************/
 
-FUStore::FUStore(Opcode type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, LSQ *_lsq, std::shared_ptr<StoreSet> ss,
-                 std::shared_ptr<Prefetcher> _pref, std::shared_ptr<Store_buffer> _scb, TimeDelta_t l,
+FUStore::FUStore(Opcode type, std::shared_ptr<Cluster> cls, std::shared_ptr<PortGeneric> aGen, LSQ *_lsq,
+                 std::shared_ptr<StoreSet> ss, std::shared_ptr<Prefetcher> _pref, std::shared_ptr<Store_buffer> _scb, TimeDelta_t l,
                  std::shared_ptr<Gmemory_system> ms, int32_t size, int32_t id, const std::string &cad)
     /* constructor {{{1 */
     : MemResource(type, cls, aGen, _lsq, ss, _pref, _scb, l, ms, id, cad), freeEntries(size) {
@@ -518,12 +560,6 @@ void FUStore::executed(Dinst *dinst) {
 
 bool FUStore::preretire(Dinst *dinst, bool flushing) {
   /* retire {{{1 */
-  /* if(dinst->getCluster()->get_reg_pool() >= dinst->getCluster()->get_nregs()-2) {
-     return false;
-       }
-  if( dinst->getCluster()->get_window_size() == dinst->getCluster()->get_window_maxsize()){
-     return false;
-  }*/
 
   if (!dinst->isExecuted()) {
     return false;
@@ -545,7 +581,7 @@ bool FUStore::preretire(Dinst *dinst, bool flushing) {
 
   scb->add_st(dinst);
 
-  if (enableDcache) {
+  if (enableDcache && !dinst->isTransient()) {
     MemRequest::sendReqWrite(firstLevelMemObj,
                              dinst->has_stats(),
                              dinst->getAddr(),
@@ -569,12 +605,24 @@ bool FUStore::flushed(Dinst *dinst)
 }
 /* }}} */
 
+bool FUStore::try_flushed(Dinst *dinst)
+/* flushing {{{1 */
+{
+  freeEntries++;
+  lsq->remove(dinst);
+  lsq->incFreeEntries();
+  storeset->remove(dinst);
+  performed(dinst);
+  return true;
+}
+/* }}} */
 void FUStore::performed(Dinst *dinst) {
   /* memory operation was globally performed {{{1 */
 
   setStats(dinst);  // Not retire for stores
-
-  I(!dinst->isPerformed());
+  if (!dinst->isTransient()) {
+    I(!dinst->isPerformed());
+  }
   if (dinst->isRetired()) {
     dinst->destroy();
   }
@@ -603,20 +651,13 @@ bool FUStore::retire(Dinst *dinst, bool flushing) {
 
 /***********************************************/
 
-FUGeneric::FUGeneric(Opcode type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, TimeDelta_t l, uint32_t cpuid)
+FUGeneric::FUGeneric(Opcode type, std::shared_ptr<Cluster> cls, std::shared_ptr<PortGeneric> aGen, TimeDelta_t l, uint32_t cpuid)
     /* constructor {{{1 */
     : Resource(type, cls, aGen, l, cpuid) {}
 /* }}} */
 
 StallCause FUGeneric::canIssue(Dinst *dinst) {
   (void)dinst;
-#if 0
-  if (inorder) {
-    Time_t t = gen->calcNextSlot();
-    if (t>globalClock)
-      return DivergeStall;
-  }
-#endif
   return NoStall;
 }
 
@@ -671,6 +712,14 @@ bool FUGeneric::flushed(Dinst *dinst)
 }
 /* }}} */
 
+bool FUGeneric::try_flushed(Dinst *dinst)
+/* flushing {{{1 */
+{
+  (void)dinst;
+  return true;
+}
+/* }}} */
+
 void FUGeneric::performed(Dinst *dinst) {
   /* memory operation was globally performed {{{1 */
   dinst->markPerformed();
@@ -680,8 +729,8 @@ void FUGeneric::performed(Dinst *dinst) {
 
 /***********************************************/
 
-FUBranch::FUBranch(Opcode type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, TimeDelta_t l, uint32_t cpuid, int32_t mb,
-                   bool dom)
+FUBranch::FUBranch(Opcode type, std::shared_ptr<Cluster> cls, std::shared_ptr<PortGeneric> aGen, TimeDelta_t l, uint32_t cpuid,
+                   int32_t mb, bool dom)
     /* constructor {{{1 */
     : Resource(type, cls, aGen, l, cpuid), freeBranches(mb), drainOnMiss(dom) {
   I(freeBranches > 0);
@@ -750,6 +799,15 @@ bool FUBranch::flushed(Dinst *dinst)
 }
 /* }}} */
 
+bool FUBranch::try_flushed(Dinst *dinst)
+/* flushing {{{1 */
+{
+  freeBranches++;
+  (void)dinst;
+  return true;
+}
+/* }}} */
+
 void FUBranch::performed(Dinst *dinst) {
   /* memory operation was globally performed {{{1 */
   dinst->markPerformed();
@@ -759,7 +817,7 @@ void FUBranch::performed(Dinst *dinst) {
 
 /***********************************************/
 
-FURALU::FURALU(Opcode type, std::shared_ptr<Cluster> cls, PortGeneric *aGen, TimeDelta_t l, int32_t id)
+FURALU::FURALU(Opcode type, std::shared_ptr<Cluster> cls, std::shared_ptr<PortGeneric> aGen, TimeDelta_t l, int32_t id)
     /* constructor {{{1 */
     : Resource(type, cls, aGen, l, id)
     , dmemoryBarrier(fmt::format("P({})_{}_dmemoryBarrier", id, cls->getName()))
@@ -821,9 +879,7 @@ void FURALU::executing(Dinst *dinst)
 void FURALU::executed(Dinst *dinst)
 /* executed {{{1 */
 {
-  if (dinst->is_flush_transient()) {
-  }
-
+  // bool pend = dinst->hasPending();
   cluster->executed(dinst);
   dinst->markPerformed();
 }
@@ -871,6 +927,14 @@ bool FURALU::flushed(Dinst *dinst)
     dinst->clearRATEntry();
     Tracer::stage(dinst, "TR");
   }
+  return true;
+}
+/* }}} */
+
+bool FURALU::try_flushed(Dinst *dinst)
+/* flushing {{{1 */
+{
+  (void)dinst;
   return true;
 }
 /* }}} */

@@ -2,19 +2,18 @@
 
 #include "store_buffer.hpp"
 
-#include "config.hpp"
-#include "gprocessor.hpp"
-#include "gmemory_system.hpp"
-#include "memory_system.hpp"
-#include "gtest/gtest.h"
 #include "callback.hpp"
 #include "ccache.hpp"
+#include "config.hpp"
 #include "dinst.hpp"
 #include "fmt/format.h"
+#include "gmemory_system.hpp"
+#include "gprocessor.hpp"
 #include "gtest/gtest.h"
 #include "iassert.hpp"
 #include "instruction.hpp"
 #include "memobj.hpp"
+#include "memory_system.hpp"
 #include "memrequest.hpp"
 #include "memstruct.hpp"
 #include "report.hpp"
@@ -60,8 +59,7 @@ static void setup_config() {
           "drop_prefetch = true\n"
           "prefetch_degree = 0    # 0 disabled\n"
           "mega_lines1K    = 8    # 8 lines touched, triggers mega/carped prefetch\n"
-          "lower_level = \"privl2 L2 sharedby 2\"\n"
-          ;
+          "lower_level = \"privl2 L2 sharedby 2\"\n";
 
   file.close();
 }
@@ -72,44 +70,41 @@ void initialize() {
     setup_config();
     Config::init("cachecore.toml");
     global_mem_sys_p0 = std::make_shared<Memory_system>(0);
-    pluggedin = true;
+    pluggedin         = true;
   }
 }
 #define PR(a) printf("%s", a)
 class Store_buffer_test : public ::testing::Test {
 protected:
   Store_buffer *sb;
-  void SetUp() override { initialize();}
-  void TearDown() override {
+  void          SetUp() override { initialize(); }
+  void          TearDown() override {
     delete sb;
     // Graph_library::sync_all();
   }
 
 public:
-void setupStoreBuffer() {
-    sb  = new Store_buffer(0, global_mem_sys_p0);
-    
+  void   setupStoreBuffer() { sb = new Store_buffer(0, global_mem_sys_p0); }
+  Dinst *createStInst() {
+    Addr_t addr = 0x200;
+    auto  *st_inst
+        = Dinst::create(Instruction(Opcode::iSALU_ST, RegType::LREG_R1, RegType::LREG_R2, RegType::LREG_R3, RegType::LREG_R4),
+                        0xdeaddead  // pc
+                        ,
+                        addr,
+                        0,
+                        true);
+    return st_inst;
   }
-Dinst *createStInst() {
-  Addr_t addr    = 0x200;
-  auto  *st_inst = Dinst::create(Instruction(Opcode::iSALU_ST, RegType::LREG_R1, RegType::LREG_R2, RegType::LREG_R3, RegType::LREG_R4),
-                                0xdeaddead  // pc
-                                ,
-                                addr,
-                                0,
-                                true);
-  return st_inst;
-}
 
-Addr_t sb_calc_line(Addr_t addr) const { 
-  size_t line_size_addr_bits = 6;
-  return addr >> line_size_addr_bits; 
-}
-Addr_t sb_calc_offset(Addr_t addr) const { 
-  size_t line_size_mask = 63;
-  return addr & line_size_mask; 
-}
-
+  Addr_t sb_calc_line(Addr_t addr) const {
+    size_t line_size_addr_bits = 6;
+    return addr >> line_size_addr_bits;
+  }
+  Addr_t sb_calc_offset(Addr_t addr) const {
+    size_t line_size_mask = 63;
+    return addr & line_size_mask;
+  }
 };
 
 /* The first test checks that if the store buffer line can accept a new store instruction,
@@ -124,16 +119,14 @@ TEST_F(Store_buffer_test, store_buf_line_is_load_forward) {
   sbline.init(64, st_addr_line);
   sbline.add_st(this->sb_calc_offset(st_addr));
   EXPECT_EQ(sbline.is_ld_forward(this->sb_calc_offset(st_addr)), true);
-  EXPECT_EQ(sbline.is_ld_forward(this->sb_calc_offset(st_addr)+0x11), false);
-
+  EXPECT_EQ(sbline.is_ld_forward(this->sb_calc_offset(st_addr) + 0x11), false);
 }
 
 /* The second test checks that if the store buffer can accept a new store instruction,
 by adding a store instruction to the store buffer and then checking a data_forwarding load */
 TEST_F(Store_buffer_test, store_buf_is_load_forward) {
-
   this->setupStoreBuffer();
-  auto  *st_inst = this->createStInst();
+  auto  *st_inst  = this->createStInst();
   Addr_t any_addr = 0x111;
   EXPECT_EQ(sb->can_accept_st(any_addr), true);
   EXPECT_EQ(sb->can_accept_st(this->createStInst()->getAddr()), true);

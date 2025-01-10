@@ -25,10 +25,9 @@ MemController::MemController(Memory_system *current, const std::string &sec, con
     , memRequestBufferSize(Config::get_integer(sec, "memRequestBufferSize", 1, 1024)) {
   MemObj *lower_level = NULL;
 
-  NumUnits_t  num = Config::get_integer(section, "port_num");
-  TimeDelta_t occ = Config::get_integer(section, "port_occ");
+  NumUnits_t num = Config::get_integer(section, "port_num");
 
-  cmdPort = PortGeneric::create(name + "_cmd", num, occ);
+  cmdPort = PortGeneric::create(name + "_cmd", num);
 
   numBanks                = Config::get_power2(section, "NumBanks");
   unsigned int numRows    = Config::get_power2(section, "NumRows");

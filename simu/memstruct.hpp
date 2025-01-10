@@ -63,7 +63,7 @@ private:
   map<string, bool> debugMap;
   int               cacheAccesses;  // Addr for where mem read starts
 
-  CacheDebugAccess(){};                        // private constructor
+  CacheDebugAccess() {};                       // private constructor
   CacheDebugAccess(CacheDebugAccess const &);  // no accidental creation from copy constructor
   void operator=(CacheDebugAccess const &);
 };

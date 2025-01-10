@@ -592,12 +592,47 @@ BPSuperbp::BPSuperbp(int32_t i, const std::string &section, const std::string &s
   int log2fetchwidth = log2(FetchWidth);
   */
   
-  
   int SBP_NUMG = Config::get_integer(section, "SBP_NUMG");
   int LOG2FETCHWIDTH = Config::get_integer(section, "LOG2FETCHWIDTH");
   int NUM_TAKEN_BRANCHES = Config::get_integer(section, "NUM_TAKEN_BRANCHES");
   
-  superbp_p = std::make_unique<PREDICTOR>(SBP_NUMG, LOG2FETCHWIDTH, NUM_TAKEN_BRANCHES);
+  std::vector<uint32_t> ORIG_ENTRIES_PER_TABLE(SBP_NUMG);
+  for (int j = 0; j < SBP_NUMG; j++)
+  {
+  	ORIG_ENTRIES_PER_TABLE[j] = Config::get_array_integer(section, "ORIG_ENTRIES_PER_TABLE", j);
+  }
+  /*int ORIG_ENTRIES_PER_TABLE_00 = Config::get_integer(section, "ORIG_ENTRIES_PER_TABLE_00");
+  int ORIG_ENTRIES_PER_TABLE_01 = Config::get_integer(section, "ORIG_ENTRIES_PER_TABLE_01");
+  int ORIG_ENTRIES_PER_TABLE_02 = Config::get_integer(section, "ORIG_ENTRIES_PER_TABLE_02");
+  int ORIG_ENTRIES_PER_TABLE_03 = Config::get_integer(section, "ORIG_ENTRIES_PER_TABLE_03");
+  int ORIG_ENTRIES_PER_TABLE_04 = Config::get_integer(section, "ORIG_ENTRIES_PER_TABLE_04");
+  int ORIG_ENTRIES_PER_TABLE_05 = Config::get_integer(section, "ORIG_ENTRIES_PER_TABLE_05");
+  int ORIG_ENTRIES_PER_TABLE_06 = Config::get_integer(section, "ORIG_ENTRIES_PER_TABLE_06");
+  int ORIG_ENTRIES_PER_TABLE_07 = Config::get_integer(section, "ORIG_ENTRIES_PER_TABLE_07");
+  int ORIG_ENTRIES_PER_TABLE_08 = Config::get_integer(section, "ORIG_ENTRIES_PER_TABLE_08");
+  int ORIG_ENTRIES_PER_TABLE_09 = Config::get_integer(section, "ORIG_ENTRIES_PER_TABLE_09");
+  int ORIG_ENTRIES_PER_TABLE_10 = Config::get_integer(section, "ORIG_ENTRIES_PER_TABLE_10");
+  int ORIG_ENTRIES_PER_TABLE_11 = Config::get_integer(section, "ORIG_ENTRIES_PER_TABLE_11");  */
+  
+  std::vector<uint32_t> INFO_PER_ENTRY(SBP_NUMG);
+  for (int j = 0; j < SBP_NUMG; j++)
+  {
+  	INFO_PER_ENTRY[j] = Config::get_array_integer(section, "INFO_PER_ENTRY", j);
+  }
+  /*int INFO_PER_ENTRY_00 = Config::get_integer(section, "INFO_PER_ENTRY_00");
+  int INFO_PER_ENTRY_01 = Config::get_integer(section, "INFO_PER_ENTRY_01");
+  int INFO_PER_ENTRY_02 = Config::get_integer(section, "INFO_PER_ENTRY_02");
+  int INFO_PER_ENTRY_03 = Config::get_integer(section, "INFO_PER_ENTRY_03");
+  int INFO_PER_ENTRY_04 = Config::get_integer(section, "INFO_PER_ENTRY_04");
+  int INFO_PER_ENTRY_05 = Config::get_integer(section, "INFO_PER_ENTRY_05");
+  int INFO_PER_ENTRY_06 = Config::get_integer(section, "INFO_PER_ENTRY_06");
+  int INFO_PER_ENTRY_07 = Config::get_integer(section, "INFO_PER_ENTRY_07");
+  int INFO_PER_ENTRY_08 = Config::get_integer(section, "INFO_PER_ENTRY_08");
+  int INFO_PER_ENTRY_09 = Config::get_integer(section, "INFO_PER_ENTRY_09");
+  int INFO_PER_ENTRY_10 = Config::get_integer(section, "INFO_PER_ENTRY_10");
+  int INFO_PER_ENTRY_11 = Config::get_integer(section, "INFO_PER_ENTRY_11"); */
+  
+  superbp_p = std::make_unique<PREDICTOR>(SBP_NUMG, LOG2FETCHWIDTH, NUM_TAKEN_BRANCHES, ORIG_ENTRIES_PER_TABLE, INFO_PER_ENTRY);
   
   //superbp_p = std::make_unique<PREDICTOR>();
 }

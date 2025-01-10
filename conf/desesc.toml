@@ -164,7 +164,6 @@ statcorrector     = false
 bimodal_size = 1024
 bimodal_width = 8
 
-
 # SuperBP parameters
 SBP_NUMG = 12
 LOG2FETCHWIDTH = 4
@@ -182,6 +181,7 @@ ORIG_ENTRIES_PER_TABLE_08 = 2895
 ORIG_ENTRIES_PER_TABLE_09 = 1936
 ORIG_ENTRIES_PER_TABLE_10 = 1360
 ORIG_ENTRIES_PER_TABLE_11 = 976
+ORIG_ENTRIES_PER_TABLE = [784, 208, 400, 1168, 976, 592, 784, 1744, 2895, 1936, 1360, 976]
     
 INFO_PER_ENTRY_00 = 2
 INFO_PER_ENTRY_01 = 1
@@ -195,7 +195,7 @@ INFO_PER_ENTRY_08 = 2
 INFO_PER_ENTRY_09 = 1
 INFO_PER_ENTRY_10 = 1
 INFO_PER_ENTRY_11 = 1
-
+INFO_PER_ENTRY = [2, 1, 1, 4, 1, 1, 2, 2, 2, 1, 1, 1]
 
 [accel_entry]
 caches        = true  # set true to enable caches...

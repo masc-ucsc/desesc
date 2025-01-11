@@ -377,15 +377,19 @@ Dinst *Emul_dromajo::peek(Hartid_t fid) {
   I(dst1 != RegType::LREG_INVALID);
 
   uint64_t paddr = 0u;
+  uint64_t pc = last[fid].pc;
   if (opcode == Opcode::iLALU_LD || opcode == Opcode::iSALU_ST) {
     paddr = last[fid].addr;
-  } else if (opcode == Opcode::iBALU_LBRANCH || opcode == Opcode::iBALU_RBRANCH || opcode == Opcode::iBALU_LJUMP
-             || opcode == Opcode::iBALU_RJUMP || opcode == Opcode::iBALU_LCALL || opcode == Opcode::iBALU_RCALL
+  } else if (opcode == Opcode::iBALU_LBRANCH || opcode == Opcode::iBALU_RBRANCH) {
+    paddr = last[fid].next_pc;
+    if ((paddr == pc+2) || paddr == pc+4) {
+      paddr = 0; // Not taken Control flow instruction
+    }
+  } else if (opcode == Opcode::iBALU_LJUMP || opcode == Opcode::iBALU_RJUMP || opcode == Opcode::iBALU_LCALL || opcode == Opcode::iBALU_RCALL
              || opcode == Opcode::iBALU_RET) {
     paddr = last[fid].next_pc;
   }
 
-  uint64_t pc = last[fid].pc;
   if (detail > 0) {
     --detail;
     return Dinst::create(Instruction(opcode, src1, src2, dst1, dst2), pc, paddr, fid, false);

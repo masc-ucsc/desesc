@@ -477,7 +477,7 @@ void GProcessor::flush_transient_from_rob() {
     }
     ROB.pop_pipe_in_cluster();  // pop last element from buffer_ROB
   }
-  printf("gprocessor::flush_transient_rob Leaving before new fetch!!!\n");
+  //printf("gprocessor::flush_transient_rob Leaving before new fetch!!!\n");
 }
 
 //<<<<<<< HEAD
@@ -563,7 +563,7 @@ void GProcessor::flush_transient_inst_from_inst_queue() {
 //<<<<<<< HEADDownward
 */
 void GProcessor::flush_transient_inst_from_inst_queue() {
-  printf("gprocessor::flush_transient_inst_queue Entering before new fetch!!!\n");
+  //printf("gprocessor::flush_transient_inst_queue Entering before new fetch!!!\n");
   while (!pipeQ.instQueue.empty()) {
     auto *bucket = pipeQ.instQueue.end_data();
     if (bucket) {

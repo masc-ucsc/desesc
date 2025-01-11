@@ -586,26 +586,34 @@ private:
   bool       Miss_Pred_Bool;
   Stats_cntr nBTAC;
 
-  Stats_cntr nBranches;
+  Stats_cntr nControl;
+  Stats_cntr nBranch;
   Stats_cntr nNoPredict;
   Stats_cntr nTaken;
-  Stats_cntr nMiss;  // hits == nBranches - nMiss
+  Stats_cntr nControlMiss;
+  Stats_cntr nBranchMiss;   // Miss predict due to T/NT predictor = nBranchMiss / nBranch
+  Stats_cntr nBranchBTBMiss;   // Extra miss due to additional BTB mistake
 
-  Stats_cntr nBranches2;
+  Stats_cntr nControl2;
+  Stats_cntr nBranch2;
   Stats_cntr nTaken2;
-  Stats_cntr nMiss2;  // hits == nBranches - nMiss
+  Stats_cntr nControlMiss2;
+  Stats_cntr nBranchMiss2;
+  Stats_cntr nBranchBTBMiss2;
 
-  Stats_cntr nBranches3;
+  Stats_cntr nControl3;
+  Stats_cntr nBranch3;
   Stats_cntr nNoPredict3;
   Stats_cntr nHit3_miss2;  // Mispred of Level 2 which are fixed by level 3 BPred
   Stats_cntr nTaken3;
-  Stats_cntr nMiss3;  // hits == nBranches - nMiss
+  Stats_cntr nControlMiss3;
+  Stats_cntr nBranchMiss3;
+  Stats_cntr nBranchBTBMiss3;
 
   Stats_cntr nFixes1;
   Stats_cntr nFixes2;
   Stats_cntr nFixes3;
   Stats_cntr nUnFixes;
-  Stats_cntr nAgree3;
 
 protected:
   Outcome predict1(Dinst *dinst);

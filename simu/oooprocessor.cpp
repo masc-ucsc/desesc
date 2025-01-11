@@ -82,10 +82,10 @@ OoOProcessor::~OoOProcessor()
 /* }}} */
 
 bool OoOProcessor::advance_clock_drain() {
-  printf("OOOProc::advance_clock_drain ::decode_stage() is called\n");
-  printf("OOOProc::advance_clock_drain ::decode_stage()::dump_rat is called\n");
+  //printf("OOOProc::advance_clock_drain ::decode_stage() is called\n");
+  //printf("OOOProc::advance_clock_drain ::decode_stage()::dump_rat is called\n");
 
-  dump_rat();
+  //dump_rat();
   bool abort = decode_stage();
 
   if (abort || !busy) {
@@ -125,9 +125,9 @@ bool OoOProcessor::advance_clock_drain() {
 
   if (!pipeQ.instQueue.empty()) {
     auto n = issue();
-    printf("OOOprocessor:: spaceInInstQueue Before issue is %d !!!\n", spaceInInstQueue);
+    //printf("OOOprocessor:: spaceInInstQueue Before issue is %d !!!\n", spaceInInstQueue);
     spaceInInstQueue += n;
-    printf("OOOprocessor:: spaceInInstQueue after issue is %d !!!\n", spaceInInstQueue);
+    //printf("OOOprocessor:: spaceInInstQueue after issue is %d !!!\n", spaceInInstQueue);
   } else if (ROB.empty() && rROB.empty() && !pipeQ.pipeLine.hasOutstandingItems()) {
     return false;
   }
@@ -145,11 +145,11 @@ bool OoOProcessor::advance_clock() {
   Tracer::advance_clock();
 
   //<<<<<<< HEAD
-  printf("\nOOOProc::advance_clock() Leaving with pipeQ.InstQ.bucket size %ld\n", pipeQ.instQueue.size());
-  printf("OOOProc::advance_clock ::fetch()::dump_rat is called\n");
+  //printf("\nOOOProc::advance_clock() Leaving with pipeQ.InstQ.bucket size %ld\n", pipeQ.instQueue.size());
+  //printf("OOOProc::advance_clock ::fetch()::dump_rat is called\n");
   fetch();
-  dump_rat();
-  printf("OOOProc::advance_clock ::fetch() is called\n");
+  //dump_rat();
+  //printf("OOOProc::advance_clock ::fetch() is called\n");
   /*=======
     fetch();
   >>>>>>> upstream/main*/
@@ -168,7 +168,7 @@ void OoOProcessor::executing(Dinst *dinst)
   }
 
   // printf("OOOProc::Executing::dump_rat is called\n");
-  dump_rat();
+  // dump_rat();
 
   Tracer::stage(dinst, "EX");
 
@@ -223,7 +223,7 @@ void OoOProcessor::executing(Dinst *dinst)
 //
 void OoOProcessor::executed([[maybe_unused]] Dinst *dinst) {
   // printf("OOOProc::Executed::dump_rat is called\n");
-  dump_rat();
+  // dump_rat();
   // if (dinst->isTransient()) {
   //   printf("OOOProc::executed Transientinst starts to executed\n");
   // } else {
@@ -365,7 +365,7 @@ StallCause OoOProcessor::add_inst(Dinst *dinst) {
   I(dinst->getCluster() != 0);  // Resource::schedule must set the resource field
 
   // printf("OOOProc::add_inst and dumprat before adding in RAT%ld\n", dinst->getID());
-  dump_rat();
+  // dump_rat();
   int n = 0;
   if (!dinst->isSrc2Ready()) {
     // It already has a src2 dep. It means that it is solved at
@@ -460,7 +460,7 @@ StallCause OoOProcessor::add_inst(Dinst *dinst) {
   // printf("OOOPROCCESOR::add_inst :  done rename instID %ld\n", dinst->getID());
 
   // printf("OOOProc::add_inst and dumprat after adding in RAT%ld\n", dinst->getID());
-  dump_rat();
+  // dump_rat();
 //=======
 
 //>>>>>>> upstream/main
@@ -523,9 +523,9 @@ void OoOProcessor::try_flush(Dinst *dinst) {
 
 void OoOProcessor::retire() {
   //<<<<<<< HEAD
-  printf("\nOOOProc::retire Entering  \n");
-  printf("\nOOOProc::retire dump_rat starting  \n");
-  dump_rat();
+  //printf("\nOOOProc::retire Entering  \n");
+  //printf("\nOOOProc::retire dump_rat starting  \n");
+  // dump_rat();
 #ifdef ENABLE_LDBP
   int64_t gclock = int64_t(clockTicks.getDouble());
   if (gclock != power_clock) {
@@ -810,9 +810,9 @@ void OoOProcessor::retire() {
     //<<<<<<< HEAD
   }  // !rROB.empty()_loop_ends
 
-  printf("OOOProcessor::retire  Exiting from retire \n");
-  printf("\nOOOProc::retire dump_rat Leaving \n");
-  dump_rat();
+  //printf("OOOProcessor::retire  Exiting from retire \n");
+  //printf("\nOOOProc::retire dump_rat Leaving \n");
+  //dump_rat();
   //=======
   //}  // !rROB.empty()_loop_ends
   //>>>>>>> upstream/main

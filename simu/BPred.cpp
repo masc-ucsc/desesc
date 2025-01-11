@@ -171,7 +171,7 @@ void BPBTB::updateOnly(Dinst *dinst) {
 }
 
 Outcome BPBTB::predict(Dinst *dinst, bool doUpdate, bool doStats) {
-  bool ntaken = !dinst->isTaken();
+  I(dinst->isTaken()); // BTB should be called only when the branch is taken (predict taken & taken -> call BTB)
 
   if (data == 0) {
     // required when BPOracle
@@ -181,11 +181,6 @@ Outcome BPBTB::predict(Dinst *dinst, bool doUpdate, bool doStats) {
       nHit.inc(doUpdate && dinst->has_stats() && doStats);
     }
 
-    if (ntaken) {
-      // Trash result because it shouldn't have reach BTB. Otherwise, the
-      // worse the predictor, the better the results.
-      return Outcome::NoBTB;
-    }
     return Outcome::Correct;
   }
 
@@ -197,29 +192,6 @@ Outcome BPBTB::predict(Dinst *dinst, bool doUpdate, bool doStats) {
     }
 
     key ^= dolc->getSign(btbHistorySize, btbHistorySize);
-  }
-
-  if (ntaken || !doUpdate) {
-    // The branch is not taken. Do not update the cache
-    if (dinst->getInst()->doesCtrl2Label() && btbicache) {
-      nHitLabel.inc(doStats && doUpdate && dinst->has_stats());
-      return Outcome::NoBTB;
-    }
-
-    BTBCache::CacheLine *cl = data->readLine(key);
-
-    if (cl == 0) {
-      nHit.inc(doStats && doUpdate && dinst->has_stats());
-      return Outcome::NoBTB;  // Outcome::NoBTB because BTAC would hide the prediction
-    }
-
-    if (cl->inst == dinst->getAddr()) {
-      nHit.inc(doStats && doUpdate && dinst->has_stats());
-      return Outcome::Correct;
-    }
-
-    nMiss.inc(doStats && doUpdate && dinst->has_stats());
-    return Outcome::Miss;
   }
 
   I(doUpdate);
@@ -1435,23 +1407,35 @@ BPredictor::BPredictor(int32_t i, MemObj *iobj, MemObj *dobj, std::shared_ptr<BP
     , il1(iobj)
     , dl1(dobj)
     , nBTAC(fmt::format("P({})_BPred:nBTAC", id))
-    , nBranches(fmt::format("P({})_BPred:nBranches", id))
+
+    , nControl(fmt::format("P({})_BPred:nControl", id))
+    , nBranch(fmt::format("P({})_BPred:nBranch", id))
     , nNoPredict(fmt::format("P({})_BPred:nNoPredict", id))
     , nTaken(fmt::format("P({})_BPred:nTaken", id))
-    , nMiss(fmt::format("P({})_BPred:nMiss", id))
-    , nBranches2(fmt::format("P({})_BPred:nBranches2", id))
+    , nControlMiss(fmt::format("P({})_BPred:nControlMiss", id))
+    , nBranchMiss(fmt::format("P({})_BPred:nBranchMiss", id))
+    , nBranchBTBMiss(fmt::format("P({})_BPred:nBranchBTBMiss", id))
+
+    , nControl2(fmt::format("P({})_BPred:nControl2", id))
+    , nBranch2(fmt::format("P({})_BPred:nBranch2", id))
     , nTaken2(fmt::format("P({})_BPred:nTaken2", id))
-    , nMiss2(fmt::format("P({})_BPred:nMiss2", id))
-    , nBranches3(fmt::format("P({})_BPred:nBranches3", id))
+    , nControlMiss2(fmt::format("P({})_BPred:nControlMiss2", id))
+    , nBranchMiss2(fmt::format("P({})_BPred:nBranchMiss2", id))
+    , nBranchBTBMiss2(fmt::format("P({})_BPred:nBranchBTBMiss2", id))
+
+    , nControl3(fmt::format("P({})_BPred:nControl3", id))
+    , nBranch3(fmt::format("P({})_BPred:nBranch3", id))
     , nNoPredict3(fmt::format("P({})_BPred:nNoPredict3", id))
     , nHit3_miss2(fmt::format("P({})_BPred:nHit3_miss2", id))
     , nTaken3(fmt::format("P({})_BPred:nTaken3", id))
-    , nMiss3(fmt::format("P({})_BPred:nMiss3", id))
+    , nControlMiss3(fmt::format("P({})_BPred:nControlMiss3", id))
+    , nBranchMiss3(fmt::format("P({})_BPred:nBranchMiss3", id))
+    , nBranchBTBMiss3(fmt::format("P({})_BPred:nBranchBTBMiss3", id))
+
     , nFixes1(fmt::format("P({})_BPred:nFixes1", id))
     , nFixes2(fmt::format("P({})_BPred:nFixes2", id))
     , nFixes3(fmt::format("P({})_BPred:nFixes3", id))
-    , nUnFixes(fmt::format("P({})_BPred:nUnFixes", id))
-    , nAgree3(fmt::format("P({})_BPred:nAgree3", id)) {
+    , nUnFixes(fmt::format("P({})_BPred:nUnFixes", id)) {
   auto cpu_section = Config::get_string("soc", "core", id);
   auto ras_section = Config::get_array_string(cpu_section, "bpred", 0);
   ras              = std::make_unique<BPRas>(id, ras_section, "");
@@ -1542,12 +1526,18 @@ void BPredictor::fetchBoundaryEnd() {
 Outcome BPredictor::predict1(Dinst *dinst) {
   I(dinst->getInst()->isControl());
 
-  nBranches.inc(dinst->has_stats());
+  nControl.inc(dinst->has_stats());
   nTaken.inc(dinst->isTaken() && dinst->has_stats());
 
   Outcome p = pred1->doPredict(dinst);
 
-  nMiss.inc(p == Outcome::Miss && dinst->has_stats());
+  if (dinst->getInst()->isBranch()) {
+    nBranch.inc(dinst->has_stats());
+    nBranchMiss.inc(p == Outcome::Miss && dinst->has_stats());
+    nBranchBTBMiss.inc(p == Outcome::NoBTB && dinst->has_stats());
+  }
+  nControlMiss.inc((p == Outcome::Miss || p == Outcome::NoBTB) && dinst->has_stats());
+
   nNoPredict.inc(p == Outcome::None && dinst->has_stats());
 
   return p;
@@ -1556,14 +1546,18 @@ Outcome BPredictor::predict1(Dinst *dinst) {
 Outcome BPredictor::predict2(Dinst *dinst) {
   I(dinst->getInst()->isControl());
 
-  nBranches2.inc(dinst->has_stats());
+  nControl2.inc(dinst->has_stats());
   nTaken2.inc(dinst->isTaken() && dinst->has_stats());
   // No RAS in L2
 
   Outcome p = pred2->doPredict(dinst);
 
-  // nMiss2.inc(p != Outcome::Correct && dinst->has_stats());
-  nMiss2.inc(p == Outcome::Miss && dinst->has_stats());
+  if (dinst->getInst()->isBranch()) {
+    nBranch2.inc(dinst->has_stats());
+    nBranchMiss2.inc(p == Outcome::Miss && dinst->has_stats());
+    nBranchBTBMiss2.inc(p == Outcome::NoBTB && dinst->has_stats());
+  }
+  nControlMiss2.inc((p == Outcome::Miss || p == Outcome::NoBTB) && dinst->has_stats());
 
   return p;
 }
@@ -1571,34 +1565,18 @@ Outcome BPredictor::predict2(Dinst *dinst) {
 Outcome BPredictor::predict3(Dinst *dinst) {
   I(dinst->getInst()->isControl());
 
-#if 0
-  if (dinst->isBiasBranch())
-    return Outcome::None;
-#endif
-
-#if 0
-  if(dinst->getDataSign() == DS_NoData)
-    return Outcome::None;
-#endif
-
-#if 0
-  if(!dinst->isBranchMiss_level2()) {
-    return Outcome::None;
-  }
-#endif
-
-  nBranches3.inc(dinst->has_stats());
+  nControl3.inc(dinst->has_stats());
   nTaken3.inc(dinst->isTaken() && dinst->has_stats());
   // No RAS in L2
 
   Outcome p = pred3->doPredict(dinst);
-#if 0
-  if(p == Outcome::None)
-    return p;
-#endif
 
-  // nMiss3.inc(p != Outcome::Correct && dinst->has_stats());
-  nMiss3.inc(p == Outcome::Miss && dinst->has_stats());
+  if (dinst->getInst()->isBranch()) {
+    nBranch3.inc(dinst->has_stats());
+    nBranchMiss3.inc(p == Outcome::Miss && dinst->has_stats());
+    nBranchBTBMiss3.inc(p == Outcome::NoBTB && dinst->has_stats());
+  }
+  nControlMiss3.inc((p == Outcome::Miss || p == Outcome::NoBTB) && dinst->has_stats());
   nNoPredict3.inc(p == Outcome::None && dinst->has_stats());
 
   return p;
@@ -1612,18 +1590,28 @@ TimeDelta_t BPredictor::predict(Dinst *dinst, bool *fastfix) {
   Outcome outcome3 = Outcome::None;
   dinst->setBiasBranch(false);
 
-  // FIXME: Even if RAS has none, it should call predict (and ignore it) to
-  // update histories (it helps to build better history)
   outcome1 = ras->doPredict(dinst);
-  if (outcome1 == Outcome::None) {
+  if (outcome1 != Outcome::None) { // If RAS, still call predictors to update history
+    predict1(dinst);
+    if (pred2) {
+      predict2(dinst);
+    }
+    if (pred3) {
+      predict3(dinst);
+    }
+    outcome2 = outcome1;
+    outcome3 = outcome1;
+  }else{
     outcome1 = predict1(dinst);
-    // outcome2 = outcome1;
     if (pred2) {
       outcome2 = predict2(dinst);
+    }else{
+      outcome2 = outcome1;
     }
-    // outcome3 = outcome2;
     if (pred3) {
       outcome3 = predict3(dinst);
+    }else{
+      outcome3 = outcome2;
     }
   }
 
@@ -1695,6 +1683,7 @@ TimeDelta_t BPredictor::predict(Dinst *dinst, bool *fastfix) {
 
   // outcome == (Outcome::Correct, Outcome::Miss, Outcome::None, Outcome::NoBTB)
   if (outcome1 == Outcome::Correct && outcome2 != Outcome::Miss && outcome3 != Outcome::Miss) {
+    fmt::print("out1{} out2{} out3{}\n", (int)outcome1, (int)outcome2, (int)outcome3);
     nFixes1.inc(dinst->has_stats());
     bpred_total_delay = bpredDelay1;
   } else if (outcome1 != Outcome::Correct && outcome2 == Outcome::Correct && outcome3 != Outcome::Miss) {

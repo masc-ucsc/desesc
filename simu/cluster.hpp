@@ -55,9 +55,9 @@ protected:
   static inline std::map<std::string, std::pair<std::shared_ptr<Cluster>, Opcode_array<std::shared_ptr<Resource>>>> clusterMap;
 
   void delEntry() {
-    printf("Cluster:::delEntry()windowsize is %d\n", windowSize);
+    //printf("Cluster:::delEntry()windowsize is %d\n", windowSize);
     windowSize++;
-    printf("Cluster:::delEntry()windowsize++ is %d: \n", windowSize);
+    //printf("Cluster:::delEntry()windowsize++ is %d: \n", windowSize);
     I(windowSize <= MaxWinSize);
   }
   void newEntry() {

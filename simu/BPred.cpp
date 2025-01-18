@@ -631,9 +631,13 @@ void BPSuperbp::fetchBoundaryEnd () {
     									0; /*insn_t::non_cti;*/
     
     bool taken = dinst->isTaken();
-    bool ptaken = superbp_p->handle_insn_desesc(pc, insn_type, taken);
+	uint64_t branchTarget = dinst->getAddr();
+    bool ptaken = superbp_p->handle_insn_desesc(pc, branchTarget, insn_type, taken);
     // superbp in sync (must be done for all instructions), prediction made, also ftq updated as per previous resolution info
-    
+
+/*    if (pc == 6218172) {
+	    fmt::print("pc:{} taken:{} ptaken:{}\n", pc, taken, ptaken);
+    }*/
     // for jump - may just return btb target
       if (dinst->getInst()->isJump()) {
     return btb.predict(dinst, doUpdate, doStats);

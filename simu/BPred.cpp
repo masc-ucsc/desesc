@@ -563,9 +563,10 @@ BPSuperbp::BPSuperbp(int32_t i, const std::string &section, const std::string &s
  
   int log2fetchwidth = log2(FetchWidth);
   */
-  
+  int FetchWidth = Config::get_power2("soc", "core", i, "fetch_width", 1);
   int SBP_NUMG = Config::get_integer(section, "SBP_NUMG");
-  int LOG2FETCHWIDTH = Config::get_integer(section, "LOG2FETCHWIDTH");
+  //int LOG2FETCHWIDTH = Config::get_integer(section, "LOG2FETCHWIDTH");
+  int LOG2FETCHWIDTH = log2(FetchWidth);
   int NUM_TAKEN_BRANCHES = Config::get_integer(section, "NUM_TAKEN_BRANCHES");
   
   std::vector<uint32_t> ORIG_ENTRIES_PER_TABLE(SBP_NUMG);

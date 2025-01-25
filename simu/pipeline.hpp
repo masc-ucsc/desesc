@@ -55,10 +55,9 @@ public:
   void     flush_transient_inst_from_buffer();
   bool     transient_buffer_empty();
   IBucket *nextItem();
-  IBucket *next_item_transient();
-  IBucket *next_item_transient_adding_to_rob();
 
   size_t size() const { return buffer.size(); }
+  size_t bucketPool_size() const { return bucketPool.size(); }
 };
 
 class IBucket : public FastQueue<Dinst *> {

@@ -19,9 +19,9 @@
 #include "taskhandler.hpp"
 #include "tracer.hpp"
 
-//  #define ESESC_TRACE
+// #define ESESC_TRACE
 //  #define ESESC_CODEPROFILE
-//  #define ESESC_BRANCHPROFILE
+// #define ESESC_BRANCHPROFILE
 
 // FIXME: to avoid deadlock, prealloc n to the n oldest instructions
 // #define LATE_ALLOC_REGISTER
@@ -82,10 +82,10 @@ OoOProcessor::~OoOProcessor()
 /* }}} */
 
 bool OoOProcessor::advance_clock_drain() {
-  //printf("OOOProc::advance_clock_drain ::decode_stage() is called\n");
-  //printf("OOOProc::advance_clock_drain ::decode_stage()::dump_rat is called\n");
+  // printf("OOOProc::advance_clock_drain ::decode_stage() is called\n");
+  // printf("OOOProc::advance_clock_drain ::decode_stage()::dump_rat is called\n");
 
-  //dump_rat();
+  // dump_rat();
   bool abort = decode_stage();
 
   if (abort || !busy) {
@@ -125,9 +125,9 @@ bool OoOProcessor::advance_clock_drain() {
 
   if (!pipeQ.instQueue.empty()) {
     auto n = issue();
-    //printf("OOOprocessor:: spaceInInstQueue Before issue is %d !!!\n", spaceInInstQueue);
+    // printf("OOOprocessor:: spaceInInstQueue Before issue is %d !!!\n", spaceInInstQueue);
     spaceInInstQueue += n;
-    //printf("OOOprocessor:: spaceInInstQueue after issue is %d !!!\n", spaceInInstQueue);
+    // printf("OOOprocessor:: spaceInInstQueue after issue is %d !!!\n", spaceInInstQueue);
   } else if (ROB.empty() && rROB.empty() && !pipeQ.pipeLine.hasOutstandingItems()) {
     return false;
   }
@@ -145,11 +145,11 @@ bool OoOProcessor::advance_clock() {
   Tracer::advance_clock();
 
   //<<<<<<< HEAD
-  //printf("\nOOOProc::advance_clock() Leaving with pipeQ.InstQ.bucket size %ld\n", pipeQ.instQueue.size());
-  //printf("OOOProc::advance_clock ::fetch()::dump_rat is called\n");
+  // printf("\nOOOProc::advance_clock() Leaving with pipeQ.InstQ.bucket size %ld\n", pipeQ.instQueue.size());
+  // printf("OOOProc::advance_clock ::fetch()::dump_rat is called\n");
   fetch();
-  //dump_rat();
-  //printf("OOOProc::advance_clock ::fetch() is called\n");
+  // dump_rat();
+  // printf("OOOProc::advance_clock ::fetch() is called\n");
   /*=======
     fetch();
   >>>>>>> upstream/main*/
@@ -523,8 +523,8 @@ void OoOProcessor::try_flush(Dinst *dinst) {
 
 void OoOProcessor::retire() {
   //<<<<<<< HEAD
-  //printf("\nOOOProc::retire Entering  \n");
-  //printf("\nOOOProc::retire dump_rat starting  \n");
+  // printf("\nOOOProc::retire Entering  \n");
+  // printf("\nOOOProc::retire dump_rat starting  \n");
   // dump_rat();
 #ifdef ENABLE_LDBP
   int64_t gclock = int64_t(clockTicks.getDouble());
@@ -749,12 +749,7 @@ void OoOProcessor::retire() {
                          dinst->isBranchHit_level2(),
                          dinst->isBranchHit_level3(),
                          dinst->isBranch_hit2_miss3(),
-                         dinst->isBranch_hit3_miss2(),
-                         dinst->isTrig_ld1_pred(),
-                         dinst->isTrig_ld1_unpred(),
-                         dinst->isTrig_ld2_pred(),
-                         dinst->isTrig_ld2_unpred(),
-                         dinst->get_trig_ld_status());
+                         dinst->isBranch_hit3_miss2());
     }
 #endif
 
@@ -810,11 +805,11 @@ void OoOProcessor::retire() {
     //<<<<<<< HEAD
   }  // !rROB.empty()_loop_ends
 
-  //printf("OOOProcessor::retire  Exiting from retire \n");
-  //printf("\nOOOProc::retire dump_rat Leaving \n");
-  //dump_rat();
+  // printf("OOOProcessor::retire  Exiting from retire \n");
+  // printf("\nOOOProc::retire dump_rat Leaving \n");
+  // dump_rat();
   //=======
-  //}  // !rROB.empty()_loop_ends
+  // }  // !rROB.empty()_loop_ends
   //>>>>>>> upstream/main
 }
 

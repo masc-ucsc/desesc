@@ -299,13 +299,9 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
     // Fetch uses getHead, ROB retires getTail
   } while (n2Fetch > 0);
 
-  /*if(fid->isBlocked()) {
-   pipeQ.pipeLine.readyItem(bucket);//must bucket-> markedfetch()
-   return;
-  }*/
   bpred->fetchBoundaryEnd();
 
-  if (il1_enable && !bucket->empty()) {
+  if (false && il1_enable && !bucket->empty()) {
     avgFetched.sample(bucket->size(), bucket->top()->has_stats());
     MemRequest::sendReqRead(gms->getIL1(),
                             bucket->top()->has_stats(),

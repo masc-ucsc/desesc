@@ -235,26 +235,24 @@ public:
   Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
 };
 
-
-//class PREDICTOR;
+// class PREDICTOR;
 #include "predictor.hpp"
 class BPSuperbp : public BPred {
 private:
   BPBTB btb;
-  
+
   std::unique_ptr<PREDICTOR> superbp_p;
 
   const bool FetchPredict;
 
 protected:
 public:
-    BPSuperbp(int32_t i, const std::string &section, const std::string &sname);
+  BPSuperbp(int32_t i, const std::string &section, const std::string &sname);
 
   void    fetchBoundaryBegin(Dinst *dinst);
   void    fetchBoundaryEnd();
   Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
 };
-
 
 class BP2level : public BPred {
 private:
@@ -591,8 +589,8 @@ private:
   Stats_cntr nNoPredict;
   Stats_cntr nTaken;
   Stats_cntr nControlMiss;
-  Stats_cntr nBranchMiss;   // Miss predict due to T/NT predictor = nBranchMiss / nBranch
-  Stats_cntr nBranchBTBMiss;   // Extra miss due to additional BTB mistake
+  Stats_cntr nBranchMiss;     // Miss predict due to T/NT predictor = nBranchMiss / nBranch
+  Stats_cntr nBranchBTBMiss;  // Extra miss due to additional BTB mistake
 
   Stats_cntr nControl2;
   Stats_cntr nBranch2;

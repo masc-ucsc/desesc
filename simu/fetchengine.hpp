@@ -34,9 +34,9 @@ private:
   // InstID of the address that generated a misprediction
 
   bool missInst;  // branch missprediction. Stop fetching until solved
-#ifndef NDEBUG
+                  // #ifndef NDEBUG
   Dinst *missDinst;
-#endif
+  // #endif
 
   // Dinst *transientDinst;
 
@@ -87,9 +87,9 @@ public:
 
   Dinst *transientDinst;
   bool   isBlocked() const { return missInst; }
-#ifndef NDEBUG
+  // #ifndef NDEBUG
   Dinst *getMissDinst() const { return missDinst; }
-#endif
+  // #endif
 
   Dinst *get_next_transient_dinst() const {
     I(0);

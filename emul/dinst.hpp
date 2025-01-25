@@ -31,13 +31,8 @@ private:
   Dinst *parentDinst{};
 #endif
 public:
-  //<<<<<<< HEAD
   DinstNext() {
-    printf("Setting DinstNext\n");
     dinst = 0;
-    // nextDep     = 0;
-    // isUsed      = 0;
-    // parentDinst = 0;
   }
 
   DinstNext *nextDep;

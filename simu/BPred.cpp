@@ -171,7 +171,7 @@ void BPBTB::updateOnly(Dinst *dinst) {
 }
 
 Outcome BPBTB::predict(Dinst *dinst, bool doUpdate, bool doStats) {
-  I(dinst->isTaken()); // BTB should be called only when the branch is taken (predict taken & taken -> call BTB)
+  I(dinst->isTaken());  // BTB should be called only when the branch is taken (predict taken & taken -> call BTB)
 
   if (data == 0) {
     // required when BPOracle
@@ -547,20 +547,20 @@ Outcome BPIMLI::predict(Dinst *dinst, bool doUpdate, bool doStats) {
   return ptaken ? btb.predict(dinst, doUpdate, doStats) : Outcome::Correct;
 }
 
+// class PREDICTOR;
 
-//class PREDICTOR;
-
-BPSuperbp::BPSuperbp(int32_t i, const std::string &section, const std::string &sname): BPred(i, section, sname, "superbp"), btb(i, section, sname), FetchPredict(Config::get_bool(section, "fetch_predict")) {
-// TODO
+BPSuperbp::BPSuperbp(int32_t i, const std::string &section, const std::string &sname)
+    : BPred(i, section, sname, "superbp"), btb(i, section, sname), FetchPredict(Config::get_bool(section, "fetch_predict")) {
+  // TODO
   /*
   int FetchWidth = Config::get_power2("soc", "core", i, "fetch_width", 1);
-  
+
   int bimodalSize = Config::get_power2(section, "bimodal_size", 4);
   int bwidth      = Config::get_integer(section, "bimodal_width");
     int blogb          = log2(bimodalSize) - log2(FetchWidth);
 
   int nhist = Config::get_integer(section, "nhist", 1);
- 
+
   int log2fetchwidth = log2(FetchWidth);
   */
   int FetchWidth = Config::get_power2("soc", "core", i, "fetch_width", 1);
@@ -568,11 +568,10 @@ BPSuperbp::BPSuperbp(int32_t i, const std::string &section, const std::string &s
   //int LOG2FETCHWIDTH = Config::get_integer(section, "LOG2FETCHWIDTH");
   int LOG2FETCHWIDTH = log2(FetchWidth);
   int NUM_TAKEN_BRANCHES = Config::get_integer(section, "NUM_TAKEN_BRANCHES");
-  
+
   std::vector<uint32_t> ORIG_ENTRIES_PER_TABLE(SBP_NUMG);
-  for (int j = 0; j < SBP_NUMG; j++)
-  {
-  	ORIG_ENTRIES_PER_TABLE[j] = Config::get_array_integer(section, "ORIG_ENTRIES_PER_TABLE", j);
+  for (int j = 0; j < SBP_NUMG; j++) {
+    ORIG_ENTRIES_PER_TABLE[j] = Config::get_array_integer(section, "ORIG_ENTRIES_PER_TABLE", j);
   }
   /*int ORIG_ENTRIES_PER_TABLE_00 = Config::get_integer(section, "ORIG_ENTRIES_PER_TABLE_00");
   int ORIG_ENTRIES_PER_TABLE_01 = Config::get_integer(section, "ORIG_ENTRIES_PER_TABLE_01");
@@ -586,11 +585,10 @@ BPSuperbp::BPSuperbp(int32_t i, const std::string &section, const std::string &s
   int ORIG_ENTRIES_PER_TABLE_09 = Config::get_integer(section, "ORIG_ENTRIES_PER_TABLE_09");
   int ORIG_ENTRIES_PER_TABLE_10 = Config::get_integer(section, "ORIG_ENTRIES_PER_TABLE_10");
   int ORIG_ENTRIES_PER_TABLE_11 = Config::get_integer(section, "ORIG_ENTRIES_PER_TABLE_11");  */
-  
+
   std::vector<uint32_t> INFO_PER_ENTRY(SBP_NUMG);
-  for (int j = 0; j < SBP_NUMG; j++)
-  {
-  	INFO_PER_ENTRY[j] = Config::get_array_integer(section, "INFO_PER_ENTRY", j);
+  for (int j = 0; j < SBP_NUMG; j++) {
+    INFO_PER_ENTRY[j] = Config::get_array_integer(section, "INFO_PER_ENTRY", j);
   }
   /*int INFO_PER_ENTRY_00 = Config::get_integer(section, "INFO_PER_ENTRY_00");
   int INFO_PER_ENTRY_01 = Config::get_integer(section, "INFO_PER_ENTRY_01");
@@ -604,46 +602,48 @@ BPSuperbp::BPSuperbp(int32_t i, const std::string &section, const std::string &s
   int INFO_PER_ENTRY_09 = Config::get_integer(section, "INFO_PER_ENTRY_09");
   int INFO_PER_ENTRY_10 = Config::get_integer(section, "INFO_PER_ENTRY_10");
   int INFO_PER_ENTRY_11 = Config::get_integer(section, "INFO_PER_ENTRY_11"); */
-  
+
   superbp_p = std::make_unique<PREDICTOR>(SBP_NUMG, LOG2FETCHWIDTH, NUM_TAKEN_BRANCHES, ORIG_ENTRIES_PER_TABLE, INFO_PER_ENTRY);
-  
-  //superbp_p = std::make_unique<PREDICTOR>();
+
+  // superbp_p = std::make_unique<PREDICTOR>();
 }
 
-void BPSuperbp::fetchBoundaryBegin (Dinst *dinst) {
+void BPSuperbp::fetchBoundaryBegin(Dinst *dinst) {
   if (FetchPredict) {
     superbp_p->fetchBoundaryBegin(dinst->getPC());
   }
 }
 
-void BPSuperbp::fetchBoundaryEnd () {
+void BPSuperbp::fetchBoundaryEnd() {
   if (FetchPredict) {
     superbp_p->fetchBoundaryEnd();
   }
 }
 
-  Outcome BPSuperbp::predict (Dinst *dinst, bool doUpdate, bool doStats) {
-    //return btb.predict(dinst, doUpdate, doStats);
-    uint64_t pc = dinst->getPC();
-    uint8_t insn_type = 	dinst->getInst()->isFuncRet	()		? 4 /*insn_t::ret*/ : \
-    									dinst->getInst()->isFuncCall()		? 3 /*insn_t::call*/ : \
-    									dinst->getInst()->	isBranch()		? 2 /*insn_t::branch*/ : \
-    									dinst->getInst()->isJump() 		? 1 /*insn_t::jump*/ : \
-    									0; /*insn_t::non_cti;*/
-    
-    bool taken = dinst->isTaken();
-	uint64_t branchTarget = dinst->getAddr();
-    bool ptaken = superbp_p->handle_insn_desesc(pc, branchTarget, insn_type, taken);
-    // superbp in sync (must be done for all instructions), prediction made, also ftq updated as per previous resolution info
+Outcome BPSuperbp::predict(Dinst *dinst, bool doUpdate, bool doStats) {
+  // return btb.predict(dinst, doUpdate, doStats);
+  uint64_t pc        = dinst->getPC();
+  uint8_t  insn_type = dinst->getInst()->isFuncRet()    ? 4 /*insn_t::ret*/
+                       : dinst->getInst()->isFuncCall() ? 3 /*insn_t::call*/
+                       : dinst->getInst()->isBranch()   ? 2 /*insn_t::branch*/
+                       : dinst->getInst()->isJump()     ? 1 /*insn_t::jump*/
+                                                        : 0;    /*insn_t::non_cti;*/
 
-/*    if (pc == 6218172) {
-	    fmt::print("pc:{} taken:{} ptaken:{}\n", pc, taken, ptaken);
-    }*/
-    // for jump - may just return btb target
-      if (dinst->getInst()->isJump()) {
+  bool     taken        = dinst->isTaken();
+  uint64_t branchTarget = dinst->getAddr();
+  bool     ptaken       = superbp_p->handle_insn_desesc(pc, branchTarget, insn_type, taken);
+  // superbp in sync (must be done for all instructions), prediction made, also ftq updated as per previous resolution info
+
+  if (pc == 6212110) {
+    // printf ("***************************************************\n");
+    // fmt::print("pc:{} taken:{} ptaken:{}\n", pc, taken, ptaken);
+    // printf ("***************************************************\n");
+  }
+  // for jump - may just return btb target
+  if (dinst->getInst()->isJump()) {
     return btb.predict(dinst, doUpdate, doStats);
   }
-  
+
   if (taken != ptaken) {
     if (doUpdate) {
       btb.updateOnly(dinst);
@@ -652,7 +652,6 @@ void BPSuperbp::fetchBoundaryEnd () {
   }
 
   return ptaken ? btb.predict(dinst, doUpdate, doStats) : Outcome::Correct;
-	
 }
 
 /*****************************************
@@ -1596,7 +1595,7 @@ TimeDelta_t BPredictor::predict(Dinst *dinst, bool *fastfix) {
   dinst->setBiasBranch(false);
 
   outcome1 = ras->doPredict(dinst);
-  if (outcome1 != Outcome::None) { // If RAS, still call predictors to update history
+  if (outcome1 != Outcome::None) {  // If RAS, still call predictors to update history
     predict1(dinst);
     if (pred2) {
       predict2(dinst);
@@ -1606,16 +1605,16 @@ TimeDelta_t BPredictor::predict(Dinst *dinst, bool *fastfix) {
     }
     outcome2 = outcome1;
     outcome3 = outcome1;
-  }else{
+  } else {
     outcome1 = predict1(dinst);
     if (pred2) {
       outcome2 = predict2(dinst);
-    }else{
+    } else {
       outcome2 = outcome1;
     }
     if (pred3) {
       outcome3 = predict3(dinst);
-    }else{
+    } else {
       outcome3 = outcome2;
     }
   }
@@ -1688,7 +1687,7 @@ TimeDelta_t BPredictor::predict(Dinst *dinst, bool *fastfix) {
 
   // outcome == (Outcome::Correct, Outcome::Miss, Outcome::None, Outcome::NoBTB)
   if (outcome1 == Outcome::Correct && outcome2 != Outcome::Miss && outcome3 != Outcome::Miss) {
-    fmt::print("out1{} out2{} out3{}\n", (int)outcome1, (int)outcome2, (int)outcome3);
+    // fmt::print("out1{} out2{} out3{}\n", (int)outcome1, (int)outcome2, (int)outcome3);
     nFixes1.inc(dinst->has_stats());
     bpred_total_delay = bpredDelay1;
   } else if (outcome1 != Outcome::Correct && outcome2 == Outcome::Correct && outcome3 != Outcome::Miss) {

@@ -137,7 +137,7 @@ btb_line_size     = 1
 btb_assoc         = 4
 btb_repl_policy   = "LRU"
 
-nhist             = 8
+nhist             = 6
 statcorrector     = false
 bimodal_size = 1024
 bimodal_width = 8

@@ -5,7 +5,7 @@
 [trace]
 #range = [0,2400]
 #range = [0,313000]
-range = [0,1000000]
+range = [50000,60000]
 
 
 [soc]
@@ -52,30 +52,8 @@ load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/xz_cld/xz_cld"
 start_roi = false
 rabbit    = 1024
 detail    = 1024
-#Number of Insts:
-#time     = 30000
-#time      = 700
-#time      = 500
-#time      = 200
-#time      = 100
-time      = 1000
-#time      = 3000
-#time      = 10000
-#time      = 30000
-#time     = 48000
-#time     = 49000
-#time      = 49050
-#time      = 49100
-#time      = 49300
-#time      = 49500 
-#good for zx_cld::Same workd
-#time       = 60000
-#time      = 70000
-#time      = 80000
-#time     = 50000
-#time     = 45000
-#time     = 100000
-#time     = 1000000
+time      = 100e3 #Number of Insts
+
 [rand_emu]
 type = "random"  # Generate random instructions (coverage testing?)
 
@@ -207,7 +185,7 @@ type  = "ooo"  # ooo or inorder or accel
 frequency_mhz = 1000
 bpred         = ["bp0", "bp1"]
 #do_random_transients = false
-do_random_transients = true
+do_random_transients = false
 
 # Fetch parameters
 fetch_align       = true
@@ -233,10 +211,10 @@ il1           = "il1_cache IL1"
 dl1           = "dl1_cache DL1"
 scoore_serialize = true
 
-decode_delay = 4
+decode_delay = 3
 rename_delay = 2
 ftq_size     = 12
-instq_size   = 16
+instq_size   = 32
 
 fetch_width  = 8
 issue_width  = 8
@@ -256,7 +234,7 @@ scoore_serialze      = true
 
 [alu0]
 num = 4
-lat = 2
+lat = 1
 occ = 1
 
 [balu]
@@ -266,7 +244,7 @@ occ = 1
 
 [calu2]
 num = 2
-lat = 1
+lat = 2
 occ = 1
 
 [lsu]
@@ -277,7 +255,7 @@ occ = 1
 [aunit]
 win_size   = 16
 sched_num  = 4
-sched_lat  = 1
+sched_lat  = 0
 recycle_at  = "executed"
 num_regs   = 64
 late_alloc = false
@@ -287,7 +265,7 @@ iRALU      = "alu0"
 [bunit]
 win_size   = 16
 sched_num  = 4
-sched_lat  = 1
+sched_lat  = 0
 recycle_at  = "executed"
 num_regs   = 64
 late_alloc = false
@@ -302,7 +280,7 @@ iBALU_RET     = "balu"
 [cunit]
 win_size   = 16
 sched_num  = 4
-sched_lat  = 1
+sched_lat  = 0
 recycle_at  = "executed"
 num_regs   = 64
 late_alloc = false
@@ -315,7 +293,7 @@ iCALU_DIV     = "calu2"
 [munit]
 win_size   = 16
 sched_num  = 4
-sched_lat  = 1
+sched_lat  = 0
 recycle_at  = "executed"
 num_regs   = 64
 late_alloc = false

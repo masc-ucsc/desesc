@@ -138,9 +138,11 @@ void GProcessor::fetch() {
         busy = true;
       }
     }
-  } else {
+  }
+  /* else {
     fmt::print("z");
   }
+  */
 }
 
 void GProcessor::flush_transient_inst_on_fetch_ready() {

@@ -188,9 +188,9 @@ bpred         = ["bp0", "bp1"]
 do_random_transients = false
 
 # Fetch parameters
-fetch_align       = true
+fetch_align       = false
 trace_align       = false
-fetch_one_line    = true   # jumps within cacheline do not flush
+fetch_one_line    = false   # jumps within cacheline do not flush
 max_bb_cycle      = 1
 prefetcher        = "pref_opt"
 
@@ -346,10 +346,10 @@ miss_delay = 8
 assoc      = 4
 repl_policy = "lru"
 
-port_num   = 1
+port_num   = 2
 port_banks = 32
 
-send_port_num = 1
+send_port_num = 2
 
 max_requests  = 32
 

@@ -522,7 +522,6 @@ Outcome BPIMLI::predict(Dinst *dinst, bool doUpdate, bool doStats) {
   uint32_t sign   = 0;
   bool     ptaken = imli->getPrediction(pc, bias, sign);  // pass taken for statistics
   dinst->setBiasBranch(bias);
-  dinst->setBranchSignature(sign);
 
   bool no_alloc = true;
   if (dinst->isUseLevel3()) {
@@ -621,6 +620,10 @@ void BPSuperbp::fetchBoundaryEnd() {
 }
 
 Outcome BPSuperbp::predict(Dinst *dinst, bool doUpdate, bool doStats) {
+  if (dinst->getInst()->isJump() || dinst->getInst()->isFuncRet()) {
+    return btb.predict(dinst, doUpdate, doStats);
+  }
+
   // return btb.predict(dinst, doUpdate, doStats);
   uint64_t pc        = dinst->getPC();
   uint8_t  insn_type = dinst->getInst()->isFuncRet()    ? 4 /*insn_t::ret*/
@@ -631,18 +634,25 @@ Outcome BPSuperbp::predict(Dinst *dinst, bool doUpdate, bool doStats) {
 
   bool     taken        = dinst->isTaken();
   uint64_t branchTarget = dinst->getAddr();
-  bool     ptaken       = superbp_p->handle_insn_desesc(pc, branchTarget, insn_type, taken);
-  // superbp in sync (must be done for all instructions), prediction made, also ftq updated as per previous resolution info
 
+  if (!FetchPredict) {
+    superbp_p->fetchBoundaryBegin(dinst->getPC());
+  }
+  bool     ptaken       = superbp_p->handle_insn_desesc(pc, branchTarget, insn_type, taken);
+
+  dinst->setBiasBranch(false); // TODO: SUPERBP does not return the confidence of the branch (assume false)
+
+  if (!FetchPredict) {
+    superbp_p->fetchBoundaryEnd();
+  }
+
+  #if 0
   if (pc == 6212110) {
     // printf ("***************************************************\n");
     // fmt::print("pc:{} taken:{} ptaken:{}\n", pc, taken, ptaken);
     // printf ("***************************************************\n");
   }
-  // for jump - may just return btb target
-  if (dinst->getInst()->isJump()) {
-    return btb.predict(dinst, doUpdate, doStats);
-  }
+  #endif
 
   if (taken != ptaken) {
     if (doUpdate) {

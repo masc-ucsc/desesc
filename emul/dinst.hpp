@@ -155,7 +155,6 @@ private:
   bool     interCluster;
   bool     keep_stats;
   bool     biasBranch;
-  uint32_t branch_signature;
   bool     imli_highconf;
 
   bool prefetch;
@@ -911,9 +910,6 @@ public:
   void setImliHighConf() { imli_highconf = true; }
 
   bool getImliHighconf() const { return imli_highconf; }
-
-  void     setBranchSignature(uint32_t s) { branch_signature = s; }
-  uint32_t getBranchSignature() const { return branch_signature; }
 
   bool isTaken() const {
     I(getInst()->isControl());

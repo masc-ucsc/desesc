@@ -117,10 +117,10 @@ http_archive(
 # clang-tidy
 http_archive(
     name = "bazel_clang_tidy",
-    sha256 = "e1440a34d7abb720005d7ba1db4b50fbe93850fbb88c0e28f8865f35dd936245",
-    strip_prefix = "bazel_clang_tidy-f23d924918c581c68cd5cda5f12b4f8198ac0c35",
+    sha256 = "726141afa927e37ddc32de96e6f40961dc446bc74014b6d452a7c53069a95990",
+    strip_prefix = "bazel_clang_tidy-0b86881921e89fc8848d7747a645541ca83b171f",
     urls = [
-        "https://github.com/erenon/bazel_clang_tidy/archive/f23d924918c581c68cd5cda5f12b4f8198ac0c35.zip"
+        "https://github.com/erenon/bazel_clang_tidy/archive/0b86881921e89fc8848d7747a645541ca83b171f.zip"
     ],
 )
 

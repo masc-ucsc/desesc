@@ -5,7 +5,7 @@
 [trace]
 #range = [0,2400]
 #range = [0,313000]
-range = [50000,60000]
+range = [0,50000]
 
 
 [soc]
@@ -40,7 +40,7 @@ type      = "dromajo"
 
 #load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/xz_cpu2006docs/xz_cpu2006docs"
 
-load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/xz_cld/xz_cld"
+#load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/xz_cld/xz_cld"
 #load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/gcc_fselective-scheduling/gcc_fselective-scheduling"
 #load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/perlbench_checkspam/perlbench_checkspam"
 #load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/perlbench_diffmail/perlbench_diffmail"
@@ -49,10 +49,12 @@ load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/xz_cld/xz_cld"
 
 # Load a Binary
 #bench      = "conf/dhrystone.riscv"
+bench      = "k1"
+
 start_roi = false
-rabbit    = 1024
-detail    = 1024
-time      = 100e3 #Number of Insts
+rabbit    = 0
+detail    = 0
+time      = 50000 #Number of Insts
 
 [rand_emu]
 type = "random"  # Generate random instructions (coverage testing?)
@@ -121,14 +123,15 @@ table_width = 3
 
 [bp1]
 type = "imli"
-#type = "superbp"
+#type = ""
 
 bp_addr_shift = 0      # bits shifted by branch predictor PC
 ras_size      = 32
 ras_prefetch  = false
 
 delay             = 2
-fetch_predict     = true   # Not a prediction per instruction
+# IMLI fetch ideal 2 taken branch, set fetch_predict false
+fetch_predict     = false   # Not a prediction per instruction
 
 btb_history_size  = 0
 btb_split_il1     = false  # do not cache entries that can be computed by IL1
@@ -144,7 +147,7 @@ bimodal_width = 8
 
 # SuperBP parameters
 SBP_NUMG = 12
-LOG2FETCHWIDTH = 4
+LOG2FETCHWIDTH = 5
 NUM_TAKEN_BRANCHES = 1
 
 ORIG_ENTRIES_PER_TABLE_00 = 784
@@ -183,15 +186,15 @@ frequency_mhz = 200
 [c0]
 type  = "ooo"  # ooo or inorder or accel
 frequency_mhz = 1000
-bpred         = ["bp0", "bp1"]
+bpred         = ["bp1"]
 #do_random_transients = false
 do_random_transients = false
 
 # Fetch parameters
-fetch_align       = false
+fetch_align       = true
 trace_align       = false
 fetch_one_line    = false   # jumps within cacheline do not flush
-max_bb_cycle      = 1
+max_bb_cycle      = 2
 prefetcher        = "pref_opt"
 
 smt = 1 # Number of STM context
@@ -216,7 +219,7 @@ rename_delay = 2
 ftq_size     = 12
 instq_size   = 32
 
-fetch_width  = 8
+fetch_width  = 16
 issue_width  = 8
 retire_width = 8
 rob_size     = 320
@@ -346,10 +349,10 @@ miss_delay = 8
 assoc      = 4
 repl_policy = "lru"
 
-port_num   = 2
+port_num   = 1
 port_banks = 32
 
-send_port_num = 2
+send_port_num = 1
 
 max_requests  = 32
 

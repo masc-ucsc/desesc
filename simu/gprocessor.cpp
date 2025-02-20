@@ -139,10 +139,6 @@ void GProcessor::fetch() {
       }
     }
   }
-  /* else {
-    fmt::print("z");
-  }
-  */
 }
 
 void GProcessor::flush_transient_inst_on_fetch_ready() {
@@ -351,7 +347,6 @@ void GProcessor::flush_transient_from_rob() {
         I(dstReady->isTransient());
       }
 
-<<<<<<< HEAD
         dinst->clearRATEntry();
 
        //printf("GPROCCESOR::flush_Rob : isRenamed current instID %ld and getParentScr1 ID is: %ld and and getParentScr2 ID is :
@@ -372,23 +367,10 @@ void GProcessor::flush_transient_from_rob() {
         }
     }//if_renamed*/
 
-  /*=======
-        bool hasDest = (dinst->getInst()->hasDstRegister());
-        if (hasDest) {
-          dinst->getCluster()->add_reg_pool();
-        }
-
-        dinst->getCluster()->delEntry();
-        dinst->destroyTransientInst();
-      }
-
-  >>>>>>> upstream/main*/
   // ROB.pop_from_back();
   // }
   while (!ROB.empty_pipe_in_cluster()) {
     auto *dinst = ROB.back_pipe_in_cluster();  // get last element from vector:back()
-
-    //<<<<<<< HEAD
 
     if (dinst->is_flush_transient() && dinst->isExecuted() && !dinst->hasDeps() && !dinst->hasPending()) {
       if (dinst->getCluster()->get_window_size() < dinst->getCluster()->get_window_maxsize() - 1) {
@@ -459,7 +441,6 @@ void GProcessor::flush_transient_inst_from_inst_queue() {
   }
   // printf("gprocessor::flush_transient_inst_queue Leaving  before new fetch!!!\n");
 }
-//<<<<<<< HEADDownward
 
 /*
 Addr_t GProcessor::random_addr_gen(){

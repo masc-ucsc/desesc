@@ -192,10 +192,12 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
           fetchLost = (entryPC) & (half_fetch_width - 1);
         }
 
-        // No matter what, do not pass cache line boundary
-        uint16_t fetchMaxPos = (entryPC & (il1_line_size / 4 - 1)) + fetch_width;
-        if (fetchMaxPos > (il1_line_size / 4)) {
-          fetchLost += (fetchMaxPos - il1_line_size / 4);
+        if (!fetch_one_line) {
+          // No matter what, do not pass cache line boundary
+          uint16_t fetchMaxPos = (entryPC & (il1_line_size / 4 - 1)) + fetch_width;
+          if (fetchMaxPos > (il1_line_size / 4)) {
+            fetchLost += (fetchMaxPos - il1_line_size / 4);
+          }
         }
 
         avgFetchLost.sample(fetchLost, dinst->has_stats());

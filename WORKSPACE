@@ -35,7 +35,7 @@ http_archive(
 # fmt
 http_archive(
     name = "fmt",
-    build_file = "fmt.BUILD",
+    build_file = "//ext:fmt.BUILD",
     sha256 = "7aa4b58e361de10b8e5d7b6c18aebd98be1886ab3efe43e368527a75cd504ae4",
     strip_prefix = "fmt-11.0.2",
     urls = [
@@ -64,7 +64,7 @@ http_archive(
 # Perfetto
 http_archive(
     name = "com_google_perfetto",
-    build_file = "perfetto.BUILD",
+    build_file = "//ext:perfetto.BUILD",
     sha256 = "8d1c6bf44f1bdb098ab70cd60da3ce6b6e731e4eb21dd52b2527cbdcf85d984d",
     strip_prefix = "perfetto-48.1/sdk",
     urls = ["https://github.com/google/perfetto/archive/refs/tags/v48.1.tar.gz"],
@@ -73,7 +73,7 @@ http_archive(
 # toml11
 http_archive(
     name = "toml11",
-    build_file = "toml11.BUILD",
+    build_file = "//ext:toml11.BUILD",
     sha256 = "e3f956df9e2c162cddf7e4ef83f35de9e2771b8e6997faa2bb3ceae5ee9c2757",
     strip_prefix = "toml11-4.2.0",
     urls = [
@@ -84,8 +84,8 @@ http_archive(
 # Dromajo
 http_archive(
     name = "dromajo",
-    build_file = "dromajo.BUILD",
-    patches = ["//external:dromajo.patch"],
+    build_file = "//ext:dromajo.BUILD",
+    patches = ["//ext:dromajo.patch"],
     sha256 = "25af8ca914f0ca3f41a6250fa6069621e3fcaa3230e1bc95ff813eaec9c7e3dd",
     strip_prefix = "dromajo-2a9f5bbfbefa92bc0d81bb83e44e6bab963302cb",
     urls = [
@@ -106,7 +106,7 @@ http_archive(
 # libelf (needed by dromajo in OSX)
 http_archive(
     name = "libelf",
-    build_file = "libelf.BUILD",
+    build_file = "//ext:libelf.BUILD",
     sha256 = "c0627b45c29a151e4e1105988ad7ce9bf83b52cbbca0a1db06c7fcad69b85c4b",
     strip_prefix = "libelf-ba3c81450b91d1935fff01bae191a59d7653d2a5",
     urls = [

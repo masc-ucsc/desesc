@@ -621,6 +621,7 @@ void BPSuperbp::fetchBoundaryEnd() {
 
 Outcome BPSuperbp::predict(Dinst *dinst, bool doUpdate, bool doStats) {
  if (dinst->getInst()->isJump() || dinst->getInst()->isFuncRet()) {
+    dinst->setBiasBranch(true);
     return btb.predict(dinst, doUpdate, doStats);
   }
 

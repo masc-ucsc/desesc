@@ -232,12 +232,8 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
     eint->execute(fid);
 
     dinst->setGProc(gproc);
-    // dinst->dump("TR");
     Tracer::stage(dinst, "IF");
-    //<<<<<<< HEAD
-    // printf("FetchEngine::::Fetched Inst is %ld at clock cycle %ld \n", dinst->getID(), globalClock);
-    // std::cout << "FetchEngine:::Fetched Inst Opcode is " << dinst->getInst()->getOpcodeName() << "and asm is "
-    //           << dinst->getInst()->get_asm() << std::endl;
+
     dinst->setFetchTime();
     bucket->push(dinst);
 
@@ -263,6 +259,9 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
       // printf("FetchEngine::realfetch instID before processbranch %ld\n", dinst->getID());
       // I(dinst->getGProc());
       bool stall_fetch = processBranch(dinst, n2Fetch);
+      if (n2Fetch < 0) {
+        fmt::print("2.HERE n2Fetch:{}\n", n2Fetch);  // negative n2fetch
+      }
       if (stall_fetch) {
 #ifdef FETCH_TRACE
         if (dinst->isBiasBranch() && dinst->getFetchEngine()) {
@@ -276,6 +275,8 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
         }
 #endif
         break;
+      } else {
+        fmt::print("HERE n2Fetch:{}\n", n2Fetch);  // negative n2fetch
       }
 #ifdef FETCH_TRACE
       if (bias_ninst > 256) {

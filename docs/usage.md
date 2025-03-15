@@ -46,12 +46,3 @@ dot memory-arch.dot -Tpng -o memory-arch.png
 bazel build -c dbg --features=asan //main:desesc
 ```
 
-## clang-tidy
-
-To run clang-tidy (must install it before):
-```
-bazel build //core:all \
-  --aspects @bazel_clang_tidy//clang_tidy:clang_tidy.bzl%clang_tidy_aspect \
-  --output_groups=report \
-  --@bazel_clang_tidy//:clang_tidy_config=//:clang_tidy_config
-```

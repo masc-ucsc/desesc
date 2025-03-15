@@ -6,9 +6,14 @@
 ###############################################################################
 # MODULE.bazel
 
-# Choose the most recent version available at
-# https://registry.bazel.build/modules/abseil-cpp.
-bazel_dep(name = "abseil-cpp", version = "20240722.0.bcr.2")
+#bazel_dep(name = "rules_foreign_cc", version = "0.14.0")
+
+bazel_dep(name = "abseil-cpp", version = "20250127.0") # 20240722.0.bcr.2")
+
+bazel_dep(name = "fmt", version = "11.1.4")
+
+bazel_dep(name = "googletest", version = "1.16.0", dev_dependency = True, repo_name = "com_google_googletest")
+bazel_dep(name = "google_benchmark", version = "1.9.1", dev_dependency = True, repo_name = "com_google_benchmark")
 
 
 # Hedron's Compile Commands Extractor for Bazel
@@ -21,3 +26,5 @@ git_override(
     # Replace the commit hash (above) with the latest (https://github.com/hedronvision/bazel-compile-commands-extractor/commits/main).
     # Even better, set up Renovate and let it do the work for you (see "Suggestion: Updates" in the README).
 )
+
+#  echo -n "sha256-" && openssl dgst -sha256 -binary v4.2.0.zip | openssl base64 -A; echo

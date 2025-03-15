@@ -8,10 +8,10 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 http_archive(
     name = "toml11",
     build_file = "//ext:toml11.BUILD",
-    sha256 = "e3f956df9e2c162cddf7e4ef83f35de9e2771b8e6997faa2bb3ceae5ee9c2757",
-    strip_prefix = "toml11-4.2.0",
+    sha256 = "075dd130a9f517c3eaed502ece6a2c1088b1d0dd4aa79882fd0ca7609325ffdc",
+    strip_prefix = "toml11-4.4.0",
     urls = [
-        "https://github.com/ToruNiina/toml11/archive/v4.2.0.zip",
+        "https://github.com/ToruNiina/toml11/archive/v4.4.0.zip",
     ],
 )
 

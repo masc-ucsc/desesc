@@ -563,9 +563,9 @@ BPSuperbp::BPSuperbp(int32_t i, const std::string &section, const std::string &s
   int log2fetchwidth = log2(FetchWidth);
   */
   int SBP_NUMG = Config::get_integer(section, "SBP_NUMG");
-  int LOG2FETCHWIDTH = Config::get_integer(section, "LOG2FETCHWIDTH");
-  //int FetchWidth = Config::get_power2("soc", "core", i, "fetch_width", 1);
-  //int LOG2FETCHWIDTH = log2(FetchWidth);
+  //int LOG2FETCHWIDTH = Config::get_integer(section, "LOG2FETCHWIDTH");
+  int FetchWidth = Config::get_power2("soc", "core", i, "fetch_width", 1);
+  int LOG2FETCHWIDTH = log2(FetchWidth);
   int NUM_TAKEN_BRANCHES = Config::get_integer(section, "NUM_TAKEN_BRANCHES");
 
   std::vector<uint32_t> ORIG_ENTRIES_PER_TABLE(SBP_NUMG);
@@ -602,7 +602,13 @@ BPSuperbp::BPSuperbp(int32_t i, const std::string &section, const std::string &s
   int INFO_PER_ENTRY_10 = Config::get_integer(section, "INFO_PER_ENTRY_10");
   int INFO_PER_ENTRY_11 = Config::get_integer(section, "INFO_PER_ENTRY_11"); */
 
-  superbp_p = std::make_unique<PREDICTOR>(SBP_NUMG, LOG2FETCHWIDTH, NUM_TAKEN_BRANCHES, ORIG_ENTRIES_PER_TABLE, INFO_PER_ENTRY);
+int NUM_GSHARE_ENTRIES_SHIFT = Config::get_integer(section, "NUM_GSHARE_ENTRIES_SHIFT");
+int NUM_PAGES_PER_GROUP = Config::get_integer(section, "NUM_PAGES_PER_GROUP");
+int PAGE_OFFSET_SIZE = Config::get_integer(section, "PAGE_OFFSET_SIZE");
+int PAGE_TABLE_INDEX_SIZE = Config::get_integer(section, "PAGE_TABLE_INDEX_SIZE");
+
+
+  superbp_p = std::make_unique<PREDICTOR>(SBP_NUMG, LOG2FETCHWIDTH, NUM_TAKEN_BRANCHES, ORIG_ENTRIES_PER_TABLE, INFO_PER_ENTRY, NUM_GSHARE_ENTRIES_SHIFT, NUM_PAGES_PER_GROUP, PAGE_OFFSET_SIZE, PAGE_TABLE_INDEX_SIZE);
 
   // superbp_p = std::make_unique<PREDICTOR>();
 }

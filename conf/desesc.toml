@@ -62,6 +62,18 @@ type = "random"  # Generate random instructions (coverage testing?)
 [bp0]
 type              = "imli"
 
+# SuperBP parameters
+SBP_NUMG = 5
+LOG2FETCHWIDTH = 4
+NUM_TAKEN_BRANCHES = 1
+ORIG_ENTRIES_PER_TABLE = [512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512]
+INFO_PER_ENTRY = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+
+# TODO - Check
+NUM_GSHARE_ENTRIES_SHIFT = 5
+NUM_PAGES_PER_GROUP = 4
+PAGE_OFFSET_SIZE = 2
+PAGE_TABLE_INDEX_SIZE = 2
 bp_addr_shift = 0      # bits shifted by branch predictor PC
 ras_size      = 32
 ras_prefetch  = false
@@ -149,6 +161,11 @@ bimodal_width = 8
 SBP_NUMG = 12
 LOG2FETCHWIDTH = 5
 NUM_TAKEN_BRANCHES = 1
+
+NUM_GSHARE_ENTRIES_SHIFT = 10
+NUM_PAGES_PER_GROUP = 8
+PAGE_OFFSET_SIZE = 6
+PAGE_TABLE_INDEX_SIZE = 6
 
 ORIG_ENTRIES_PER_TABLE_00 = 784
 ORIG_ENTRIES_PER_TABLE_01 = 208

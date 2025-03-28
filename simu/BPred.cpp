@@ -563,9 +563,9 @@ BPSuperbp::BPSuperbp(int32_t i, const std::string &section, const std::string &s
   int log2fetchwidth = log2(FetchWidth);
   */
   int SBP_NUMG = Config::get_integer(section, "SBP_NUMG");
-  //int LOG2FETCHWIDTH = Config::get_integer(section, "LOG2FETCHWIDTH");
-  int FetchWidth = Config::get_power2("soc", "core", i, "fetch_width", 1);
-  int LOG2FETCHWIDTH = log2(FetchWidth);
+  // int LOG2FETCHWIDTH = Config::get_integer(section, "LOG2FETCHWIDTH");
+  int FetchWidth         = Config::get_power2("soc", "core", i, "fetch_width", 1);
+  int LOG2FETCHWIDTH     = log2(FetchWidth);
   int NUM_TAKEN_BRANCHES = Config::get_integer(section, "NUM_TAKEN_BRANCHES");
 
   std::vector<uint32_t> ORIG_ENTRIES_PER_TABLE(SBP_NUMG);
@@ -602,13 +602,20 @@ BPSuperbp::BPSuperbp(int32_t i, const std::string &section, const std::string &s
   int INFO_PER_ENTRY_10 = Config::get_integer(section, "INFO_PER_ENTRY_10");
   int INFO_PER_ENTRY_11 = Config::get_integer(section, "INFO_PER_ENTRY_11"); */
 
-int NUM_GSHARE_ENTRIES_SHIFT = Config::get_integer(section, "NUM_GSHARE_ENTRIES_SHIFT");
-int NUM_PAGES_PER_GROUP = Config::get_integer(section, "NUM_PAGES_PER_GROUP");
-int PAGE_OFFSET_SIZE = Config::get_integer(section, "PAGE_OFFSET_SIZE");
-int PAGE_TABLE_INDEX_SIZE = Config::get_integer(section, "PAGE_TABLE_INDEX_SIZE");
+  uint32_t NUM_GSHARE_ENTRIES_SHIFT = Config::get_integer(section, "NUM_GSHARE_ENTRIES_SHIFT");
+  uint8_t  NUM_PAGES_PER_GROUP      = Config::get_integer(section, "NUM_PAGES_PER_GROUP");
+  uint8_t  PAGE_OFFSET_SIZE         = Config::get_integer(section, "PAGE_OFFSET_SIZE");
+  uint8_t  PAGE_TABLE_INDEX_SIZE    = Config::get_integer(section, "PAGE_TABLE_INDEX_SIZE");
 
-
-  superbp_p = std::make_unique<PREDICTOR>(SBP_NUMG, LOG2FETCHWIDTH, NUM_TAKEN_BRANCHES, ORIG_ENTRIES_PER_TABLE, INFO_PER_ENTRY, NUM_GSHARE_ENTRIES_SHIFT, NUM_PAGES_PER_GROUP, PAGE_OFFSET_SIZE, PAGE_TABLE_INDEX_SIZE);
+  superbp_p = std::make_unique<PREDICTOR>(SBP_NUMG,
+                                          LOG2FETCHWIDTH,
+                                          NUM_TAKEN_BRANCHES,
+                                          ORIG_ENTRIES_PER_TABLE,
+                                          INFO_PER_ENTRY,
+                                          NUM_GSHARE_ENTRIES_SHIFT,
+                                          NUM_PAGES_PER_GROUP,
+                                          PAGE_OFFSET_SIZE,
+                                          PAGE_TABLE_INDEX_SIZE);
 
   // superbp_p = std::make_unique<PREDICTOR>();
 }
@@ -626,7 +633,7 @@ void BPSuperbp::fetchBoundaryEnd() {
 }
 
 Outcome BPSuperbp::predict(Dinst *dinst, bool doUpdate, bool doStats) {
- if (dinst->getInst()->isJump() || dinst->getInst()->isFuncRet()) {
+  if (dinst->getInst()->isJump() || dinst->getInst()->isFuncRet()) {
     dinst->setBiasBranch(true);
     return btb.predict(dinst, doUpdate, doStats);
   }
@@ -645,21 +652,21 @@ Outcome BPSuperbp::predict(Dinst *dinst, bool doUpdate, bool doStats) {
   if (!FetchPredict) {
     superbp_p->fetchBoundaryBegin(dinst->getPC());
   }
-  bool     ptaken       = superbp_p->handle_insn_desesc(pc, branchTarget, insn_type, taken);
+  bool ptaken = superbp_p->handle_insn_desesc(pc, branchTarget, insn_type, taken);
 
-  dinst->setBiasBranch(false); // TODO: SUPERBP does not return the confidence of the branch (assume false)
+  dinst->setBiasBranch(false);  // TODO: SUPERBP does not return the confidence of the branch (assume false)
 
   if (!FetchPredict) {
     superbp_p->fetchBoundaryEnd();
   }
 
-  #if 0
+#if 0
   if (pc == 6212110) {
     // printf ("***************************************************\n");
     // fmt::print("pc:{} taken:{} ptaken:{}\n", pc, taken, ptaken);
     // printf ("***************************************************\n");
   }
-  #endif
+#endif
 
   if (taken != ptaken) {
     if (doUpdate) {

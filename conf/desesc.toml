@@ -5,7 +5,7 @@
 [trace]
 #range = [0,2400]
 #range = [0,313000]
-range = [0,50000]
+range = [0,50]
 
 
 [soc]
@@ -41,7 +41,7 @@ type      = "dromajo"
 #load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/xz_cpu2006docs/xz_cpu2006docs"
 
 #load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/xz_cld/xz_cld"
-#load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/gcc_fselective-scheduling/gcc_fselective-scheduling"
+load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/gcc_fselective-scheduling/gcc_fselective-scheduling"
 #load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/perlbench_checkspam/perlbench_checkspam"
 #load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/perlbench_diffmail/perlbench_diffmail"
 
@@ -49,18 +49,19 @@ type      = "dromajo"
 
 # Load a Binary
 #bench      = "conf/dhrystone.riscv"
-bench      = "k1"
+#bench      = "k1"
 
 start_roi = false
 rabbit    = 0
 detail    = 0
-time      = 50000 #Number of Insts
+time      = 1e6 #Number of Insts
 
 [rand_emu]
 type = "random"  # Generate random instructions (coverage testing?)
 
 [bp0]
-type              = "imli"
+type = "superbp"
+#type              = "imli"
 
 # SuperBP parameters
 SBP_NUMG = 5
@@ -203,7 +204,7 @@ frequency_mhz = 200
 [c0]
 type  = "ooo"  # ooo or inorder or accel
 frequency_mhz = 1000
-bpred         = ["bp1"]
+bpred         = ["bp0", "bp1"]
 #do_random_transients = false
 do_random_transients = false
 

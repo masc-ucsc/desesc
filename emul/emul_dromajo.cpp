@@ -464,10 +464,11 @@ void Emul_dromajo::init_dromajo_machine() {
       dromajo_args.push_back(strdup(arg.c_str()));
     }
   }
-  char *argv[dromajo_args.size()];
+  char **argv = (char **)malloc(sizeof(char *)*(dromajo_args.size()+1));
   for (auto i = 0u; i < dromajo_args.size(); ++i) {
     argv[i] = dromajo_args[i];
   }
+  argv[dromajo_args.size()]= nullptr;
 
   fmt::print("\ndromajo arguments:");
   for (const auto *str : dromajo_args) {
@@ -480,4 +481,5 @@ void Emul_dromajo::init_dromajo_machine() {
   for (auto *ptr : dromajo_args) {
     free(ptr);
   }
+  free(argv);
 }

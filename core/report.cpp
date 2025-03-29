@@ -23,7 +23,7 @@ void Report::init() {
 
   absl::StrAppend(&report_file, ".XXXXXX");
 
-  char f[report_file.size() + 10];
+  char *f = (char *)malloc(report_file.size() + 10);
   strcpy(f, report_file.c_str());
   fd = ::mkstemp(f);
   if (fd == -1) {

@@ -633,6 +633,9 @@ void BPSuperbp::fetchBoundaryEnd() {
 }
 
 Outcome BPSuperbp::predict(Dinst *dinst, bool doUpdate, bool doStats) {
+  // FIXME: If second predict, call dinst->set_zero_delay_taken();
+  // dinst->set_zero_delay_taken();
+
   if (dinst->getInst()->isJump() || dinst->getInst()->isFuncRet()) {
     dinst->setBiasBranch(true);
     return btb.predict(dinst, doUpdate, doStats);
@@ -1436,6 +1439,7 @@ BPredictor::BPredictor(int32_t i, MemObj *iobj, MemObj *dobj, std::shared_ptr<BP
     , dl1(dobj)
     , nBTAC(fmt::format("P({})_BPred:nBTAC", id))
 
+    , nZero_taken_delay(fmt::format("P({})_BPred:nZero_taken_delay", id))
     , nControl(fmt::format("P({})_BPred:nControl", id))
     , nBranch(fmt::format("P({})_BPred:nBranch", id))
     , nNoPredict(fmt::format("P({})_BPred:nNoPredict", id))
@@ -1648,13 +1652,6 @@ TimeDelta_t BPredictor::predict(Dinst *dinst, bool *fastfix) {
     ras->tryPrefetch(il1, dinst->has_stats(), 1);
   }
 
-  if (outcome1 == Outcome::Correct && outcome2 == Outcome::Correct && outcome3 == Outcome::Correct) {
-    unset_Miss_Pred_Bool();
-  } else {
-    set_Miss_Pred_Bool();
-  }
-
-#if 1
   if (outcome1 != Outcome::Correct) {
     dinst->setBranchMiss_level1();
   } else {
@@ -1681,7 +1678,6 @@ TimeDelta_t BPredictor::predict(Dinst *dinst, bool *fastfix) {
     //}else {
     //  dinst->setLevel3_Outcome::None();
   }
-#endif
 
   if (outcome1 == Outcome::Correct && outcome2 == Outcome::Correct && outcome3 == Outcome::Correct) {
     if (dinst->isTaken()) {
@@ -1690,9 +1686,13 @@ TimeDelta_t BPredictor::predict(Dinst *dinst, bool *fastfix) {
 
       uint32_t delta = distance / FetchWidth;
       if (delta <= 2 && distance > 0) {
-        return delta;
+        return 0;
       }
 #endif
+      if (dinst->is_zero_delay_taken()) {
+        nZero_taken_delay.inc(true);
+        return 0;
+      }
 
       return bpredDelay1;
     }

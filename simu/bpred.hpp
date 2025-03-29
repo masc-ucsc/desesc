@@ -581,8 +581,9 @@ private:
   int32_t bpredDelay2;
   int32_t bpredDelay3;
 
-  bool       Miss_Pred_Bool;
   Stats_cntr nBTAC;
+
+  Stats_cntr nZero_taken_delay;
 
   Stats_cntr nControl;
   Stats_cntr nBranch;
@@ -628,13 +629,4 @@ public:
   TimeDelta_t predict(Dinst *dinst, bool *fastfix);
   bool        Miss_Prediction(Dinst *dinst);
   void        dump(const std::string &str) const;
-
-  void set_Miss_Pred_Bool() {
-    Miss_Pred_Bool = 1;  // Correct_Prediction==0 in enum before
-  }
-  void unset_Miss_Pred_Bool() {
-    Miss_Pred_Bool = 0;  // Correct_Prediction==0 in enum before
-  }
-
-  bool get_Miss_Pred_Bool_Val() { return Miss_Pred_Bool; }
 };

@@ -134,8 +134,8 @@ table_width = 3
 
 
 [bp1]
-type = "imli"
-#type = ""
+#type = "imli"
+type = "superbp"
 
 bp_addr_shift = 0      # bits shifted by branch predictor PC
 ras_size      = 32
@@ -209,7 +209,7 @@ do_random_transients = false
 
 # Fetch parameters
 fetch_align       = true
-trace_align       = false
+trace_align       = true
 fetch_one_line    = false   # jumps within cacheline do not flush
 max_bb_cycle      = 2
 prefetcher        = "pref_opt"

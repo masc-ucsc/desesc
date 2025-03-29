@@ -86,41 +86,26 @@ FetchEngine::FetchEngine(Hartid_t id, std::shared_ptr<Gmemory_system> gms_, std:
 
 FetchEngine::~FetchEngine() {}
 
-bool FetchEngine::processBranch(Dinst *dinst, uint16_t n2Fetch) {
-  // printf("FetchEngine::processbranch entering dinstID %ld\n", dinst->getID());
-
-  (void)n2Fetch;
+bool FetchEngine::processBranch(Dinst *dinst) {
   I(dinst->getInst()->isControl());  // getAddr is target only for br/jmp
 
   bool        fastfix;
   TimeDelta_t delay = bpred->predict(dinst, &fastfix);
-
   if (delay == 0) {
     return false;
   }
-  // I(dinst->getGProc());
+
   setMissInst(dinst);
-  // is_fetch_next_ready = false;
   setTransientInst(dinst);
 
   Time_t n = (globalClock - lastMissTime);
   avgFetchTime.sample(n, dinst->has_stats());
 
-#if 0
-  if (!dinst->isBiasBranch()) {
-    if ( dinst->isTaken() && (dinst->getAddr() > dinst->getPC() && (dinst->getAddr() + 8<<2) <= dinst->getPC())) {
-      fastfix = true;
-    }
-  }
-#endif
-
   if (fastfix) {
-    // dinst->getGProc()->flush_transient_inst_on_fetch_ready();
     unBlockFetchBPredDelayCB::schedule(delay, this, dinst, globalClock);
   } else {
     dinst->lockFetch(this);
   }
-  // printf("FetchEngine::processbranch return true dinstID %ld\n", dinst->getID());
 
   return true;
 }
@@ -192,14 +177,6 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
           fetchLost = (entryPC) & (half_fetch_width - 1);
         }
 
-        if (!fetch_one_line) {
-          // No matter what, do not pass cache line boundary
-          uint16_t fetchMaxPos = (entryPC & (il1_line_size / 4 - 1)) + fetch_width;
-          if (fetchMaxPos > (il1_line_size / 4)) {
-            fetchLost += (fetchMaxPos - il1_line_size / 4);
-          }
-        }
-
         avgFetchLost.sample(fetchLost, dinst->has_stats());
 
         n2Fetch -= fetchLost;
@@ -228,6 +205,7 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
       }
     }
     lastpc = dinst->getPC();
+    I(lastpc);
 
     eint->execute(fid);
 
@@ -258,10 +236,7 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
     if (dinst->getInst()->isControl()) {
       // printf("FetchEngine::realfetch instID before processbranch %ld\n", dinst->getID());
       // I(dinst->getGProc());
-      bool stall_fetch = processBranch(dinst, n2Fetch);
-      if (n2Fetch < 0) {
-        fmt::print("2.HERE n2Fetch:{}\n", n2Fetch);  // negative n2fetch
-      }
+      bool stall_fetch = processBranch(dinst);
       if (stall_fetch) {
 #ifdef FETCH_TRACE
         if (dinst->isBiasBranch() && dinst->getFetchEngine()) {
@@ -275,8 +250,6 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
         }
 #endif
         break;
-      } else {
-        fmt::print("HERE n2Fetch:{}\n", n2Fetch);  // negative n2fetch
       }
 #ifdef FETCH_TRACE
       if (bias_ninst > 256) {
@@ -300,7 +273,7 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
 #endif
 
     // Fetch uses getHead, ROB retires getTail
-  } while (n2Fetch > 0);
+  } while (n2Fetch > 0);  // NOTE: n2Fetch can get negative if bad fetch entry point
 
   bpred->fetchBoundaryEnd();
 

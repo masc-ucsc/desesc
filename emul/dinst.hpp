@@ -31,9 +31,7 @@ private:
   Dinst *parentDinst{};
 #endif
 public:
-  DinstNext() {
-    dinst = 0;
-  }
+  DinstNext() { dinst = 0; }
 
   DinstNext *nextDep;
   bool       isUsed;  // true while non-satisfied RAW dependence
@@ -134,10 +132,6 @@ private:
   Time_t executing;
   Time_t executed;
 
-  bool retired;
-
-  bool loadForwarded;
-  bool replay;
   bool branchMiss;
   bool use_level3;         // use level3 bpred or not?
   bool branch_hit2_miss3;  // coorect pred by level 2 BP but misprediction by level 3 BP
@@ -150,12 +144,16 @@ private:
   bool branchMiss_level3;
   bool level3_NoPrediction;
 
+  bool retired;
+  bool loadForwarded;
+  bool replay;
   bool performed;
 
-  bool     interCluster;
-  bool     keep_stats;
-  bool     biasBranch;
-  bool     imli_highconf;
+  bool interCluster;
+  bool keep_stats;
+  bool biasBranch;
+  bool zero_delay_taken;
+  bool imli_highconf;
 
   bool prefetch;
   bool dispatched;
@@ -165,11 +163,12 @@ private:
   bool del_entry;
   bool is_rrob;
   bool present_in_rob;
+  bool in_cluster;
+
   bool flush_transient;
   bool try_flush_transient;
   bool to_be_destroyed;
   bool destroy_transient;
-  bool in_cluster;
   // END Boolean flags
 
   SSID_t      SSID;
@@ -221,18 +220,19 @@ private:
 #ifndef NDEBUG
     mreq_id = 0;
 #endif
-    /*<<<<<<< HEAD
-        first = 0;
-    =======*/
     first = nullptr;
-    //>>>>>>> upstream/main
 
-    RAT1Entry           = nullptr;
-    RAT2Entry           = nullptr;
-    serializeEntry      = nullptr;
-    fetch               = nullptr;
-    cluster             = nullptr;
-    resource            = nullptr;
+    RAT1Entry      = nullptr;
+    RAT2Entry      = nullptr;
+    serializeEntry = nullptr;
+    fetch          = nullptr;
+    cluster        = nullptr;
+    resource       = nullptr;
+
+    gproc           = nullptr;
+    SSID            = -1;
+    conflictStorePC = 0;
+
     branchMiss          = false;
     use_level3          = false;
     branch_hit2_miss3   = false;
@@ -244,38 +244,38 @@ private:
     branchMiss_level2   = false;
     branchMiss_level3   = false;
     level3_NoPrediction = false;
-    imli_highconf       = false;
-    gproc               = nullptr;
-    SSID                = -1;
-    conflictStorePC     = 0;
 
     fetched   = 0;
     renamed   = 0;
     issued    = 0;
     executing = 0;
     executed  = 0;
-    retired   = false;
 
+    retired       = false;
     loadForwarded = false;
+    replay        = false;
+    performed     = false;
 
-    replay       = false;
-    performed    = false;
     interCluster = false;
-    prefetch     = false;
-    dispatched   = false;
-    fullMiss     = false;
-    speculative  = true;
-    //<<<<<<< HEAD
+    // keep_stats - is an argument
+    biasBranch       = false;
+    zero_delay_taken = false;
+    imli_highconf    = false;
 
-    transient           = false;
-    del_entry           = false;
-    is_rrob             = false;
+    prefetch       = false;
+    dispatched     = false;
+    fullMiss       = false;
+    speculative    = true;
+    transient      = false;
+    del_entry      = false;
+    is_rrob        = false;
+    present_in_rob = false;
+    in_cluster     = false;
+
     flush_transient     = false;
     try_flush_transient = false;
     to_be_destroyed     = false;
     destroy_transient   = false;
-    present_in_rob      = false;
-    in_cluster          = false;
 
 #ifdef DINST_PARENT
     pend[0].setParentDinst(0);
@@ -906,6 +906,9 @@ public:
 
   void setBiasBranch(bool b) { biasBranch = b; }
   bool isBiasBranch() const { return biasBranch; }
+
+  void set_zero_delay_taken() { zero_delay_taken = true; }
+  bool is_zero_delay_taken() const { return zero_delay_taken; }
 
   void setImliHighConf() { imli_highconf = true; }
 

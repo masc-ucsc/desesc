@@ -46,8 +46,7 @@ private:
 
   bool il1_enable;
 
-  // bool processBranch(Dinst *dinst, uint16_t n2Fetched);
-  bool processBranch(Dinst *dinst, uint16_t n2Fetchedi);
+  bool processBranch(Dinst *dinst);
 
   // ******************* Statistics section
   Stats_avg  avgFetchLost;

@@ -908,6 +908,7 @@ public:
   bool isBiasBranch() const { return biasBranch; }
 
   void set_zero_delay_taken() { zero_delay_taken = true; }
+  void clear_zero_delay_taken() { zero_delay_taken = false; }
   bool is_zero_delay_taken() const { return zero_delay_taken; }
 
   void setImliHighConf() { imli_highconf = true; }

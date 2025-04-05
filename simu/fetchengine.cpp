@@ -194,6 +194,7 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
           dinst->scrap();
           break;
         }
+  	dinst->set_zero_delay_taken();
       }
       n2Fetch--;
 

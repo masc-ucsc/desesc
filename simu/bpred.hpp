@@ -242,8 +242,10 @@ private:
   BPBTB btb;
 
   std::unique_ptr<PREDICTOR> superbp_p;
-
   const bool FetchPredict;
+  Stats_cntr  gshare_must;
+  Stats_cntr  gshare_correct;
+  Stats_cntr  gshare_incorrect;
 
 protected:
 public:

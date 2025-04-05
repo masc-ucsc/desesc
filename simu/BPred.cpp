@@ -548,8 +548,12 @@ Outcome BPIMLI::predict(Dinst *dinst, bool doUpdate, bool doStats) {
 
 // class PREDICTOR;
 
+//gshare_must, gshare_correct, gshare_incorrect; 
 BPSuperbp::BPSuperbp(int32_t i, const std::string &section, const std::string &sname)
-    : BPred(i, section, sname, "superbp"), btb(i, section, sname), FetchPredict(Config::get_bool(section, "fetch_predict")) {
+    : BPred(i, section, sname, "superbp"), btb(i, section, sname), FetchPredict(Config::get_bool(section, "fetch_predict")) 
+    , gshare_must(fmt::format("P({})_{}_BPred:gshare_must", i, sname))
+, gshare_correct(fmt::format("P({})_{}_BPred:gshare_correct", i, sname)) 
+, gshare_incorrect(fmt::format("P({})_{}_BPred:gshare_incorrect", i, sname))  {
   // TODO
   /*
   int FetchWidth = Config::get_power2("soc", "core", i, "fetch_width", 1);
@@ -632,9 +636,9 @@ void BPSuperbp::fetchBoundaryEnd() {
   }
 }
 
+//uint64_t gshare_must, gshare_correct, gshare_incorrect; 
 Outcome BPSuperbp::predict(Dinst *dinst, bool doUpdate, bool doStats) {
-  // FIXME: If second predict, call dinst->set_zero_delay_taken();
-  // dinst->set_zero_delay_taken();
+  // FIXME: check dinst->is_zero_delay_taken(); If TRUE, it is beyond the 1 taken branch
 
   if (dinst->getInst()->isJump() || dinst->getInst()->isFuncRet()) {
     dinst->setBiasBranch(true);
@@ -655,9 +659,33 @@ Outcome BPSuperbp::predict(Dinst *dinst, bool doUpdate, bool doStats) {
   if (!FetchPredict) {
     superbp_p->fetchBoundaryBegin(dinst->getPC());
   }
-  bool ptaken = superbp_p->handle_insn_desesc(pc, branchTarget, insn_type, taken);
+  bool gshare_use = false, batage_pred = false, batage_conf = false;
+  bool ptaken = false;
+  superbp_p->handle_insn_desesc(pc, branchTarget, insn_type, taken, &batage_pred, &batage_conf, &gshare_use);
+  // TODO:Check if ptaken must get the value based on is_zero_delay_taken directly w/o checking gshare_use at all
+  if (gshare_use) {
+	ptaken = true;
+        if (ptaken != taken) { gshare_incorrect.inc(true); } else { gshare_correct.inc(true); }
+  } else {
+	ptaken = batage_pred;
+        if (dinst->is_zero_delay_taken()) {
+          {
+		// Stats saying that I wish I had gshare, but I did not so stall fetch (fall back to 1 taken)
+		gshare_must.inc(true);
 
-  dinst->setBiasBranch(false);  // TODO: SUPERBP does not return the confidence of the branch (assume false)
+	}
+          dinst->clear_zero_delay_taken();
+          // the succeeding fetch boundary begin must/ will update the history in superbp
+  }
+}
+
+  	dinst->setBiasBranch(false);  
+	// TODO: check if it should be true on gshare_use or gshare_correct and if batage_conf = true or batage_pred should be taken as well
+	// TODO: Also check that definition of conf b/w desesc and superbp is compatible
+	if (batage_conf || gshare_use)
+	{
+		dinst->setBiasBranch(true); 
+	}
 
   if (!FetchPredict) {
     superbp_p->fetchBoundaryEnd();

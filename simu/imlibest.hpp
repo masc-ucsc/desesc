@@ -84,6 +84,17 @@
 #define MAXHIST 200
 #define MINHIST 5
 
+#elif IMLI_256K_SBP
+// nhist = 6
+#define LOOPPREDICTOR  //  use loop  predictor
+#define LOCALH         // use local histories
+#define IMLI           // using IMLI component
+#define IMLISIC        // use IMLI-SIC
+#define IMLIOH         // use IMLI-OH
+#define LOGG    10     // logsize of the  tagged TAGE tables
+#define TBITS   12     // minimum tag width
+#define MAXHIST 700
+#define MINHIST 4
 #elif IMLI_150K
 // nhist = 4
 #define LOOPPREDICTOR  //  use loop  predictor
@@ -143,10 +154,6 @@
 #endif
 // probably not the best history length, but nice
 
-#ifdef USE_DOLC
-DOLC idolc(MAXHIST, 1, 6, 18);
-#endif
-
 #ifndef STRICTSIZE
 #define PERCWIDTH 6  // Statistical corrector maximum counter width
 #else
@@ -164,30 +171,28 @@ DOLC idolc(MAXHIST, 1, 6, 18);
 #ifdef IMLI
 #ifdef STRICTSIZE
 #define GNB 2
-int Gm[GNB] = {17, 14};
+const int Gm[GNB] = {17, 14};
 #else
 #ifdef LARGE_SC
 #define GNB 4
-int Gm[GNB] = {27, 22, 17, 14};
+const int Gm[GNB] = {27, 22, 17, 14};
 #else
 #define GNB 2
-int Gm[GNB] = {17, 14};
+const int Gm[GNB] = {17, 14};
 #endif
 #endif
 #else
 #ifdef LARGE_SC
 #define GNB 4
-int Gm[GNB] = {27, 22, 17, 14};
+const int Gm[GNB] = {27, 22, 17, 14};
 #else
 #define GNB 2
-int Gm[GNB] = {17, 14};
+const int Gm[GNB] = {17, 14};
 #endif
 
 #endif
 /*effective length is  -11,  we use (GHIST<<11)+IMLIcount; we force the IMLIcount zero when IMLI is not used*/
 
-int8_t  GGEHLA[GNB][(1 << LOGGNB)];
-int8_t *GGEHL[GNB];
 
 // large local history
 #define LOGLOCAL 8
@@ -198,47 +203,31 @@ int8_t *GGEHL[GNB];
 
 #define LOGLNB 10
 #define LNB    3
-int     Lm[LNB] = {11, 6, 3};
-int8_t  LGEHLA[LNB][(1 << LOGLNB)];
-int8_t *LGEHL[LNB];
 #else
 // only one local history
 #define LOGLNB 10
 #define LNB    4
-int     Lm[LNB] = {16, 11, 6, 3};
-int8_t  LGEHLA[LNB][(1 << LOGLNB)];
-int8_t *LGEHL[LNB];
+const int     Lm[LNB] = {16, 11, 6, 3};
 #endif
 
 // small local history
 #define LOGSECLOCAL 4
 #define NSECLOCAL   (1 << LOGSECLOCAL)  // Number of second local histories
-#define INDSLOCAL   (((PC ^ (PC >> 5))) & (NSECLOCAL - 1))
 #define LOGSNB      9
 #define SNB         4
-int     Sm[SNB] = {16, 11, 6, 3};
-int8_t  SGEHLA[SNB][(1 << LOGSNB)];
-int8_t *SGEHL[SNB];
+const int     Sm[SNB] = {16, 11, 6, 3};
 
 // third local history
 #define LOGTNB 9
 #ifdef STRICTSIZE
 #define TNB 2
-int Tm[TNB] = {17, 14};
+const int Tm[TNB] = {17, 14};
 #else
 #define TNB 3
-int Tm[TNB] = {22, 17, 14};
+const int Tm[TNB] = {22, 17, 14};
 #endif
 // effective local history size +11: we use IMLIcount + (LH) << 11
-int8_t  TGEHLA[TNB][(1 << LOGTNB)];
-int8_t *TGEHL[TNB];
-#define INDTLOCAL (((PC ^ (PC >> 3))) & (NSECLOCAL - 1))  // different hash for the 3rd history
 
-long long L_shist[NLOCAL];
-long long S_slhist[NSECLOCAL];
-long long T_slhist[NSECLOCAL];
-long long HSTACK[16];
-int       pthstack;
 #ifdef LARGE_SC
 // return-stack associated history component
 #ifdef STRICTSIZE
@@ -247,17 +236,12 @@ int       pthstack;
 #define LOGPNB 9
 #endif
 #define PNB 4
-int     Pm[PNB] = {16, 11, 6, 3};
-int8_t  PGEHLA[PNB][(1 << LOGPNB)];
-int8_t *PGEHL[PNB];
+const int     Pm[PNB] = {16, 11, 6, 3};
 #else
 // in this case we don´t use the call stack
 #define PNB    2
 #define LOGPNB 11
-int Pm[PNB] = {16, 11};
-
-int8_t  PGEHLA[PNB][(1 << LOGPNB)];
-int8_t *PGEHL[PNB];
+const int Pm[PNB] = {16, 11};
 #endif
 
 // parameters of the loop predictor
@@ -267,11 +251,9 @@ int8_t *PGEHL[PNB];
 
 // update threshold for the statistical corrector
 #define LOGSIZEUP 0
-int Pupdatethreshold[(1 << LOGSIZEUP)];  // size is fixed by LOGSIZEUP
 #define INDUPD (PC & ((1 << LOGSIZEUP) - 1))
 
 // The three counters used to choose between TAGE ang SC on High Conf TAGE/Low Conf SC
-int8_t FirstH, SecondH, ThirdH;
 #define CONFWIDTH  7   // for the counters in the choser
 #define PHISTWIDTH 27  // width of the path history used in TAGE
 
@@ -724,9 +706,6 @@ public:
 // IMLI-SIC related data declaration
 #define LOGINB 10  // (LOG of IMLI-SIC table size +1)
 #define INB    1
-  int     Im[INB];
-  int8_t  IGEHLA[INB][(1 << LOGINB)];
-  int8_t *IGEHL[INB];
 #endif
 // IMLI-OH related data declaration
 #ifdef IMLIOH
@@ -743,8 +722,6 @@ public:
 #endif
 #define FNB 1
   int     Fm[FNB];
-  int8_t  FGEHLA[FNB][(1 << LOGFNB)];
-  int8_t *FGEHL[FNB];
 #endif
 #endif
 
@@ -775,6 +752,31 @@ public:
 
   std::vector<std::vector<gentry>> gtable;  // [NHIST + 1];	// tagged TAGE tables
 
+  int     Im[INB];
+
+  const int     Lm[LNB] = {11, 6, 3};
+
+  std::array<std::array<int8_t, FNB>, (1<<LOGFNB)> FGEHL;
+  std::array<std::array<int8_t, GNB>, (1<<LOGGNB)> GGEHL;
+  std::array<std::array<int8_t, LNB>, (1<<LOGLNB)> LGEHL;
+  std::array<std::array<int8_t, INB>, (1<<LOGINB)> IGEHL;
+  std::array<std::array<int8_t, PNB>, (1<<LOGPNB)> PGEHL;
+  // int8_t  GGEHL[GNB][(1 << LOGGNB)];
+  // int8_t  LGEHL[LNB][(1 << LOGLNB)];
+  // int8_t  IGEHL[INB][(1 << LOGINB)];
+  // int8_t  PGEHL[PNB][(1 << LOGPNB)];
+
+  long long L_shist[NLOCAL];
+  long long S_slhist[NSECLOCAL];
+  long long T_slhist[NSECLOCAL];
+  int       pthstack;
+
+  int Pupdatethreshold[(1 << LOGSIZEUP)];  // size is fixed by LOGSIZEUP
+  int8_t FirstH, SecondH, ThirdH;
+
+#ifdef USE_DOLC
+  DOLC idolc(MAXHIST, 1, 6, 18);
+#endif
   std::vector<int>  m;           // [NHIST + 1];	// history lengths
   std::vector<int>  TB;          //[NHIST + 1]; 	// tag width for the different tagged tables
   std::vector<int>  logg;        // [NHIST + 1];	// log of number entries of the different tagged tables
@@ -998,13 +1000,6 @@ public:
     }
 
     for (int i = 0; i < GNB; i++) {
-      GGEHL[i] = &GGEHLA[i][0];
-    }
-    for (int i = 0; i < LNB; i++) {
-      LGEHL[i] = &LGEHLA[i][0];
-    }
-
-    for (int i = 0; i < GNB; i++) {
       for (int j = 0; j < ((1 << LOGGNB) - 1); j++) {
         if (!(j & 1)) {
           GGEHL[i][j] = -1;
@@ -1019,9 +1014,6 @@ public:
       }
     }
     for (int i = 0; i < PNB; i++) {
-      PGEHL[i] = &PGEHLA[i][0];
-    }
-    for (int i = 0; i < PNB; i++) {
       for (int j = 0; j < ((1 << LOGPNB) - 1); j++) {
         if (!(j & 1)) {
           PGEHL[i][j] = -1;
@@ -1032,9 +1024,6 @@ public:
 #ifdef IMLI
 #ifdef IMLIOH
     for (int i = 0; i < FNB; i++) {
-      FGEHL[i] = &FGEHLA[i][0];
-    }
-    for (int i = 0; i < FNB; i++) {
       for (int j = 0; j < ((1 << LOGFNB) - 1); j++) {
         if (!(j & 1)) {
           FGEHL[i][j] = -1;
@@ -1043,9 +1032,6 @@ public:
     }
 #endif
 #ifdef IMLISIC
-    for (int i = 0; i < INB; i++) {
-      IGEHL[i] = &IGEHLA[i][0];
-    }
     for (int i = 0; i < INB; i++) {
       for (int j = 0; j < ((1 << LOGINB) - 1); j++) {
         if (!(j & 1)) {
@@ -1488,12 +1474,12 @@ public:
     }
 
     if (IMLIcount >= 2) {
-      LSUM += 2 * Gpredict((PC << 2), localoh, Fm, FGEHL, FNB, LOGFNB);
+      LSUM += 2 * Gpredict<FNB, LOGFNB>((PC << 2), localoh, Fm, FGEHL);
     }
 #endif
 
 #ifdef IMLISIC
-    LSUM += 2 * Gpredict(PC, IMLIcount, Im, IGEHL, INB, LOGINB);
+    LSUM += 2 * Gpredict<INB, LOGINB>(PC, IMLIcount, Im, IGEHL);
 #else
     long long interIMLIcount = IMLIcount;
     /* just a trick to disable IMLIcount*/
@@ -1505,10 +1491,10 @@ public:
     IMLIcount = 0;
 #endif
 
-    LSUM += Gpredict((PC << 1) + pred_inter /*PC*/, (GHIST << 11) + IMLIcount, Gm, GGEHL, GNB, LOGGNB);
+    LSUM += Gpredict<GNB, LOGGNB>((PC << 1) + pred_inter /*PC*/, (GHIST << 11) + IMLIcount, Gm, GGEHL);
 
 #ifdef LOCALH
-    LSUM += Gpredict(PC, L_shist[INDLOCAL], Lm, LGEHL, LNB, LOGLNB);
+    LSUM += Gpredict<LNB, LOGLNB>(PC, L_shist[INDLOCAL], Lm, LGEHL);
 #endif
 #ifdef IMLI
 #ifndef IMLISIC
@@ -1516,7 +1502,7 @@ public:
 #endif
 #endif
 
-    LSUM += Gpredict(PC, GHIST, Pm, PGEHL, PNB, LOGPNB);
+    LSUM += Gpredict<PNB, LOGPNB>(PC, GHIST, Pm, PGEHL);
 
     bool SCPRED = (LSUM >= 0);
 
@@ -1683,21 +1669,21 @@ public:
         IMLIcount = 0;
 #endif
 #endif
-        Gupdate((PC << 1) + pred_inter /*PC*/, resolveDir, (GHIST << 11) + IMLIcount, Gm, GGEHL, GNB, LOGGNB);
-        Gupdate(PC, resolveDir, L_shist[INDLOCAL], Lm, LGEHL, LNB, LOGLNB);
+        Gupdate<GNB, LOGGNB>((PC << 1) + pred_inter /*PC*/, resolveDir, (GHIST << 11) + IMLIcount, Gm, GGEHL);
+        Gupdate<LNB, LOGLNB>(PC, resolveDir, L_shist[INDLOCAL], Lm, LGEHL);
 
-        Gupdate(PC, resolveDir, GHIST, Pm, PGEHL, PNB, LOGPNB);
+        Gupdate<PNB, LOGPNB>(PC, resolveDir, GHIST, Pm, PGEHL);
 
 #ifdef IMLI
 #ifdef IMLISIC
-        Gupdate(PC, resolveDir, IMLIcount, Im, IGEHL, INB, LOGINB);
+        Gupdate<INB, LOGINB>(PC, resolveDir, IMLIcount, Im, IGEHL);
 #else
         IMLIcount = interIMLIcount;
 #endif
 
 #ifdef IMLIOH
         if (IMLIcount >= 2) {
-          Gupdate((PC << 2), resolveDir, localoh, Fm, FGEHL, FNB, LOGFNB);
+          Gupdate<FNB, LOGFNB>((PC << 2), resolveDir, localoh, Fm, FGEHL);
         }
 #endif
 
@@ -1905,8 +1891,11 @@ public:
    ^ (bhist >> (40 - 4 * i)))                                                                                                 \
       & ((1 << (logs - (i >= (NBR - 2)))) - 1)
 
-  int Gpredict(Addr_t PC, long long BHIST, int *length, int8_t **tab, int NBR, int logs) {
+  template <std::size_t S1, std::size_t S2>
+  int Gpredict(Addr_t PC, long long BHIST, const int *length, const std::array<std::array<int8_t, S1>, (1<<S2)> &tab) {
     int PERCSUM = 0;
+    constexpr int NBR = tab.size();
+    constexpr int logs= tab[0].size();
     for (int i = 0; i < NBR; i++) {
       long long bhist = BHIST & ((long long)((1 << length[i]) - 1));
       int16_t   ctr   = tab[i][GINDEX];
@@ -1916,7 +1905,10 @@ public:
     return PERCSUM;
   }
 
-  void Gupdate(Addr_t PC, bool taken, long long BHIST, int *length, int8_t **tab, int NBR, int logs) {
+  template <std::size_t S1, std::size_t S2>
+  void Gupdate(Addr_t PC, bool taken, long long BHIST, const int *length, std::array<std::array<int8_t, S1>, (1<<S2)> &tab) {
+    constexpr int NBR = tab.size();
+    constexpr int logs= tab[0].size();
     for (int i = 0; i < NBR; i++) {
       long long bhist = BHIST & ((long long)((1 << length[i]) - 1));
       ctrupdate(tab[i][GINDEX], taken, PERCWIDTH - (i < (NBR - 1)));
@@ -1938,9 +1930,6 @@ public:
                   ch_t[0],
                   ch_t[1],
                   L_shist[INDLOCAL],
-                  // S_slhist[INDSLOCAL],
-                  // T_slhist[INDTLOCAL],
-                  // HSTACK[pthstack],
                   GHIST);
   }
 };

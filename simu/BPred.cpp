@@ -1564,23 +1564,20 @@ void BPredictor::fetchBoundaryBegin(Dinst *dinst) {
   pred1->fetchBoundaryBegin(dinst);
   if (pred2) {
     pred2->fetchBoundaryBegin(dinst);
+    if (pred3) {
+      pred3->fetchBoundaryBegin(dinst);
+    }
   }
-  if (pred3 == 0) {
-    return;
-  }
-
-  pred3->fetchBoundaryBegin(dinst);
 }
 
 void BPredictor::fetchBoundaryEnd() {
   pred1->fetchBoundaryEnd();
   if (pred2) {
     pred2->fetchBoundaryEnd();
+    if (pred3) {
+      pred3->fetchBoundaryEnd();
+    }
   }
-  if (pred3 == 0) {
-    return;
-  }
-  pred3->fetchBoundaryEnd();
 }
 
 Outcome BPredictor::predict1(Dinst *dinst) {

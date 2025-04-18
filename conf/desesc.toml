@@ -11,7 +11,7 @@ range = [0,0]
 [soc]
 # FIXME: multicore dromajo/desesc
 #core = ["c0", "c0"]
-#emul = ["drom_emu", "drom_emu"]:w
+#emul = ["drom_emu", "drom_emu"]
 core = ["c0"]
 emul = ["drom_emu"]
 
@@ -31,7 +31,7 @@ type      = "dromajo"
 #load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/mcf/mcf"
 
 #leela_load_FIXME 
-#load     = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/leela/leela"
+load     = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/leela/leela"
  
 #load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/x264/x264"
 
@@ -49,19 +49,19 @@ type      = "dromajo"
 
 # Load a Binary
 #bench      = "conf/dhrystone.riscv"
-bench      = "k1"
+#bench      = "k1"
 
 start_roi = false
-rabbit    = 0
+rabbit    = 10e6
 detail    = 0
-time      = 200e3 #Number of Insts
+time      = 10e3 #Number of Insts
 
 [rand_emu]
 type = "random"  # Generate random instructions (coverage testing?)
 
 [bp0]
 type = "superbp"
-#type              = "imli"
+#type              = "superbp"
 
 # SuperBP parameters
 SBP_NUMG = 5
@@ -72,9 +72,9 @@ INFO_PER_ENTRY = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 
 # TODO - Check
 NUM_GSHARE_ENTRIES_SHIFT = 5
-NUM_PAGES_PER_GROUP = 4
-PAGE_OFFSET_SIZE = 2
-PAGE_TABLE_INDEX_SIZE = 2
+NUM_PAGES_PER_GROUP = 2
+PAGE_OFFSET_SIZE = 6
+PAGE_TABLE_INDEX_SIZE = 3
 bp_addr_shift = 0      # bits shifted by branch predictor PC
 ras_size      = 32
 ras_prefetch  = false
@@ -135,7 +135,7 @@ table_width = 3
 
 
 [bp1]
-#type = "imli"
+#type = "superbp"
 type = "superbp"
 
 bp_addr_shift = 0      # bits shifted by branch predictor PC
@@ -144,7 +144,7 @@ ras_prefetch  = false
 
 delay             = 2
 # IMLI fetch ideal 2 taken branch, set fetch_predict false
-fetch_predict     = false   # Not a prediction per instruction
+fetch_predict     = true   # Not a prediction per instruction
 
 btb_history_size  = 0
 btb_split_il1     = false  # do not cache entries that can be computed by IL1

@@ -5,7 +5,7 @@
 [trace]
 #range = [0,2400]
 #range = [0,313000]
-range = [0,50]
+range = [0,0]
 
 
 [soc]

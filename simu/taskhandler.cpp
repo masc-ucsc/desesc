@@ -122,8 +122,10 @@ void TaskHandler::boot() {
   if (Config::has_entry("trace", "range")) {
     auto t_start = Config::get_array_integer("trace", "range", 0);
     auto t_end   = Config::get_array_integer("trace", "range", 1);
-    Tracer::open("kanata_log");
-    Tracer::track_range(t_start, t_end);
+    if (t_start < t_end) {
+      Tracer::open("kanata_log");
+      Tracer::track_range(t_start, t_end);
+    }
   }
 
   while (!running.empty()) {

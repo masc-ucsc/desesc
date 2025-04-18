@@ -194,7 +194,7 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
           dinst->scrap();
           break;
         }
-  	dinst->set_zero_delay_taken();
+        dinst->set_zero_delay_taken();
       }
       n2Fetch--;
 
@@ -278,12 +278,16 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
 
   bpred->fetchBoundaryEnd();
 
-  if (false && il1_enable && !bucket->empty()) {
-    avgFetched.sample(bucket->size(), bucket->top()->has_stats());
+  if (bucket->empty()) {
+    bucket->markFetchedCB.schedule(il1_hit_delay);
+    return;
+  }
+  avgFetched.sample(bucket->size(), bucket->top()->has_stats());
+  if (il1_enable) {
     MemRequest::sendReqRead(gms->getIL1(),
                             bucket->top()->has_stats(),
                             bucket->top()->getPC(),
-                            0xdeaddead,
+                            bucket->top()->getPC(),
                             &(bucket->markFetchedCB));  // 0xdeaddead as PC signature
   } else {
     bucket->markFetchedCB.schedule(il1_hit_delay);

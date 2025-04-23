@@ -1,12 +1,11 @@
 ###############################################################################
-# Bazel now uses Bzlmod by default to manage external dependencies.
-# Please consider migrating your external dependencies from WORKSPACE to MODULE.bazel.
-#
-# For more details, please check https://github.com/bazelbuild/bazel/issues/18958
-###############################################################################
-# MODULE.bazel
+module(
+    name = "desesc",
+    version = "0.2.0",
+)
 
-#bazel_dep(name = "rules_foreign_cc", version = "0.14.0")
+# Compiler rules
+bazel_dep(name = "rules_cc", version = "0.1.1")
 
 bazel_dep(name = "abseil-cpp", version = "20250127.0") # 20240722.0.bcr.2")
 
@@ -28,3 +27,16 @@ git_override(
 )
 
 #  echo -n "sha256-" && openssl dgst -sha256 -binary v4.2.0.zip | openssl base64 -A; echo
+
+
+# iassert
+bazel_dep(name = "iassert", version = "0.1.0")
+
+archive_override(
+    module_name = "iassert",
+    integrity = "sha256-lHlDknD8QsWKOVnXql7NIH6/C76SEOHRe0JlMPCwlrI=",
+    strip_prefix = "iassert-c2136ed8809ec1addbc48eb836c58d5b895e3f2b",
+    urls = [
+        "https://github.com/masc-ucsc/iassert/archive/c2136ed8809ec1addbc48eb836c58d5b895e3f2b.zip",
+    ],
+)

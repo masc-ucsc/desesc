@@ -193,7 +193,6 @@ const int Gm[GNB] = {17, 14};
 #endif
 /*effective length is  -11,  we use (GHIST<<11)+IMLIcount; we force the IMLIcount zero when IMLI is not used*/
 
-
 // large local history
 #define LOGLOCAL 8
 #define NLOCAL   (1 << LOGLOCAL)
@@ -207,7 +206,7 @@ const int Gm[GNB] = {17, 14};
 // only one local history
 #define LOGLNB 10
 #define LNB    4
-const int     Lm[LNB] = {16, 11, 6, 3};
+const int Lm[LNB] = {16, 11, 6, 3};
 #endif
 
 // small local history
@@ -215,7 +214,7 @@ const int     Lm[LNB] = {16, 11, 6, 3};
 #define NSECLOCAL   (1 << LOGSECLOCAL)  // Number of second local histories
 #define LOGSNB      9
 #define SNB         4
-const int     Sm[SNB] = {16, 11, 6, 3};
+const int Sm[SNB] = {16, 11, 6, 3};
 
 // third local history
 #define LOGTNB 9
@@ -236,7 +235,7 @@ const int Tm[TNB] = {22, 17, 14};
 #define LOGPNB 9
 #endif
 #define PNB 4
-const int     Pm[PNB] = {16, 11, 6, 3};
+const int Pm[PNB] = {16, 11, 6, 3};
 #else
 // in this case we don´t use the call stack
 #define PNB    2
@@ -251,7 +250,7 @@ const int Pm[PNB] = {16, 11};
 
 // update threshold for the statistical corrector
 #define LOGSIZEUP 0
-#define INDUPD (PC & ((1 << LOGSIZEUP) - 1))
+#define INDUPD    (PC & ((1 << LOGSIZEUP) - 1))
 
 // The three counters used to choose between TAGE ang SC on High Conf TAGE/Low Conf SC
 #define CONFWIDTH  7   // for the counters in the choser
@@ -721,7 +720,7 @@ public:
 #define LOGFNB 9  // 256 entries
 #endif
 #define FNB 1
-  int     Fm[FNB];
+  int Fm[FNB];
 #endif
 #endif
 
@@ -752,15 +751,15 @@ public:
 
   std::vector<std::vector<gentry>> gtable;  // [NHIST + 1];	// tagged TAGE tables
 
-  int     Im[INB];
+  int Im[INB];
 
-  const int     Lm[LNB] = {11, 6, 3};
+  const int Lm[LNB] = {11, 6, 3};
 
-  std::array<std::array<int8_t, FNB>, (1<<LOGFNB)> FGEHL;
-  std::array<std::array<int8_t, GNB>, (1<<LOGGNB)> GGEHL;
-  std::array<std::array<int8_t, LNB>, (1<<LOGLNB)> LGEHL;
-  std::array<std::array<int8_t, INB>, (1<<LOGINB)> IGEHL;
-  std::array<std::array<int8_t, PNB>, (1<<LOGPNB)> PGEHL;
+  std::array<std::array<int8_t, FNB>, (1 << LOGFNB)> FGEHL;
+  std::array<std::array<int8_t, GNB>, (1 << LOGGNB)> GGEHL;
+  std::array<std::array<int8_t, LNB>, (1 << LOGLNB)> LGEHL;
+  std::array<std::array<int8_t, INB>, (1 << LOGINB)> IGEHL;
+  std::array<std::array<int8_t, PNB>, (1 << LOGPNB)> PGEHL;
   // int8_t  GGEHL[GNB][(1 << LOGGNB)];
   // int8_t  LGEHL[LNB][(1 << LOGLNB)];
   // int8_t  IGEHL[INB][(1 << LOGINB)];
@@ -771,7 +770,7 @@ public:
   long long T_slhist[NSECLOCAL];
   int       pthstack;
 
-  int Pupdatethreshold[(1 << LOGSIZEUP)];  // size is fixed by LOGSIZEUP
+  int    Pupdatethreshold[(1 << LOGSIZEUP)];  // size is fixed by LOGSIZEUP
   int8_t FirstH, SecondH, ThirdH;
 
 #ifdef USE_DOLC
@@ -841,8 +840,8 @@ public:
       STORAGESIZE += x;
     }
 
-    STORAGESIZE += 2 * (SIZEUSEALT) * 4;
-    fprintf(stderr, " altna size=%d log2entries=%d\n", 2 * (SIZEUSEALT) * 4, LOGSIZEUSEALT);
+    STORAGESIZE += 2 * (SIZEUSEALT)*4;
+    fprintf(stderr, " altna size=%d log2entries=%d\n", 2 * (SIZEUSEALT)*4, LOGSIZEUSEALT);
 
     inter = bwidth * (1 << (log2fetchwidth + blogb));
     fprintf(stderr, " bimodal table size=%d log2entries=%d\n", inter, blogb);
@@ -865,7 +864,7 @@ public:
 
       inter += 16;                   // global histories for SC
       inter = 8 * (1 << LOGSIZEUP);  // the update threshold counters
-      inter += (PERCWIDTH) * 4 * (1 << (LOGBIAS));
+      inter += (PERCWIDTH)*4 * (1 << (LOGBIAS));
       inter += (GNB - 2) * (1 << (LOGGNB)) * (PERCWIDTH - 1) + (1 << (LOGGNB - 1)) * (2 * PERCWIDTH - 1);
 
       inter += (PNB - 2) * (1 << (LOGPNB)) * (PERCWIDTH - 1) + (1 << (LOGPNB - 1)) * (2 * PERCWIDTH - 1);
@@ -1141,8 +1140,7 @@ public:
       if (ltable[index].TAG == LTAG) {
         LHIT   = i;
         LVALID = ((ltable[index].confid == CONFLOOP) || (ltable[index].confid * ltable[index].NbIter > 128));
-        {
-        }
+        {}
         if (ltable[index].CurrentIter + 1 == ltable[index].NbIter) {
           return (!(ltable[index].dir));
         } else {
@@ -1585,8 +1583,8 @@ public:
       J[i].set(sign2);  // Not used in DOLC
     }
 #else
-    int T    = ((PC) << 1) + taken;
-    int PATH = PC;
+    int T            = ((PC) << 1) + taken;
+    int PATH         = PC;
 #endif
 
     for (int t = 0; t < maxt; t++) {
@@ -1892,10 +1890,10 @@ public:
       & ((1 << (logs - (i >= (NBR - 2)))) - 1)
 
   template <std::size_t S1, std::size_t S2>
-  int Gpredict(Addr_t PC, long long BHIST, const int *length, const std::array<std::array<int8_t, S1>, (1<<S2)> &tab) {
-    int PERCSUM = 0;
-    constexpr int NBR = tab.size();
-    constexpr int logs= tab[0].size();
+  int Gpredict(Addr_t PC, long long BHIST, const int *length, const std::array<std::array<int8_t, S1>, (1 << S2)> &tab) {
+    int       PERCSUM = 0;
+    const int NBR     = tab.size();
+    const int logs    = tab[0].size();
     for (int i = 0; i < NBR; i++) {
       long long bhist = BHIST & ((long long)((1 << length[i]) - 1));
       int16_t   ctr   = tab[i][GINDEX];
@@ -1906,9 +1904,9 @@ public:
   }
 
   template <std::size_t S1, std::size_t S2>
-  void Gupdate(Addr_t PC, bool taken, long long BHIST, const int *length, std::array<std::array<int8_t, S1>, (1<<S2)> &tab) {
-    constexpr int NBR = tab.size();
-    constexpr int logs= tab[0].size();
+  void Gupdate(Addr_t PC, bool taken, long long BHIST, const int *length, std::array<std::array<int8_t, S1>, (1 << S2)> &tab) {
+    const int NBR  = tab.size();
+    const int logs = tab[0].size();
     for (int i = 0; i < NBR; i++) {
       long long bhist = BHIST & ((long long)((1 << length[i]) - 1));
       ctrupdate(tab[i][GINDEX], taken, PERCWIDTH - (i < (NBR - 1)));
@@ -1920,16 +1918,6 @@ public:
 
     bool taken = true;
 
-    HistoryUpdate(PC,
-                  opType,
-                  taken,
-                  branchTarget,
-                  phist,
-                  ptghist,
-                  ch_i,
-                  ch_t[0],
-                  ch_t[1],
-                  L_shist[INDLOCAL],
-                  GHIST);
+    HistoryUpdate(PC, opType, taken, branchTarget, phist, ptghist, ch_i, ch_t[0], ch_t[1], L_shist[INDLOCAL], GHIST);
   }
 };

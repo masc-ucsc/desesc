@@ -27,12 +27,12 @@ GProcessor::GProcessor(std::shared_ptr<Gmemory_system> gm, Hartid_t i)
     , rROB(Config::get_integer("soc", "core", i, "rob_size"))
     , ROB(MaxROBSize)
     , avgFetchWidth(fmt::format("P({})_avgFetchWidth", i))
-    , rrobUsed(fmt::format("({})_rrobUsed", i))  // avg
-    , robUsed(fmt::format("({})_robUsed", i))    // avg
-    , nReplayInst(fmt::format("({})_nReplayInst", i))
-    , nCommitted(fmt::format("({}):nCommitted", i))  // Should be the same as robUsed - replayed
-    , noFetch(fmt::format("({}):noFetch", i))
-    , noFetch2(fmt::format("({}):noFetch2", i))
+    , rrobUsed(fmt::format("P({})_rrobUsed", i))  // avg
+    , robUsed(fmt::format("P({})_robUsed", i))    // avg
+    , nReplayInst(fmt::format("P({})_nReplayInst", i))
+    , nCommitted(fmt::format("P({}):nCommitted", i))  // Should be the same as robUsed - replayed
+    , noFetch(fmt::format("P({}):noFetch", i))
+    , noFetch2(fmt::format("P({}):noFetch2", i))
     , pipeQ(i) {
   smt_size = Config::get_integer("soc", "core", i, "smt", 1, 32);
 

@@ -52,8 +52,8 @@ load     = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/leela/leela"
 #bench      = "k1"
 
 start_roi = false
-rabbit    = 10e6
-detail    = 0
+rabbit    = 0
+detail    = 60e3
 time      = 10e3 #Number of Insts
 
 [rand_emu]

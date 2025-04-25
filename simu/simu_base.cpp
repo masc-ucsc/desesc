@@ -7,8 +7,8 @@
 
 Simu_base::Simu_base(std::shared_ptr<Gmemory_system> gm, Hartid_t hid_)
     : power_down(false)
-    , nFreeze(fmt::format("({}):nFreeze", hid_))
-    , clockTicks(fmt::format("({}):clockTicks", hid_))
+    , nFreeze(fmt::format("P(){}):nFreeze", hid_))
+    , clockTicks(fmt::format("P({}):clockTicks", hid_))
     , hid(hid_)
     , memorySystem(gm) {
   power_down = false;

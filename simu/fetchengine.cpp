@@ -27,18 +27,18 @@ extern bool MIMDmode;
 
 FetchEngine::FetchEngine(Hartid_t id, std::shared_ptr<Gmemory_system> gms_, std::shared_ptr<BPredictor> shared_bpred)
     : gms(gms_)
-    , avgFetchLost(fmt::format("P({})_FetchEngine_avgFetchLost", id))
-    , avgBranchTime(fmt::format("P({})_FetchEngine_avgBranchTime", id))
-    , avgBranchTime2(fmt::format("P({})_FetchEngine_avgBranchTime2", id))
-    , avgFetchTime(fmt::format("P({})_FetchEngine_avgFetchTime", id))
-    , avgFetched(fmt::format("P({})_FetchEngine_avgFetched", id))
-    , nDelayInst1(fmt::format("P({})_FetchEngine:nDelayInst1", id))
-    , nDelayInst2(fmt::format("P({})_FetchEngine:nDelayInst2", id))  // Not enough BB/LVIDs per cycle)
-    , nDelayInst3(fmt::format("P({})_FetchEngine:nDelayInst3", id))
-    , nBTAC(fmt::format("P({})_FetchEngine:nBTAC", id))  // BTAC corrections to BTB
+    , avgFetchLost(fmt::format("P({})_FetchEngine:avgFetchLost", id))
+    , avgFastFixWasteTime(fmt::format("P({})_FetchEngine:avgFastFixWasteTime", id))
+    , avgSlowFixWasteTime(fmt::format("P({})_FetchEngine:avgSlowFixWasteTime", id))
+    , avgSlowFixWasteInst(fmt::format("P({})_FetchEngine:avgSlowFixWasteInst", id))
+    , avgFastFixWasteInst(fmt::format("P({})_FetchEngine:avgFastFixWasteInst", id))
+    , avgFetchTime(fmt::format("P({})_FetchEngine:avgFetchTime", id))
+    , avgBucketInst(fmt::format("P({})_FetchEngine:avgBucketInst", id))
+    , avgBeyondFBInst(fmt::format("P({})_FetchEngine:avgBeyondFBInst", id))  // Not enough BB/LVIDs per cycle)
+    , nBTAC(fmt::format("P({})_FetchEngine:nBTAC", id))                      // BTAC corrections to BTB
     , zeroDinst(fmt::format("P({})_zeroDinst:nBTAC", id))
-//  ,szBB("FetchEngine(%d):szBB", id)
-//  ,szFB("FetchEngine(%d):szFB", id)
+    , avgBB(fmt::format("FetchEngine({}):avgBB", id))
+    , avgFB(fmt::format("FetchEngine({}):avgFB", id))
 //  ,szFS("FetchEngine(%d):szFS", id)
 //,unBlockFetchCB(this)
 //,unBlockFetchBPredDelayCB(this)
@@ -127,7 +127,8 @@ void FetchEngine::chainLoadDone(Dinst *dinst) { (void)dinst; }
 
 void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Hartid_t fid, int32_t n2Fetch, GProcessor *gproc) {
   // printf("FetchEngine::::Entering real fetch !!!\n");
-  Addr_t lastpc = 0;
+  Addr_t  lastpc     = 0;
+  int32_t last_taken = 0;
 
 #ifdef USE_FUSE
   RegType last_dest = LREG_R0;
@@ -186,11 +187,13 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
     } else {
       I(lastpc);
 
-      if ((lastpc + 4) == dinst->getPC() || (lastpc + 2) == dinst->getPC()) {
-      } else {
+      if ((lastpc + 4) != dinst->getPC() && (lastpc + 2) != dinst->getPC()) {
+        avgBB.sample(fetch_width - (n2Fetch - last_taken), dinst->has_stats());
+        last_taken = n2Fetch;
         maxBB--;
         if (maxBB < 1) {
-          nDelayInst2.add(n2Fetch, dinst->has_stats());
+          avgFB.sample(fetch_width - n2Fetch, dinst->has_stats());
+          avgBeyondFBInst.sample(n2Fetch, dinst->has_stats());
           dinst->scrap();
           break;
         }
@@ -282,7 +285,7 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
     bucket->markFetchedCB.schedule(il1_hit_delay);
     return;
   }
-  avgFetched.sample(bucket->size(), bucket->top()->has_stats());
+  avgBucketInst.sample(bucket->size(), bucket->top()->has_stats());
   if (il1_enable) {
     MemRequest::sendReqRead(gms->getIL1(),
                             bucket->top()->has_stats(),
@@ -313,11 +316,9 @@ void FetchEngine::unBlockFetchBPredDelay(Dinst *dinst, Time_t missFetchTime) {
   is_fetch_next_ready = true;
 
   Time_t n = (globalClock - missFetchTime);
-  avgBranchTime2.sample(n, dinst->has_stats());  // Not short branches
-  // n *= fetch_width; // FOR CPU
-  n *= 1;  // FOR GPU
-
-  nDelayInst3.add(n, dinst->has_stats());
+  avgFastFixWasteTime.sample(n, dinst->has_stats());  // Not short branches
+  n *= fetch_width;                                   // FOR CPU
+  avgFastFixWasteInst.sample(n, dinst->has_stats());
 }
 
 void FetchEngine::unBlockFetch(Dinst *dinst, Time_t missFetchTime) {
@@ -329,10 +330,9 @@ void FetchEngine::unBlockFetch(Dinst *dinst, Time_t missFetchTime) {
 
   I(globalClock > missFetchTime);
   Time_t n = (globalClock - missFetchTime);
-  avgBranchTime.sample(n, dinst->has_stats());  // Not short branches
-  // n *= fetch_width;  //FOR CPU
-  n *= 1;  // FOR GPU and for MIMD
-  nDelayInst1.add(n, dinst->has_stats());
+  avgSlowFixWasteTime.sample(n, dinst->has_stats());  // Not short branches
+  n *= fetch_width;                                   // FOR CPU
+  avgSlowFixWasteInst.sample(n, dinst->has_stats());
 
   lastMissTime = globalClock;
 }

@@ -50,15 +50,17 @@ private:
 
   // ******************* Statistics section
   Stats_avg  avgFetchLost;
-  Stats_avg  avgBranchTime;
-  Stats_avg  avgBranchTime2;
+  Stats_avg  avgFastFixWasteTime;
+  Stats_avg  avgSlowFixWasteTime;
+  Stats_avg  avgSlowFixWasteInst;
+  Stats_avg  avgFastFixWasteInst;
   Stats_avg  avgFetchTime;
-  Stats_avg  avgFetched;
-  Stats_cntr nDelayInst1;
-  Stats_cntr nDelayInst2;
-  Stats_cntr nDelayInst3;
+  Stats_avg  avgBucketInst;
+  Stats_avg  avgBeyondFBInst;
   Stats_cntr nBTAC;
   Stats_cntr zeroDinst;
+  Stats_avg  avgBB;
+  Stats_avg  avgFB;
   // *******************
 
 public:

@@ -197,18 +197,6 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
         }
       }
     }
-    if (dinst->getInst()->isControl() && dinst->isTaken()) {
-      avgBB.sample(fetch_width - (n2Fetch - last_taken), dinst->has_stats());
-      last_taken = n2Fetch;
-      maxBB--;
-      if (maxBB < 1) {
-        avgFB.sample(fetch_width - n2Fetch, dinst->has_stats());
-        avgBeyondFBInst.sample(n2Fetch, dinst->has_stats());
-        dinst->scrap();
-        break;
-      }
-      dinst->set_zero_delay_taken();
-    }
     lastpc = dinst->getPC();
     I(lastpc);
 
@@ -239,6 +227,12 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
     // I(dinst->getGProc());
 
     if (dinst->getInst()->isControl()) {
+      if (dinst->getInst()->isControl() && dinst->isTaken()) {
+        avgBB.sample(fetch_width - (n2Fetch - last_taken), dinst->has_stats());
+        last_taken = n2Fetch;
+        maxBB--;
+        dinst->set_zero_delay_taken();
+      }
       bool stall_fetch = processBranch(dinst);
       if (stall_fetch) {
         avgFetchStallInst.sample(fetch_width - n2Fetch, dinst->has_stats());
@@ -254,6 +248,11 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
           bias_ninst   = 0;
         }
 #endif
+        break;
+      }
+      if (maxBB < 1) {
+        avgFB.sample(fetch_width - n2Fetch, dinst->has_stats());
+        avgBeyondFBInst.sample(n2Fetch, dinst->has_stats());
         break;
       }
 #ifdef FETCH_TRACE

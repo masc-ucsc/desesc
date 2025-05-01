@@ -46,14 +46,14 @@ void Tracer::stage(const Dinst *dinst, const std::string ev) {
   int id = dinst->getID();
 
   if (!started.contains(id)) {
-    ofs << "I\t" << std::dec << id << "\t" << id << "\t" << dinst->getFlowId() << "\n";
-    ofs << "L\t" << std::dec << id << "\t0\t" << std::hex << dinst->getPC() << " " << dinst->getInst()->get_asm() << "\n";
+    ofs << "I\t" << std::dec << id-track_from << "\t" << id-track_from << "\t" << dinst->getFlowId() << "\n";
+    ofs << "L\t" << std::dec << id-track_from << "\t0\t" << std::hex << dinst->getPC() << " " << dinst->getInst()->get_asm() << "\n";
     started.insert(id);
   }
 
-  ofs << fmt::format("S\t{}\t0\t{}\n", id, ev);
+  ofs << fmt::format("S\t{}\t0\t{}\n", id-track_from, ev);
   if (ev == "WB" || ev == "RN" || ev == "PNR") {
-    pending_end.emplace_back(fmt::format("E\t{}\t0\t{}\n", id, ev));
+    pending_end.emplace_back(fmt::format("E\t{}\t0\t{}\n", id-track_from, ev));
   }
 }
 
@@ -69,9 +69,9 @@ void Tracer::event(const Dinst *dinst, const std::string ev) {
   adjust_clock();
   int id = dinst->getID();
 
-  ofs << fmt::format("S\t{}\t1\t{}\n", id, ev);
+  ofs << fmt::format("S\t{}\t1\t{}\n", id-track_from, ev);
 
-  pending_end.emplace_back(fmt::format("E\t{}\t1\t{}\n", id, ev));
+  pending_end.emplace_back(fmt::format("E\t{}\t1\t{}\n", id-track_from, ev));
 }
 
 void Tracer::commit(const Dinst *dinst) {
@@ -83,7 +83,7 @@ void Tracer::commit(const Dinst *dinst) {
   int id = dinst->getID();
 
   stage(dinst, "CO");
-  pending_end.emplace_back(fmt::format("R\t{}\t{}\t0\n", id, id));
+  pending_end.emplace_back(fmt::format("R\t{}\t{}\t0\n", id-track_from, id-track_from));
 }
 
 void Tracer::flush(const Dinst *dinst) {
@@ -94,7 +94,7 @@ void Tracer::flush(const Dinst *dinst) {
   adjust_clock();
   int id = dinst->getID();
 
-  ofs << fmt::format("R\t{}\t{}\t1\n", id, id);
+  ofs << fmt::format("R\t{}\t{}\t1\n", id-track_from, id-track_from);
 }
 
 void Tracer::adjust_clock() {

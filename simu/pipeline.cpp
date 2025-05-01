@@ -198,7 +198,6 @@ PipeQueue::PipeQueue(CPU_t i)
         Config::get_integer("soc", "core", i, "decode_delay", 1, 64) + Config::get_integer("soc", "core", i, "rename_delay", 1, 8),
         Config::get_integer("soc", "core", i, "fetch_width", 1, 64), Config::get_integer("soc", "core", i, "ftq_size", 1, 64))
     , instQueue(Config::get_integer("soc", "core", i, "decode_bucket_size", 1, 128)) {
-  auto fetch_width = Config::get_integer("soc", "core", i, "fetch_width", 1, 64);
 }
 
 PipeQueue::~PipeQueue() {

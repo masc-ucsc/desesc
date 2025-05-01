@@ -20,7 +20,6 @@
 
 // late allocation flag
 #define USE_PNR
-#define LSQ_LATE_EXECUTED 1
 
 /* }}} */
 
@@ -244,13 +243,11 @@ FULoad::FULoad(Opcode type, std::shared_ptr<Cluster> cls, std::shared_ptr<PortGe
 StallCause FULoad::canIssue(Dinst *dinst) {
   /* canIssue {{{1 */
 
-  // FULoad::freeEntries <=0
   if (freeEntries <= 0) {
     I(freeEntries == 0);  // Can't be negative
     return OutsLoadsStall;
   }
 
-  // LSQ::freeEntries<0
   if (!lsq->hasFreeEntries()) {
     return OutsLoadsStall;
   }
@@ -271,10 +268,8 @@ StallCause FULoad::canIssue(Dinst *dinst) {
   storeset->insert(dinst);
   // call vtage->rename() here????
 
-  /*decFreeEntries():: lsq->unresolved++; lsq->freeEntries--;*/
   lsq->decFreeEntries();
 
-  // FULoad::freeEntries--
   if (!LSQlateAlloc) {
     freeEntries--;
   }
@@ -285,7 +280,6 @@ StallCause FULoad::canIssue(Dinst *dinst) {
 void FULoad::executing(Dinst *dinst) {
   /* executing {{{1 */
 
-  /*LSQlateAlloc = false*/
   if (LSQlateAlloc) {
     freeEntries--;
   }
@@ -568,6 +562,7 @@ bool FUStore::preretire(Dinst *dinst, bool flushing) {
     return true;
   }
   if (flushing) {
+    freeEntries++;
     performed(dinst);
     return true;
   }

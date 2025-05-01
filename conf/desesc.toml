@@ -5,7 +5,7 @@
 [trace]
 #range = [0,2400]
 #range = [0,313000]
-range = [0,0]
+range = [3100000,3200000]
 
 
 [soc]
@@ -31,9 +31,9 @@ type      = "dromajo"
 #load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/mcf/mcf"
 
 #leela_load_FIXME 
-load     = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/leela/leela"
+#load     = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/leela/leela"
  
-#load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/x264/x264"
+load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/x264/x264"
 
 #xalancebk_load_FIXME 
 #load = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/xalancebmk/xalancebmk"
@@ -53,15 +53,15 @@ load     = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/leela/leela"
 
 start_roi = false
 rabbit    = 0
-detail    = 60e3
-time      = 10e3 #Number of Insts
+detail    = 3000000
+time      = 2000000
 
 [rand_emu]
 type = "random"  # Generate random instructions (coverage testing?)
 
 [bp0]
-type = "superbp"
-#type              = "superbp"
+type = "imli"
+#type              = "imli"
 
 # SuperBP parameters
 SBP_NUMG = 5
@@ -80,7 +80,7 @@ ras_size      = 32
 ras_prefetch  = false
 
 delay             = 1
-fetch_predict     = true   # Not a prediction per instruction
+fetch_predict     = false   # Not a prediction per instruction
 
 btb_history_size  = 0
 btb_split_il1     = false  # do not cache entries that can be computed by IL1
@@ -135,8 +135,8 @@ table_width = 3
 
 
 [bp1]
-#type = "superbp"
-type = "superbp"
+#type = "imli"
+type = "imli"
 
 bp_addr_shift = 0      # bits shifted by branch predictor PC
 ras_size      = 32
@@ -144,7 +144,7 @@ ras_prefetch  = false
 
 delay             = 2
 # IMLI fetch ideal 2 taken branch, set fetch_predict false
-fetch_predict     = true   # Not a prediction per instruction
+fetch_predict     = false   # Not a prediction per instruction
 
 btb_history_size  = 0
 btb_split_il1     = false  # do not cache entries that can be computed by IL1
@@ -169,15 +169,15 @@ PAGE_OFFSET_SIZE = 6
 PAGE_TABLE_INDEX_SIZE = 6
 
 #BOOM
-#ORIG_ENTRIES_PER_TABLE = [1168, 1168, 1168, 1168, 1168, 1168, 1168, 1168, 1168, 1168, 1168, 1168]
+ORIG_ENTRIES_PER_TABLE = [1168, 1168, 1168, 1168, 1168, 1168, 1168, 1168, 1168, 1168, 1168, 1168]
 #TODO - How to get this from FETCHWIDTH
-#INFO_PER_ENTRY = [16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16]
+INFO_PER_ENTRY = [16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16]
 #XIANGSHAN
 #ORIG_ENTRIES_PER_TABLE = [1168, 1168, 1168, 1168, 1168, 1168, 1168, 1168, 1168, 1168, 1168, 1168]
 #INFO_PER_ENTRY = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
 #SUPERBP
-ORIG_ENTRIES_PER_TABLE = [784, 208, 400, 1168, 976, 592, 784, 1744, 2895, 1936, 1360, 976]
-INFO_PER_ENTRY = [2, 1, 1, 4, 1, 1, 2, 2, 2, 1, 1, 1]
+#ORIG_ENTRIES_PER_TABLE = [784, 208, 400, 1168, 976, 592, 784, 1744, 2895, 1936, 1360, 976]
+#INFO_PER_ENTRY = [2, 1, 1, 4, 1, 1, 2, 2, 2, 1, 1, 1]
 
 [accel_entry]
 caches        = true  # set true to enable caches...
@@ -195,7 +195,7 @@ do_random_transients = false
 fetch_align       = true
 trace_align       = true
 fetch_one_line    = false   # jumps within cacheline do not flush
-max_bb_cycle      = 2
+max_bb_cycle      = 1
 prefetcher        = "pref_opt"
 
 smt = 1 # Number of STM context
@@ -203,13 +203,13 @@ smt = 1 # Number of STM context
 # Memory Parameters
 caches        = true  # set true to enable caches...
 #na caches        = falsm
-scb_size      = 16
-memory_replay = true
+scb_size      = 32
+memory_replay = false
 st_fwd_delay  = 2
-ldq_size      = 96
-stq_size      = 64
-stq_late_alloc = false
-ldq_late_alloc = false
+ldq_size      = 256
+stq_size      = 128
+stq_late_alloc = true
+ldq_late_alloc = true
 storeset_size = 8192
 il1           = "il1_cache IL1"
 dl1           = "dl1_cache DL1"
@@ -224,14 +224,14 @@ rename_instq_size   = 32
 fetch_width  = 16
 issue_width  = 8
 retire_width = 8
-rob_size     = 320
+rob_size     = 512
 
 # Exe Parameters
 cluster = ["aunit", "bunit", "cunit", "munit"]
-num_regs   = 256
+num_regs   = 512
 inter_cluster_lat    = 0
 cluster_scheduler    = "RoundRobin"
-max_branches         = 30
+max_branches         = 512
 drain_on_miss        = false
 commit_delay         = 2
 replay_serialize_for = 32
@@ -258,21 +258,21 @@ lat = 1
 occ = 1
 
 [aunit]
-win_size   = 16
-sched_num  = 4
+win_size   = 48
+sched_num  = 0
 sched_lat  = 0
 recycle_at  = "executed"
-num_regs   = 64
+num_regs   = 256
 late_alloc = false
 iAALU      = "alu0"
 iRALU      = "alu0"
 
 [bunit]
-win_size   = 16
-sched_num  = 4
+win_size   = 48
+sched_num  = 0
 sched_lat  = 0
 recycle_at  = "executed"
-num_regs   = 64
+num_regs   = 256
 late_alloc = false
 iBALU_LBRANCH = "balu"
 iBALU_LJUMP   = "balu"
@@ -283,11 +283,11 @@ iBALU_RCALL   = "balu"
 iBALU_RET     = "balu"
 
 [cunit]
-win_size   = 16
-sched_num  = 4
+win_size   = 48
+sched_num  = 0
 sched_lat  = 0
 recycle_at  = "executed"
-num_regs   = 64
+num_regs   = 256
 late_alloc = false
 iCALU_FPMULT  = "calu2"
 iCALU_FPDIV   = "calu2"
@@ -296,11 +296,11 @@ iCALU_MULT    = "calu2"
 iCALU_DIV     = "calu2"
 
 [munit]
-win_size   = 16
-sched_num  = 4
+win_size   = 48
+sched_num  = 0
 sched_lat  = 0
 recycle_at  = "executed"
-num_regs   = 64
+num_regs   = 256
 late_alloc = false
 iLALU_LD      = "lsu"
 iSALU_ST      = "lsu"
@@ -311,11 +311,11 @@ iSALU_ADDR    = "lsu"
 [dl1_cache]
 type       = "cache"   # or nice
 cold_misses = true
-size       = 32768
+size       = 65536
 line_size  = 64
 delay      = 3         # hit delay
 miss_delay = 2
-assoc      = 4
+assoc      = 8
 repl_policy = "lru"
 
 port_num   = 1
@@ -351,7 +351,7 @@ miss_delay = 8
 assoc      = 4
 repl_policy = "lru"
 
-port_num   = 1
+port_num   = 2
 port_banks = 32
 
 send_port_num = 1
@@ -376,14 +376,14 @@ lower_level = "privl2 L2 sharedby 2"
 [privl2]
 type       = "nice"   # or nice
 cold_misses = true
-size       = 1048576
+size       = 2097152  # 2MB
 line_size  = 64
-delay      = 10         # hit delay
-miss_delay = 2
-assoc      = 4
+delay      = 6         # hit delay
+miss_delay = 6
+assoc      = 16
 repl_policy = "lru"
 
-port_num   = 1
+port_num   = 2
 port_banks = 32
 
 send_port_num = 1
@@ -409,7 +409,7 @@ lower_level = "l3 l3 shared"
 [l3]
 type = "nice"
 line_size = 64
-delay = 31
+delay = 60
 cold_misses = false
 lower_level = ""
 

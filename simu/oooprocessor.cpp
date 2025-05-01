@@ -522,38 +522,14 @@ void OoOProcessor::try_flush(Dinst *dinst) {
 }
 
 void OoOProcessor::retire() {
-  //<<<<<<< HEAD
-  // printf("\nOOOProc::retire Entering  \n");
-  // printf("\nOOOProc::retire dump_rat starting  \n");
-  // dump_rat();
-#ifdef ENABLE_LDBP
-  int64_t gclock = int64_t(clockTicks.getDouble());
-  if (gclock != power_clock) {
-    power_clock = gclock;
-    if (power_save_mode_ctr <= (MAX_POWER_SAVE_MODE_CTR + 1)) {
-      power_save_mode_ctr++;
-    }
-    if (power_save_mode_ctr >= MAX_POWER_SAVE_MODE_CTR) {
-      // reset tables and power off
-      ldbp_power_save_cycles.inc(true);
-      tmp_power_clock++;
-      // MSG("global=%d tmp_power_clock=%d", gclock, tmp_power_clock);
-      if (power_save_mode_ctr == MAX_POWER_SAVE_MODE_CTR) {
-        power_save_mode_table_reset();
-      }
-    }
-  }
-#endif
-  //=======
-  //>>>>>>> upstream/main
+
   // Pass all the ready instructions to the rrob
   while (!ROB.empty()) {
     auto *dinst = ROB.top();
 
     I(dinst->getCluster());
     bool done = dinst->getClusterResource()->preretire(dinst, flushing);
-    // Addr_t ppc = dinst->getPC();
-    // MSG("MV");
+
     GI(flushing && dinst->isExecuted(), done);
     if (!done) {
       break;
@@ -754,19 +730,21 @@ void OoOProcessor::retire() {
 #endif
 
 #ifdef ESESC_TRACE
-    fmt::print("TR {:<8} {:<8x} r{:<2},r{:<2}= r{:<2} op={} r{:<2} ft:{} rt:{} it:{} et:{} @{}\n",
-               dinst->getID(),
-               dinst->getPC(),
-               dinst->getInst()->getDst1(),
-               dinst->getInst()->getDst2(),
-               dinst->getInst()->getSrc1(),
-               dinst->getInst()->getOpcode(),
-               dinst->getInst()->getSrc2(),
-               globalClock - dinst->getFetchedTime(),
-               globalClock - dinst->getRenamedTime(),
-               globalClock - dinst->getIssuedTime(),
-               globalClock - dinst->getExecutedTime(),
-               globalClock);
+    if (dinst->has_stats()) {
+      fmt::print("TR {:<8} {:<8x} r{:<2},r{:<2}= r{:<2} op={} r{:<2} ft:{} rt:{} it:{} et:{} @{}\n",
+                 dinst->getID(),
+                 dinst->getPC(),
+                 dinst->getInst()->getDst1(),
+                 dinst->getInst()->getDst2(),
+                 dinst->getInst()->getSrc1(),
+                 dinst->getInst()->getOpcode(),
+                 dinst->getInst()->getSrc2(),
+                 globalClock - dinst->getFetchedTime(),
+                 globalClock - dinst->getRenamedTime(),
+                 globalClock - dinst->getIssuedTime(),
+                 globalClock - dinst->getExecutedTime(),
+                 globalClock);
+    }
 #endif
 
 #ifdef WAVESNAP_EN
@@ -802,15 +780,7 @@ void OoOProcessor::retire() {
     }
 
     rROB.pop();
-    //<<<<<<< HEAD
   }  // !rROB.empty()_loop_ends
-
-  // printf("OOOProcessor::retire  Exiting from retire \n");
-  // printf("\nOOOProc::retire dump_rat Leaving \n");
-  // dump_rat();
-  //=======
-  // }  // !rROB.empty()_loop_ends
-  //>>>>>>> upstream/main
 }
 
 void OoOProcessor::replay(Dinst *target)

@@ -5,7 +5,8 @@
 [trace]
 #range = [0,2400]
 #range = [0,313000]
-range = [3100000,3200000]
+#range = [3100000,3200000]
+range = [0,0]
 
 
 [soc]
@@ -31,9 +32,9 @@ type      = "dromajo"
 #load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/mcf/mcf"
 
 #leela_load_FIXME 
-#load     = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/leela/leela"
+load     = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/leela/leela"
  
-load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/x264/x264"
+#load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/x264/x264"
 
 #xalancebk_load_FIXME 
 #load = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/xalancebmk/xalancebmk"
@@ -193,7 +194,7 @@ do_random_transients = false
 
 # Fetch parameters
 fetch_align       = true
-trace_align       = true
+trace_align       = false
 fetch_one_line    = false   # jumps within cacheline do not flush
 max_bb_cycle      = 1
 prefetcher        = "pref_opt"
@@ -221,7 +222,7 @@ ftq_size     = 12
 decode_bucket_size   = 32
 rename_instq_size   = 32
 
-fetch_width  = 16
+fetch_width  = 8
 issue_width  = 8
 retire_width = 8
 rob_size     = 512

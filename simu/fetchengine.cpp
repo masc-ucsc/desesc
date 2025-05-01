@@ -27,18 +27,18 @@ extern bool MIMDmode;
 
 FetchEngine::FetchEngine(Hartid_t id, std::shared_ptr<Gmemory_system> gms_, std::shared_ptr<BPredictor> shared_bpred)
     : gms(gms_)
-    , avgFetchLost(fmt::format("P({})_FetchEngine:avgFetchLost", id))
+    , avgEntryFetchLost(fmt::format("P({})_FetchEngine:avgEntryFetchLost", id))
     , avgFastFixWasteTime(fmt::format("P({})_FetchEngine:avgFastFixWasteTime", id))
     , avgSlowFixWasteTime(fmt::format("P({})_FetchEngine:avgSlowFixWasteTime", id))
     , avgSlowFixWasteInst(fmt::format("P({})_FetchEngine:avgSlowFixWasteInst", id))
     , avgFastFixWasteInst(fmt::format("P({})_FetchEngine:avgFastFixWasteInst", id))
     , avgFetchTime(fmt::format("P({})_FetchEngine:avgFetchTime", id))
     , avgBucketInst(fmt::format("P({})_FetchEngine:avgBucketInst", id))
-    , avgBeyondFBInst(fmt::format("P({})_FetchEngine:avgBeyondFBInst", id))  // Not enough BB/LVIDs per cycle)
-    , nBTAC(fmt::format("P({})_FetchEngine:nBTAC", id))                      // BTAC corrections to BTB
-    , zeroDinst(fmt::format("P({})_zeroDinst:nBTAC", id))
-    , avgBB(fmt::format("FetchEngine({}):avgBB", id))
-    , avgFB(fmt::format("FetchEngine({}):avgFB", id))
+    , avgBeyondFBInst(fmt::format("P({})_FetchEngine:avgBeyondFBInst", id))                    // Not enough BB/LVIDs per cycle)
+    , avgFetchOneLineWasteInst(fmt::format("P({})_FetchEngine:avgFetchOneLineWasteInst", id))  // Not enough BB/LVIDs per cycle)
+    , avgFetchStallInst(fmt::format("P({})_FetchEngine:avgFetchStallInst", id))                // Not enough BB/LVIDs per cycle)
+    , avgBB(fmt::format("P({})_FetchEngine:avgBB", id))
+    , avgFB(fmt::format("P({})_FetchEngine:avgFB", id))
 //  ,szFS("FetchEngine(%d):szFS", id)
 //,unBlockFetchCB(this)
 //,unBlockFetchBPredDelayCB(this)
@@ -178,7 +178,7 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
           fetchLost = (entryPC) & (half_fetch_width - 1);
         }
 
-        avgFetchLost.sample(fetchLost, dinst->has_stats());
+        avgEntryFetchLost.sample(fetchLost, dinst->has_stats());
 
         n2Fetch -= fetchLost;
       }
@@ -187,22 +187,11 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
     } else {
       I(lastpc);
 
-      if ((lastpc + 4) != dinst->getPC() && (lastpc + 2) != dinst->getPC()) {
-        avgBB.sample(fetch_width - (n2Fetch - last_taken), dinst->has_stats());
-        last_taken = n2Fetch;
-        maxBB--;
-        if (maxBB < 1) {
-          avgFB.sample(fetch_width - n2Fetch, dinst->has_stats());
-          avgBeyondFBInst.sample(n2Fetch, dinst->has_stats());
-          dinst->scrap();
-          break;
-        }
-        dinst->set_zero_delay_taken();
-      }
       n2Fetch--;
 
       if (fetch_one_line) {
         if ((lastpc >> il1_line_bits) != (dinst->getPC() >> il1_line_bits)) {
+          avgFetchOneLineWasteInst.sample(n2Fetch, dinst->has_stats());
           dinst->scrap();
           break;
         }
@@ -238,10 +227,23 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
     // I(dinst->getGProc());
 
     if (dinst->getInst()->isControl()) {
-      // printf("FetchEngine::realfetch instID before processbranch %ld\n", dinst->getID());
-      // I(dinst->getGProc());
+      if (dinst->isTaken()) {
+        avgBB.sample(fetch_width - (n2Fetch - last_taken), dinst->has_stats());
+        last_taken = n2Fetch;
+        maxBB--;
+        if (maxBB < 1) {
+          avgFB.sample(fetch_width - n2Fetch, dinst->has_stats());
+          avgBeyondFBInst.sample(n2Fetch, dinst->has_stats());
+          dinst->scrap();
+          break;
+        }
+        dinst->set_zero_delay_taken();
+      }
+
       bool stall_fetch = processBranch(dinst);
       if (stall_fetch) {
+        avgFetchStallInst.sample(fetch_width - n2Fetch, dinst->has_stats());
+
 #ifdef FETCH_TRACE
         if (dinst->isBiasBranch() && dinst->getFetchEngine()) {
           // OOPS. Thought that it was bias and it is a long misspredict

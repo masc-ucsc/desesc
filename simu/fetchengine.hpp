@@ -49,18 +49,18 @@ private:
   bool processBranch(Dinst *dinst);
 
   // ******************* Statistics section
-  Stats_avg  avgFetchLost;
-  Stats_avg  avgFastFixWasteTime;
-  Stats_avg  avgSlowFixWasteTime;
-  Stats_avg  avgSlowFixWasteInst;
-  Stats_avg  avgFastFixWasteInst;
-  Stats_avg  avgFetchTime;
-  Stats_avg  avgBucketInst;
-  Stats_avg  avgBeyondFBInst;
-  Stats_cntr nBTAC;
-  Stats_cntr zeroDinst;
-  Stats_avg  avgBB;
-  Stats_avg  avgFB;
+  Stats_avg avgEntryFetchLost;
+  Stats_avg avgFastFixWasteTime;
+  Stats_avg avgSlowFixWasteTime;
+  Stats_avg avgSlowFixWasteInst;
+  Stats_avg avgFastFixWasteInst;
+  Stats_avg avgFetchTime;
+  Stats_avg avgBucketInst;
+  Stats_avg avgBeyondFBInst;
+  Stats_avg avgFetchOneLineWasteInst;
+  Stats_avg avgFetchStallInst;
+  Stats_avg avgBB;
+  Stats_avg avgFB;
   // *******************
 
 public:

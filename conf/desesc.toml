@@ -218,7 +218,8 @@ scoore_serialize = true
 decode_delay = 3
 rename_delay = 2
 ftq_size     = 12
-instq_size   = 32
+decode_bucket_size   = 32
+rename_instq_size   = 32
 
 fetch_width  = 16
 issue_width  = 8

@@ -18,6 +18,7 @@
 #include "imlibest.hpp"
 #include "memobj.hpp"
 #include "report.hpp"
+#include "tahead.hpp"
 
 // #define CLOSE_TARGET_OPTIMIZATION 1
 
@@ -470,6 +471,23 @@ Outcome BPTData::predict(Dinst *dinst, bool doUpdate, bool doStats) {
   return ptaken ? btb.predict(dinst, doUpdate, doStats) : Outcome::Correct;
 }
 
+BPTahead::BPTahead(int32_t i, const std::string &section, const std::string &sname)
+    : BPred(i, section, sname, "imli"), btb(i, section, sname), FetchPredict(Config::get_bool(section, "fetch_predict")) {
+  int FetchWidth = Config::get_power2("soc", "core", i, "fetch_width", 1);
+  I(FetchWidth == TAHEAD_MAXBR);
+
+  // tahead = std::make_unique<Tahead>();
+}
+
+void BPTahead::fetchBoundaryBegin(Dinst *dinst) { (void)dinst; }
+
+void BPTahead::fetchBoundaryEnd() {}
+
+Outcome BPTahead::predict(Dinst *dinst, bool doUpdate, bool doStats) {
+  // FIXME: Just to make it compile
+  return btb.predict(dinst, doUpdate, doStats);
+}
+
 /*****************************************
  * BPIMLI: SC-TAGE-L with IMLI from Seznec Micro paper
  */
@@ -548,12 +566,14 @@ Outcome BPIMLI::predict(Dinst *dinst, bool doUpdate, bool doStats) {
 
 // class PREDICTOR;
 
-//gshare_must, gshare_correct, gshare_incorrect; 
+// gshare_must, gshare_correct, gshare_incorrect;
 BPSuperbp::BPSuperbp(int32_t i, const std::string &section, const std::string &sname)
-    : BPred(i, section, sname, "superbp"), btb(i, section, sname), FetchPredict(Config::get_bool(section, "fetch_predict")) 
+    : BPred(i, section, sname, "superbp")
+    , btb(i, section, sname)
+    , FetchPredict(Config::get_bool(section, "fetch_predict"))
     , gshare_must(fmt::format("P({})_{}_BPred:gshare_must", i, sname))
-, gshare_correct(fmt::format("P({})_{}_BPred:gshare_correct", i, sname)) 
-, gshare_incorrect(fmt::format("P({})_{}_BPred:gshare_incorrect", i, sname))  {
+    , gshare_correct(fmt::format("P({})_{}_BPred:gshare_correct", i, sname))
+    , gshare_incorrect(fmt::format("P({})_{}_BPred:gshare_incorrect", i, sname)) {
   // TODO
   /*
   int FetchWidth = Config::get_power2("soc", "core", i, "fetch_width", 1);
@@ -636,7 +656,7 @@ void BPSuperbp::fetchBoundaryEnd() {
   }
 }
 
-//uint64_t gshare_must, gshare_correct, gshare_incorrect; 
+// uint64_t gshare_must, gshare_correct, gshare_incorrect;
 Outcome BPSuperbp::predict(Dinst *dinst, bool doUpdate, bool doStats) {
   // FIXME: check dinst->is_zero_delay_taken(); If TRUE, it is beyond the 1 taken branch
 
@@ -664,28 +684,31 @@ Outcome BPSuperbp::predict(Dinst *dinst, bool doUpdate, bool doStats) {
   superbp_p->handle_insn_desesc(pc, branchTarget, insn_type, taken, &batage_pred, &batage_conf, &gshare_use);
   // TODO:Check if ptaken must get the value based on is_zero_delay_taken directly w/o checking gshare_use at all
   if (gshare_use) {
-	ptaken = true;
-        if (ptaken != taken) { gshare_incorrect.inc(true); } else { gshare_correct.inc(true); }
+    ptaken = true;
+    if (ptaken != taken) {
+      gshare_incorrect.inc(true);
+    } else {
+      gshare_correct.inc(true);
+    }
   } else {
-	ptaken = batage_pred;
-        if (dinst->is_zero_delay_taken()) {
-          {
-		// Stats saying that I wish I had gshare, but I did not so stall fetch (fall back to 1 taken)
-		gshare_must.inc(true);
-
-	}
-          dinst->clear_zero_delay_taken();
-          // the succeeding fetch boundary begin must/ will update the history in superbp
+    ptaken = batage_pred;
+    if (dinst->is_zero_delay_taken()) {
+      {
+        // Stats saying that I wish I had gshare, but I did not so stall fetch (fall back to 1 taken)
+        gshare_must.inc(true);
+      }
+      dinst->clear_zero_delay_taken();
+      // the succeeding fetch boundary begin must/ will update the history in superbp
+    }
   }
-}
 
-  	dinst->setBiasBranch(false);  
-	// TODO: check if it should be true on gshare_use or gshare_correct and if batage_conf = true or batage_pred should be taken as well
-	// TODO: Also check that definition of conf b/w desesc and superbp is compatible
-	if (batage_conf || gshare_use)
-	{
-		dinst->setBiasBranch(true); 
-	}
+  dinst->setBiasBranch(false);
+  // TODO: check if it should be true on gshare_use or gshare_correct and if batage_conf = true or batage_pred should be taken as
+  // well
+  // TODO: Also check that definition of conf b/w desesc and superbp is compatible
+  if (batage_conf || gshare_use) {
+    dinst->setBiasBranch(true);
+  }
 
   if (!FetchPredict) {
     superbp_p->fetchBoundaryEnd();
@@ -1445,6 +1468,8 @@ std::unique_ptr<BPred> BPredictor::getBPred(int32_t id, const std::string &sec, 
     pred = std::make_unique<BPyags>(id, sec, sname);
   } else if (type == "imli") {
     pred = std::make_unique<BPIMLI>(id, sec, sname);
+  } else if (type == "tahead") {
+    pred = std::make_unique<BPTahead>(id, sec, sname);
   } else if (type == "superbp") {
     pred = std::make_unique<BPSuperbp>(id, sec, sname);
   } else if (type == "tdata") {

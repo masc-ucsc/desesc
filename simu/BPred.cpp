@@ -476,7 +476,7 @@ BPTahead::BPTahead(int32_t i, const std::string &section, const std::string &sna
   int FetchWidth = Config::get_power2("soc", "core", i, "fetch_width", 1);
   I(FetchWidth == TAHEAD_MAXBR);
 
-  // tahead = std::make_unique<Tahead>();
+  tahead = std::make_unique<Tahead>();
 }
 
 void BPTahead::fetchBoundaryBegin(Dinst *dinst) { (void)dinst; }
@@ -484,8 +484,30 @@ void BPTahead::fetchBoundaryBegin(Dinst *dinst) { (void)dinst; }
 void BPTahead::fetchBoundaryEnd() {}
 
 Outcome BPTahead::predict(Dinst *dinst, bool doUpdate, bool doStats) {
-  // FIXME: Just to make it compile
-  return btb.predict(dinst, doUpdate, doStats);
+    if (dinst->getInst()->isJump() || dinst->getInst()->isFuncRet()) {
+    tahead->TrackOtherInst(dinst->getPC(), dinst->getInst()->getOpcode(), dinst->isTaken(), dinst->getAddr());
+    dinst->setBiasBranch(true);
+    return btb.predict(dinst, doUpdate, doStats);
+  }
+  
+  bool taken = dinst->isTaken();
+  
+  // bool     bias = false;
+  Addr_t   pc     = dinst->getPC();
+  bool     ptaken = tahead->getPrediction(pc);  // pass taken for statistics
+
+  if (doUpdate) {
+    tahead->updatePredictor(pc, dinst->getInst()->getOpcode(), taken, ptaken, dinst->getAddr());
+  }
+
+  if (taken != ptaken) {
+    if (doUpdate) {
+      btb.updateOnly(dinst);
+    }
+    return Outcome::Miss;
+  }
+
+  return ptaken ? btb.predict(dinst, doUpdate, doStats) : Outcome::Correct;
 }
 
 /*****************************************

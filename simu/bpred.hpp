@@ -236,7 +236,8 @@ public:
 };
 
 // FIXME: convert to just class Tahead;
-
+class Tahead;
+/*
 class Tahead {
 public:
   bool getPrediction(uint64_t PCBRANCH) {
@@ -244,6 +245,7 @@ public:
     return false;
   }
 };
+*/
 class BPTahead : public BPred {
 private:
   BPBTB btb;

@@ -472,7 +472,7 @@ Outcome BPTData::predict(Dinst *dinst, bool doUpdate, bool doStats) {
 }
 
 BPTahead::BPTahead(int32_t i, const std::string &section, const std::string &sname)
-    : BPred(i, section, sname, "imli"), btb(i, section, sname), FetchPredict(Config::get_bool(section, "fetch_predict")) {
+    : BPred(i, section, sname, "tahead"), btb(i, section, sname), FetchPredict(Config::get_bool(section, "fetch_predict")) {
   int FetchWidth = Config::get_power2("soc", "core", i, "fetch_width", 1);
   I(FetchWidth == TAHEAD_MAXBR);
 

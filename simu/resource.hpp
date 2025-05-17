@@ -206,8 +206,9 @@ public:
 
 class FUBranch : public Resource {
 private:
-  int32_t freeBranches;
-  bool    drainOnMiss;
+  int32_t     freeBranches;
+  bool        drainOnMiss;
+  TimeDelta_t bpred_delay;
 
 protected:
 public:

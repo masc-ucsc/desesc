@@ -12,6 +12,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "opcode.hpp"
 // #include "utils.h"
 // #include "bt9.h"
@@ -22,8 +23,6 @@
 // #define RANDINIT  // RANDINIT provide random values in all counters, might be slightly more realistic than initialization with
 // weak counters
 
-
-// Possible conf option if updates are delayed to end of fetch_boundary (BPred.cpp:pending)
 #define TAHEAD_DELAY_UPDATE 1
 
 #define TAHEAD_LOGSCALE 2
@@ -53,8 +52,8 @@
 #define TAHEAD_MAXHIST 250
 #endif
 
-#define TAHEAD_MAXBR 16  // Maximum TAHEAD_MAXBR  branches in  the block; the code assumes TAHEAD_MAXBR is a power of 2
-#define NBREADPERTABLE 4  // predictions read per table for a block
+#define TAHEAD_MAXBR   16  // Maximum TAHEAD_MAXBR  branches in  the block; the code assumes TAHEAD_MAXBR is a power of 2
+#define NBREADPERTABLE 4   // predictions read per table for a block
 
 #define TAHEAD_AHEAD 2
 // in the curent version:  only 0 or 2 are valid (0 corresponds to the conventional 1-block ahead, 2 coresponds to the 3-block
@@ -71,13 +70,13 @@
 
 #define TAHEAD_UWIDTH 2
 #define LOGASSOC \
-  1  // associative tagged tables are probably  not worth the effort at TAHEAD_TBITS=12 : about 0.02 MPKI gain for associativity 2; an
-     // extra tag bit would be  needed to get some gain with associativity 4 // but partial skewed associativity (option PSK) might
-     // be interesting
+  1  // associative tagged tables are probably  not worth the effort at TAHEAD_TBITS=12 : about 0.02 MPKI gain for associativity 2;
+     // an extra tag bit would be  needed to get some gain with associativity 4 // but partial skewed associativity (option PSK)
+     // might be interesting
 #define TAHEAD_TBITS 12  // if 11 bits: benefit from associativity vanishes
 
-#define TAHEAD_LOGG  (TAHEAD_LOGT - LOGASSOC)  // size of way in a logical TAGE table
-#define ASSOC (1 << LOGASSOC)
+#define TAHEAD_LOGG (TAHEAD_LOGT - LOGASSOC)  // size of way in a logical TAGE table
+#define ASSOC       (1 << LOGASSOC)
 
 #define HYSTSHIFT 1  // bimodal hysteresis shared among (1<< HYSTSHIFT) entries
 #define BIMWIDTH  3  //  with of the counter in the bimodal predictor
@@ -85,8 +84,8 @@
 
 /////////////////////////////////////////////
 // Options  for optimizations of TAGE
-// #define TAHEAD_INTERLEAVED // just to show that it  is not  fully interleaving the banks is not that great and probably not worth the
-// extra 14x14 shuffling/reshuffling
+// #define TAHEAD_INTERLEAVED // just to show that it  is not  fully interleaving the banks is not that great and probably not worth
+// the extra 14x14 shuffling/reshuffling
 #ifdef TAHEAD_INTERLEAVED
 #define SHARED        0
 #define ADJACENTTABLE 1
@@ -104,7 +103,7 @@ int BANK1;
      // H(2i-1) and H(2i).
 #define SHARED 1  // (T1/T9) (T2/T10)   shared the same bank T9 and T10 do not share with anybody: ~ -0.076 MPKI
 #endif
-#define OPTGEOHIST          // we can do better than geometric series
+#define OPTGEOHIST  // we can do better than geometric series
 // Optimizations  allocation/replacement: globally; ~0.09
 #define FILTERALLOCATION 1  // ~ -0.04 MPKI
 #define FORCEU           1  // don't work if only one U  bit	// from times selective allocation with u = 1: ~0.015 MPKI
@@ -139,10 +138,10 @@ int BANK1;
 // In practice the optimizations on TAGE brings significant gains
 #endif
 
-#define FORCEONHIGHCONF  //   if TAGE is high conf and TAHEAD_SC very low conf then use TAGE, if TAHEAD_SC: brings 0.008 - 0.016 MPKI, but a
-                         //   5-to-1 mux instead a 4-to-1
-// #define MORESCLOGICAHEAD // if TAHEAD_AHEAD and if TAHEAD_SC uses four times  the number of adder trees (compute 16 SCsum  per prediction !),
-// ~ 1 % gain in accuracy
+#define FORCEONHIGHCONF  //   if TAGE is high conf and TAHEAD_SC very low conf then use TAGE, if TAHEAD_SC: brings 0.008 - 0.016
+                         //   MPKI, but a 5-to-1 mux instead a 4-to-1
+// #define MORESCLOGICAHEAD // if TAHEAD_AHEAD and if TAHEAD_SC uses four times  the number of adder trees (compute 16 SCsum  per
+// prediction !), ~ 1 % gain in accuracy
 
 // Add the extra TAHEAD_SC tables
 #define SCMEDIUM
@@ -185,17 +184,17 @@ int8_t BiasLMAP[4];
 int8_t BiasPC[1 << TAHEAD_LOGBIAS];
 int8_t BiasPCLMAP[(1 << TAHEAD_LOGBIAS)];
 
-#define TAHEAD_LOGINB      TAHEAD_LOGBIAS
+#define TAHEAD_LOGINB TAHEAD_LOGBIAS
 int    Im = TAHEAD_LOGBIAS;
 int8_t IBIAS[(1 << TAHEAD_LOGINB)];
 int8_t IIBIAS[(1 << TAHEAD_LOGINB)];
 
 // Back path history; (in practice  when a  new backward branch is  reached; 2 bits are pushed in the history
-#define LOGBNB      TAHEAD_LOGBIAS
+#define LOGBNB TAHEAD_LOGBIAS
 int    Bm = TAHEAD_LOGBIAS;
 int8_t BBIAS[(1 << LOGBNB)];
 //////////////// Forward path history (taken)
-#define TAHEAD_LOGFNB      TAHEAD_LOGBIAS
+#define TAHEAD_LOGFNB TAHEAD_LOGBIAS
 int    Fm = TAHEAD_LOGBIAS;
 int8_t FBIAS[(1 << TAHEAD_LOGFNB)];
 
@@ -238,7 +237,7 @@ uint64_t LastBackPC;
 uint64_t BBHIST;
 
 // update threshold for the statistical corrector
-#define WIDTHRES      8
+#define WIDTHRES 8
 int updatethreshold;
 
 int SUMSC;
@@ -270,12 +269,12 @@ public:
   TAHEAD_folded_history() {}
 
   void init(int original_length, int compressed_length, int N) {
+    (void)N;
+
     comp     = 0;
     OLENGTH  = original_length;
     CLENGTH  = compressed_length;
     OUTPOINT = OLENGTH % CLENGTH;
-
-        N++; N--;
   }
 
   void update(uint8_t *h, int PT) {
@@ -337,7 +336,7 @@ int    TAGECONF;               // TAGE confidence  from 0 (weak counter) to 3 (s
 #define TAHEAD_CWIDTH     3   // predictor counter width on the TAGE tagged tables
 
 // the counter(s) to chose between longest match and alternate prediction on TAGE when weak counters: only plain TAGE
-#define TAHEAD_ALTWIDTH   5
+#define TAHEAD_ALTWIDTH 5
 int8_t use_alt_on_na;
 int    TICK, TICKH;  // for the reset of the u counter
 
@@ -345,20 +344,20 @@ uint8_t ghist[HISTBUFFERLENGTH];
 int     ptghist;
 // for managing global path history
 
-long long      phist;               // path history
-int            GH;                  //  another form of path history
-TAHEAD_folded_history tahead_ch_i[NHIST + 1];     // utility for computing TAGE indices
-TAHEAD_folded_history ch_t[2][NHIST + 1];  // utility for computing TAGE tags
+long long             phist;                   // path history
+int                   GH;                      //  another form of path history
+TAHEAD_folded_history tahead_ch_i[NHIST + 1];  // utility for computing TAGE indices
+TAHEAD_folded_history ch_t[2][NHIST + 1];      // utility for computing TAGE tags
 
 // For the TAGE predictor
-bentry *btable;             // bimodal TAGE table
+bentry        *btable;             // bimodal TAGE table
 TAHEAD_gentry *gtable[NHIST + 1];  // tagged TAGE tables
-int     TAHEAD_m[NHIST + 1];
-uint    GI[NHIST + 1];          // indexes to the different tables are computed only once
-uint    GGI[ASSOC][NHIST + 1];  // indexes to the different tables are computed only once
-uint    GTAG[NHIST + 1];        // tags for the different tables are computed only once
-int     BI;                     // index of the bimodal table
-bool    pred_taken;             // prediction
+int            TAHEAD_m[NHIST + 1];
+uint           GI[NHIST + 1];          // indexes to the different tables are computed only once
+uint           GGI[ASSOC][NHIST + 1];  // indexes to the different tables are computed only once
+uint           GTAG[NHIST + 1];        // tags for the different tables are computed only once
+int            BI;                     // index of the bimodal table
+bool           pred_taken;             // prediction
 
 int incval(int8_t ctr) {
   return (2 * ctr + 1);
@@ -376,8 +375,8 @@ int predictorsize() {
   // the use_alt counter
 #endif
   STORAGESIZE += (1 << TAHEAD_LOGB) + (BIMWIDTH - 1) * (1 << (TAHEAD_LOGB - HYSTSHIFT));
-  STORAGESIZE += TAHEAD_m[NHIST];             // the history bits
-  STORAGESIZE += TAHEAD_PHISTWIDTH;           // phist
+  STORAGESIZE += TAHEAD_m[NHIST];      // the history bits
+  STORAGESIZE += TAHEAD_PHISTWIDTH;    // phist
   STORAGESIZE += 12;                   // the TICK counter
   STORAGESIZE += 12;                   // the TICKH counter
   STORAGESIZE += 2 * 7 * (NHIST / 4);  // counters COUNT50 COUNT16_31
@@ -449,7 +448,9 @@ public:
     mm[1] = TAHEAD_MINHIST;
 
     for (int i = 2; i <= NNHIST; i++) {
-      mm[i] = (int)(((double)TAHEAD_MINHIST * pow((double)(TAHEAD_MAXHIST) / (double)TAHEAD_MINHIST, (double)(i - 1) / (double)((NNHIST - 1)))) + 0.5);
+      mm[i] = (int)(((double)TAHEAD_MINHIST
+                     * pow((double)(TAHEAD_MAXHIST) / (double)TAHEAD_MINHIST, (double)(i - 1) / (double)((NNHIST - 1))))
+                    + 0.5);
     }
     for (int i = 2; i <= NNHIST; i++) {
       if (mm[i] <= mm[i - 1] + 1) {
@@ -479,7 +480,9 @@ public:
     TAHEAD_m[1] = TAHEAD_MINHIST;
 
     for (int i = 2; i <= NHIST; i++) {
-      TAHEAD_m[i] = (int)(((double)TAHEAD_MINHIST * pow((double)(TAHEAD_MAXHIST) / (double)TAHEAD_MINHIST, (double)(i - 1) / (double)((NHIST - 1)))) + 0.5);
+      TAHEAD_m[i] = (int)(((double)TAHEAD_MINHIST
+                           * pow((double)(TAHEAD_MAXHIST) / (double)TAHEAD_MINHIST, (double)(i - 1) / (double)((NHIST - 1))))
+                          + 0.5);
     }
     for (int i = 3; i <= NHIST; i++) {
       if (TAHEAD_m[i] <= TAHEAD_m[i - 1]) {
@@ -947,7 +950,7 @@ public:
     predSC     = pred_taken;
     predTSC    = pred_taken;
 
-    //printf("pc:%lx Num:%lx ptaken:%d\n", PC, Numero, pred_taken);
+    // printf("pc:%lx Num:%lx ptaken:%d\n", PC, Numero, pred_taken);
 #ifdef TAHEAD_DELAY_UPDATE
     Numero++;
 #endif
@@ -1021,28 +1024,33 @@ public:
       brtype = 0;
 
       switch (opType) {
-        case Opcode::iBALU_RJUMP : 									// OPTYPE_JMP_INDIRECT_UNCOND:
-        case Opcode::iBALU_RCALL : 									// OPTYPE_CALL_INDIRECT_UNCOND:
-        case Opcode::iBALU_RBRANCH : 								// OPTYPE_JMP_INDIRECT_COND:
-        //case Opcode::iBALU_RCALL : 									// OPTYPE_CALL_INDIRECT_COND:
-        case Opcode::iBALU_RET : 											// OPTYPE_RET_UNCOND:
-        																						// case OPTYPE_RET_COND: Opcode::iBALU_RET
-        brtype = 2; break;
-        //case Opcode::iBALU_LCALL : 									// OPTYPE_CALL_DIRECT_COND:
-        case Opcode::iBALU_LCALL : 									// OPTYPE_CALL_DIRECT_UNCOND:
-        case Opcode::iBALU_LBRANCH : 								// OPTYPE_JMP_DIRECT_COND:
-        case Opcode::iBALU_LJUMP : 										// OPTYPE_JMP_DIRECT_UNCOND:
-        brtype = 0; break;
+        case Opcode::iBALU_RJUMP:    // OPTYPE_JMP_INDIRECT_UNCOND:
+        case Opcode::iBALU_RCALL:    // OPTYPE_CALL_INDIRECT_UNCOND:
+        case Opcode::iBALU_RBRANCH:  // OPTYPE_JMP_INDIRECT_COND:
+        // case Opcode::iBALU_RCALL : 									//
+        // OPTYPE_CALL_INDIRECT_COND:
+        case Opcode::iBALU_RET:  // OPTYPE_RET_UNCOND:
+                                 // case OPTYPE_RET_COND: Opcode::iBALU_RET
+          brtype = 2;
+          break;
+        // case Opcode::iBALU_LCALL : 									// OPTYPE_CALL_DIRECT_COND:
+        case Opcode::iBALU_LCALL:    // OPTYPE_CALL_DIRECT_UNCOND:
+        case Opcode::iBALU_LBRANCH:  // OPTYPE_JMP_DIRECT_COND:
+        case Opcode::iBALU_LJUMP:    // OPTYPE_JMP_DIRECT_UNCOND:
+          brtype = 0;
+          break;
         default: exit(1);
       }
 
       switch (opType) {
-        case Opcode::iBALU_LBRANCH : 								// OPTYPE_JMP_DIRECT_COND:
-        //case Opcode::iBALU_LCALL : 									// OPTYPE_CALL_DIRECT_COND:
-        case Opcode::iBALU_RBRANCH :								// OPTYPE_JMP_INDIRECT_COND:
-        //case Opcode::iBALU_RCALL : 									// OPTYPE_CALL_INDIRECT_COND:
-        //case Opcode::iBALU_RET : 											// OPTYPE_RET_COND:
-        brtype += 1; break;
+        case Opcode::iBALU_LBRANCH:  // OPTYPE_JMP_DIRECT_COND:
+        // case Opcode::iBALU_LCALL : 									// OPTYPE_CALL_DIRECT_COND:
+        case Opcode::iBALU_RBRANCH:  // OPTYPE_JMP_INDIRECT_COND:
+          // case Opcode::iBALU_RCALL : 									//
+          // OPTYPE_CALL_INDIRECT_COND: case Opcode::iBALU_RET :
+          // // OPTYPE_RET_COND:
+          brtype += 1;
+          break;
 
         default:;
       }
@@ -1107,9 +1115,6 @@ public:
       for (int t = 0; t < 4; t++) {
         int DIR = (T & 1);
         T >>= 1;
-        int PATHBIT = PATH;
-        PATHBIT++; PATHBIT--;
-
         PATH >>= 1;
         Y--;
         ghist[Y & (HISTBUFFERLENGTH - 1)] = DIR;
@@ -1120,7 +1125,7 @@ public:
         }
       }
 
-      Numero      = 0;
+      Numero = 0;
 
       PrevPCBLOCK = PCBLOCK;
       PCBLOCK     = (taken) ? branchTarget : PCBRANCH + 1;
@@ -1146,13 +1151,12 @@ public:
   // Tahead UPDATE
 
   void updatePredictor(uint64_t PCBRANCH, Opcode opType, bool resolveDir, bool predDir, uint64_t branchTarget) {
-
     // uint64_t PC = PCBLOCK ^ (Numero << 5);
     //
     // if (TAHEAD_AHEAD) {
     //   PC = PrevPCBLOCK ^ (Numero << 5) ^ (PrevNumero << 5) ^ ((BI & 3) << 5);
     // }
-    //bool DONE = false;
+    // bool DONE = false;
 
 #ifdef TAHEAD_SC
     bool SCPRED = (SUMSC >= 0);
@@ -1306,7 +1310,8 @@ public:
               if (TAHEAD_AHEAD == 0) {
                 IREP[j] = GGI[j][i] ^ ((((gtable[i][GGI[j][i] + j].tag >> 5) & 3) << (TAHEAD_LOGG - 3)) + (j ^ 1));
               } else {
-                IREP[j] = GGI[j][i] ^ ((((gtable[i][GGI[j][i] + j].tag >> 5) & (READWIDTHAHEAD - 1)) << (TAHEAD_LOGG - 5)) + (j ^ 1));
+                IREP[j]
+                    = GGI[j][i] ^ ((((gtable[i][GGI[j][i] + j].tag >> 5) & (READWIDTHAHEAD - 1)) << (TAHEAD_LOGG - 5)) + (j ^ 1));
               }
 
               REP[j] = (gtable[i][IREP[j]].u == 0);
@@ -1516,7 +1521,6 @@ public:
     HistoryUpdate(PCBRANCH, opType, taken, branchTarget, ptghist, tahead_ch_i, ch_t[0], ch_t[1]);
   }
 #endif
-
 };
 
 #endif

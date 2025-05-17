@@ -729,6 +729,10 @@ FUBranch::FUBranch(Opcode type, std::shared_ptr<Cluster> cls, std::shared_ptr<Po
     /* constructor {{{1 */
     : Resource(type, cls, aGen, l, cpuid), freeBranches(mb), drainOnMiss(dom) {
   I(freeBranches > 0);
+
+  auto cpu_section   = Config::get_string("soc", "core", cpuid);
+  auto bpred_section = Config::get_array_string(cpu_section, "bpred", 0);
+  bpred_delay        = Config::get_integer(bpred_section, "delay", 1);
 }
 /* }}} */
 
@@ -749,7 +753,7 @@ StallCause FUBranch::canIssue(Dinst *dinst) {
 void FUBranch::executing(Dinst *dinst) {
   /* executing {{{1 */
   cluster->executing(dinst);
-  executedCB::scheduleAbs(gen->nextSlot(dinst->has_stats()) + lat, this, dinst);
+  executedCB::scheduleAbs(gen->nextSlot(dinst->has_stats()) + lat + bpred_delay, this, dinst);
 }
 /* }}} */
 

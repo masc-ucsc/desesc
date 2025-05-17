@@ -23,9 +23,10 @@
 // weak counters
 
 
-#define TAHEAD_ALLOW_TAKEN 0
+// Possible conf option if updates are delayed to end of fetch_boundary (BPred.cpp:pending)
+#define TAHEAD_DELAY_UPDATE 1
 
-#define TAHEAD_LOGSCALE 3
+#define TAHEAD_LOGSCALE 2
 #define TAHEAD_LOGT     (8 + TAHEAD_LOGSCALE)   /* logsize of a logical  TAGE tables */
 #define TAHEAD_LOGB     (11 + TAHEAD_LOGSCALE)  // log of number of entries in bimodal predictor
 #define TAHEAD_LOGBIAS  (7 + TAHEAD_LOGSCALE)   // logsize of tables in TAHEAD_SC
@@ -52,7 +53,7 @@
 #define TAHEAD_MAXHIST 250
 #endif
 
-#define TAHEAD_MAXBR 4  // Maximum TAHEAD_MAXBR  branches in  the block; the code assumes TAHEAD_MAXBR is a power of 2
+#define TAHEAD_MAXBR 16  // Maximum TAHEAD_MAXBR  branches in  the block; the code assumes TAHEAD_MAXBR is a power of 2
 #define NBREADPERTABLE 4  // predictions read per table for a block
 
 #define TAHEAD_AHEAD 2
@@ -930,8 +931,8 @@ public:
   // compute the prediction
 
   void fetchBoundaryEnd() {
-#ifdef TAHEAD_ALLOW_TAKEN
-    Numero = 0;
+#ifdef TAHEAD_DELAY_UPDATE
+    // Numero = 0;
 #endif
   }
 
@@ -940,7 +941,6 @@ public:
 
     uint64_t PC = PCBLOCK ^ (Numero << 5);
 
-
     // computes the TAGE table addresses and the partial tags
     Tagepred(PC);
     pred_taken = tage_pred;
@@ -948,6 +948,9 @@ public:
     predTSC    = pred_taken;
 
     //printf("pc:%lx Num:%lx ptaken:%d\n", PC, Numero, pred_taken);
+#ifdef TAHEAD_DELAY_UPDATE
+    Numero++;
+#endif
 
 #ifndef TAHEAD_SC
 #ifdef LMP
@@ -1094,8 +1097,9 @@ public:
 
       Numero <<= 1;
       Numero += taken;
+
       int T = ((PC ^ (PC >> 2))) ^ Numero ^ (branchTarget >> 3);
-      ;
+
       int PATH = PC ^ (PC >> 2) ^ (PC >> 4) ^ (branchTarget) ^ (Numero << 3);
       phist    = (phist << 4) ^ PATH;
       phist    = (phist & ((1 << 27) - 1));
@@ -1115,14 +1119,8 @@ public:
           J[i].update(ghist, Y);
         }
       }
-#ifdef TAHEAD_ALLOW_TAKEN
-      Numero++;
-      if ((Numero >= TAHEAD_MAXBR - 1)) {
-        Numero = TAHEAD_MAXBR -1;
-      }
-#else
+
       Numero      = 0;
-#endif
 
       PrevPCBLOCK = PCBLOCK;
       PCBLOCK     = (taken) ? branchTarget : PCBRANCH + 1;
@@ -1148,7 +1146,6 @@ public:
   // Tahead UPDATE
 
   void updatePredictor(uint64_t PCBRANCH, Opcode opType, bool resolveDir, bool predDir, uint64_t branchTarget) {
-    (void)predDir;
 
     // uint64_t PC = PCBLOCK ^ (Numero << 5);
     //
@@ -1492,14 +1489,34 @@ public:
       }
     }
 
-    // END TAGE UPDATE
+#ifdef TAHEAD_DELAY_UPDATE
+    (void)PCBRANCH;
+    (void)predDir;
+    (void)opType;
+    (void)branchTarget;
+    Numero++;
+#else
     HistoryUpdate(PCBRANCH, opType, resolveDir, branchTarget, ptghist, tahead_ch_i, ch_t[0], ch_t[1]);
-    // END Tahead UPDATE
+#endif
   }
 
   void TrackOtherInst(uint64_t PCBRANCH, Opcode opType, bool taken, uint64_t branchTarget) {
+#ifdef TAHEAD_DELAY_UPDATE
+    (void)PCBRANCH;
+    (void)opType;
+    (void)taken;
+    (void)branchTarget;
+    Numero++;
+#else
+    HistoryUpdate(PCBRANCH, opType, taken, branchTarget, ptghist, tahead_ch_i, ch_t[0], ch_t[1]);
+#endif
+  }
+#ifdef TAHEAD_DELAY_UPDATE
+  void delayed_history(uint64_t PCBRANCH, Opcode opType, bool taken, uint64_t branchTarget) {
     HistoryUpdate(PCBRANCH, opType, taken, branchTarget, ptghist, tahead_ch_i, ch_t[0], ch_t[1]);
   }
+#endif
+
 };
 
 #endif

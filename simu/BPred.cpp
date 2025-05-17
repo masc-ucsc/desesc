@@ -480,6 +480,16 @@ BPTahead::BPTahead(int32_t i, const std::string &section, const std::string &sna
 }
 
 struct Pending_update {
+  Pending_update () {
+    other = false;
+    PC = 0;
+    opcode = Opcode::iBALU_LBRANCH;
+    taken = false;
+    ptaken = false;
+    target = 0;
+  }
+  Pending_update(bool o, Addr_t pc, Opcode op, bool t, bool pt, Addr_t tgt)
+    : other(o), PC(pc), opcode(op), taken(t), ptaken(pt), target(tgt) {}
   bool other;
   Addr_t PC;
   Opcode opcode;
@@ -488,27 +498,35 @@ struct Pending_update {
   Addr_t target;
 };
 
+#ifdef TAHEAD_DELAY_UPDATE
 std::vector<Pending_update> pending;
+#endif
 
-void BPTahead::fetchBoundaryBegin(Dinst *dinst) { (void)dinst; }
+void BPTahead::fetchBoundaryBegin(Dinst *dinst) {
+  (void)dinst;
+#ifdef TAHEAD_DELAY_UPDATE
+  tahead->fetchBoundaryEnd();
+#endif
+}
 
 void BPTahead::fetchBoundaryEnd() {
 
+#ifdef TAHEAD_DELAY_UPDATE
+  //tahead->fetchBoundaryEnd();
+
   for(auto &e:pending) {
-    if (e.other) {
-      tahead->TrackOtherInst(e.PC, e.opcode, e.taken, e.target);
-    }else{
-      tahead->updatePredictor(e.PC, e.opcode, e.taken, e.ptaken, e.target);
-    }
+    tahead->delayed_history(e.PC, e.opcode, e.taken, e.target);
   }
   pending.clear();
-  tahead->fetchBoundaryEnd();
+#endif
 }
 
 Outcome BPTahead::predict(Dinst *dinst, bool doUpdate, bool doStats) {
   if (dinst->getInst()->isJump() || dinst->getInst()->isFuncRet()) {
+#ifdef TAHEAD_DELAY_UPDATE
     pending.emplace_back(true, dinst->getPC(), dinst->getInst()->getOpcode(), dinst->isTaken(), true, dinst->getAddr());
-    // tahead->TrackOtherInst(dinst->getPC(), dinst->getInst()->getOpcode(), dinst->isTaken(), dinst->getAddr());
+#endif
+    tahead->TrackOtherInst(dinst->getPC(), dinst->getInst()->getOpcode(), dinst->isTaken(), dinst->getAddr());
     dinst->setBiasBranch(true);
     return btb.predict(dinst, doUpdate, doStats);
   }
@@ -520,8 +538,10 @@ Outcome BPTahead::predict(Dinst *dinst, bool doUpdate, bool doStats) {
   bool     ptaken = tahead->getPrediction(pc);  // pass taken for statistics
 
   if (doUpdate) {
+#ifdef TAHEAD_DELAY_UPDATE
     pending.emplace_back(false, pc, dinst->getInst()->getOpcode(), taken, ptaken, dinst->getAddr());
-    // tahead->updatePredictor(pc, dinst->getInst()->getOpcode(), taken, ptaken, dinst->getAddr());
+#endif
+    tahead->updatePredictor(pc, dinst->getInst()->getOpcode(), taken, ptaken, dinst->getAddr());
   }
 
   if (taken != ptaken) {

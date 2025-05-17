@@ -32,9 +32,9 @@ type      = "dromajo"
 #load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/mcf/mcf"
 
 #leela_load_FIXME 
-load     = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/leela/leela"
+#load     = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/leela/leela"
  
-#load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/x264/x264"
+load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/x264/x264"
 
 #xalancebk_load_FIXME 
 #load = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/xalancebmk/xalancebmk"
@@ -53,16 +53,16 @@ load     = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/leela/leela"
 #bench      = "k1"
 
 start_roi = false
-rabbit    = 0
-detail    = 3000000
-time      = 2000000
+rabbit    = 100000
+detail    = 30000000
+time      = 20000000
 
 [rand_emu]
 type = "random"  # Generate random instructions (coverage testing?)
 
 [bp0]
-type = "imli"
-#type              = "imli"
+type = "superbp"
+delay             = 1
 
 # SuperBP parameters
 SBP_NUMG = 5
@@ -80,8 +80,7 @@ bp_addr_shift = 0      # bits shifted by branch predictor PC
 ras_size      = 32
 ras_prefetch  = false
 
-delay             = 1
-fetch_predict     = false   # Not a prediction per instruction
+fetch_predict     = true   # Not a prediction per instruction
 
 btb_history_size  = 0
 btb_split_il1     = false  # do not cache entries that can be computed by IL1
@@ -136,16 +135,17 @@ table_width = 3
 
 
 [bp1]
-#type = "imli"
-type = "imli"
+type = "tahead"
+delay             = 3
+#type = "superbp"
+#delay             = 2
 
 bp_addr_shift = 0      # bits shifted by branch predictor PC
 ras_size      = 32
 ras_prefetch  = false
 
-delay             = 2
 # IMLI fetch ideal 2 taken branch, set fetch_predict false
-fetch_predict     = false   # Not a prediction per instruction
+fetch_predict     = true   # Not a prediction per instruction
 
 btb_history_size  = 0
 btb_split_il1     = false  # do not cache entries that can be computed by IL1
@@ -188,7 +188,8 @@ frequency_mhz = 200
 [c0]
 type  = "ooo"  # ooo or inorder or accel
 frequency_mhz = 1000
-bpred         = ["bp0", "bp1"]
+#bpred         = ["bp0","bp1"]
+bpred         = ["bp1"]
 #do_random_transients = false
 do_random_transients = false
 
@@ -196,7 +197,7 @@ do_random_transients = false
 fetch_align       = true
 trace_align       = false
 fetch_one_line    = false   # jumps within cacheline do not flush
-max_bb_cycle      = 1
+max_bb_cycle      = 4
 prefetcher        = "pref_opt"
 
 smt = 1 # Number of STM context
@@ -219,10 +220,10 @@ scoore_serialize = true
 decode_delay = 3
 rename_delay = 2
 ftq_size     = 12
-decode_bucket_size   = 32
-rename_instq_size   = 32
+decode_bucket_size   = 128
+rename_instq_size   = 128
 
-fetch_width  = 8
+fetch_width  = 16
 issue_width  = 8
 retire_width = 8
 rob_size     = 512

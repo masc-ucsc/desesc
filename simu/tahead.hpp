@@ -22,7 +22,8 @@
 // #define RANDINIT  // RANDINIT provide random values in all counters, might be slightly more realistic than initialization with
 // weak counters
 
-//
+
+#define TAHEAD_ALLOW_TAKEN 0
 
 #define TAHEAD_LOGSCALE 3
 #define TAHEAD_LOGT     (8 + TAHEAD_LOGSCALE)   /* logsize of a logical  TAGE tables */
@@ -51,15 +52,16 @@
 #define TAHEAD_MAXHIST 250
 #endif
 
-#define TAHEAD_MAXBR   4  // Maximum TAHEAD_MAXBR  branches in  the block; the code assumes TAHEAD_MAXBR is a power of 2
+#define TAHEAD_MAXBR 4  // Maximum TAHEAD_MAXBR  branches in  the block; the code assumes TAHEAD_MAXBR is a power of 2
 #define NBREADPERTABLE 4  // predictions read per table for a block
+
+#define TAHEAD_AHEAD 2
+// in the curent version:  only 0 or 2 are valid (0 corresponds to the conventional 1-block ahead, 2 coresponds to the 3-block
+// ahead)
 
 // FIXME: DISSABLING code
 // general prameters
-#define AHEAD \
-  0  // in the curent version:  only 0 or 2 are valid (0 corresponds to the conventional 1-block ahead, 2 coresponds to the 3-block
-     // ahead)
-// Only useful when AHEAD==2
+// Only useful when TAHEAD_AHEAD==2
 #define READWIDTHAHEAD 16  // the number of entries read in each tagged table   (per way if associative),
 #define TAGCHECKAHEAD  4   // the number of tag checks per entries,
 //  (16,4) and (8,8) seems good design points
@@ -138,7 +140,7 @@ int BANK1;
 
 #define FORCEONHIGHCONF  //   if TAGE is high conf and TAHEAD_SC very low conf then use TAGE, if TAHEAD_SC: brings 0.008 - 0.016 MPKI, but a
                          //   5-to-1 mux instead a 4-to-1
-// #define MORESCLOGICAHEAD // if AHEAD and if TAHEAD_SC uses four times  the number of adder trees (compute 16 SCsum  per prediction !),
+// #define MORESCLOGICAHEAD // if TAHEAD_AHEAD and if TAHEAD_SC uses four times  the number of adder trees (compute 16 SCsum  per prediction !),
 // ~ 1 % gain in accuracy
 
 // Add the extra TAHEAD_SC tables
@@ -151,8 +153,8 @@ int BANK1;
 #define PERCWIDTH 6  // Statistical corrector counter width: if FULL  6 bits brings 0.007
 /////////////////////////////////////////////////
 
-int NPRED = 20;  // this variable needs to be larger than AHEAD to avoid core dump when AHEAD prediction
-// I was wanting to test large AHEAD distances up to 9
+int NPRED = 20;  // this variable needs to be larger than TAHEAD_AHEAD to avoid core dump when TAHEAD_AHEAD prediction
+// I was wanting to test large TAHEAD_AHEAD distances up to 9
 uint     AHGI[10][NHIST + 1];    // indexes to the different tables are computed only once
 uint     AHGTAG[10][NHIST + 1];  // tags for the different tables are computed only once
 uint64_t Numero;                 // Number of the branch in the basic block
@@ -198,12 +200,12 @@ int8_t FBIAS[(1 << TAHEAD_LOGFNB)];
 
 // indices for the  TAHEAD_SC tables
 #define INDBIASLMAP (LongestMatchPred + (HCpred << 1))
-#define PSNUM       ((((AHEAD) ? ((Numero ^ PCBLOCK) & (TAHEAD_MAXBR - 1)) : (Numero & (TAHEAD_MAXBR - 1)))) << 2)
+#define PSNUM       ((((TAHEAD_AHEAD) ? ((Numero ^ PCBLOCK) & (TAHEAD_MAXBR - 1)) : (Numero & (TAHEAD_MAXBR - 1)))) << 2)
 
 #ifdef MORESCLOGICAHEAD
-#define PCBL ((AHEAD) ? (PrevPCBLOCK ^ ((GH)&3)) : (PCBLOCK))
+#define PCBL ((TAHEAD_AHEAD) ? (PrevPCBLOCK ^ ((GH)&3)) : (PCBLOCK))
 #else
-#define PCBL ((AHEAD) ? (PrevPCBLOCK) : (PCBLOCK))
+#define PCBL ((TAHEAD_AHEAD) ? (PrevPCBLOCK) : (PCBLOCK))
 #endif
 
 #define INDBIASPC     (((((PCBL ^ (PCBL >> (TAHEAD_LOGBIAS - 5))))) & ((1 << TAHEAD_LOGBIAS) - 1)) ^ PSNUM)
@@ -223,7 +225,7 @@ long long F_BrIMLI;  // use to monitor the iteration number (a second version), 
 long long BHIST;
 long long FHIST;
 
-// Same thing but a cycle ahead
+// Same thing but a cycle TAHEAD_AHEAD
 long long PrevF_TaIMLI;  // use to monitor the iteration number, BHIST if TaIMLI = 0
 long long PrevF_BrIMLI;  // use to monitor the iteration number (a second version), FHIST if BrIMLI = 0
 long long PrevBHIST;
@@ -267,11 +269,11 @@ public:
   TAHEAD_folded_history() {}
 
   void init(int original_length, int compressed_length, int N) {
-    comp     = 0;    
+    comp     = 0;
     OLENGTH  = original_length;
     CLENGTH  = compressed_length;
     OUTPOINT = OLENGTH % CLENGTH;
-    
+
         N++; N--;
   }
 
@@ -429,8 +431,8 @@ public:
   int mm[NNHIST + 1];
 
   void reinit() {
-    if ((AHEAD != 0) && (AHEAD != 2)) {
-      printf("Sorry the simulator does not support this AHEAD distance\n");
+    if ((TAHEAD_AHEAD != 0) && (TAHEAD_AHEAD != 2)) {
+      printf("Sorry the simulator does not support this TAHEAD_AHEAD distance\n");
       exit(1);
     }
     if ((LOGASSOC != 1) || (PSK == 0)) {
@@ -484,11 +486,11 @@ public:
       }
     }
 #endif
-    if ((AHEAD != 0) & (AHEAD != 2)) {
+    if ((TAHEAD_AHEAD != 0) & (TAHEAD_AHEAD != 2)) {
       exit(1);  // prediction is considered to be done in 1 cycle or 3 cycles
     }
     for (int i = 1; i <= NHIST; i++) {
-      TAHEAD_m[i] -= AHEAD;
+      TAHEAD_m[i] -= TAHEAD_AHEAD;
     }
 
 #ifdef ADJACENTTABLE
@@ -773,16 +775,16 @@ public:
 #endif
 #endif
     }
-    int AHEADTAG = (AHEAD > 0) ? AHEAD - 1 : AHEAD;
-    // assumes that the tag is used one cycle later than the index if ahead pipelining is used.
+    int AHEADTAG = (TAHEAD_AHEAD > 0) ? TAHEAD_AHEAD - 1 : TAHEAD_AHEAD;
+    // assumes that the tag is used one cycle later than the index if TAHEAD_AHEAD pipelining is used.
 
     BI = (PCBLOCK ^ ((Numero & (NBREADPERTABLE - 1)) << (TAHEAD_LOGB - 2))) & ((1 << TAHEAD_LOGB) - 1);
 
-    // For ahead, one considers that the bimodal prediction is  obtained during the last cycle
+    // For TAHEAD_AHEAD, one considers that the bimodal prediction is  obtained during the last cycle
     for (int i = 1; i <= NHIST; i++) {
-#if (AHEAD != 0)
+#if (TAHEAD_AHEAD != 0)
       {
-        GI[i] = AHGI[(NPRED - AHEAD) % 10][i]
+        GI[i] = AHGI[(NPRED - TAHEAD_AHEAD) % 10][i]
                 ^ (((GH ^ Numero ^ BI ^ (PCBLOCK >> 3)) & (READWIDTHAHEAD - 1)) << (TAHEAD_LOGG - LOGASSOC - 4));
         // some bits are hashed on  values that are unknown at prediction read time: assumes READWITHTAHEAD reads at a time
 
@@ -798,7 +800,7 @@ public:
 
 #else
       {
-        GI[i] = AHGI[(NPRED - AHEAD) % 10][i] ^ ((Numero & (NBREADPERTABLE - 1)) << (TAHEAD_LOGG - LOGASSOC - 2));
+        GI[i] = AHGI[(NPRED - TAHEAD_AHEAD) % 10][i] ^ ((Numero & (NBREADPERTABLE - 1)) << (TAHEAD_LOGG - LOGASSOC - 2));
         GI[i] *= ASSOC;
         GTAG[i] = AHGTAG[(NPRED - AHEADTAG) % 10][i] ^ (Numero);
       }
@@ -817,7 +819,7 @@ public:
         GGI[j][i] = GI[i];
       }
       if (PSK == 1) {
-        if (AHEAD == 0) {
+        if (TAHEAD_AHEAD == 0) {
           for (int j = 1; j < ASSOC; j++) {
             GGI[j][i] ^= ((GTAG[i] >> (3 + 2 * j)) & 0x3) << (TAHEAD_LOGG - 3);
           }
@@ -828,7 +830,7 @@ public:
         }
       }
 
-      // works for AHEAD also if READWIDTHAHEAD <= 16
+      // works for TAHEAD_AHEAD also if READWIDTHAHEAD <= 16
     }
 
     alttaken         = getbim();
@@ -927,12 +929,17 @@ public:
 
   // compute the prediction
 
-  bool getPrediction(uint64_t PCBRANCH)
-  {
-  
-  PCBRANCH++; PCBRANCH--;
-  
+  void fetchBoundaryEnd() {
+#ifdef TAHEAD_ALLOW_TAKEN
+    Numero = 0;
+#endif
+  }
+
+  bool getPrediction(uint64_t PCBRANCH) {
+    (void)PCBRANCH;
+
     uint64_t PC = PCBLOCK ^ (Numero << 5);
+
 
     // computes the TAGE table addresses and the partial tags
     Tagepred(PC);
@@ -940,13 +947,15 @@ public:
     predSC     = pred_taken;
     predTSC    = pred_taken;
 
+    //printf("pc:%lx Num:%lx ptaken:%d\n", PC, Numero, pred_taken);
+
 #ifndef TAHEAD_SC
 #ifdef LMP
     return (LongestMatchPred);
 #endif
     return pred_taken;
 #endif
-    if (AHEAD) {
+    if (TAHEAD_AHEAD) {
       PC = PrevPCBLOCK ^ (Numero << 5) ^ (PrevNumero << 5) ^ ((BI & 3) << 5);
     }
 
@@ -998,9 +1007,7 @@ public:
                      TAHEAD_folded_history *G, TAHEAD_folded_history *J) {
     int brtype;
 
-    if ((Numero == TAHEAD_MAXBR - 1) || (taken))
-
-    {
+    if ((Numero == TAHEAD_MAXBR - 1) || (taken)) {
       GH = (GH << 2) ^ PCBRANCH;
 
       uint64_t PC = PCBLOCK ^ (Numero << 5);
@@ -1009,29 +1016,29 @@ public:
       uint64_t Successor = (taken) ? branchTarget ^ (branchTarget >> 4) : (PCBRANCH + 1) ^ ((PCBRANCH + 1) >> 4);
       GH ^= ((Numero) ^ Successor);
       brtype = 0;
-      
+
       switch (opType) {
         case Opcode::iBALU_RJUMP : 									// OPTYPE_JMP_INDIRECT_UNCOND:
         case Opcode::iBALU_RCALL : 									// OPTYPE_CALL_INDIRECT_UNCOND:
         case Opcode::iBALU_RBRANCH : 								// OPTYPE_JMP_INDIRECT_COND:
         //case Opcode::iBALU_RCALL : 									// OPTYPE_CALL_INDIRECT_COND:
         case Opcode::iBALU_RET : 											// OPTYPE_RET_UNCOND:
-        																						// case OPTYPE_RET_COND: Opcode::iBALU_RET 
+        																						// case OPTYPE_RET_COND: Opcode::iBALU_RET
         brtype = 2; break;
         //case Opcode::iBALU_LCALL : 									// OPTYPE_CALL_DIRECT_COND:
         case Opcode::iBALU_LCALL : 									// OPTYPE_CALL_DIRECT_UNCOND:
         case Opcode::iBALU_LBRANCH : 								// OPTYPE_JMP_DIRECT_COND:
-        case Opcode::iBALU_LJUMP : 										// OPTYPE_JMP_DIRECT_UNCOND: 
+        case Opcode::iBALU_LJUMP : 										// OPTYPE_JMP_DIRECT_UNCOND:
         brtype = 0; break;
         default: exit(1);
       }
-      
+
       switch (opType) {
         case Opcode::iBALU_LBRANCH : 								// OPTYPE_JMP_DIRECT_COND:
         //case Opcode::iBALU_LCALL : 									// OPTYPE_CALL_DIRECT_COND:
         case Opcode::iBALU_RBRANCH :								// OPTYPE_JMP_INDIRECT_COND:
         //case Opcode::iBALU_RCALL : 									// OPTYPE_CALL_INDIRECT_COND:
-        //case Opcode::iBALU_RET : 											// OPTYPE_RET_COND: 
+        //case Opcode::iBALU_RET : 											// OPTYPE_RET_COND:
         brtype += 1; break;
 
         default:;
@@ -1079,7 +1086,7 @@ public:
         }
       }
 #endif
-      if (AHEAD) {
+      if (TAHEAD_AHEAD) {
         // to hash with Numero
         PrevNumero = (Numero & 1) << 1;
         PrevNumero ^= (Numero >> 1);
@@ -1098,7 +1105,7 @@ public:
         T >>= 1;
         int PATHBIT = PATH;
         PATHBIT++; PATHBIT--;
-        
+
         PATH >>= 1;
         Y--;
         ghist[Y & (HISTBUFFERLENGTH - 1)] = DIR;
@@ -1108,21 +1115,27 @@ public:
           J[i].update(ghist, Y);
         }
       }
+#ifdef TAHEAD_ALLOW_TAKEN
+      Numero++;
+      if ((Numero >= TAHEAD_MAXBR - 1)) {
+        Numero = TAHEAD_MAXBR -1;
+      }
+#else
       Numero      = 0;
+#endif
+
       PrevPCBLOCK = PCBLOCK;
       PCBLOCK     = (taken) ? branchTarget : PCBRANCH + 1;
       PCBLOCK     = PCBLOCK ^ (PCBLOCK >> 4);
 
-    }
-
-    else {
+    } else {
       Numero++;
     }
     BHIST    = (BrIMLI == 0) ? BBHIST : ((BBHIST & 15) + (BrIMLI << 6)) ^ (BrIMLI >> 4);
     F_TaIMLI = (TaIMLI == 0) || (BrIMLI == TaIMLI) ? (GH) : TaIMLI;
     F_BrIMLI = (BrIMLI == 0) ? (phist) : BrIMLI;
 
-    if (AHEAD == 0) {
+    if (TAHEAD_AHEAD == 0) {
       PrevF_TaIMLI = F_TaIMLI;
       PrevF_BrIMLI = F_BrIMLI;
       PrevBHIST    = BHIST;
@@ -1135,15 +1148,13 @@ public:
   // Tahead UPDATE
 
   void updatePredictor(uint64_t PCBRANCH, Opcode opType, bool resolveDir, bool predDir, uint64_t branchTarget) {
-    
-    predDir = !(!predDir);
-    
-    uint64_t PC = PCBLOCK ^ (Numero << 5);
+    (void)predDir;
 
-    if (AHEAD) {
-      PC = PrevPCBLOCK ^ (Numero << 5) ^ (PrevNumero << 5) ^ ((BI & 3) << 5);
-    }
-	PC++; PC--;
+    // uint64_t PC = PCBLOCK ^ (Numero << 5);
+    //
+    // if (TAHEAD_AHEAD) {
+    //   PC = PrevPCBLOCK ^ (Numero << 5) ^ (PrevNumero << 5) ^ ((BI & 3) << 5);
+    // }
     //bool DONE = false;
 
 #ifdef TAHEAD_SC
@@ -1295,7 +1306,7 @@ public:
             }
 
             else if (REPSK == 1) {
-              if (AHEAD == 0) {
+              if (TAHEAD_AHEAD == 0) {
                 IREP[j] = GGI[j][i] ^ ((((gtable[i][GGI[j][i] + j].tag >> 5) & 3) << (TAHEAD_LOGG - 3)) + (j ^ 1));
               } else {
                 IREP[j] = GGI[j][i] ^ ((((gtable[i][GGI[j][i] + j].tag >> 5) & (READWIDTHAHEAD - 1)) << (TAHEAD_LOGG - 5)) + (j ^ 1));

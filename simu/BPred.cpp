@@ -473,31 +473,55 @@ Outcome BPTData::predict(Dinst *dinst, bool doUpdate, bool doStats) {
 
 BPTahead::BPTahead(int32_t i, const std::string &section, const std::string &sname)
     : BPred(i, section, sname, "tahead"), btb(i, section, sname), FetchPredict(Config::get_bool(section, "fetch_predict")) {
-  int FetchWidth = Config::get_power2("soc", "core", i, "fetch_width", 1);
-  I(FetchWidth == TAHEAD_MAXBR);
+  // int FetchWidth = Config::get_power2("soc", "core", i, "fetch_width", 1);
+  // FIXME: I(FetchWidth == TAHEAD_MAXBR);
 
   tahead = std::make_unique<Tahead>();
 }
 
+struct Pending_update {
+  bool other;
+  Addr_t PC;
+  Opcode opcode;
+  bool taken;
+  bool ptaken;
+  Addr_t target;
+};
+
+std::vector<Pending_update> pending;
+
 void BPTahead::fetchBoundaryBegin(Dinst *dinst) { (void)dinst; }
 
-void BPTahead::fetchBoundaryEnd() {}
+void BPTahead::fetchBoundaryEnd() {
+
+  for(auto &e:pending) {
+    if (e.other) {
+      tahead->TrackOtherInst(e.PC, e.opcode, e.taken, e.target);
+    }else{
+      tahead->updatePredictor(e.PC, e.opcode, e.taken, e.ptaken, e.target);
+    }
+  }
+  pending.clear();
+  tahead->fetchBoundaryEnd();
+}
 
 Outcome BPTahead::predict(Dinst *dinst, bool doUpdate, bool doStats) {
-    if (dinst->getInst()->isJump() || dinst->getInst()->isFuncRet()) {
-    tahead->TrackOtherInst(dinst->getPC(), dinst->getInst()->getOpcode(), dinst->isTaken(), dinst->getAddr());
+  if (dinst->getInst()->isJump() || dinst->getInst()->isFuncRet()) {
+    pending.emplace_back(true, dinst->getPC(), dinst->getInst()->getOpcode(), dinst->isTaken(), true, dinst->getAddr());
+    // tahead->TrackOtherInst(dinst->getPC(), dinst->getInst()->getOpcode(), dinst->isTaken(), dinst->getAddr());
     dinst->setBiasBranch(true);
     return btb.predict(dinst, doUpdate, doStats);
   }
-  
+
   bool taken = dinst->isTaken();
-  
+
   // bool     bias = false;
   Addr_t   pc     = dinst->getPC();
   bool     ptaken = tahead->getPrediction(pc);  // pass taken for statistics
 
   if (doUpdate) {
-    tahead->updatePredictor(pc, dinst->getInst()->getOpcode(), taken, ptaken, dinst->getAddr());
+    pending.emplace_back(false, pc, dinst->getInst()->getOpcode(), taken, ptaken, dinst->getAddr());
+    // tahead->updatePredictor(pc, dinst->getInst()->getOpcode(), taken, ptaken, dinst->getAddr());
   }
 
   if (taken != ptaken) {
@@ -1538,6 +1562,8 @@ BPredictor::BPredictor(int32_t i, MemObj *iobj, MemObj *dobj, std::shared_ptr<BP
     , nControlMiss3(fmt::format("P({})_BPred:nControlMiss3", id))
     , nBranchMiss3(fmt::format("P({})_BPred:nBranchMiss3", id))
     , nBranchBTBMiss3(fmt::format("P({})_BPred:nBranchBTBMiss3", id))
+    , nFirstBias(fmt::format("P({})_BPred:nFirstBias", id))
+    , nFirstBias_wrong(fmt::format("P({})_BPred:nFirstBias_wrong", id))
 
     , nFixes1(fmt::format("P({})_BPred:nFixes1", id))
     , nFixes2(fmt::format("P({})_BPred:nFixes2", id))
@@ -1695,6 +1721,9 @@ TimeDelta_t BPredictor::predict(Dinst *dinst, bool *fastfix) {
   dinst->setBiasBranch(false);
 
   outcome1 = ras->doPredict(dinst);
+
+  bool first_bias = false;
+  bool last_bias = false;
   if (outcome1 != Outcome::None) {  // If RAS, still call predictors to update history
     predict1(dinst);
     if (pred2) {
@@ -1707,6 +1736,7 @@ TimeDelta_t BPredictor::predict(Dinst *dinst, bool *fastfix) {
     outcome3 = outcome1;
   } else {
     outcome1 = predict1(dinst);
+    first_bias = dinst->isBiasBranch();
     if (pred2) {
       outcome2 = predict2(dinst);
     } else {
@@ -1717,11 +1747,21 @@ TimeDelta_t BPredictor::predict(Dinst *dinst, bool *fastfix) {
     } else {
       outcome3 = outcome2;
     }
+    last_bias = dinst->isBiasBranch();
   }
 
   if (dinst->getInst()->isFuncRet() || dinst->getInst()->isFuncCall()) {
     dinst->setBiasBranch(true);
     ras->tryPrefetch(il1, dinst->has_stats(), 1);
+  }
+
+  if (first_bias && !last_bias) {
+    nFirstBias.inc(dinst->has_stats());
+    if (outcome1 != Outcome::Correct && outcome3 == Outcome::Correct) {
+      nFirstBias_wrong.inc(dinst->has_stats());
+    }
+    outcome2 = outcome1;
+    outcome3 = outcome1;
   }
 
   if (outcome1 != Outcome::Correct) {

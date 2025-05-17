@@ -90,6 +90,9 @@ void BootLoader::report(std::string_view str) {
 }
 
 void BootLoader::plug_emuls() {
+
+  srandom(100); // No randomize
+
   auto nemuls = Config::get_array_size("soc", "emul");
 
   std::shared_ptr<Emul_dromajo> dromajo;

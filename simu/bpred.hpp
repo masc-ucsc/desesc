@@ -638,6 +638,8 @@ private:
   Stats_cntr nControlMiss3;
   Stats_cntr nBranchMiss3;
   Stats_cntr nBranchBTBMiss3;
+  Stats_cntr nFirstBias;
+  Stats_cntr nFirstBias_wrong;
 
   Stats_cntr nFixes1;
   Stats_cntr nFixes2;

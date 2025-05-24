@@ -23,7 +23,9 @@
 // #define RANDINIT  // RANDINIT provide random values in all counters, might be slightly more realistic than initialization with
 // weak counters
 
-#define TAHEAD_DELAY_UPDATE 1
+// Possible conf option if updates are delayed to end of fetch_boundary (BPred.cpp:pending)
+//#define TAHEAD_DELAY_UPDATE 1
+
 
 #define TAHEAD_LOGSCALE 2
 #define TAHEAD_LOGT     (8 + TAHEAD_LOGSCALE)   /* logsize of a logical  TAGE tables */
@@ -1156,8 +1158,10 @@ public:
     // if (TAHEAD_AHEAD) {
     //   PC = PrevPCBLOCK ^ (Numero << 5) ^ (PrevNumero << 5) ^ ((BI & 3) << 5);
     // }
-    // bool DONE = false;
-
+    //bool DONE = false;
+#ifndef TAHEAD_DELAY_UPDATE 
+(void)predDir;
+#endif
 #ifdef TAHEAD_SC
     bool SCPRED = (SUMSC >= 0);
     if ((SCPRED != resolveDir) || ((abs(SUMSC) < updatethreshold)))

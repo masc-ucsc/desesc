@@ -857,7 +857,8 @@ Outcome BPSuperbp::predict(Dinst *dinst, bool doUpdate, bool doStats) {
   // TODO: check if it should be true on gshare_use or gshare_correct and if batage_conf = true or batage_pred should be taken as
   // well
   // TODO: Also check that definition of conf b/w desesc and superbp is compatible
-#ifdef TEST1
+
+#ifdef BATAGE_TEST1
   if (batage_conf || gshare_use) {
     dinst->setBiasBranch(true);
   }

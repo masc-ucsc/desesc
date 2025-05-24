@@ -263,6 +263,36 @@ public:
   Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
 };
 
+// FIXME: convert to just class Tahead;
+class Tahead1;
+/*
+class Tahead1 {
+public:
+  bool getPrediction(uint64_t PCBRANCH) {
+    (void)PCBRANCH;
+    return false;
+  }
+};
+*/
+class BPTahead1 : public BPred {
+private:
+  BPBTB btb;
+
+  std::unique_ptr<Tahead1> tahead1;
+
+  const bool FetchPredict;
+
+protected:
+public:
+  BPTahead1(int32_t i, const std::string &section, const std::string &sname);
+
+  void    fetchBoundaryBegin(Dinst *dinst);
+  void    fetchBoundaryEnd();
+  Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
+};
+
+
+
 // class PREDICTOR;
 #include "predictor.hpp"
 class BPSuperbp : public BPred {

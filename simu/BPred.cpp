@@ -19,6 +19,7 @@
 #include "memobj.hpp"
 #include "report.hpp"
 #include "tahead.hpp"
+#include "tahead1.hpp"
 
 // #define CLOSE_TARGET_OPTIMIZATION 1
 
@@ -554,6 +555,90 @@ Outcome BPTahead::predict(Dinst *dinst, bool doUpdate, bool doStats) {
   return ptaken ? btb.predict(dinst, doUpdate, doStats) : Outcome::Correct;
 }
 
+BPTahead1::BPTahead1(int32_t i, const std::string &section, const std::string &sname)
+    : BPred(i, section, sname, "tahead1"), btb(i, section, sname), FetchPredict(Config::get_bool(section, "fetch_predict")) {
+  // int FetchWidth = Config::get_power2("soc", "core", i, "fetch_width", 1);
+  // FIXME: I(FetchWidth == TAHEAD1_MAXBR);
+
+  tahead1 = std::make_unique<Tahead1>();
+}
+
+/*
+struct Pending_update {
+  Pending_update () {
+    other = false;
+    PC = 0;
+    opcode = Opcode::iBALU_LBRANCH;
+    taken = false;
+    ptaken = false;
+    target = 0;
+  }
+  Pending_update(bool o, Addr_t pc, Opcode op, bool t, bool pt, Addr_t tgt)
+    : other(o), PC(pc), opcode(op), taken(t), ptaken(pt), target(tgt) {}
+  bool other;
+  Addr_t PC;
+  Opcode opcode;
+  bool taken;
+  bool ptaken;
+  Addr_t target;
+};
+*/
+#ifdef TAHEAD1_DELAY_UPDATE
+std::vector<Pending_update> pending;
+#endif
+
+void BPTahead1::fetchBoundaryBegin(Dinst *dinst) {
+  (void)dinst;
+#ifdef TAHEAD1_DELAY_UPDATE
+  tahead1->fetchBoundaryEnd();
+#endif
+}
+
+void BPTahead1::fetchBoundaryEnd() {
+
+#ifdef TAHEAD1_DELAY_UPDATE
+  //tahead1->fetchBoundaryEnd();
+
+  for(auto &e:pending) {
+    tahead1->delayed_history(e.PC, e.opcode, e.taken, e.target);
+  }
+  pending.clear();
+#endif
+}
+
+Outcome BPTahead1::predict(Dinst *dinst, bool doUpdate, bool doStats) {
+  if (dinst->getInst()->isJump() || dinst->getInst()->isFuncRet()) {
+#ifdef TAHEAD1_DELAY_UPDATE
+    pending.emplace_back(true, dinst->getPC(), dinst->getInst()->getOpcode(), dinst->isTaken(), true, dinst->getAddr());
+#endif
+    tahead1->TrackOtherInst(dinst->getPC(), dinst->getInst()->getOpcode(), dinst->isTaken(), dinst->getAddr());
+    dinst->setBiasBranch(true);
+    return btb.predict(dinst, doUpdate, doStats);
+  }
+
+  bool taken = dinst->isTaken();
+
+  // bool     bias = false;
+  Addr_t   pc     = dinst->getPC();
+  bool     ptaken = tahead1->getPrediction(pc);  // pass taken for statistics
+
+  if (doUpdate) {
+#ifdef TAHEAD1_DELAY_UPDATE
+    pending.emplace_back(false, pc, dinst->getInst()->getOpcode(), taken, ptaken, dinst->getAddr());
+#endif
+    tahead1->updatePredictor(pc, dinst->getInst()->getOpcode(), taken, ptaken, dinst->getAddr());
+  }
+
+  if (taken != ptaken) {
+    if (doUpdate) {
+      btb.updateOnly(dinst);
+    }
+    return Outcome::Miss;
+  }
+
+  return ptaken ? btb.predict(dinst, doUpdate, doStats) : Outcome::Correct;
+}
+
 /*****************************************
  * BPIMLI: SC-TAGE-L with IMLI from Seznec Micro paper
  */
@@ -772,9 +857,15 @@ Outcome BPSuperbp::predict(Dinst *dinst, bool doUpdate, bool doStats) {
   // TODO: check if it should be true on gshare_use or gshare_correct and if batage_conf = true or batage_pred should be taken as
   // well
   // TODO: Also check that definition of conf b/w desesc and superbp is compatible
+#ifdef TEST1
   if (batage_conf || gshare_use) {
     dinst->setBiasBranch(true);
   }
+#else
+  if (batage_conf && !gshare_use) {
+    dinst->setBiasBranch(true);
+  }
+#endif
 
   if (!FetchPredict) {
     superbp_p->fetchBoundaryEnd();
@@ -1536,6 +1627,8 @@ std::unique_ptr<BPred> BPredictor::getBPred(int32_t id, const std::string &sec, 
     pred = std::make_unique<BPIMLI>(id, sec, sname);
   } else if (type == "tahead") {
     pred = std::make_unique<BPTahead>(id, sec, sname);
+  } else if (type == "tahead1") {
+    pred = std::make_unique<BPTahead1>(id, sec, sname);
   } else if (type == "superbp") {
     pred = std::make_unique<BPSuperbp>(id, sec, sname);
   } else if (type == "tdata") {

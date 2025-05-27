@@ -27,9 +27,9 @@
 //#define TAHEAD1_DELAY_UPDATE 1
 
 #define TAHEAD1_LOGSCALE 2
-#define TAHEAD1_LOGT     (8 + TAHEAD1_LOGSCALE)   /* logsize of a logical  TAGE tables */
-#define TAHEAD1_LOGB     (11 + TAHEAD1_LOGSCALE)  // log of number of entries in bimodal predictor
-#define TAHEAD1_LOGBIAS  (7 + TAHEAD1_LOGSCALE)   // logsize of tables in TAHEAD1_SC
+#define TAHEAD1_LOGT     (4 + TAHEAD1_LOGSCALE)   /* logsize of a logical  TAGE tables */
+#define TAHEAD1_LOGB     (4 + TAHEAD1_LOGSCALE)  // log of number of entries in bimodal predictor
+#define TAHEAD1_LOGBIAS  (4 + TAHEAD1_LOGSCALE)   // logsize of tables in TAHEAD1_SC
 
 #if (TAHEAD1_LOGSCALE == 4)
 #define TAHEAD1_MITAHEAD1_NHIST 2

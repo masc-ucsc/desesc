@@ -61,7 +61,7 @@ time      = 20000000
 type = "random"  # Generate random instructions (coverage testing?)
 
 [bp0]
-type = "superbp"
+type = "tahead1"
 delay             = 1
 
 # SuperBP parameters
@@ -188,8 +188,8 @@ frequency_mhz = 200
 [c0]
 type  = "ooo"  # ooo or inorder or accel
 frequency_mhz = 1000
-#bpred         = ["bp0","bp1"]
-bpred         = ["bp1"]
+bpred         = ["bp0","bp1"]
+#bpred         = ["bp1"]
 #do_random_transients = false
 do_random_transients = false
 

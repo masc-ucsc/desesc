@@ -96,6 +96,8 @@ Outcome BPRas::predict(Dinst *dinst, bool doUpdate, bool doStats) {
       }
     }
 
+
+#ifdef USE_DOLC
     uint64_t phase = 0;
     for (int i = 0; i < 4; i++) {
       int pos = index - i;
@@ -105,7 +107,6 @@ Outcome BPRas::predict(Dinst *dinst, bool doUpdate, bool doStats) {
       phase = (phase >> 3) ^ stack[index];
     }
 
-#ifdef USE_DOLC
     // idolc.setPhase(phase);
 #endif
 
@@ -1863,6 +1864,10 @@ TimeDelta_t BPredictor::predict(Dinst *dinst, bool *fastfix) {
     }
     last_bias = dinst->isBiasBranch();
   }
+#if 0
+  // enable to disable bias
+  first_bias = false;
+#endif
 
   if (dinst->getInst()->isFuncRet() || dinst->getInst()->isFuncCall()) {
     dinst->setBiasBranch(true);

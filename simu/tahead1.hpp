@@ -430,6 +430,25 @@ public:
 
 #define NTAHEAD1_NHIST 18
   int mm[NTAHEAD1_NHIST + 1];
+  
+  int getTableSize(int i) {
+    if (TAHEAD1_SHARED && i >= 1 && i <= 6)
+        return (1 << (TAHEAD1_LOGG + 1)) * TAHEAD1_ASSOC;
+    else
+        return (1 << TAHEAD1_LOGG) * TAHEAD1_ASSOC;
+}
+
+TAHEAD1_gentry& get_TAHEAD1_gtable_entry (int i, int j)
+{
+	int idx = j % getTableSize(i);
+	return TAHEAD1_gtable[i][idx];
+}
+
+TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
+{
+	int idx = j % (1 << TAHEAD1_LOGB);
+	return TAHEAD1_btable[idx];
+}
 
   void reinit() {
     if ((TAHEAD1_AHEAD != 0) && (TAHEAD1_AHEAD != 2)) {
@@ -605,9 +624,10 @@ public:
     if (TAHEAD1_NHIST == 14) {
       for (int i = 1; i <= ((TAHEAD1_SHARED) ? 8 : 14); i++) {
         for (int j = 0; j < TAHEAD1_ASSOC * (1 << (TAHEAD1_LOGG + (TAHEAD1_SHARED ? (i <= 6) : 0))); j++) {
-          TAHEAD1_gtable[i][j].u = random() & ((1 << TAHEAD1_UWIDTH) - 1);
+	  int idx = j % getTableSize(i);
+          get_TAHEAD1_gtable_entry(i, idx).u = random() & ((1 << TAHEAD1_UWIDTH) - 1);
 
-          TAHEAD1_gtable[i][j].ctr = (random() & 7) - 4;
+          get_TAHEAD1_gtable_entry(i, idx).ctr = (random() & 7) - 4;
         }
       }
     }
@@ -615,8 +635,9 @@ public:
     else {
       for (int i = 1; i <= TAHEAD1_NHIST; i++) {
         for (int j = 0; j < TAHEAD1_ASSOC * (1 << TAHEAD1_LOGG); j++) {
-          TAHEAD1_gtable[i][j].u   = random() & ((1 << TAHEAD1_UWIDTH) - 1);
-          TAHEAD1_gtable[i][j].ctr = (random() & 7) - 4;
+          int idx = j % getTableSize(i);
+		get_TAHEAD1_gtable_entry(i, idx).u   = random() & ((1 << TAHEAD1_UWIDTH) - 1);
+          get_TAHEAD1_gtable_entry(i, idx).ctr = (random() & 7) - 4;
         }
       }
     }
@@ -624,8 +645,8 @@ public:
     TAHEAD1_TICK  = TAHEAD1_BORNTICK / 2;
     TAHEAD1_TICKH = TAHEAD1_BORNTICK / 2;
     for (int i = 0; i < (1 << TAHEAD1_LOGB); i++) {
-      TAHEAD1_btable[i].pred = random() & 1;
-      TAHEAD1_btable[i].hyst = random() & 3;
+      get_TAHEAD1_btable_entry(i).pred = random() & 1;
+      get_TAHEAD1_btable_entry(i).hyst = random() & 3;
     }
     TAHEAD1_updatethreshold = 23;
 #ifdef TAHEAD1_SCMEDIUM
@@ -715,17 +736,17 @@ public:
   }
 
   bool getbim() {
-    TAHEAD1_BIM      = (TAHEAD1_btable[TAHEAD1_BI].pred) ? (TAHEAD1_btable[TAHEAD1_BI >> TAHEAD1_HYSTSHIFT].hyst) : -1 - (TAHEAD1_btable[TAHEAD1_BI >> TAHEAD1_HYSTSHIFT].hyst);
-    TAHEAD1_TAGECONF = 3 * (TAHEAD1_btable[TAHEAD1_BI >> TAHEAD1_HYSTSHIFT].hyst != 0);
+    TAHEAD1_BIM      = (get_TAHEAD1_btable_entry(TAHEAD1_BI).pred) ? (get_TAHEAD1_btable_entry(TAHEAD1_BI >> TAHEAD1_HYSTSHIFT).hyst) : -1 - (get_TAHEAD1_btable_entry(TAHEAD1_BI >> TAHEAD1_HYSTSHIFT).hyst);
+    TAHEAD1_TAGECONF = 3 * (get_TAHEAD1_btable_entry(TAHEAD1_BI >> TAHEAD1_HYSTSHIFT).hyst != 0);
 
-    return (TAHEAD1_btable[TAHEAD1_BI].pred != 0);
+    return (get_TAHEAD1_btable_entry(TAHEAD1_BI).pred != 0);
   }
 
   void baseupdate(bool Taken) {
     int8_t inter = TAHEAD1_BIM;
     ctrupdate(inter, Taken, TAHEAD1_BIMWIDTH);
-    TAHEAD1_btable[TAHEAD1_BI].pred              = (inter >= 0);
-    TAHEAD1_btable[TAHEAD1_BI >> TAHEAD1_HYSTSHIFT].hyst = (inter >= 0) ? inter : -inter - 1;
+    get_TAHEAD1_btable_entry(TAHEAD1_BI).pred              = (inter >= 0);
+    get_TAHEAD1_btable_entry(TAHEAD1_BI >> TAHEAD1_HYSTSHIFT).hyst = (inter >= 0) ? inter : -inter - 1;
   };
   uint32_t MYRANDOM() {
     // This pseudo-random function: just to be sure that the simulator is deterministic
@@ -842,12 +863,13 @@ public:
     // Look for the bank with longest matching history
     for (int i = TAHEAD1_NHIST; i > 0; i--) {
       for (int j = 0; j < TAHEAD1_ASSOC; j++) {
-        if (TAHEAD1_gtable[i][TAHEAD1_GGI[j][i] + j].tag == TAHEAD1_GTAG[i]) {
+        //int idx = (TAHEAD1_GGI[j][i] + j)%getTableSize(i);
+        if (get_TAHEAD1_gtable_entry (i, TAHEAD1_GGI[j][i] + j).tag == TAHEAD1_GTAG[i]) {
           TAHEAD1_HitBank  = i;
           TAHEAD1_HitAssoc = j;
 
-          TAHEAD1_LongestMatchPred = (TAHEAD1_gtable[TAHEAD1_HitBank][TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc].ctr >= 0);
-          TAHEAD1_TAGECONF         = (abs(2 * TAHEAD1_gtable[TAHEAD1_HitBank][TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc].ctr + 1)) >> 1;
+          TAHEAD1_LongestMatchPred = (get_TAHEAD1_gtable_entry (TAHEAD1_HitBank, TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc).ctr >= 0);
+          TAHEAD1_TAGECONF         = (abs(2 * get_TAHEAD1_gtable_entry (TAHEAD1_HitBank, TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc).ctr + 1)) >> 1;
 
           break;
         }
@@ -860,7 +882,7 @@ public:
     // needed only on update.
     for (int i = TAHEAD1_HitBank - 1; i > 0; i--) {
       for (int j = 0; j < TAHEAD1_ASSOC; j++) {
-        if (TAHEAD1_gtable[i][TAHEAD1_GGI[j][i] + j].tag == TAHEAD1_GTAG[i]) {
+        if (get_TAHEAD1_gtable_entry (i, TAHEAD1_GGI[j][i] + j).tag == TAHEAD1_GTAG[i]) {
           // if (abs (2 * TAHEAD1_gtable[i][TAHEAD1_GGI[j][i] + j].ctr + 1) != 1)
           // slightly better to pick alternate prediction as not low confidence
           {
@@ -875,17 +897,17 @@ public:
       }
     }
     if (TAHEAD1_HitBank > 0) {
-      if (abs(2 * TAHEAD1_gtable[TAHEAD1_HitBank][TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc].ctr + 1) == 1) {
+      if (abs(2 * get_TAHEAD1_gtable_entry (TAHEAD1_HitBank, TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc).ctr + 1) == 1) {
         for (int i = TAHEAD1_HitBank - 1; i > 0; i--) {
           for (int j = 0; j < TAHEAD1_ASSOC; j++) {
-            if (TAHEAD1_gtable[i][TAHEAD1_GGI[j][i] + j].tag == TAHEAD1_GTAG[i]) {
-              if (abs(2 * TAHEAD1_gtable[i][TAHEAD1_GGI[j][i] + j].ctr + 1) != 1)
+        	if (get_TAHEAD1_gtable_entry (i, TAHEAD1_GGI[j][i] + j).tag == TAHEAD1_GTAG[i]) { 
+              if (abs(2 * get_TAHEAD1_gtable_entry (i, TAHEAD1_GGI[j][i] + j).ctr + 1) != 1)
               // slightly better to pick alternate prediction as not low confidence
               {
                 TAHEAD1_HCpredBank = i;
 
                 TAHEAD1_HCpredAssoc = j;
-                TAHEAD1_HCpred      = (TAHEAD1_gtable[i][TAHEAD1_GGI[j][i] + j].ctr >= 0);
+                TAHEAD1_HCpred      = (get_TAHEAD1_gtable_entry (i, TAHEAD1_GGI[j][i] + j).ctr >= 0);
 
                 break;
               }
@@ -908,7 +930,7 @@ public:
 
     if (TAHEAD1_HitBank > 0) {
       if (TAHEAD1_AltBank > 0) {
-        TAHEAD1_alttaken = (TAHEAD1_gtable[TAHEAD1_AltBank][TAHEAD1_GGI[TAHEAD1_AltAssoc][TAHEAD1_AltBank] + TAHEAD1_AltAssoc].ctr >= 0);
+        TAHEAD1_alttaken = (get_TAHEAD1_gtable_entry (TAHEAD1_AltBank, TAHEAD1_GGI[TAHEAD1_AltAssoc][TAHEAD1_AltBank] + TAHEAD1_AltAssoc).ctr >= 0);
       }
 
 #ifndef TAHEAD1_SC
@@ -916,7 +938,7 @@ public:
       // USE_ALT_ON_NA is positive  use the alternate prediction
       bool Huse_alt_on_na = (TAHEAD1_use_alt_on_na >= 0);
 
-      if ((!Huse_alt_on_na) || (abs(2 * TAHEAD1_gtable[TAHEAD1_HitBank][TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc].ctr + 1) > 1)) {
+      if ((!Huse_alt_on_na) || (abs(2 * get_TAHEAD1_gtable_entry (TAHEAD1_HitBank, TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc).ctr + 1) > 1)) {
         TAHEAD1_tage_pred = TAHEAD1_LongestMatchPred;
       } else {
         TAHEAD1_tage_pred = TAHEAD1_HCpred;
@@ -1204,7 +1226,7 @@ public:
     //////////////////////////////////////////////////
 
     if (TAHEAD1_HitBank > 0) {
-      bool PseudoNewAlloc = (abs(2 * TAHEAD1_gtable[TAHEAD1_HitBank][TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc].ctr + 1) <= 1);
+      bool PseudoNewAlloc = (abs(2 * get_TAHEAD1_gtable_entry (TAHEAD1_HitBank, TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc).ctr + 1) <= 1);
       // an entry is considered as newly allocated if its prediction counter is weak
 
       if (PseudoNewAlloc) {
@@ -1297,44 +1319,45 @@ public:
           for (int J = 0; J < TAHEAD1_ASSOC; J++) {
             j++;
             j = j % TAHEAD1_ASSOC;
+	    int idx = (TAHEAD1_GGI[j][i] + j)%getTableSize(i);
 
-            if (TAHEAD1_gtable[i][TAHEAD1_GGI[j][i] + j].u == 0) {
+            if (get_TAHEAD1_gtable_entry (i, idx).u == 0) {
               REP[j]  = true;
-              IREP[j] = TAHEAD1_GGI[j][i] + j;
+              IREP[j] = idx;
 
             }
 
             else if (TAHEAD1_REPSK == 1) {
               if (TAHEAD1_AHEAD == 0) {
-                IREP[j] = TAHEAD1_GGI[j][i] ^ ((((TAHEAD1_gtable[i][TAHEAD1_GGI[j][i] + j].tag >> 5) & 3) << (TAHEAD1_LOGG - 3)) + (j ^ 1));
+                IREP[j] = TAHEAD1_GGI[j][i] ^ ((((get_TAHEAD1_gtable_entry (i, idx).tag >> 5) & 3) << (TAHEAD1_LOGG - 3)) + (j ^ 1));
               } else {
-                IREP[j] = TAHEAD1_GGI[j][i] ^ ((((TAHEAD1_gtable[i][TAHEAD1_GGI[j][i] + j].tag >> 5) & (TAHEAD1_READWIDTHAHEAD - 1)) << (TAHEAD1_LOGG - 5)) + (j ^ 1));
+                IREP[j] = TAHEAD1_GGI[j][i] ^ ((((get_TAHEAD1_gtable_entry (i, idx).tag >> 5) & (TAHEAD1_READWIDTHAHEAD - 1)) << (TAHEAD1_LOGG - 5)) + (j ^ 1));
               }
 
-              REP[j] = (TAHEAD1_gtable[i][IREP[j]].u == 0);
+              REP[j] = (get_TAHEAD1_gtable_entry(i, IREP[j]).u == 0);
 
               MOVE[j] = true;
             }
 
             if (REP[j]) {
-              if ((((TAHEAD1_UWIDTH == 1) && ((((MYRANDOM() & ((1 << (abs(2 * TAHEAD1_gtable[i][TAHEAD1_GGI[j][i] + j].ctr + 1) >> 1)) - 1)) == 0))))
+              if ((((TAHEAD1_UWIDTH == 1) && ((((MYRANDOM() & ((1 << (abs(2 * get_TAHEAD1_gtable_entry (i, idx).ctr + 1) >> 1)) - 1)) == 0))))
                    || (TAHEAD1_TICKH >= TAHEAD1_BORNTICK / 2))
                   || (TAHEAD1_UWIDTH == 2)) {
                 done = true;
                 if (MOVE[j]) {
-                  TAHEAD1_gtable[i][IREP[j]].u   = TAHEAD1_gtable[i][TAHEAD1_GGI[j][i] + j].u;
-                  TAHEAD1_gtable[i][IREP[j]].tag = TAHEAD1_gtable[i][TAHEAD1_GGI[j][i] + j].tag;
-                  TAHEAD1_gtable[i][IREP[j]].ctr = TAHEAD1_gtable[i][TAHEAD1_GGI[j][i] + j].ctr;
+                  get_TAHEAD1_gtable_entry (i, IREP[j]).u   = get_TAHEAD1_gtable_entry (i, idx).u;
+                  get_TAHEAD1_gtable_entry (i, IREP[j]).tag = get_TAHEAD1_gtable_entry (i, idx).tag;
+                  get_TAHEAD1_gtable_entry (i, IREP[j]).ctr = get_TAHEAD1_gtable_entry (i, idx).ctr;
                 }
 
-                TAHEAD1_gtable[i][TAHEAD1_GGI[j][i] + j].tag = TAHEAD1_GTAG[i];
+                get_TAHEAD1_gtable_entry (i, idx).tag = TAHEAD1_GTAG[i];
 #ifndef TAHEAD1_FORCEU
-                TAHEAD1_gtable[i][TAHEAD1_GGI[j][i] + j].u = 0;
+                get_TAHEAD1_gtable_entry (i, idx).u = 0;
 #else
 
-                TAHEAD1_gtable[i][TAHEAD1_GGI[j][i] + j].u = ((TAHEAD1_UWIDTH == 2) || (TAHEAD1_TICKH >= TAHEAD1_BORNTICK / 2)) & (First ? 1 : 0);
+                get_TAHEAD1_gtable_entry (i, idx).u = ((TAHEAD1_UWIDTH == 2) || (TAHEAD1_TICKH >= TAHEAD1_BORNTICK / 2)) & (First ? 1 : 0);
 #endif
-                TAHEAD1_gtable[i][TAHEAD1_GGI[j][i] + j].ctr = (resolveDir) ? 0 : -1;
+                get_TAHEAD1_gtable_entry (i, idx).ctr = (resolveDir) ? 0 : -1;
 
                 NA++;
                 if ((i >= 3) || (!First)) {
@@ -1358,18 +1381,19 @@ public:
             for (int jj = 0; jj < TAHEAD1_ASSOC; jj++) {
               {
                 // some just allocated entries  have been set to useful
+                int idxj = (TAHEAD1_GGI[jj][i] + jj)%getTableSize(i);
                 if ((MYRANDOM() & ((1 << (1 + TAHEAD1_LOGASSOC + TAHEAD1_REPSK)) - 1)) == 0) {
-                  if (abs(2 * TAHEAD1_gtable[i][TAHEAD1_GGI[jj][i] + jj].ctr + 1) == 1) {
-                    if (TAHEAD1_gtable[i][TAHEAD1_GGI[jj][i] + jj].u == 1) {
-                      TAHEAD1_gtable[i][TAHEAD1_GGI[jj][i] + jj].u--;
+                  if (abs(2 * get_TAHEAD1_gtable_entry (i, idxj).ctr + 1) == 1) {
+                    if (get_TAHEAD1_gtable_entry (i, idxj).u == 1) {
+                      get_TAHEAD1_gtable_entry (i, idxj).u--;
                     }
                   }
                 }
                 if (TAHEAD1_REPSK == 1) {
                   if ((MYRANDOM() & ((1 << (1 + TAHEAD1_LOGASSOC + TAHEAD1_REPSK)) - 1)) == 0) {
-                    if (abs(2 * TAHEAD1_gtable[i][IREP[jj]].ctr + 1) == 1) {
-                      if (TAHEAD1_gtable[i][IREP[jj]].u == 1) {
-                        TAHEAD1_gtable[i][IREP[jj]].u--;
+                    if (abs(2 * get_TAHEAD1_gtable_entry(i, IREP[jj]).ctr + 1) == 1) {
+                      if (get_TAHEAD1_gtable_entry(i, IREP[jj]).u == 1) {
+                        get_TAHEAD1_gtable_entry(i, IREP[jj]).u--;
                       }
                     }
                   }
@@ -1408,9 +1432,10 @@ public:
         if (TAHEAD1_NHIST == 14) {
           for (int i = 1; i <= ((TAHEAD1_SHARED) ? 8 : 14); i++) {
             for (int j = 0; j < TAHEAD1_ASSOC * (1 << (TAHEAD1_LOGG + (TAHEAD1_SHARED ? (i <= 6) : 0))); j++) {
-              // this is not realistic: in a real processor:    TAHEAD1_gtable[1][j].u >>= 1;
-              if (TAHEAD1_gtable[i][j].u > 0) {
-                TAHEAD1_gtable[i][j].u--;
+              int idxx = j%getTableSize(i);
+		// this is not realistic: in a real processor:    TAHEAD1_gtable[1][idxx].u >>= 1;
+              if (get_TAHEAD1_gtable_entry (i, idxx).u > 0) {
+                get_TAHEAD1_gtable_entry (i, idxx).u--;
               }
             }
           }
@@ -1419,9 +1444,10 @@ public:
         else {
           for (int i = 1; i <= TAHEAD1_NHIST; i++) {
             for (int j = 0; j < TAHEAD1_ASSOC * (1 << TAHEAD1_LOGG); j++) {
-              // this is not realistic: in a real processor:    TAHEAD1_gtable[1][j].u >>= 1;
-              if (TAHEAD1_gtable[i][j].u > 0) {
-                TAHEAD1_gtable[i][j].u--;
+              int idxx = j%getTableSize(i);
+              // this is not realistic: in a real processor:    TAHEAD1_gtable[1][idxx].u >>= 1;
+              if (get_TAHEAD1_gtable_entry (i, idxx).u > 0) {
+                get_TAHEAD1_gtable_entry (i, idxx).u--;
               }
             }
           }
@@ -1429,9 +1455,10 @@ public:
 #else
 
         for (int j = 0; j < TAHEAD1_ASSOC * (1 << TAHEAD1_LOGG) * TAHEAD1_NHIST; j++) {
-          // this is not realistic: in a real processor:    TAHEAD1_gtable[1][j].u >>= 1;
-          if (TAHEAD1_gtable[1][j].u > 0) {
-            TAHEAD1_gtable[1][j].u--;
+          int idxx = j%getTableSize(1);
+          // this is not realistic: in a real processor:    TAHEAD1_gtable[1][idxx].u >>= 1;
+          if (get_TAHEAD1_gtable_entry (1, idxx).u > 0) {
+            get_TAHEAD1_gtable_entry (1, idxx).u--;
           }
         }
 #endif
@@ -1448,11 +1475,11 @@ public:
       if (TAHEAD1_TAGECONF == 0) {
         if (TAHEAD1_LongestMatchPred != resolveDir) {
           if (TAHEAD1_AltBank != TAHEAD1_HCpredBank) {
-            ctrupdate(TAHEAD1_gtable[TAHEAD1_AltBank][TAHEAD1_GGI[TAHEAD1_AltAssoc][TAHEAD1_AltBank] + TAHEAD1_AltAssoc].ctr, resolveDir, TAHEAD1_CWIDTH);
+	    ctrupdate(get_TAHEAD1_gtable_entry (TAHEAD1_AltBank, TAHEAD1_GGI[TAHEAD1_AltAssoc][TAHEAD1_AltBank] + TAHEAD1_AltAssoc).ctr, resolveDir, TAHEAD1_CWIDTH);
+
           }
           if (TAHEAD1_HCpredBank > 0) {
-            ctrupdate(TAHEAD1_gtable[TAHEAD1_HCpredBank][TAHEAD1_GGI[TAHEAD1_HCpredAssoc][TAHEAD1_HCpredBank] + TAHEAD1_HCpredAssoc].ctr, resolveDir, TAHEAD1_CWIDTH);
-
+            ctrupdate(get_TAHEAD1_gtable_entry (TAHEAD1_HCpredBank, TAHEAD1_GGI[TAHEAD1_HCpredAssoc][TAHEAD1_HCpredBank] + TAHEAD1_HCpredAssoc).ctr, resolveDir, TAHEAD1_CWIDTH);
           }
 
           else {
@@ -1462,7 +1489,7 @@ public:
       }
 
 #endif
-      ctrupdate(TAHEAD1_gtable[TAHEAD1_HitBank][TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc].ctr, resolveDir, TAHEAD1_CWIDTH);
+      ctrupdate(get_TAHEAD1_gtable_entry (TAHEAD1_HitBank, TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc).ctr, resolveDir, TAHEAD1_CWIDTH);
 
     } else {
       baseupdate(resolveDir);
@@ -1473,19 +1500,19 @@ public:
       if (TAHEAD1_LongestMatchPred == resolveDir) {
 #ifdef TAHEAD1_PROTECTRECENTALLOCUSEFUL
 
-        if (TAHEAD1_gtable[TAHEAD1_HitBank][TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc].u == 0) {
-          TAHEAD1_gtable[TAHEAD1_HitBank][TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc].u++;
+        if (get_TAHEAD1_gtable_entry (TAHEAD1_HitBank, TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc).u == 0) {
+          get_TAHEAD1_gtable_entry (TAHEAD1_HitBank, TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc).u++;
         }
         // Recent useful will survive a smart reset
 #endif
-        if (TAHEAD1_gtable[TAHEAD1_HitBank][TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc].u < (1 << TAHEAD1_UWIDTH) - 1) {
-          TAHEAD1_gtable[TAHEAD1_HitBank][TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc].u++;
+        if (get_TAHEAD1_gtable_entry(TAHEAD1_HitBank, TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc).u < (1 << TAHEAD1_UWIDTH) - 1) {
+          get_TAHEAD1_gtable_entry(TAHEAD1_HitBank, TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc).u++;
         }
 
       } else {
-        if (TAHEAD1_gtable[TAHEAD1_HitBank][TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc].u > 0) {
+        if (get_TAHEAD1_gtable_entry(TAHEAD1_HitBank, TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc).u > 0) {
           if (TAHEAD1_predSC == resolveDir) {
-            TAHEAD1_gtable[TAHEAD1_HitBank][TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc].u--;
+            get_TAHEAD1_gtable_entry(TAHEAD1_HitBank, TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc).u--;
           }
         }
       }

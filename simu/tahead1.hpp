@@ -32,24 +32,24 @@
 #define TAHEAD1_LOGBIAS  (4 + TAHEAD1_LOGSCALE)   // logsize of tables in TAHEAD1_SC
 
 #if (TAHEAD1_LOGSCALE == 4)
-#define TAHEAD1_MITAHEAD1_NHIST 2
+#define TAHEAD1_MINHIST 2
 #define TAHEAD1_MAXHIST 350
 #endif
 #if (TAHEAD1_LOGSCALE == 3)
-#define TAHEAD1_MITAHEAD1_NHIST 2
+#define TAHEAD1_MINHIST 2
 #define TAHEAD1_MAXHIST 250
 #endif
 #if (TAHEAD1_LOGSCALE == 2)
-#define TAHEAD1_MITAHEAD1_NHIST 2
+#define TAHEAD1_MINHIST 2
 #define TAHEAD1_MAXHIST 250
 #endif
 #if (TAHEAD1_LOGSCALE == 1)
-#define TAHEAD1_MITAHEAD1_NHIST 2
+#define TAHEAD1_MINHIST 2
 #define TAHEAD1_MAXHIST 250
 #endif
 
 #if (TAHEAD1_LOGSCALE == 0)
-#define TAHEAD1_MITAHEAD1_NHIST 1
+#define TAHEAD1_MINHIST 1
 #define TAHEAD1_MAXHIST 250
 #endif
 
@@ -270,12 +270,12 @@ public:
   TAHEAD1_folded_history() {}
 
   void init(int original_length, int compressed_length, int N) {
+    (void)N;
     comp     = 0;
     OLENGTH  = original_length;
     CLENGTH  = compressed_length;
     OUTPOINT = OLENGTH % CLENGTH;
 
-        N++; N--;
   }
 
   void update(uint8_t *h, int PT) {
@@ -428,10 +428,10 @@ public:
 #endif
   }
 
-#define NTAHEAD1_NHIST 18
-  int mm[NTAHEAD1_NHIST + 1];
+#define TAHEAD1_NNHIST 18
+  int mm[TAHEAD1_NNHIST + 1];
   
-  int getTableSize(int i) {
+  int TAHEAD1_getTableSize(int i) {
     if (TAHEAD1_SHARED && i >= 1 && i <= 6)
         return (1 << (TAHEAD1_LOGG + 1)) * TAHEAD1_ASSOC;
     else
@@ -440,7 +440,7 @@ public:
 
 TAHEAD1_gentry& get_TAHEAD1_gtable_entry (int i, int j)
 {
-	int idx = j % getTableSize(i);
+	int idx = j % TAHEAD1_getTableSize(i);
 	return TAHEAD1_gtable[i][idx];
 }
 
@@ -465,12 +465,12 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
     }
 
 #ifdef TAHEAD1_OPTGEOHIST
-    mm[1] = TAHEAD1_MITAHEAD1_NHIST;
+    mm[1] = TAHEAD1_MINHIST;
 
-    for (int i = 2; i <= NTAHEAD1_NHIST; i++) {
-      mm[i] = (int)(((double)TAHEAD1_MITAHEAD1_NHIST * pow((double)(TAHEAD1_MAXHIST) / (double)TAHEAD1_MITAHEAD1_NHIST, (double)(i - 1) / (double)((NTAHEAD1_NHIST - 1)))) + 0.5);
+    for (int i = 2; i <= TAHEAD1_NNHIST; i++) {
+      mm[i] = (int)(((double)TAHEAD1_MINHIST * pow((double)(TAHEAD1_MAXHIST) / (double)TAHEAD1_MINHIST, (double)(i - 1) / (double)((TAHEAD1_NNHIST - 1)))) + 0.5);
     }
-    for (int i = 2; i <= NTAHEAD1_NHIST; i++) {
+    for (int i = 2; i <= TAHEAD1_NNHIST; i++) {
       if (mm[i] <= mm[i - 1] + 1) {
         mm[i] = mm[i - 1] + 1;
       }
@@ -489,16 +489,16 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
     }
     PT = TAHEAD1_NHIST;
 
-    for (int i = NTAHEAD1_NHIST; i > 14; i -= 2) {
+    for (int i = TAHEAD1_NNHIST; i > 14; i -= 2) {
       TAHEAD1_m[PT] = mm[i];
       PT--;
     }
 
 #else
-    TAHEAD1_m[1] = TAHEAD1_MITAHEAD1_NHIST;
+    TAHEAD1_m[1] = TAHEAD1_MINHIST;
 
     for (int i = 2; i <= TAHEAD1_NHIST; i++) {
-      TAHEAD1_m[i] = (int)(((double)TAHEAD1_MITAHEAD1_NHIST * pow((double)(TAHEAD1_MAXHIST) / (double)TAHEAD1_MITAHEAD1_NHIST, (double)(i - 1) / (double)((TAHEAD1_NHIST - 1)))) + 0.5);
+      TAHEAD1_m[i] = (int)(((double)TAHEAD1_MINHIST * pow((double)(TAHEAD1_MAXHIST) / (double)TAHEAD1_MINHIST, (double)(i - 1) / (double)((TAHEAD1_NHIST - 1)))) + 0.5);
     }
     for (int i = 3; i <= TAHEAD1_NHIST; i++) {
       if (TAHEAD1_m[i] <= TAHEAD1_m[i - 1]) {
@@ -624,7 +624,7 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
     if (TAHEAD1_NHIST == 14) {
       for (int i = 1; i <= ((TAHEAD1_SHARED) ? 8 : 14); i++) {
         for (int j = 0; j < TAHEAD1_ASSOC * (1 << (TAHEAD1_LOGG + (TAHEAD1_SHARED ? (i <= 6) : 0))); j++) {
-	  int idx = j % getTableSize(i);
+	  int idx = j % TAHEAD1_getTableSize(i);
           get_TAHEAD1_gtable_entry(i, idx).u = random() & ((1 << TAHEAD1_UWIDTH) - 1);
 
           get_TAHEAD1_gtable_entry(i, idx).ctr = (random() & 7) - 4;
@@ -635,7 +635,7 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
     else {
       for (int i = 1; i <= TAHEAD1_NHIST; i++) {
         for (int j = 0; j < TAHEAD1_ASSOC * (1 << TAHEAD1_LOGG); j++) {
-          int idx = j % getTableSize(i);
+          int idx = j % TAHEAD1_getTableSize(i);
 		get_TAHEAD1_gtable_entry(i, idx).u   = random() & ((1 << TAHEAD1_UWIDTH) - 1);
           get_TAHEAD1_gtable_entry(i, idx).ctr = (random() & 7) - 4;
         }
@@ -863,7 +863,7 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
     // Look for the bank with longest matching history
     for (int i = TAHEAD1_NHIST; i > 0; i--) {
       for (int j = 0; j < TAHEAD1_ASSOC; j++) {
-        //int idx = (TAHEAD1_GGI[j][i] + j)%getTableSize(i);
+        //int idx = (TAHEAD1_GGI[j][i] + j)%TAHEAD1_getTableSize(i);
         if (get_TAHEAD1_gtable_entry (i, TAHEAD1_GGI[j][i] + j).tag == TAHEAD1_GTAG[i]) {
           TAHEAD1_HitBank  = i;
           TAHEAD1_HitAssoc = j;
@@ -1319,7 +1319,7 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
           for (int J = 0; J < TAHEAD1_ASSOC; J++) {
             j++;
             j = j % TAHEAD1_ASSOC;
-	    int idx = (TAHEAD1_GGI[j][i] + j)%getTableSize(i);
+	    int idx = (TAHEAD1_GGI[j][i] + j)%TAHEAD1_getTableSize(i);
 
             if (get_TAHEAD1_gtable_entry (i, idx).u == 0) {
               REP[j]  = true;
@@ -1381,7 +1381,7 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
             for (int jj = 0; jj < TAHEAD1_ASSOC; jj++) {
               {
                 // some just allocated entries  have been set to useful
-                int idxj = (TAHEAD1_GGI[jj][i] + jj)%getTableSize(i);
+                int idxj = (TAHEAD1_GGI[jj][i] + jj)%TAHEAD1_getTableSize(i);
                 if ((MYRANDOM() & ((1 << (1 + TAHEAD1_LOGASSOC + TAHEAD1_REPSK)) - 1)) == 0) {
                   if (abs(2 * get_TAHEAD1_gtable_entry (i, idxj).ctr + 1) == 1) {
                     if (get_TAHEAD1_gtable_entry (i, idxj).u == 1) {
@@ -1432,7 +1432,7 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
         if (TAHEAD1_NHIST == 14) {
           for (int i = 1; i <= ((TAHEAD1_SHARED) ? 8 : 14); i++) {
             for (int j = 0; j < TAHEAD1_ASSOC * (1 << (TAHEAD1_LOGG + (TAHEAD1_SHARED ? (i <= 6) : 0))); j++) {
-              int idxx = j%getTableSize(i);
+              int idxx = j%TAHEAD1_getTableSize(i);
 		// this is not realistic: in a real processor:    TAHEAD1_gtable[1][idxx].u >>= 1;
               if (get_TAHEAD1_gtable_entry (i, idxx).u > 0) {
                 get_TAHEAD1_gtable_entry (i, idxx).u--;
@@ -1444,7 +1444,7 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
         else {
           for (int i = 1; i <= TAHEAD1_NHIST; i++) {
             for (int j = 0; j < TAHEAD1_ASSOC * (1 << TAHEAD1_LOGG); j++) {
-              int idxx = j%getTableSize(i);
+              int idxx = j%TAHEAD1_getTableSize(i);
               // this is not realistic: in a real processor:    TAHEAD1_gtable[1][idxx].u >>= 1;
               if (get_TAHEAD1_gtable_entry (i, idxx).u > 0) {
                 get_TAHEAD1_gtable_entry (i, idxx).u--;
@@ -1455,7 +1455,7 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
 #else
 
         for (int j = 0; j < TAHEAD1_ASSOC * (1 << TAHEAD1_LOGG) * TAHEAD1_NHIST; j++) {
-          int idxx = j%getTableSize(1);
+          int idxx = j%TAHEAD1_getTableSize(1);
           // this is not realistic: in a real processor:    TAHEAD1_gtable[1][idxx].u >>= 1;
           if (get_TAHEAD1_gtable_entry (1, idxx).u > 0) {
             get_TAHEAD1_gtable_entry (1, idxx).u--;

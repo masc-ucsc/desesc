@@ -6,6 +6,7 @@ module(
 
 # Compiler rules
 bazel_dep(name = "rules_cc", version = "0.1.1")
+bazel_dep(name = "rules_foreign_cc", version = "0.14.0")
 
 bazel_dep(name = "abseil-cpp", version = "20250512.0") # 20240722.0.bcr.2")
 
@@ -15,19 +16,7 @@ bazel_dep(name = "googletest", version = "1.17.0", dev_dependency = True, repo_n
 bazel_dep(name = "google_benchmark", version = "1.9.4", dev_dependency = True, repo_name = "com_google_benchmark")
 
 
-# Hedron's Compile Commands Extractor for Bazel
-# https://github.com/hedronvision/bazel-compile-commands-extractor
-bazel_dep(name = "hedron_compile_commands", dev_dependency = True)
-git_override(
-    module_name = "hedron_compile_commands",
-    remote = "https://github.com/hedronvision/bazel-compile-commands-extractor.git",
-    commit = "4f28899228fb3ad0126897876f147ca15026151e",
-    # Replace the commit hash (above) with the latest (https://github.com/hedronvision/bazel-compile-commands-extractor/commits/main).
-    # Even better, set up Renovate and let it do the work for you (see "Suggestion: Updates" in the README).
-)
-
 #  echo -n "sha256-" && openssl dgst -sha256 -binary v4.2.0.zip | openssl base64 -A; echo
-
 
 # iassert
 bazel_dep(name = "iassert", version = "0.1.0")

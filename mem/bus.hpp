@@ -17,7 +17,7 @@ protected:
   std::shared_ptr<PortGeneric> cmdPort;
 
 public:
-  Bus(Memory_system *current, const std::string &device_descr_section, const std::string &device_name = NULL);
+  Bus(Memory_system *current, const std::string &device_descr_section, const std::string &device_name = "");
   ~Bus() {}
 
   // Entry points to schedule that may schedule a do?? if needed

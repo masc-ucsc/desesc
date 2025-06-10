@@ -11,7 +11,7 @@ protected:
   uint32_t LineSize;
 
 public:
-  UnMemXBar(Memory_system *current, const std::string &device_descr_section, const std::string &device_name = NULL);
+  UnMemXBar(Memory_system *current, const std::string &device_descr_section, const std::string &device_name = "");
   ~UnMemXBar() {}
 
   // Entry points to schedule that may schedule a do?? if needed

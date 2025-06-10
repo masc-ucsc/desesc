@@ -23,6 +23,6 @@ protected:
   static inline uint32_t Xbar_unXbar_balance = 0;
 
 public:
-  GXBar(const std::string &device_descr_section, const std::string &device_name = NULL);
+  GXBar(const std::string &device_descr_section, const std::string &device_name = "");
   ~GXBar() {}
 };

@@ -12,6 +12,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "opcode.hpp"
 // #include "utils.h"
 // #include "bt9.h"
@@ -19,17 +20,16 @@
 
 // if one wants to test with "more realistic" initial states
 // #define WARM // 5000000 branches to warm the predictor if one wants a warmed predictor
-// #define TAHEAD1_RANDINIT  // TAHEAD1_RANDINIT provide random values in all counters, might be slightly more realistic than initialization with
-// weak counters
-
+// #define TAHEAD1_RANDINIT  // TAHEAD1_RANDINIT provide random values in all counters, might be slightly more realistic than
+// initialization with weak counters
 
 // Possible conf option if updates are delayed to end of fetch_boundary (BPred.cpp:pending)
-//#define TAHEAD1_DELAY_UPDATE 1
+// #define TAHEAD1_DELAY_UPDATE 1
 
 #define TAHEAD1_LOGSCALE 2
-#define TAHEAD1_LOGT     (4 + TAHEAD1_LOGSCALE)   /* logsize of a logical  TAGE tables */
+#define TAHEAD1_LOGT     (4 + TAHEAD1_LOGSCALE)  /* logsize of a logical  TAGE tables */
 #define TAHEAD1_LOGB     (4 + TAHEAD1_LOGSCALE)  // log of number of entries in bimodal predictor
-#define TAHEAD1_LOGBIAS  (4 + TAHEAD1_LOGSCALE)   // logsize of tables in TAHEAD1_SC
+#define TAHEAD1_LOGBIAS  (4 + TAHEAD1_LOGSCALE)  // logsize of tables in TAHEAD1_SC
 
 #if (TAHEAD1_LOGSCALE == 4)
 #define TAHEAD1_MINHIST 2
@@ -53,8 +53,8 @@
 #define TAHEAD1_MAXHIST 250
 #endif
 
-#define TAHEAD1_MAXBR 16  // Maximum TAHEAD1_MAXBR  branches in  the block; the code assumes TAHEAD1_MAXBR is a power of 2
-#define TAHEAD1_NBREADPERTABLE 4  // predictions read per table for a block
+#define TAHEAD1_MAXBR          16  // Maximum TAHEAD1_MAXBR  branches in  the block; the code assumes TAHEAD1_MAXBR is a power of 2
+#define TAHEAD1_NBREADPERTABLE 4   // predictions read per table for a block
 
 #define TAHEAD1_AHEAD 2
 // in the curent version:  only 0 or 2 are valid (0 corresponds to the conventional 1-block ahead, 2 coresponds to the 3-block
@@ -71,9 +71,9 @@
 
 #define TAHEAD1_UWIDTH 2
 #define TAHEAD1_LOGASSOC \
-  1  // associative tagged tables are probably  not worth the effort at TAHEAD1_TBITS=12 : about 0.02 MPKI gain for associativity 2; an
-     // extra tag bit would be  needed to get some gain with associativity 4 // but partial skewed associativity (option TAHEAD1_PSK) might
-     // be interesting
+  1  // associative tagged tables are probably  not worth the effort at TAHEAD1_TBITS=12 : about 0.02 MPKI gain for associativity 2;
+     // an extra tag bit would be  needed to get some gain with associativity 4 // but partial skewed associativity (option
+     // TAHEAD1_PSK) might be interesting
 #define TAHEAD1_TBITS 12  // if 11 bits: benefit from associativity vanishes
 
 #define TAHEAD1_LOGG  (TAHEAD1_LOGT - TAHEAD1_LOGASSOC)  // size of way in a logical TAGE table
@@ -81,12 +81,13 @@
 
 #define TAHEAD1_HYSTSHIFT 1  // bimodal hysteresis shared among (1<< TAHEAD1_HYSTSHIFT) entries
 #define TAHEAD1_BIMWIDTH  3  //  with of the counter in the bimodal predictor
-// A. Seznec: I just played using 3-bit counters in the simulator, using 2-bit counters but TAHEAD1_HYSTSHIFT=0 brings similar accuracy
+// A. Seznec: I just played using 3-bit counters in the simulator, using 2-bit counters but TAHEAD1_HYSTSHIFT=0 brings similar
+// accuracy
 
 /////////////////////////////////////////////
 // Options  for optimizations of TAGE
-// #define TAHEAD1_INTERLEAVED // just to show that it  is not  fully interleaving the banks is not that great and probably not worth the
-// extra 14x14 shuffling/reshuffling
+// #define TAHEAD1_INTERLEAVED // just to show that it  is not  fully interleaving the banks is not that great and probably not
+// worth the extra 14x14 shuffling/reshuffling
 #ifdef TAHEAD1_INTERLEAVED
 #define TAHEAD1_SHARED        0
 #define TAHEAD1_ADJACENTTABLE 1
@@ -104,7 +105,7 @@ int BANK1;
      // H(2i-1) and H(2i).
 #define TAHEAD1_SHARED 1  // (T1/T9) (T2/T10)   shared the same bank T9 and T10 do not share with anybody: ~ -0.076 MPKI
 #endif
-#define TAHEAD1_OPTGEOHIST          // we can do better than geometric series
+#define TAHEAD1_OPTGEOHIST  // we can do better than geometric series
 // Optimizations  allocation/replacement: globally; ~0.09
 #define TAHEAD1_FILTERALLOCATION 1  // ~ -0.04 MPKI
 #define TAHEAD1_FORCEU           1  // don't work if only one U  bit	// from times selective allocation with u = 1: ~0.015 MPKI
@@ -139,10 +140,11 @@ int BANK1;
 // In practice the optimizations on TAGE brings significant gains
 #endif
 
-#define TAHEAD1_FORCEONHIGHCONF  //   if TAGE is high conf and TAHEAD1_SC very low conf then use TAGE, if TAHEAD1_SC: brings 0.008 - 0.016 MPKI, but a
-                         //   5-to-1 mux instead a 4-to-1
-// #define TAHEAD1_MORESCLOGICAHEAD // if TAHEAD1_AHEAD and if TAHEAD1_SC uses four times  the number of adder trees (compute 16 SCsum  per prediction !),
-// ~ 1 % gain in accuracy
+#define TAHEAD1_FORCEONHIGHCONF  //   if TAGE is high conf and TAHEAD1_SC very low conf then use TAGE, if TAHEAD1_SC: brings 0.008 -
+                                 //   0.016 MPKI, but a
+                                 //   5-to-1 mux instead a 4-to-1
+// #define TAHEAD1_MORESCLOGICAHEAD // if TAHEAD1_AHEAD and if TAHEAD1_SC uses four times  the number of adder trees (compute 16
+// SCsum  per prediction !), ~ 1 % gain in accuracy
 
 // Add the extra TAHEAD1_SC tables
 #define TAHEAD1_SCMEDIUM
@@ -158,7 +160,7 @@ int TAHEAD1_NPRED = 20;  // this variable needs to be larger than TAHEAD1_AHEAD 
 // I was wanting to test large TAHEAD1_AHEAD distances up to 9
 uint     TAHEAD1_AHGI[10][TAHEAD1_NHIST + 1];    // indexes to the different tables are computed only once
 uint     TAHEAD1_AHGTAG[10][TAHEAD1_NHIST + 1];  // tags for the different tables are computed only once
-uint64_t TAHEAD1_Numero;                 // Number of the branch in the basic block
+uint64_t TAHEAD1_Numero;                         // Number of the branch in the basic block
 uint64_t TAHEAD1_PCBLOCK;
 uint64_t TAHEAD1_PrevPCBLOCK;
 uint64_t TAHEAD1_PrevNumero;
@@ -171,9 +173,9 @@ uint64_t TAHEAD1_PrevNumero;
 ////////The statistical corrector components
 
 // The base table  in the TAHEAD1_SC component indexed with only PC + information flowing out from  TAGE
-//  In order to  allow computing SCSUM in parallel with TAGE check, only TAHEAD1_LongestMatchPred and TAHEAD1_HCpred are used. 4 SCSUM are computed,
-//  and a final 4-to-1 selects the correct prediction:   each extra bit of information (confidence, etc) would necessitate  doubling
-//  the number of computed SCSUMs and double the width of the final MUX
+//  In order to  allow computing SCSUM in parallel with TAGE check, only TAHEAD1_LongestMatchPred and TAHEAD1_HCpred are used. 4
+//  SCSUM are computed, and a final 4-to-1 selects the correct prediction:   each extra bit of information (confidence, etc) would
+//  necessitate  doubling the number of computed SCSUMs and double the width of the final MUX
 
 // if only PC-based TAHEAD1_SC these ones are useful
 int8_t TAHEAD1_BiasGEN;
@@ -185,23 +187,24 @@ int8_t TAHEAD1_BiasLMAP[4];
 int8_t TAHEAD1_BiasPC[1 << TAHEAD1_LOGBIAS];
 int8_t TAHEAD1_BiasPCLMAP[(1 << TAHEAD1_LOGBIAS)];
 
-#define TAHEAD1_LOGINB      TAHEAD1_LOGBIAS
+#define TAHEAD1_LOGINB TAHEAD1_LOGBIAS
 int    TAHEAD1_Im = TAHEAD1_LOGBIAS;
 int8_t TAHEAD1_IBIAS[(1 << TAHEAD1_LOGINB)];
 int8_t TAHEAD1_IIBIAS[(1 << TAHEAD1_LOGINB)];
 
 // Back path history; (in practice  when a  new backward branch is  reached; 2 bits are pushed in the history
-#define TAHEAD1_LOGBNB      TAHEAD1_LOGBIAS
+#define TAHEAD1_LOGBNB TAHEAD1_LOGBIAS
 int    TAHEAD1_Bm = TAHEAD1_LOGBIAS;
 int8_t TAHEAD1_BBIAS[(1 << TAHEAD1_LOGBNB)];
 //////////////// Forward path history (taken)
-#define TAHEAD1_LOGFNB      TAHEAD1_LOGBIAS
+#define TAHEAD1_LOGFNB TAHEAD1_LOGBIAS
 int    TAHEAD1_Fm = TAHEAD1_LOGBIAS;
 int8_t TAHEAD1_FBIAS[(1 << TAHEAD1_LOGFNB)];
 
 // indices for the  TAHEAD1_SC tables
 #define TAHEAD1_INDBIASLMAP (TAHEAD1_LongestMatchPred + (TAHEAD1_HCpred << 1))
-#define TAHEAD1_PSNUM       ((((TAHEAD1_AHEAD) ? ((TAHEAD1_Numero ^ TAHEAD1_PCBLOCK) & (TAHEAD1_MAXBR - 1)) : (TAHEAD1_Numero & (TAHEAD1_MAXBR - 1)))) << 2)
+#define TAHEAD1_PSNUM \
+  ((((TAHEAD1_AHEAD) ? ((TAHEAD1_Numero ^ TAHEAD1_PCBLOCK) & (TAHEAD1_MAXBR - 1)) : (TAHEAD1_Numero & (TAHEAD1_MAXBR - 1)))) << 2)
 
 #ifdef TAHEAD1_MORESCLOGICAHEAD
 #define TAHEAD1_PCBL ((TAHEAD1_AHEAD) ? (TAHEAD1_PrevPCBLOCK ^ ((TAHEAD1_GH)&3)) : (TAHEAD1_PCBLOCK))
@@ -209,14 +212,21 @@ int8_t TAHEAD1_FBIAS[(1 << TAHEAD1_LOGFNB)];
 #define TAHEAD1_PCBL ((TAHEAD1_AHEAD) ? (TAHEAD1_PrevPCBLOCK) : (TAHEAD1_PCBLOCK))
 #endif
 
-#define TAHEAD1_INDBIASPC     (((((TAHEAD1_PCBL ^ (TAHEAD1_PCBL >> (TAHEAD1_LOGBIAS - 5))))) & ((1 << TAHEAD1_LOGBIAS) - 1)) ^ TAHEAD1_PSNUM)
+#define TAHEAD1_INDBIASPC \
+  (((((TAHEAD1_PCBL ^ (TAHEAD1_PCBL >> (TAHEAD1_LOGBIAS - 5))))) & ((1 << TAHEAD1_LOGBIAS) - 1)) ^ TAHEAD1_PSNUM)
 #define TAHEAD1_INDBIASPCLMAP (TAHEAD1_INDBIASPC) ^ ((TAHEAD1_LongestMatchPred ^ (TAHEAD1_HCpred << 1)) << (TAHEAD1_LOGBIAS - 2))
 // a single  physical table but  two logic tables: indices agree on all the bits except 2
 
-#define TAHEAD1_INDBIASBHIST  (((((TAHEAD1_PCBL ^ TAHEAD1_PrevBHIST ^ (TAHEAD1_PCBL >> (TAHEAD1_LOGBIAS - 4))))) & ((1 << TAHEAD1_LOGBNB) - 1)) ^ TAHEAD1_PSNUM)
-#define TAHEAD1_INDBIASFHIST  (((((TAHEAD1_PCBL ^ TAHEAD1_PrevFHIST ^ (TAHEAD1_PCBL >> (TAHEAD1_LOGBIAS - 3))))) & ((1 << TAHEAD1_LOGFNB) - 1)) ^ TAHEAD1_PSNUM)
-#define TAHEAD1_INDBIASIMLIBR (((((TAHEAD1_PCBL ^ TAHEAD1_PrevF_BrIMLI ^ (TAHEAD1_PCBL >> (TAHEAD1_LOGBIAS - 6))))) & ((1 << TAHEAD1_LOGINB) - 1)) ^ TAHEAD1_PSNUM)
-#define TAHEAD1_INDBIASIMLITA ((((((TAHEAD1_PCBL >> 4) ^ TAHEAD1_PrevF_TaIMLI ^ (TAHEAD1_PCBL << (TAHEAD1_LOGBIAS - 4))))) & ((1 << TAHEAD1_LOGINB) - 1)) ^ TAHEAD1_PSNUM)
+#define TAHEAD1_INDBIASBHIST \
+  (((((TAHEAD1_PCBL ^ TAHEAD1_PrevBHIST ^ (TAHEAD1_PCBL >> (TAHEAD1_LOGBIAS - 4))))) & ((1 << TAHEAD1_LOGBNB) - 1)) ^ TAHEAD1_PSNUM)
+#define TAHEAD1_INDBIASFHIST \
+  (((((TAHEAD1_PCBL ^ TAHEAD1_PrevFHIST ^ (TAHEAD1_PCBL >> (TAHEAD1_LOGBIAS - 3))))) & ((1 << TAHEAD1_LOGFNB) - 1)) ^ TAHEAD1_PSNUM)
+#define TAHEAD1_INDBIASIMLIBR                                                                                          \
+  (((((TAHEAD1_PCBL ^ TAHEAD1_PrevF_BrIMLI ^ (TAHEAD1_PCBL >> (TAHEAD1_LOGBIAS - 6))))) & ((1 << TAHEAD1_LOGINB) - 1)) \
+   ^ TAHEAD1_PSNUM)
+#define TAHEAD1_INDBIASIMLITA                                                                                                 \
+  ((((((TAHEAD1_PCBL >> 4) ^ TAHEAD1_PrevF_TaIMLI ^ (TAHEAD1_PCBL << (TAHEAD1_LOGBIAS - 4))))) & ((1 << TAHEAD1_LOGINB) - 1)) \
+   ^ TAHEAD1_PSNUM)
 
 //////////////////////IMLI RELATED and backward/Forward history////////////////////////////////////
 long long TAHEAD1_TaIMLI;    // use to monitor the iteration number (based on target locality for backward branches)
@@ -238,7 +248,7 @@ uint64_t TAHEAD1_LastBackPC;
 uint64_t TAHEAD1_BBHIST;
 
 // update threshold for the statistical corrector
-#define TAHEAD1_WIDTHRES      8
+#define TAHEAD1_WIDTHRES 8
 int TAHEAD1_updatethreshold;
 
 int TAHEAD1_SUMSC;
@@ -275,7 +285,6 @@ public:
     OLENGTH  = original_length;
     CLENGTH  = compressed_length;
     OUTPOINT = OLENGTH % CLENGTH;
-
   }
 
   void update(uint8_t *h, int PT) {
@@ -331,13 +340,13 @@ int8_t TAHEAD1_CountLowConf = 0;
 
 int8_t TAHEAD1_COUNT50[TAHEAD1_NHIST + 1];     // more or less than 50%  misprediction on weak TAHEAD1_LongestMatchPred
 int8_t TAHEAD1_COUNT16_31[TAHEAD1_NHIST + 1];  // more or less than 16/31th  misprediction on weak TAHEAD1_LongestMatchPred
-int    TAHEAD1_TAGECONF;               // TAGE confidence  from 0 (weak counter) to 3 (saturated)
+int    TAHEAD1_TAGECONF;                       // TAGE confidence  from 0 (weak counter) to 3 (saturated)
 
 #define TAHEAD1_PHISTWIDTH 27  // width of the path history used in TAGE
 #define TAHEAD1_CWIDTH     3   // predictor counter width on the TAGE tagged tables
 
 // the counter(s) to chose between longest match and alternate prediction on TAGE when weak counters: only plain TAGE
-#define TAHEAD1_ALTWIDTH   5
+#define TAHEAD1_ALTWIDTH 5
 int8_t TAHEAD1_use_alt_on_na;
 int    TAHEAD1_TICK, TAHEAD1_TICKH;  // for the reset of the u counter
 
@@ -345,20 +354,20 @@ uint8_t TAHEAD1_ghist[TAHEAD1_HISTBUFFERLENGTH];
 int     TAHEAD1_ptghist;
 // for managing global path history
 
-long long      TAHEAD1_phist;               // path history
-int            TAHEAD1_GH;                  //  another form of path history
+long long              TAHEAD1_phist;                       // path history
+int                    TAHEAD1_GH;                          //  another form of path history
 TAHEAD1_folded_history tahead1_ch_i[TAHEAD1_NHIST + 1];     // utility for computing TAGE indices
 TAHEAD1_folded_history TAHEAD1_ch_t[2][TAHEAD1_NHIST + 1];  // utility for computing TAGE tags
 
 // For the TAGE predictor
-TAHEAD1_bentry *TAHEAD1_btable;             // bimodal TAGE table
+TAHEAD1_bentry *TAHEAD1_btable;                     // bimodal TAGE table
 TAHEAD1_gentry *TAHEAD1_gtable[TAHEAD1_NHIST + 1];  // tagged TAGE tables
-int     TAHEAD1_m[TAHEAD1_NHIST + 1];
-uint    TAHEAD1_GI[TAHEAD1_NHIST + 1];          // indexes to the different tables are computed only once
-uint    TAHEAD1_GGI[TAHEAD1_ASSOC][TAHEAD1_NHIST + 1];  // indexes to the different tables are computed only once
-uint    TAHEAD1_GTAG[TAHEAD1_NHIST + 1];        // tags for the different tables are computed only once
-int     TAHEAD1_BI;                     // index of the bimodal table
-bool    TAHEAD1_pred_taken;             // prediction
+int             TAHEAD1_m[TAHEAD1_NHIST + 1];
+uint            TAHEAD1_GI[TAHEAD1_NHIST + 1];                  // indexes to the different tables are computed only once
+uint            TAHEAD1_GGI[TAHEAD1_ASSOC][TAHEAD1_NHIST + 1];  // indexes to the different tables are computed only once
+uint            TAHEAD1_GTAG[TAHEAD1_NHIST + 1];                // tags for the different tables are computed only once
+int             TAHEAD1_BI;                                     // index of the bimodal table
+bool            TAHEAD1_pred_taken;                             // prediction
 
 int TAHEAD1_incval(int8_t ctr) {
   return (2 * ctr + 1);
@@ -376,19 +385,19 @@ int TAHEAD1_predictorsize() {
   // the use_alt counter
 #endif
   STORAGESIZE += (1 << TAHEAD1_LOGB) + (TAHEAD1_BIMWIDTH - 1) * (1 << (TAHEAD1_LOGB - TAHEAD1_HYSTSHIFT));
-  STORAGESIZE += TAHEAD1_m[TAHEAD1_NHIST];             // the history bits
+  STORAGESIZE += TAHEAD1_m[TAHEAD1_NHIST];     // the history bits
   STORAGESIZE += TAHEAD1_PHISTWIDTH;           // TAHEAD1_phist
-  STORAGESIZE += 12;                   // the TAHEAD1_TICK counter
-  STORAGESIZE += 12;                   // the TAHEAD1_TICKH counter
+  STORAGESIZE += 12;                           // the TAHEAD1_TICK counter
+  STORAGESIZE += 12;                           // the TAHEAD1_TICKH counter
   STORAGESIZE += 2 * 7 * (TAHEAD1_NHIST / 4);  // counters TAHEAD1_COUNT50 TAHEAD1_COUNT16_31
-  STORAGESIZE += 8;                    // TAHEAD1_CountMiss11
-  STORAGESIZE += 36;                   // for the random number generator
+  STORAGESIZE += 8;                            // TAHEAD1_CountMiss11
+  STORAGESIZE += 36;                           // for the random number generator
   fprintf(stderr, " (TAGE %d) ", STORAGESIZE);
 #ifdef TAHEAD1_SC
 
   inter += TAHEAD1_WIDTHRES;
   inter += (TAHEAD1_PERCWIDTH)*2 * (1 << TAHEAD1_LOGBIAS);  // TAHEAD1_BiasPC and TAHEAD1_BiasPCLMAP,
-  inter += (TAHEAD1_PERCWIDTH)*2;                          // TAHEAD1_BiasLMAP
+  inter += (TAHEAD1_PERCWIDTH)*2;                           // TAHEAD1_BiasLMAP
 
 #ifdef TAHEAD1_SCMEDIUM
 #ifdef TAHEAD1_SCFULL
@@ -430,25 +439,24 @@ public:
 
 #define TAHEAD1_NNHIST 18
   int mm[TAHEAD1_NNHIST + 1];
-  
+
   int TAHEAD1_getTableSize(int i) {
-    if (TAHEAD1_SHARED && i >= 1 && i <= 6)
-        return (1 << (TAHEAD1_LOGG + 1)) * TAHEAD1_ASSOC;
-    else
-        return (1 << TAHEAD1_LOGG) * TAHEAD1_ASSOC;
-}
+    if (TAHEAD1_SHARED && i >= 1 && i <= 6) {
+      return (1 << (TAHEAD1_LOGG + 1)) * TAHEAD1_ASSOC;
+    } else {
+      return (1 << TAHEAD1_LOGG) * TAHEAD1_ASSOC;
+    }
+  }
 
-TAHEAD1_gentry& get_TAHEAD1_gtable_entry (int i, int j)
-{
-	int idx = j % TAHEAD1_getTableSize(i);
-	return TAHEAD1_gtable[i][idx];
-}
+  TAHEAD1_gentry &get_TAHEAD1_gtable_entry(int i, int j) {
+    int idx = j % TAHEAD1_getTableSize(i);
+    return TAHEAD1_gtable[i][idx];
+  }
 
-TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
-{
-	int idx = j % (1 << TAHEAD1_LOGB);
-	return TAHEAD1_btable[idx];
-}
+  TAHEAD1_bentry &get_TAHEAD1_btable_entry(int j) {
+    int idx = j % (1 << TAHEAD1_LOGB);
+    return TAHEAD1_btable[idx];
+  }
 
   void reinit() {
     if ((TAHEAD1_AHEAD != 0) && (TAHEAD1_AHEAD != 2)) {
@@ -468,7 +476,9 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
     mm[1] = TAHEAD1_MINHIST;
 
     for (int i = 2; i <= TAHEAD1_NNHIST; i++) {
-      mm[i] = (int)(((double)TAHEAD1_MINHIST * pow((double)(TAHEAD1_MAXHIST) / (double)TAHEAD1_MINHIST, (double)(i - 1) / (double)((TAHEAD1_NNHIST - 1)))) + 0.5);
+      mm[i] = (int)(((double)TAHEAD1_MINHIST
+                     * pow((double)(TAHEAD1_MAXHIST) / (double)TAHEAD1_MINHIST, (double)(i - 1) / (double)((TAHEAD1_NNHIST - 1))))
+                    + 0.5);
     }
     for (int i = 2; i <= TAHEAD1_NNHIST; i++) {
       if (mm[i] <= mm[i - 1] + 1) {
@@ -498,7 +508,10 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
     TAHEAD1_m[1] = TAHEAD1_MINHIST;
 
     for (int i = 2; i <= TAHEAD1_NHIST; i++) {
-      TAHEAD1_m[i] = (int)(((double)TAHEAD1_MINHIST * pow((double)(TAHEAD1_MAXHIST) / (double)TAHEAD1_MINHIST, (double)(i - 1) / (double)((TAHEAD1_NHIST - 1)))) + 0.5);
+      TAHEAD1_m[i]
+          = (int)(((double)TAHEAD1_MINHIST
+                   * pow((double)(TAHEAD1_MAXHIST) / (double)TAHEAD1_MINHIST, (double)(i - 1) / (double)((TAHEAD1_NHIST - 1))))
+                  + 0.5);
     }
     for (int i = 3; i <= TAHEAD1_NHIST; i++) {
       if (TAHEAD1_m[i] <= TAHEAD1_m[i - 1]) {
@@ -624,7 +637,7 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
     if (TAHEAD1_NHIST == 14) {
       for (int i = 1; i <= ((TAHEAD1_SHARED) ? 8 : 14); i++) {
         for (int j = 0; j < TAHEAD1_ASSOC * (1 << (TAHEAD1_LOGG + (TAHEAD1_SHARED ? (i <= 6) : 0))); j++) {
-	  int idx = j % TAHEAD1_getTableSize(i);
+          int idx                            = j % TAHEAD1_getTableSize(i);
           get_TAHEAD1_gtable_entry(i, idx).u = random() & ((1 << TAHEAD1_UWIDTH) - 1);
 
           get_TAHEAD1_gtable_entry(i, idx).ctr = (random() & 7) - 4;
@@ -635,8 +648,8 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
     else {
       for (int i = 1; i <= TAHEAD1_NHIST; i++) {
         for (int j = 0; j < TAHEAD1_ASSOC * (1 << TAHEAD1_LOGG); j++) {
-          int idx = j % TAHEAD1_getTableSize(i);
-		get_TAHEAD1_gtable_entry(i, idx).u   = random() & ((1 << TAHEAD1_UWIDTH) - 1);
+          int idx                              = j % TAHEAD1_getTableSize(i);
+          get_TAHEAD1_gtable_entry(i, idx).u   = random() & ((1 << TAHEAD1_UWIDTH) - 1);
           get_TAHEAD1_gtable_entry(i, idx).ctr = (random() & 7) - 4;
         }
       }
@@ -736,7 +749,9 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
   }
 
   bool getbim() {
-    TAHEAD1_BIM      = (get_TAHEAD1_btable_entry(TAHEAD1_BI).pred) ? (get_TAHEAD1_btable_entry(TAHEAD1_BI >> TAHEAD1_HYSTSHIFT).hyst) : -1 - (get_TAHEAD1_btable_entry(TAHEAD1_BI >> TAHEAD1_HYSTSHIFT).hyst);
+    TAHEAD1_BIM      = (get_TAHEAD1_btable_entry(TAHEAD1_BI).pred)
+                           ? (get_TAHEAD1_btable_entry(TAHEAD1_BI >> TAHEAD1_HYSTSHIFT).hyst)
+                           : -1 - (get_TAHEAD1_btable_entry(TAHEAD1_BI >> TAHEAD1_HYSTSHIFT).hyst);
     TAHEAD1_TAGECONF = 3 * (get_TAHEAD1_btable_entry(TAHEAD1_BI >> TAHEAD1_HYSTSHIFT).hyst != 0);
 
     return (get_TAHEAD1_btable_entry(TAHEAD1_BI).pred != 0);
@@ -745,7 +760,7 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
   void baseupdate(bool Taken) {
     int8_t inter = TAHEAD1_BIM;
     ctrupdate(inter, Taken, TAHEAD1_BIMWIDTH);
-    get_TAHEAD1_btable_entry(TAHEAD1_BI).pred              = (inter >= 0);
+    get_TAHEAD1_btable_entry(TAHEAD1_BI).pred                      = (inter >= 0);
     get_TAHEAD1_btable_entry(TAHEAD1_BI >> TAHEAD1_HYSTSHIFT).hyst = (inter >= 0) ? inter : -inter - 1;
   };
   uint32_t MYRANDOM() {
@@ -791,7 +806,8 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
         TAHEAD1_AHGI[TAHEAD1_NPRED % 10][i] = TAHEAD1_AHGI[TAHEAD1_NPRED % 10][i - 1];
       }
       for (int i = 1; i <= TAHEAD1_NHIST; i++) {
-        TAHEAD1_AHGI[TAHEAD1_NPRED % 10][i] += ((BANK1 + ((i - 1) / 2)) % (TAHEAD1_NHIST / 2)) * (1 << (TAHEAD1_LOGG + 1)) + ((i & 1) << TAHEAD1_LOGG);
+        TAHEAD1_AHGI[TAHEAD1_NPRED % 10][i]
+            += ((BANK1 + ((i - 1) / 2)) % (TAHEAD1_NHIST / 2)) * (1 << (TAHEAD1_LOGG + 1)) + ((i & 1) << TAHEAD1_LOGG);
       }
 
 #endif
@@ -800,20 +816,22 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
     int AHEADTAG = (TAHEAD1_AHEAD > 0) ? TAHEAD1_AHEAD - 1 : TAHEAD1_AHEAD;
     // assumes that the tag is used one cycle later than the index if TAHEAD1_AHEAD pipelining is used.
 
-    TAHEAD1_BI = (TAHEAD1_PCBLOCK ^ ((TAHEAD1_Numero & (TAHEAD1_NBREADPERTABLE - 1)) << (TAHEAD1_LOGB - 2))) & ((1 << TAHEAD1_LOGB) - 1);
+    TAHEAD1_BI
+        = (TAHEAD1_PCBLOCK ^ ((TAHEAD1_Numero & (TAHEAD1_NBREADPERTABLE - 1)) << (TAHEAD1_LOGB - 2))) & ((1 << TAHEAD1_LOGB) - 1);
 
     // For TAHEAD1_AHEAD, one considers that the bimodal prediction is  obtained during the last cycle
     for (int i = 1; i <= TAHEAD1_NHIST; i++) {
 #if (TAHEAD1_AHEAD != 0)
       {
         TAHEAD1_GI[i] = TAHEAD1_AHGI[(TAHEAD1_NPRED - TAHEAD1_AHEAD) % 10][i]
-                ^ (((TAHEAD1_GH ^ TAHEAD1_Numero ^ TAHEAD1_BI ^ (TAHEAD1_PCBLOCK >> 3)) & (TAHEAD1_READWIDTHAHEAD - 1)) << (TAHEAD1_LOGG - TAHEAD1_LOGASSOC - 4));
+                        ^ (((TAHEAD1_GH ^ TAHEAD1_Numero ^ TAHEAD1_BI ^ (TAHEAD1_PCBLOCK >> 3)) & (TAHEAD1_READWIDTHAHEAD - 1))
+                           << (TAHEAD1_LOGG - TAHEAD1_LOGASSOC - 4));
         // some bits are hashed on  values that are unknown at prediction read time: assumes READWITHTAHEAD1 reads at a time
 
         TAHEAD1_GI[i] *= TAHEAD1_ASSOC;
         TAHEAD1_GTAG[i] = TAHEAD1_AHGTAG[(TAHEAD1_NPRED - AHEADTAG) % 10][i]
 
-                  ^ (((TAHEAD1_GH ^ (TAHEAD1_GH >> 1)) & (TAHEAD1_TAGCHECKAHEAD - 1)));
+                          ^ (((TAHEAD1_GH ^ (TAHEAD1_GH >> 1)) & (TAHEAD1_TAGCHECKAHEAD - 1)));
 
         ;
 
@@ -822,7 +840,8 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
 
 #else
       {
-        TAHEAD1_GI[i] = TAHEAD1_AHGI[(TAHEAD1_NPRED - TAHEAD1_AHEAD) % 10][i] ^ ((TAHEAD1_Numero & (TAHEAD1_NBREADPERTABLE - 1)) << (TAHEAD1_LOGG - TAHEAD1_LOGASSOC - 2));
+        TAHEAD1_GI[i] = TAHEAD1_AHGI[(TAHEAD1_NPRED - TAHEAD1_AHEAD) % 10][i]
+                        ^ ((TAHEAD1_Numero & (TAHEAD1_NBREADPERTABLE - 1)) << (TAHEAD1_LOGG - TAHEAD1_LOGASSOC - 2));
         TAHEAD1_GI[i] *= TAHEAD1_ASSOC;
         TAHEAD1_GTAG[i] = TAHEAD1_AHGTAG[(TAHEAD1_NPRED - AHEADTAG) % 10][i] ^ (TAHEAD1_Numero);
       }
@@ -863,13 +882,20 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
     // Look for the bank with longest matching history
     for (int i = TAHEAD1_NHIST; i > 0; i--) {
       for (int j = 0; j < TAHEAD1_ASSOC; j++) {
-        //int idx = (TAHEAD1_GGI[j][i] + j)%TAHEAD1_getTableSize(i);
-        if (get_TAHEAD1_gtable_entry (i, TAHEAD1_GGI[j][i] + j).tag == TAHEAD1_GTAG[i]) {
+        // int idx = (TAHEAD1_GGI[j][i] + j)%TAHEAD1_getTableSize(i);
+        if (get_TAHEAD1_gtable_entry(i, TAHEAD1_GGI[j][i] + j).tag == TAHEAD1_GTAG[i]) {
           TAHEAD1_HitBank  = i;
           TAHEAD1_HitAssoc = j;
 
-          TAHEAD1_LongestMatchPred = (get_TAHEAD1_gtable_entry (TAHEAD1_HitBank, TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc).ctr >= 0);
-          TAHEAD1_TAGECONF         = (abs(2 * get_TAHEAD1_gtable_entry (TAHEAD1_HitBank, TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc).ctr + 1)) >> 1;
+          TAHEAD1_LongestMatchPred
+              = (get_TAHEAD1_gtable_entry(TAHEAD1_HitBank, TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc).ctr
+                 >= 0);
+          TAHEAD1_TAGECONF = (abs(2
+                                      * get_TAHEAD1_gtable_entry(TAHEAD1_HitBank,
+                                                                 TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc)
+                                            .ctr
+                                  + 1))
+                             >> 1;
 
           break;
         }
@@ -878,11 +904,11 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
         break;
       }
     }
-    // should be noted that when TAHEAD1_LongestMatchPred is not low conf then TAHEAD1_alttaken is the 2nd not-low conf:  not a critical path,
-    // needed only on update.
+    // should be noted that when TAHEAD1_LongestMatchPred is not low conf then TAHEAD1_alttaken is the 2nd not-low conf:  not a
+    // critical path, needed only on update.
     for (int i = TAHEAD1_HitBank - 1; i > 0; i--) {
       for (int j = 0; j < TAHEAD1_ASSOC; j++) {
-        if (get_TAHEAD1_gtable_entry (i, TAHEAD1_GGI[j][i] + j).tag == TAHEAD1_GTAG[i]) {
+        if (get_TAHEAD1_gtable_entry(i, TAHEAD1_GGI[j][i] + j).tag == TAHEAD1_GTAG[i]) {
           // if (abs (2 * TAHEAD1_gtable[i][TAHEAD1_GGI[j][i] + j].ctr + 1) != 1)
           // slightly better to pick alternate prediction as not low confidence
           {
@@ -897,17 +923,19 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
       }
     }
     if (TAHEAD1_HitBank > 0) {
-      if (abs(2 * get_TAHEAD1_gtable_entry (TAHEAD1_HitBank, TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc).ctr + 1) == 1) {
+      if (abs(2 * get_TAHEAD1_gtable_entry(TAHEAD1_HitBank, TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc).ctr
+              + 1)
+          == 1) {
         for (int i = TAHEAD1_HitBank - 1; i > 0; i--) {
           for (int j = 0; j < TAHEAD1_ASSOC; j++) {
-        	if (get_TAHEAD1_gtable_entry (i, TAHEAD1_GGI[j][i] + j).tag == TAHEAD1_GTAG[i]) { 
-              if (abs(2 * get_TAHEAD1_gtable_entry (i, TAHEAD1_GGI[j][i] + j).ctr + 1) != 1)
+            if (get_TAHEAD1_gtable_entry(i, TAHEAD1_GGI[j][i] + j).tag == TAHEAD1_GTAG[i]) {
+              if (abs(2 * get_TAHEAD1_gtable_entry(i, TAHEAD1_GGI[j][i] + j).ctr + 1) != 1)
               // slightly better to pick alternate prediction as not low confidence
               {
                 TAHEAD1_HCpredBank = i;
 
                 TAHEAD1_HCpredAssoc = j;
-                TAHEAD1_HCpred      = (get_TAHEAD1_gtable_entry (i, TAHEAD1_GGI[j][i] + j).ctr >= 0);
+                TAHEAD1_HCpred      = (get_TAHEAD1_gtable_entry(i, TAHEAD1_GGI[j][i] + j).ctr >= 0);
 
                 break;
               }
@@ -930,7 +958,9 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
 
     if (TAHEAD1_HitBank > 0) {
       if (TAHEAD1_AltBank > 0) {
-        TAHEAD1_alttaken = (get_TAHEAD1_gtable_entry (TAHEAD1_AltBank, TAHEAD1_GGI[TAHEAD1_AltAssoc][TAHEAD1_AltBank] + TAHEAD1_AltAssoc).ctr >= 0);
+        TAHEAD1_alttaken
+            = (get_TAHEAD1_gtable_entry(TAHEAD1_AltBank, TAHEAD1_GGI[TAHEAD1_AltAssoc][TAHEAD1_AltBank] + TAHEAD1_AltAssoc).ctr
+               >= 0);
       }
 
 #ifndef TAHEAD1_SC
@@ -938,7 +968,12 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
       // USE_ALT_ON_NA is positive  use the alternate prediction
       bool Huse_alt_on_na = (TAHEAD1_use_alt_on_na >= 0);
 
-      if ((!Huse_alt_on_na) || (abs(2 * get_TAHEAD1_gtable_entry (TAHEAD1_HitBank, TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc).ctr + 1) > 1)) {
+      if ((!Huse_alt_on_na)
+          || (abs(2
+                      * get_TAHEAD1_gtable_entry(TAHEAD1_HitBank, TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc)
+                            .ctr
+                  + 1)
+              > 1)) {
         TAHEAD1_tage_pred = TAHEAD1_LongestMatchPred;
       } else {
         TAHEAD1_tage_pred = TAHEAD1_HCpred;
@@ -969,7 +1004,7 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
     TAHEAD1_predSC     = TAHEAD1_pred_taken;
     TAHEAD1_predTSC    = TAHEAD1_pred_taken;
 
-    //printf("pc:%lx Num:%lx ptaken:%d\n", PC, TAHEAD1_Numero, TAHEAD1_pred_taken);
+    // printf("pc:%lx Num:%lx ptaken:%d\n", PC, TAHEAD1_Numero, TAHEAD1_pred_taken);
 #ifdef TAHEAD1_DELAY_UPDATE
     TAHEAD1_Numero++;
 #endif
@@ -1018,7 +1053,8 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
     bool SCPRED = (TAHEAD1_SUMSC >= 0);
 
 #ifdef TAHEAD1_FORCEONHIGHCONF
-    TAHEAD1_pred_taken = (TAHEAD1_TAGECONF != 3) || (abs(TAHEAD1_SUMSC) >= TAHEAD1_updatethreshold / 2) ? SCPRED : TAHEAD1_LongestMatchPred;
+    TAHEAD1_pred_taken
+        = (TAHEAD1_TAGECONF != 3) || (abs(TAHEAD1_SUMSC) >= TAHEAD1_updatethreshold / 2) ? SCPRED : TAHEAD1_LongestMatchPred;
 #else
     TAHEAD1_pred_taken = (TAHEAD1_SUMSC >= 0);
 #endif
@@ -1043,28 +1079,33 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
       brtype = 0;
 
       switch (opType) {
-        case Opcode::iBALU_RJUMP : 									// OPTYPE_JMP_INDIRECT_UNCOND:
-        case Opcode::iBALU_RCALL : 									// OPTYPE_CALL_INDIRECT_UNCOND:
-        case Opcode::iBALU_RBRANCH : 								// OPTYPE_JMP_INDIRECT_COND:
-        //case Opcode::iBALU_RCALL : 									// OPTYPE_CALL_INDIRECT_COND:
-        case Opcode::iBALU_RET : 											// OPTYPE_RET_UNCOND:
-        																						// case OPTYPE_RET_COND: Opcode::iBALU_RET
-        brtype = 2; break;
-        //case Opcode::iBALU_LCALL : 									// OPTYPE_CALL_DIRECT_COND:
-        case Opcode::iBALU_LCALL : 									// OPTYPE_CALL_DIRECT_UNCOND:
-        case Opcode::iBALU_LBRANCH : 								// OPTYPE_JMP_DIRECT_COND:
-        case Opcode::iBALU_LJUMP : 										// OPTYPE_JMP_DIRECT_UNCOND:
-        brtype = 0; break;
+        case Opcode::iBALU_RJUMP:    // OPTYPE_JMP_INDIRECT_UNCOND:
+        case Opcode::iBALU_RCALL:    // OPTYPE_CALL_INDIRECT_UNCOND:
+        case Opcode::iBALU_RBRANCH:  // OPTYPE_JMP_INDIRECT_COND:
+        // case Opcode::iBALU_RCALL : 									//
+        // OPTYPE_CALL_INDIRECT_COND:
+        case Opcode::iBALU_RET:  // OPTYPE_RET_UNCOND:
+                                 // case OPTYPE_RET_COND: Opcode::iBALU_RET
+          brtype = 2;
+          break;
+        // case Opcode::iBALU_LCALL : 									// OPTYPE_CALL_DIRECT_COND:
+        case Opcode::iBALU_LCALL:    // OPTYPE_CALL_DIRECT_UNCOND:
+        case Opcode::iBALU_LBRANCH:  // OPTYPE_JMP_DIRECT_COND:
+        case Opcode::iBALU_LJUMP:    // OPTYPE_JMP_DIRECT_UNCOND:
+          brtype = 0;
+          break;
         default: exit(1);
       }
 
       switch (opType) {
-        case Opcode::iBALU_LBRANCH : 								// OPTYPE_JMP_DIRECT_COND:
-        //case Opcode::iBALU_LCALL : 									// OPTYPE_CALL_DIRECT_COND:
-        case Opcode::iBALU_RBRANCH :								// OPTYPE_JMP_INDIRECT_COND:
-        //case Opcode::iBALU_RCALL : 									// OPTYPE_CALL_INDIRECT_COND:
-        //case Opcode::iBALU_RET : 											// OPTYPE_RET_COND:
-        brtype += 1; break;
+        case Opcode::iBALU_LBRANCH:  // OPTYPE_JMP_DIRECT_COND:
+        // case Opcode::iBALU_LCALL : 									// OPTYPE_CALL_DIRECT_COND:
+        case Opcode::iBALU_RBRANCH:  // OPTYPE_JMP_INDIRECT_COND:
+          // case Opcode::iBALU_RCALL : 									//
+          // OPTYPE_CALL_INDIRECT_COND: case Opcode::iBALU_RET :
+          // // OPTYPE_RET_COND:
+          brtype += 1;
+          break;
 
         default:;
       }
@@ -1122,15 +1163,13 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
 
       int T = ((PC ^ (PC >> 2))) ^ TAHEAD1_Numero ^ (branchTarget >> 3);
 
-      int PATH = PC ^ (PC >> 2) ^ (PC >> 4) ^ (branchTarget) ^ (TAHEAD1_Numero << 3);
-      TAHEAD1_phist    = (TAHEAD1_phist << 4) ^ PATH;
-      TAHEAD1_phist    = (TAHEAD1_phist & ((1 << 27) - 1));
+      int PATH      = PC ^ (PC >> 2) ^ (PC >> 4) ^ (branchTarget) ^ (TAHEAD1_Numero << 3);
+      TAHEAD1_phist = (TAHEAD1_phist << 4) ^ PATH;
+      TAHEAD1_phist = (TAHEAD1_phist & ((1 << 27) - 1));
 
       for (int t = 0; t < 4; t++) {
         int DIR = (T & 1);
         T >>= 1;
-        int PATHBIT = PATH;
-        PATHBIT++; PATHBIT--;
 
         PATH >>= 1;
         Y--;
@@ -1142,7 +1181,7 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
         }
       }
 
-      TAHEAD1_Numero      = 0;
+      TAHEAD1_Numero = 0;
 
       TAHEAD1_PrevPCBLOCK = TAHEAD1_PCBLOCK;
       TAHEAD1_PCBLOCK     = (taken) ? branchTarget : PCBRANCH + 1;
@@ -1151,7 +1190,8 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
     } else {
       TAHEAD1_Numero++;
     }
-    TAHEAD1_BHIST    = (TAHEAD1_BrIMLI == 0) ? TAHEAD1_BBHIST : ((TAHEAD1_BBHIST & 15) + (TAHEAD1_BrIMLI << 6)) ^ (TAHEAD1_BrIMLI >> 4);
+    TAHEAD1_BHIST
+        = (TAHEAD1_BrIMLI == 0) ? TAHEAD1_BBHIST : ((TAHEAD1_BBHIST & 15) + (TAHEAD1_BrIMLI << 6)) ^ (TAHEAD1_BrIMLI >> 4);
     TAHEAD1_F_TaIMLI = (TAHEAD1_TaIMLI == 0) || (TAHEAD1_BrIMLI == TAHEAD1_TaIMLI) ? (TAHEAD1_GH) : TAHEAD1_TaIMLI;
     TAHEAD1_F_BrIMLI = (TAHEAD1_BrIMLI == 0) ? (TAHEAD1_phist) : TAHEAD1_BrIMLI;
 
@@ -1168,15 +1208,14 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
   // Tahead1 UPDATE
 
   void updatePredictor(uint64_t PCBRANCH, Opcode opType, bool resolveDir, bool predDir, uint64_t branchTarget) {
-
     // uint64_t PC = TAHEAD1_PCBLOCK ^ (TAHEAD1_Numero << 5);
     //
     // if (TAHEAD1_AHEAD) {
     //   PC = TAHEAD1_PrevPCBLOCK ^ (TAHEAD1_Numero << 5) ^ (TAHEAD1_PrevNumero << 5) ^ ((TAHEAD1_BI & 3) << 5);
     // }
-    //bool DONE = false;
-#ifndef TAHEAD1_DELAY_UPDATE 
-(void)predDir;
+    // bool DONE = false;
+#ifndef TAHEAD1_DELAY_UPDATE
+    (void)predDir;
 #endif
 #ifdef TAHEAD1_SC
     bool SCPRED = (TAHEAD1_SUMSC >= 0);
@@ -1226,7 +1265,12 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
     //////////////////////////////////////////////////
 
     if (TAHEAD1_HitBank > 0) {
-      bool PseudoNewAlloc = (abs(2 * get_TAHEAD1_gtable_entry (TAHEAD1_HitBank, TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc).ctr + 1) <= 1);
+      bool PseudoNewAlloc
+          = (abs(2
+                     * get_TAHEAD1_gtable_entry(TAHEAD1_HitBank, TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc)
+                           .ctr
+                 + 1)
+             <= 1);
       // an entry is considered as newly allocated if its prediction counter is weak
 
       if (PseudoNewAlloc) {
@@ -1258,7 +1302,9 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
       if (PseudoNewAlloc) {
         // Here we count correct/wrong weak counters to guide allocation
         for (int i = TAHEAD1_HitBank / 4; i <= TAHEAD1_NHIST / 4; i++) {
-          ctrupdate(TAHEAD1_COUNT50[i], (resolveDir == TAHEAD1_LongestMatchPred), 7);  // more or less than 50 % good predictions on weak counters
+          ctrupdate(TAHEAD1_COUNT50[i],
+                    (resolveDir == TAHEAD1_LongestMatchPred),
+                    7);  // more or less than 50 % good predictions on weak counters
           if ((TAHEAD1_LongestMatchPred != resolveDir) || ((MYRANDOM() & 31) > 1)) {
             ctrupdate(TAHEAD1_COUNT16_31[i],
                       (resolveDir == TAHEAD1_LongestMatchPred),
@@ -1318,10 +1364,10 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
           bool MOVE[2] = {false};
           for (int J = 0; J < TAHEAD1_ASSOC; J++) {
             j++;
-            j = j % TAHEAD1_ASSOC;
-	    int idx = (TAHEAD1_GGI[j][i] + j)%TAHEAD1_getTableSize(i);
+            j       = j % TAHEAD1_ASSOC;
+            int idx = (TAHEAD1_GGI[j][i] + j) % TAHEAD1_getTableSize(i);
 
-            if (get_TAHEAD1_gtable_entry (i, idx).u == 0) {
+            if (get_TAHEAD1_gtable_entry(i, idx).u == 0) {
               REP[j]  = true;
               IREP[j] = idx;
 
@@ -1329,9 +1375,11 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
 
             else if (TAHEAD1_REPSK == 1) {
               if (TAHEAD1_AHEAD == 0) {
-                IREP[j] = TAHEAD1_GGI[j][i] ^ ((((get_TAHEAD1_gtable_entry (i, idx).tag >> 5) & 3) << (TAHEAD1_LOGG - 3)) + (j ^ 1));
+                IREP[j] = TAHEAD1_GGI[j][i] ^ ((((get_TAHEAD1_gtable_entry(i, idx).tag >> 5) & 3) << (TAHEAD1_LOGG - 3)) + (j ^ 1));
               } else {
-                IREP[j] = TAHEAD1_GGI[j][i] ^ ((((get_TAHEAD1_gtable_entry (i, idx).tag >> 5) & (TAHEAD1_READWIDTHAHEAD - 1)) << (TAHEAD1_LOGG - 5)) + (j ^ 1));
+                IREP[j] = TAHEAD1_GGI[j][i]
+                          ^ ((((get_TAHEAD1_gtable_entry(i, idx).tag >> 5) & (TAHEAD1_READWIDTHAHEAD - 1)) << (TAHEAD1_LOGG - 5))
+                             + (j ^ 1));
               }
 
               REP[j] = (get_TAHEAD1_gtable_entry(i, IREP[j]).u == 0);
@@ -1340,24 +1388,26 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
             }
 
             if (REP[j]) {
-              if ((((TAHEAD1_UWIDTH == 1) && ((((MYRANDOM() & ((1 << (abs(2 * get_TAHEAD1_gtable_entry (i, idx).ctr + 1) >> 1)) - 1)) == 0))))
+              if ((((TAHEAD1_UWIDTH == 1)
+                    && ((((MYRANDOM() & ((1 << (abs(2 * get_TAHEAD1_gtable_entry(i, idx).ctr + 1) >> 1)) - 1)) == 0))))
                    || (TAHEAD1_TICKH >= TAHEAD1_BORNTICK / 2))
                   || (TAHEAD1_UWIDTH == 2)) {
                 done = true;
                 if (MOVE[j]) {
-                  get_TAHEAD1_gtable_entry (i, IREP[j]).u   = get_TAHEAD1_gtable_entry (i, idx).u;
-                  get_TAHEAD1_gtable_entry (i, IREP[j]).tag = get_TAHEAD1_gtable_entry (i, idx).tag;
-                  get_TAHEAD1_gtable_entry (i, IREP[j]).ctr = get_TAHEAD1_gtable_entry (i, idx).ctr;
+                  get_TAHEAD1_gtable_entry(i, IREP[j]).u   = get_TAHEAD1_gtable_entry(i, idx).u;
+                  get_TAHEAD1_gtable_entry(i, IREP[j]).tag = get_TAHEAD1_gtable_entry(i, idx).tag;
+                  get_TAHEAD1_gtable_entry(i, IREP[j]).ctr = get_TAHEAD1_gtable_entry(i, idx).ctr;
                 }
 
-                get_TAHEAD1_gtable_entry (i, idx).tag = TAHEAD1_GTAG[i];
+                get_TAHEAD1_gtable_entry(i, idx).tag = TAHEAD1_GTAG[i];
 #ifndef TAHEAD1_FORCEU
-                get_TAHEAD1_gtable_entry (i, idx).u = 0;
+                get_TAHEAD1_gtable_entry(i, idx).u = 0;
 #else
 
-                get_TAHEAD1_gtable_entry (i, idx).u = ((TAHEAD1_UWIDTH == 2) || (TAHEAD1_TICKH >= TAHEAD1_BORNTICK / 2)) & (First ? 1 : 0);
+                get_TAHEAD1_gtable_entry(i, idx).u
+                    = ((TAHEAD1_UWIDTH == 2) || (TAHEAD1_TICKH >= TAHEAD1_BORNTICK / 2)) & (First ? 1 : 0);
 #endif
-                get_TAHEAD1_gtable_entry (i, idx).ctr = (resolveDir) ? 0 : -1;
+                get_TAHEAD1_gtable_entry(i, idx).ctr = (resolveDir) ? 0 : -1;
 
                 NA++;
                 if ((i >= 3) || (!First)) {
@@ -1381,11 +1431,11 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
             for (int jj = 0; jj < TAHEAD1_ASSOC; jj++) {
               {
                 // some just allocated entries  have been set to useful
-                int idxj = (TAHEAD1_GGI[jj][i] + jj)%TAHEAD1_getTableSize(i);
+                int idxj = (TAHEAD1_GGI[jj][i] + jj) % TAHEAD1_getTableSize(i);
                 if ((MYRANDOM() & ((1 << (1 + TAHEAD1_LOGASSOC + TAHEAD1_REPSK)) - 1)) == 0) {
-                  if (abs(2 * get_TAHEAD1_gtable_entry (i, idxj).ctr + 1) == 1) {
-                    if (get_TAHEAD1_gtable_entry (i, idxj).u == 1) {
-                      get_TAHEAD1_gtable_entry (i, idxj).u--;
+                  if (abs(2 * get_TAHEAD1_gtable_entry(i, idxj).ctr + 1) == 1) {
+                    if (get_TAHEAD1_gtable_entry(i, idxj).u == 1) {
+                      get_TAHEAD1_gtable_entry(i, idxj).u--;
                     }
                   }
                 }
@@ -1432,10 +1482,10 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
         if (TAHEAD1_NHIST == 14) {
           for (int i = 1; i <= ((TAHEAD1_SHARED) ? 8 : 14); i++) {
             for (int j = 0; j < TAHEAD1_ASSOC * (1 << (TAHEAD1_LOGG + (TAHEAD1_SHARED ? (i <= 6) : 0))); j++) {
-              int idxx = j%TAHEAD1_getTableSize(i);
-		// this is not realistic: in a real processor:    TAHEAD1_gtable[1][idxx].u >>= 1;
-              if (get_TAHEAD1_gtable_entry (i, idxx).u > 0) {
-                get_TAHEAD1_gtable_entry (i, idxx).u--;
+              int idxx = j % TAHEAD1_getTableSize(i);
+              // this is not realistic: in a real processor:    TAHEAD1_gtable[1][idxx].u >>= 1;
+              if (get_TAHEAD1_gtable_entry(i, idxx).u > 0) {
+                get_TAHEAD1_gtable_entry(i, idxx).u--;
               }
             }
           }
@@ -1444,10 +1494,10 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
         else {
           for (int i = 1; i <= TAHEAD1_NHIST; i++) {
             for (int j = 0; j < TAHEAD1_ASSOC * (1 << TAHEAD1_LOGG); j++) {
-              int idxx = j%TAHEAD1_getTableSize(i);
+              int idxx = j % TAHEAD1_getTableSize(i);
               // this is not realistic: in a real processor:    TAHEAD1_gtable[1][idxx].u >>= 1;
-              if (get_TAHEAD1_gtable_entry (i, idxx).u > 0) {
-                get_TAHEAD1_gtable_entry (i, idxx).u--;
+              if (get_TAHEAD1_gtable_entry(i, idxx).u > 0) {
+                get_TAHEAD1_gtable_entry(i, idxx).u--;
               }
             }
           }
@@ -1455,10 +1505,10 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
 #else
 
         for (int j = 0; j < TAHEAD1_ASSOC * (1 << TAHEAD1_LOGG) * TAHEAD1_NHIST; j++) {
-          int idxx = j%TAHEAD1_getTableSize(1);
+          int idxx = j % TAHEAD1_getTableSize(1);
           // this is not realistic: in a real processor:    TAHEAD1_gtable[1][idxx].u >>= 1;
-          if (get_TAHEAD1_gtable_entry (1, idxx).u > 0) {
-            get_TAHEAD1_gtable_entry (1, idxx).u--;
+          if (get_TAHEAD1_gtable_entry(1, idxx).u > 0) {
+            get_TAHEAD1_gtable_entry(1, idxx).u--;
           }
         }
 #endif
@@ -1475,11 +1525,17 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
       if (TAHEAD1_TAGECONF == 0) {
         if (TAHEAD1_LongestMatchPred != resolveDir) {
           if (TAHEAD1_AltBank != TAHEAD1_HCpredBank) {
-	    ctrupdate(get_TAHEAD1_gtable_entry (TAHEAD1_AltBank, TAHEAD1_GGI[TAHEAD1_AltAssoc][TAHEAD1_AltBank] + TAHEAD1_AltAssoc).ctr, resolveDir, TAHEAD1_CWIDTH);
-
+            ctrupdate(
+                get_TAHEAD1_gtable_entry(TAHEAD1_AltBank, TAHEAD1_GGI[TAHEAD1_AltAssoc][TAHEAD1_AltBank] + TAHEAD1_AltAssoc).ctr,
+                resolveDir,
+                TAHEAD1_CWIDTH);
           }
           if (TAHEAD1_HCpredBank > 0) {
-            ctrupdate(get_TAHEAD1_gtable_entry (TAHEAD1_HCpredBank, TAHEAD1_GGI[TAHEAD1_HCpredAssoc][TAHEAD1_HCpredBank] + TAHEAD1_HCpredAssoc).ctr, resolveDir, TAHEAD1_CWIDTH);
+            ctrupdate(get_TAHEAD1_gtable_entry(TAHEAD1_HCpredBank,
+                                               TAHEAD1_GGI[TAHEAD1_HCpredAssoc][TAHEAD1_HCpredBank] + TAHEAD1_HCpredAssoc)
+                          .ctr,
+                      resolveDir,
+                      TAHEAD1_CWIDTH);
           }
 
           else {
@@ -1489,7 +1545,9 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
       }
 
 #endif
-      ctrupdate(get_TAHEAD1_gtable_entry (TAHEAD1_HitBank, TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc).ctr, resolveDir, TAHEAD1_CWIDTH);
+      ctrupdate(get_TAHEAD1_gtable_entry(TAHEAD1_HitBank, TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc).ctr,
+                resolveDir,
+                TAHEAD1_CWIDTH);
 
     } else {
       baseupdate(resolveDir);
@@ -1500,12 +1558,13 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
       if (TAHEAD1_LongestMatchPred == resolveDir) {
 #ifdef TAHEAD1_PROTECTRECENTALLOCUSEFUL
 
-        if (get_TAHEAD1_gtable_entry (TAHEAD1_HitBank, TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc).u == 0) {
-          get_TAHEAD1_gtable_entry (TAHEAD1_HitBank, TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc).u++;
+        if (get_TAHEAD1_gtable_entry(TAHEAD1_HitBank, TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc).u == 0) {
+          get_TAHEAD1_gtable_entry(TAHEAD1_HitBank, TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc).u++;
         }
         // Recent useful will survive a smart reset
 #endif
-        if (get_TAHEAD1_gtable_entry(TAHEAD1_HitBank, TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc).u < (1 << TAHEAD1_UWIDTH) - 1) {
+        if (get_TAHEAD1_gtable_entry(TAHEAD1_HitBank, TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc).u
+            < (1 << TAHEAD1_UWIDTH) - 1) {
           get_TAHEAD1_gtable_entry(TAHEAD1_HitBank, TAHEAD1_GGI[TAHEAD1_HitAssoc][TAHEAD1_HitBank] + TAHEAD1_HitAssoc).u++;
         }
 
@@ -1545,7 +1604,6 @@ TAHEAD1_bentry& get_TAHEAD1_btable_entry (int j)
     HistoryUpdate(PCBRANCH, opType, taken, branchTarget, TAHEAD1_ptghist, tahead1_ch_i, TAHEAD1_ch_t[0], TAHEAD1_ch_t[1]);
   }
 #endif
-
 };
 
 #endif

@@ -71,7 +71,7 @@ protected:
   FCFSQueue                        OverflowMemoryRequests;
 
 public:
-  MemController(Memory_system *current, const std::string &device_descr_section, const std::string &device_name = NULL);
+  MemController(Memory_system *current, const std::string &device_descr_section, const std::string &device_name = "");
   ~MemController() {}
 
   // Entry points to schedule that may schedule a do?? if needed

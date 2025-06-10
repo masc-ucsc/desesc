@@ -19,10 +19,7 @@ ESESC; see the file COPYING.  If not, write to the  Free Software Foundation, 59
 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 */
 
-#include <stdlib.h>
-#include <string.h>
-#include <strings.h>
-
+#include <cstdlib>
 #include <algorithm>
 #include <vector>
 
@@ -75,8 +72,8 @@ private:
   const uint32_t AccessSize;
   const uint32_t AccessMask;
 
-  Data *access;
-  Data *accessTail;
+  std::vector<Data> access;
+  std::vector<Data> accessTail;
 
   class DLess {
   public:
@@ -270,20 +267,21 @@ public:
 };
 
 template <class Data, class Time>
-TQueue<Data, Time>::TQueue(uint32_t MaxTimeDiff) : AccessSize(MaxTimeDiff), AccessMask(AccessSize - 1) {
+TQueue<Data, Time>::TQueue(uint32_t MaxTimeDiff)
+    : AccessSize(MaxTimeDiff)
+    , AccessMask(AccessSize - 1)
+    , access(AccessSize)
+    , accessTail(AccessSize) {
   I(AccessSize > 7);
   I((AccessSize & (AccessSize - 1)) == 0);
-
-  accessTail = (Data *)malloc(AccessSize * sizeof(Data));
-
-  access = (Data *)malloc(AccessSize * sizeof(Data));
 
   reset();
 }
 
 template <class Data, class Time>
 void TQueue<Data, Time>::reset() {
-  bzero(access, AccessSize * sizeof(Data));
+  std::fill(access.begin(), access.end(), nullptr);
+  std::fill(accessTail.begin(), accessTail.end(), nullptr);
 
   nNodes  = 0;
   minTime = 0;
@@ -298,9 +296,7 @@ TQueue<Data, Time>::~TQueue() {
     fmt::print("Destroying TQueue {} with pending nodes\n", nNodes);
   }
 
-  free(accessTail);
-
-  free(access);
+  // vectors automatically release memory
 }
 
 template <class Data, class Time>

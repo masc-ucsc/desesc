@@ -16,6 +16,8 @@ bazel_dep(name = "googletest", version = "1.17.0", dev_dependency = True, repo_n
 bazel_dep(name = "google_benchmark", version = "1.9.4", dev_dependency = True, repo_name = "com_google_benchmark")
 
 
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
 #  echo -n "sha256-" && openssl dgst -sha256 -binary v4.2.0.zip | openssl base64 -A; echo
 
 # iassert
@@ -29,3 +31,48 @@ archive_override(
         "https://github.com/masc-ucsc/iassert/archive/db67db81bc7708fae78d1d667c9a085e5c0e123c.zip",
     ],
 )
+
+# toml11
+http_archive(
+    name = "toml11",
+    build_file = "//packages:toml11.BUILD",
+    sha256 = "075dd130a9f517c3eaed502ece6a2c1088b1d0dd4aa79882fd0ca7609325ffdc",
+    strip_prefix = "toml11-4.4.0",
+    urls = [
+        "https://github.com/ToruNiina/toml11/archive/v4.4.0.zip",
+    ],
+)
+
+# Dromajo
+http_archive(
+    name = "dromajo",
+    build_file = "//packages:dromajo.BUILD",
+    patches = ["//packages:dromajo.patch"],
+    sha256 = "25af8ca914f0ca3f41a6250fa6069621e3fcaa3230e1bc95ff813eaec9c7e3dd",
+    strip_prefix = "dromajo-2a9f5bbfbefa92bc0d81bb83e44e6bab963302cb",
+    urls = [
+      "https://github.com/masc-ucsc/dromajo/archive/2a9f5bbfbefa92bc0d81bb83e44e6bab963302cb.zip",
+    ],
+)
+
+# superbp
+http_archive(
+    name = "superbp",
+    sha256 = "6a64e6b9083a6935f1c541e966600eda70f01c0abf7adeb495d54470909d680a",
+    strip_prefix = "superbp-defafae5f352970c292887538cd91d05d4cf3cbc",
+    urls = [
+      "https://github.com/masc-ucsc/superbp/archive/defafae5f352970c292887538cd91d05d4cf3cbc.zip",
+    ],
+)
+
+# libelf (needed by dromajo in OSX)
+http_archive(
+    name = "libelf",
+    build_file = "//packages:libelf.BUILD",
+    sha256 = "c0627b45c29a151e4e1105988ad7ce9bf83b52cbbca0a1db06c7fcad69b85c4b",
+    strip_prefix = "libelf-ba3c81450b91d1935fff01bae191a59d7653d2a5",
+    urls = [
+        "https://github.com/masc-ucsc/libelf/archive/ba3c81450b91d1935fff01bae191a59d7653d2a5.zip",
+    ],
+)
+

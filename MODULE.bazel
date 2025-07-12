@@ -58,10 +58,10 @@ http_archive(
 # superbp
 http_archive(
     name = "superbp",
-    sha256 = "6a64e6b9083a6935f1c541e966600eda70f01c0abf7adeb495d54470909d680a",
-    strip_prefix = "superbp-defafae5f352970c292887538cd91d05d4cf3cbc",
+    sha256 = "040eeb15595f19ad3859266be880caf0f5deb81785656edd4ce85f19af677f9d",
+    strip_prefix = "superbp-fd8095b767c8c1e4584132fcfada0460da53cf18",
     urls = [
-      "https://github.com/masc-ucsc/superbp/archive/defafae5f352970c292887538cd91d05d4cf3cbc.zip",
+      "https://github.com/masc-ucsc/superbp/archive/fd8095b767c8c1e4584132fcfada0460da53cf18.zip",
     ],
 )
 

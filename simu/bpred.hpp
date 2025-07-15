@@ -43,7 +43,7 @@ public:
   };
 
   HistoryType calcHist(Addr_t pc) const {
-    HistoryType cid = pc >> 2;  // psudo-PC works, no need lower 2 bit
+    HistoryType cid = pc >> 1;  // psudo-PC works, no need lower 1 bit in RISC-V
 
     // Remove used bits (restrict predictions per cycle)
     cid = cid >> addrShift;
@@ -106,8 +106,10 @@ public:
   void tryPrefetch(MemObj *il1, bool doStats, int degree);
 };
 
-class BPBTB : public BPred {
+class BPBTB {
 private:
+  Stats_cntr nHit;
+  Stats_cntr nMiss;
   Stats_cntr nHitLabel;  // hits to the icache label (ibtb)
   DOLC      *dolc;
   bool       btbicache;
@@ -134,8 +136,8 @@ public:
   BPBTB(int32_t i, const std::string &section, const std::string &sname, const std::string &name = "btb");
   ~BPBTB();
 
-  Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
-  void    updateOnly(Dinst *dinst);
+  Outcome predict(Addr_t pc, Dinst *dinst, bool doUpdate, bool doStats);
+  void    updateOnly(Addr_t pc, Dinst *dinst);
 };
 
 class BPOracle : public BPred {
@@ -209,10 +211,14 @@ private:
 
   SCTable table;
 
+  Addr_t pc;
+
 protected:
 public:
   BP2bit(int32_t i, const std::string &section, const std::string &sname);
 
+  void    fetchBoundaryBegin(Dinst *dinst);
+  void    fetchBoundaryEnd();
   Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
 };
 

@@ -27,9 +27,9 @@
 // #define TAHEAD1_DELAY_UPDATE 1
 
 #define TAHEAD1_LOGSCALE 2
-#define TAHEAD1_LOGT     (4 + TAHEAD1_LOGSCALE)  /* logsize of a logical  TAGE tables */
-#define TAHEAD1_LOGB     (4 + TAHEAD1_LOGSCALE)  // log of number of entries in bimodal predictor
-#define TAHEAD1_LOGBIAS  (4 + TAHEAD1_LOGSCALE)  // logsize of tables in TAHEAD1_SC
+#define TAHEAD1_LOGT     (6 + TAHEAD1_LOGSCALE)  /* logsize of a logical  TAGE tables */
+#define TAHEAD1_LOGB     (6 + TAHEAD1_LOGSCALE)  // log of number of entries in bimodal predictor
+#define TAHEAD1_LOGBIAS  (6 + TAHEAD1_LOGSCALE)  // logsize of tables in TAHEAD1_SC
 
 #if (TAHEAD1_LOGSCALE == 4)
 #define TAHEAD1_MINHIST 2
@@ -53,10 +53,10 @@
 #define TAHEAD1_MAXHIST 250
 #endif
 
-#define TAHEAD1_MAXBR          16  // Maximum TAHEAD1_MAXBR  branches in  the block; the code assumes TAHEAD1_MAXBR is a power of 2
+#define TAHEAD1_MAXBR 8  // Maximum TAHEAD1_MAXBR  branches in  the block; the code assumes TAHEAD1_MAXBR is a power of 2
 #define TAHEAD1_NBREADPERTABLE 4   // predictions read per table for a block
 
-#define TAHEAD1_AHEAD 2
+#define TAHEAD1_AHEAD 0
 // in the curent version:  only 0 or 2 are valid (0 corresponds to the conventional 1-block ahead, 2 coresponds to the 3-block
 // ahead)
 
@@ -67,7 +67,7 @@
 #define TAHEAD1_TAGCHECKAHEAD  4   // the number of tag checks per entries,
 //  (16,4) and (8,8) seems good design points
 
-#define TAHEAD1_NHIST 14  // 14  different history lengths, but 7 physical tables
+#define TAHEAD1_NHIST 6  // 14  different history lengths, but 7 physical tables
 
 #define TAHEAD1_UWIDTH 2
 #define TAHEAD1_LOGASSOC \
@@ -437,7 +437,7 @@ public:
 #endif
   }
 
-#define TAHEAD1_NNHIST 18
+#define TAHEAD1_NNHIST 10
   int mm[TAHEAD1_NNHIST + 1];
 
   int TAHEAD1_getTableSize(int i) {
@@ -491,7 +491,7 @@ public:
       PT++;
     }
 
-    for (int i = 5; i <= 14; i++)
+    for (int i = 5; i <= TAHEAD1_NHIST; i++)
 
     {
       TAHEAD1_m[PT] = mm[i];
@@ -499,7 +499,7 @@ public:
     }
     PT = TAHEAD1_NHIST;
 
-    for (int i = TAHEAD1_NNHIST; i > 14; i -= 2) {
+    for (int i = TAHEAD1_NNHIST; i > TAHEAD1_NHIST; i -= 2) {
       TAHEAD1_m[PT] = mm[i];
       PT--;
     }
@@ -553,10 +553,10 @@ public:
 #ifndef TAHEAD1_INTERLEAVED
     if (TAHEAD1_SHARED) {
       /* tailored for 14 tables */
-      for (int i = 1; i <= 8; i++) {
+      for (int i = 1; i < TAHEAD1_NNHIST/2; i++) {
         TAHEAD1_gtable[i] = new TAHEAD1_gentry[(1 << (TAHEAD1_LOGG + (i <= 6))) * TAHEAD1_ASSOC];
       }
-      for (int i = 9; i <= 14; i++) {
+      for (int i = TAHEAD1_NNHIST/2; i <= TAHEAD1_NHIST; i++) {
         TAHEAD1_gtable[i] = TAHEAD1_gtable[i - 8];
       }
     }
@@ -787,11 +787,11 @@ public:
       }
       if (TAHEAD1_SHARED) {
         int X = TAHEAD1_AHGI[TAHEAD1_NPRED % 10][1] & 1;
-        for (int i = 2; i <= 6; i++) {
+        for (int i = 2; i < TAHEAD1_NHIST/2; i++) {
           TAHEAD1_AHGI[TAHEAD1_NPRED % 10][i] <<= 1;
           TAHEAD1_AHGI[TAHEAD1_NPRED % 10][i] ^= X;
         }
-        for (int i = 9; i <= 14; i++) {
+        for (int i = TAHEAD1_NNHIST/2; i <= TAHEAD1_NHIST; i++) {
           TAHEAD1_AHGI[TAHEAD1_NPRED % 10][i] <<= 1;
           TAHEAD1_AHGI[TAHEAD1_NPRED % 10][i] ^= X ^ 1;
         }
@@ -1339,7 +1339,9 @@ public:
       }
 
       bool First = true;
+#ifdef TAHEAD1_FILTERALLOCATION
       bool Test  = false;
+#endif
 
       for (int i = DEP; i <= TAHEAD1_NHIST; i++) {
 #ifdef TAHEAD1_FILTERALLOCATION

@@ -550,6 +550,7 @@ public:
       printf("%d ", TAHEAD1_m[i]);
     }
     printf("\n");
+    //printf ("TAHEAD1_m[TAHEAD1_NHIST] = %u\n", TAHEAD1_m[TAHEAD1_NHIST]);
 #ifndef TAHEAD1_INTERLEAVED
     if (TAHEAD1_SHARED) {
       /* tailored for 14 tables */

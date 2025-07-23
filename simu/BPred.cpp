@@ -298,6 +298,51 @@ Outcome BPNotTakenEnhanced::predict(Dinst *dinst, bool doUpdate, bool doStats) {
 }
 
 /*****************************************
+ * BP2bitL0
+ */
+
+BP2bitL0::BP2bitL0(int32_t i, const std::string &section, const std::string &sname)
+    : BPred(i, section, sname, "2bitl0")
+    , btb(i, section, sname)
+    , table(section, Config::get_power2(section, "size", 1), Config::get_integer(section, "bits", 1, 7)) {
+
+  pc = 0;
+}
+
+void BP2bitL0::fetchBoundaryBegin(Dinst *dinst) {
+  pc = dinst->getPC();
+}
+
+void BP2bitL0::fetchBoundaryEnd() {
+  pc = 0;
+}
+
+Outcome BP2bitL0::predict(Dinst *dinst, bool doUpdate, bool doStats) {
+  // NOTE: 2 bit is simple, no predecode of instruction type (isJump() special code)
+
+  bool taken = dinst->isTaken();
+  Addr_t use_pc = pc==0?dinst->getPC():pc;
+
+  bool ptaken = table.isHighest(calcHist(use_pc));
+  if (doUpdate) {
+    table.update(calcHist(use_pc), taken);
+  }
+
+  Outcome btb_outcome = Outcome::NoBTB;
+  if (ptaken) {
+    btb_outcome = btb.predict(use_pc, dinst, doUpdate? (ptaken && taken): false, doStats);
+  }
+
+  if (btb_outcome == Outcome::NoBTB)
+    return Outcome::NoBTB;
+
+  if (ptaken != taken)
+    return Outcome::Miss;
+
+  return ptaken ? btb_outcome : Outcome::Correct;
+}
+
+/*****************************************
  * BP2bit
  */
 
@@ -726,12 +771,12 @@ Outcome BPIMLI::predict(Dinst *dinst, bool doUpdate, bool doStats) {
 
 // class PREDICTOR;
 
-// gshare_must, gshare_correct, gshare_incorrect;
+// gshare_missed, gshare_correct, gshare_incorrect;
 BPSuperbp::BPSuperbp(int32_t i, const std::string &section, const std::string &sname)
     : BPred(i, section, sname, "superbp")
     , btb(i, section, sname)
     , FetchPredict(Config::get_bool(section, "fetch_predict"))
-    , gshare_must(fmt::format("P({})_{}_BPred:gshare_must", i, sname))
+    , gshare_missed(fmt::format("P({})_{}_BPred:gshare_missed", i, sname))
     , gshare_correct(fmt::format("P({})_{}_BPred:gshare_correct", i, sname))
     , gshare_incorrect(fmt::format("P({})_{}_BPred:gshare_incorrect", i, sname)) {
   // TODO
@@ -816,7 +861,7 @@ void BPSuperbp::fetchBoundaryEnd() {
   }
 }
 
-// uint64_t gshare_must, gshare_correct, gshare_incorrect;
+// uint64_t gshare_missed, gshare_correct, gshare_incorrect;
 Outcome BPSuperbp::predict(Dinst *dinst, bool doUpdate, bool doStats) {
   // FIXME: check dinst->is_zero_delay_taken(); If TRUE, it is beyond the 1 taken branch
 
@@ -843,20 +888,29 @@ Outcome BPSuperbp::predict(Dinst *dinst, bool doUpdate, bool doStats) {
   bool ptaken = false;
   superbp_p->handle_insn_desesc(pc, branchTarget, insn_type, taken, &batage_pred, &batage_conf, &gshare_use);
   // TODO:Check if ptaken must get the value based on is_zero_delay_taken directly w/o checking gshare_use at all
-  if (gshare_use) {
+  if (gshare_use) { // GSHARE did a prediction (it should be taken, but may be a miss prediction)
     ptaken = true;
     if (ptaken != taken) {
-      gshare_incorrect.inc(true);
+      if (dinst->is_zero_delay_taken()) {
+        fmt::print("1.WHY IS {:x} gshare_use is set and still MISS predict??\n", dinst->getPC());
+      }
+      assert(!dinst->is_zero_delay_taken()); // UNSURE
+      gshare_incorrect.inc(dinst->has_stats());
+      dinst->clear_zero_delay_taken();
     } else {
-      gshare_correct.inc(true);
+      if (!dinst->is_zero_delay_taken()) {
+        fmt::print("2.WHY IS {:x} gshare IF NOT THE LAST BRANCH IS FETCH (one taken before)\n", dinst->getPC());
+      }
+      assert(dinst->is_zero_delay_taken()); // In theory, gshare should be used only in the 2nd taken branch
+      gshare_correct.inc(dinst->has_stats());
     }
   } else {
     ptaken = batage_pred;
     if (dinst->is_zero_delay_taken()) {
-      {
+   
         // Stats saying that I wish I had gshare, but I did not so stall fetch (fall back to 1 taken)
-        gshare_must.inc(true);
-      }
+      gshare_missed.inc(dinst->has_stats());
+   
       dinst->clear_zero_delay_taken();
       // the succeeding fetch boundary begin must/ will update the history in superbp
     }
@@ -1626,6 +1680,8 @@ std::unique_ptr<BPred> BPredictor::getBPred(int32_t id, const std::string &sec, 
     pred = std::make_unique<BPTaken>(id, sec, sname);
   } else if (type == "2bit") {
     pred = std::make_unique<BP2bit>(id, sec, sname);
+  } else if (type == "2bitl0") {
+    pred = std::make_unique<BP2bitL0>(id, sec, sname);
   } else if (type == "2level") {
     pred = std::make_unique<BP2level>(id, sec, sname);
   } else if (type == "2bcgskew") {
@@ -1662,7 +1718,9 @@ BPredictor::BPredictor(int32_t i, MemObj *iobj, MemObj *dobj, std::shared_ptr<BP
     , dl1(dobj)
     , nBTAC(fmt::format("P({})_BPred:nBTAC", id))
 
-    , nZero_taken_delay(fmt::format("P({})_BPred:nZero_taken_delay", id))
+    , nZero_taken_delay1(fmt::format("P({})_BPred:nZero_taken_delay1", id))
+    , nZero_taken_delay2(fmt::format("P({})_BPred:nZero_taken_delay2", id))
+    , nZero_taken_delay3(fmt::format("P({})_BPred:nZero_taken_delay3", id))
     , nControl(fmt::format("P({})_BPred:nControl", id))
     , nBranch(fmt::format("P({})_BPred:nBranch", id))
     , nNoPredict(fmt::format("P({})_BPred:nNoPredict", id))
@@ -1689,6 +1747,7 @@ BPredictor::BPredictor(int32_t i, MemObj *iobj, MemObj *dobj, std::shared_ptr<BP
     , nFirstBias(fmt::format("P({})_BPred:nFirstBias", id))
     , nFirstBias_wrong(fmt::format("P({})_BPred:nFirstBias_wrong", id))
 
+    , nFixes0(fmt::format("P({})_BPred:nFixes0", id))
     , nFixes1(fmt::format("P({})_BPred:nFixes1", id))
     , nFixes2(fmt::format("P({})_BPred:nFixes2", id))
     , nFixes3(fmt::format("P({})_BPred:nFixes3", id))
@@ -1925,49 +1984,46 @@ TimeDelta_t BPredictor::predict(Dinst *dinst, bool *fastfix) {
       dinst->setBranch_hit3_miss2();
       nHit3_miss2.inc(true);
     }
-    //}else {
-    //  dinst->setLevel3_Outcome::None();
   }
 
+  if (dinst->isTaken()) {
   if (outcome1 == Outcome::Correct && outcome2 == Outcome::Correct && outcome3 == Outcome::Correct) {
-    if (dinst->isTaken()) {
-#ifdef CLOSE_TARGET_OPTIMIZATION
-      int distance = dinst->getAddr() - dinst->getPC();
-
-      uint32_t delta = distance / FetchWidth;
-      if (delta <= 2 && distance > 0) {
-        return 0;
-      }
-#endif
       if (dinst->is_zero_delay_taken()) {
-        nZero_taken_delay.inc(true);
+          nZero_taken_delay1.inc(dinst->has_stats());
         return 0;
       }
 
+      nFixes1.inc(dinst->has_stats());
       return bpredDelay1;
     }
+    if (dinst->is_zero_delay_taken()) {
+      if (pred3) {
+        if (outcome2 == Outcome::Correct && outcome3 == Outcome::Correct) {
+          nZero_taken_delay2.inc(dinst->has_stats());
     return 0;
   }
+      }else if (pred2 && pred1) {
+        if (outcome1 == Outcome::Correct && outcome2 == Outcome::Correct) {
+          nZero_taken_delay3.inc(dinst->has_stats());
+          return 0;
+        }
+      }
+    }
 
-#if 0
-  // Only if reads from icache
-  if (dinst->getInst()->doesJump2Label()) {
-    nBTAC.inc(dinst->has_stats());
-    return bpredDelay1;
+  }else{
+    // Any mix of NoBTB or Correct will do it for not-taken
+    if (outcome1 != Outcome::Miss && outcome2 != Outcome::Miss && outcome3 != Outcome::Miss) {
+      nFixes0.inc(dinst->has_stats());
+      return 0;
   }
-#endif
+  }
 
   TimeDelta_t bpred_total_delay = 0;
 
-  // outcome == (Outcome::Correct, Outcome::Miss, Outcome::None, Outcome::NoBTB)
-  if (outcome1 == Outcome::Correct && outcome2 != Outcome::Miss && outcome3 != Outcome::Miss) {
-    // fmt::print("out1{} out2{} out3{}\n", (int)outcome1, (int)outcome2, (int)outcome3);
-    nFixes1.inc(dinst->has_stats());
-    bpred_total_delay = bpredDelay1;
-  } else if (outcome1 != Outcome::Correct && outcome2 == Outcome::Correct && outcome3 != Outcome::Miss) {
+  if (outcome2 == Outcome::Correct && outcome3 == Outcome::Correct) {
     nFixes2.inc(dinst->has_stats());
     bpred_total_delay = bpredDelay2;
-  } else if (outcome1 != Outcome::Correct && outcome2 != Outcome::Correct && outcome3 == Outcome::Correct) {
+  } else if (outcome3 == Outcome::Correct) {
     nFixes3.inc(dinst->has_stats());
     bpred_total_delay = bpredDelay3;
   } else {

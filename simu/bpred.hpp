@@ -222,6 +222,23 @@ public:
   Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
 };
 
+// Similar to BP2bit but try to learn only for taken, and bias to non-taken unless confident
+class BP2bitL0 : public BPred {
+private:
+  BPBTB btb;
+
+  SCTable table;
+
+  Addr_t pc;
+
+protected:
+public:
+  BP2bitL0(int32_t i, const std::string &section, const std::string &sname);
+
+  void    fetchBoundaryBegin(Dinst *dinst);
+  void    fetchBoundaryEnd();
+  Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
+};
 class IMLIBest;
 
 class BPIMLI : public BPred {
@@ -307,7 +324,7 @@ private:
 
   std::unique_ptr<PREDICTOR> superbp_p;
   const bool                 FetchPredict;
-  Stats_cntr                 gshare_must;
+  Stats_cntr                 gshare_missed;
   Stats_cntr                 gshare_correct;
   Stats_cntr                 gshare_incorrect;
 
@@ -649,7 +666,9 @@ private:
 
   Stats_cntr nBTAC;
 
-  Stats_cntr nZero_taken_delay;
+  Stats_cntr nZero_taken_delay1;
+  Stats_cntr nZero_taken_delay2;
+  Stats_cntr nZero_taken_delay3;
 
   Stats_cntr nControl;
   Stats_cntr nBranch;
@@ -677,6 +696,7 @@ private:
   Stats_cntr nFirstBias;
   Stats_cntr nFirstBias_wrong;
 
+  Stats_cntr nFixes0;
   Stats_cntr nFixes1;
   Stats_cntr nFixes2;
   Stats_cntr nFixes3;

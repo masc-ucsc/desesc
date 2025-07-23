@@ -50,8 +50,8 @@ private:
 
   // ******************* Statistics section
   Stats_avg avgEntryFetchLost;
-  Stats_avg avgFastFixWasteTime;
-  Stats_avg avgSlowFixWasteTime;
+  Stats_hist avgFastFixWasteTime;
+  Stats_hist avgSlowFixWasteTime;
   Stats_avg avgSlowFixWasteInst;
   Stats_avg avgFastFixWasteInst;
   Stats_avg avgFetchTime;

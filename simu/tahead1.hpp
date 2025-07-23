@@ -96,7 +96,7 @@ int BANK1;
 
 /////////////////////////////////////////////////
 // the replacement/allocation policies described in the slide set
-#define TAHEAD1_OPTTAGE
+//#define TAHEAD1_OPTTAGE
 #ifdef TAHEAD1_OPTTAGE
 #ifndef TAHEAD1_INTERLEAVED
 #define TAHEAD1_ADJACENTTABLE \

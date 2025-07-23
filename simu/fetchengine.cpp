@@ -231,7 +231,9 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
         avgBB.sample(fetch_width - (n2Fetch - last_taken), dinst->has_stats());
         last_taken = n2Fetch;
         maxBB--;
-        dinst->set_zero_delay_taken();
+        // WARNING: Code zero_delay_taken only works with max_bb_cycle==2 for last TAKEN branch in bucket
+        if (maxBB==0 && max_bb_cycle==2)
+          dinst->set_zero_delay_taken(); // To indicate that gshare could predict this
       }
       bool stall_fetch = processBranch(dinst);
       if (stall_fetch) {
@@ -316,7 +318,7 @@ void FetchEngine::unBlockFetchBPredDelay(Dinst *dinst, Time_t missFetchTime) {
   is_fetch_next_ready = true;
 
   Time_t n = (globalClock - missFetchTime);
-  avgFastFixWasteTime.sample(n, dinst->has_stats());  // Not short branches
+  avgFastFixWasteTime.sample(dinst->has_stats(),n);  // Not short branches
   n *= fetch_width;                                   // FOR CPU
   avgFastFixWasteInst.sample(n, dinst->has_stats());
 }
@@ -330,7 +332,7 @@ void FetchEngine::unBlockFetch(Dinst *dinst, Time_t missFetchTime) {
 
   I(globalClock > missFetchTime);
   Time_t n = (globalClock - missFetchTime);
-  avgSlowFixWasteTime.sample(n, dinst->has_stats());  // Not short branches
+  avgSlowFixWasteTime.sample(dinst->has_stats(),n);  // Not short branches
   n *= fetch_width;                                   // FOR CPU
   avgSlowFixWasteInst.sample(n, dinst->has_stats());
 

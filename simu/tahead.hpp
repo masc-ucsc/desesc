@@ -96,7 +96,7 @@ int BANK1;
 
 /////////////////////////////////////////////////
 // the replacement/allocation policies described in the slide set
-#define TAHEAD_OPTTAGE
+//#define TAHEAD_OPTTAGE
 #ifdef TAHEAD_OPTTAGE
 #ifndef TAHEAD_INTERLEAVED
 #define TAHEAD_ADJACENTTABLE \
@@ -1323,7 +1323,9 @@ public:
       }
 
       bool First = true;
+#ifdef TAHEAD_FILTERALLOCATION
       bool Test  = false;
+#endif
 
       for (int i = DEP; i <= TAHEAD_NHIST; i++) {
 #ifdef TAHEAD_FILTERALLOCATION

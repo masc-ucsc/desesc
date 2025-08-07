@@ -18,6 +18,9 @@
 #include "tracer.hpp"
 extern bool MIMDmode;
 
+// Enable IDEAL_FETCHBOUNDARY if you want to "ideally fast" update history between taken branches
+// #define IDEAL_FETCHBOUNDARY 1
+
 // #define ENABLE_FAST_WARMUP 1
 // #define FETCH_TRACE 1
 
@@ -167,6 +170,7 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
 #endif
     if (lastpc == 0) {
       bpred->fetchBoundaryBegin(dinst);
+#ifndef IDEAL_FETCHBOUNDARY
       if (!trace_align) {
         uint64_t entryPC = dinst->getPC() >> 2;
 
@@ -182,6 +186,7 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
 
         n2Fetch -= fetchLost;
       }
+#endif
 
       n2Fetch--;
     } else {
@@ -189,6 +194,7 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
 
       n2Fetch--;
 
+#ifndef IDEAL_FETCHBOUNDARY
       if (fetch_one_line) {
         if ((lastpc >> il1_line_bits) != (dinst->getPC() >> il1_line_bits)) {
           avgFetchOneLineWasteInst.sample(n2Fetch, dinst->has_stats());
@@ -196,6 +202,7 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
           break;
         }
       }
+#endif
     }
     lastpc = dinst->getPC();
     I(lastpc);
@@ -227,13 +234,18 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
     // I(dinst->getGProc());
 
     if (dinst->getInst()->isControl()) {
-      if (dinst->getInst()->isControl() && dinst->isTaken()) {
+      if (dinst->isTaken()) {
         avgBB.sample(fetch_width - (n2Fetch - last_taken), dinst->has_stats());
         last_taken = n2Fetch;
         maxBB--;
         // WARNING: Code zero_delay_taken only works with max_bb_cycle==2 for last TAKEN branch in bucket
-        if (maxBB==0 && max_bb_cycle==2)
-          dinst->set_zero_delay_taken(); // To indicate that gshare could predict this
+        if (maxBB == 0 && max_bb_cycle == 2) {
+          dinst->set_zero_delay_taken();  // To indicate that gshare could predict this
+        }
+#ifdef IDEAL_FETCHBOUNDARY
+        bpred->fetchBoundaryEnd();
+        lastpc = 0;
+#endif
       }
       bool stall_fetch = processBranch(dinst);
       if (stall_fetch) {
@@ -318,7 +330,7 @@ void FetchEngine::unBlockFetchBPredDelay(Dinst *dinst, Time_t missFetchTime) {
   is_fetch_next_ready = true;
 
   Time_t n = (globalClock - missFetchTime);
-  avgFastFixWasteTime.sample(dinst->has_stats(),n);  // Not short branches
+  avgFastFixWasteTime.sample(dinst->has_stats(), n);  // Not short branches
   n *= fetch_width;                                   // FOR CPU
   avgFastFixWasteInst.sample(n, dinst->has_stats());
 }
@@ -332,7 +344,7 @@ void FetchEngine::unBlockFetch(Dinst *dinst, Time_t missFetchTime) {
 
   I(globalClock > missFetchTime);
   Time_t n = (globalClock - missFetchTime);
-  avgSlowFixWasteTime.sample(dinst->has_stats(),n);  // Not short branches
+  avgSlowFixWasteTime.sample(dinst->has_stats(), n);  // Not short branches
   n *= fetch_width;                                   // FOR CPU
   avgSlowFixWasteInst.sample(n, dinst->has_stats());
 

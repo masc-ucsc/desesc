@@ -29,6 +29,7 @@
 
 BPred::BPred(int32_t i, const std::string &sec, const std::string &sname, const std::string &name)
     : id(i)
+    , full_name(fmt::format("P({})_BPred{}_{}", i, sname, name))
     , nHit(fmt::format("P({})_BPred{}_{}:nHit", i, sname, name))
     , nMiss(fmt::format("P({})_BPred{}_{}:nMiss", i, sname, name)) {
   addrShift = Config::get_integer(sec, "bp_addr_shift");
@@ -176,7 +177,7 @@ void BPBTB::updateOnly(Addr_t pc, Dinst *dinst) {
 }
 
 Outcome BPBTB::predict(Addr_t pc, Dinst *dinst, bool doUpdate, bool doStats) {
-  I(dinst->isTaken());  // BTB should be called only when the branch is taken (predict taken & taken -> call BTB)
+  //I(dinst->isTaken());  // BTB should be called only when the branch is taken (predict taken & taken -> call BTB)
 
   if (data == 0) {
     // required when BPOracle
@@ -307,10 +308,12 @@ BP2bitL0::BP2bitL0(int32_t i, const std::string &section, const std::string &sna
     , table(section, Config::get_power2(section, "size", 1), Config::get_integer(section, "bits", 1, 7)) {
 
   pc = 0;
+  one_prediction_done = false;
 }
 
 void BP2bitL0::fetchBoundaryBegin(Dinst *dinst) {
   pc = dinst->getPC();
+  one_prediction_done = false;
 }
 
 void BP2bitL0::fetchBoundaryEnd() {
@@ -320,6 +323,8 @@ void BP2bitL0::fetchBoundaryEnd() {
 Outcome BP2bitL0::predict(Dinst *dinst, bool doUpdate, bool doStats) {
   // NOTE: 2 bit is simple, no predecode of instruction type (isJump() special code)
 
+  if (one_prediction_done)
+    return Outcome::None;   // Only 1 prediction independent of how many max_bb set
   bool taken = dinst->isTaken();
   Addr_t use_pc = pc==0?dinst->getPC():pc;
 
@@ -336,6 +341,8 @@ Outcome BP2bitL0::predict(Dinst *dinst, bool doUpdate, bool doStats) {
   if (btb_outcome == Outcome::NoBTB)
     return Outcome::NoBTB;
 
+  if (ptaken)
+    one_prediction_done = true;
   if (ptaken != taken)
     return Outcome::Miss;
 
@@ -888,21 +895,24 @@ Outcome BPSuperbp::predict(Dinst *dinst, bool doUpdate, bool doStats) {
   bool ptaken = false;
   superbp_p->handle_insn_desesc(pc, branchTarget, insn_type, taken, &batage_pred, &batage_conf, &gshare_use);
   // TODO:Check if ptaken must get the value based on is_zero_delay_taken directly w/o checking gshare_use at all
+  // xxxx - fmt::print("2.pc={:x} {} {} {} id:{} {} bb:{}\n", dinst->getPC(), gshare_use?"gs":"ng", taken? " T":"NT", batage_pred?" pT":"pNT", dinst->getID(), full_name, dinst->getBB());
   if (gshare_use) { // GSHARE did a prediction (it should be taken, but may be a miss prediction)
     ptaken = true;
     if (ptaken != taken) {
       if (dinst->is_zero_delay_taken()) {
-        fmt::print("1.WHY IS {:x} gshare_use is set and still MISS predict??\n", dinst->getPC());
+        //fmt::print("1.WHY IS {:x} gshare_use is set and still MISS predict??\n", dinst->getPC());
       }
       assert(!dinst->is_zero_delay_taken()); // UNSURE
       gshare_incorrect.inc(dinst->has_stats());
       dinst->clear_zero_delay_taken();
     } else {
       if (!dinst->is_zero_delay_taken()) {
-        fmt::print("2.WHY IS {:x} gshare IF NOT THE LAST BRANCH IS FETCH (one taken before)\n", dinst->getPC());
+        //fmt::print("2.WHY cpuid:{} IS {:x} gshare IF NOT THE LAST BRANCH IS FETCH (one taken before)\n", id, dinst->getPC());
+        //fmt::print("2.WHY IS {:x} gshare IF NOT THE LAST BRANCH IS FETCH (one taken before)\n", dinst->getPC());
       }
-      assert(dinst->is_zero_delay_taken()); // In theory, gshare should be used only in the 2nd taken branch
+      //assert(dinst->is_zero_delay_taken()); // In theory, gshare should be used only in the 2nd taken branch
       gshare_correct.inc(dinst->has_stats());
+      // xxxx - fmt::print("gs_correct\n");
     }
   } else {
     ptaken = batage_pred;
@@ -1987,17 +1997,54 @@ TimeDelta_t BPredictor::predict(Dinst *dinst, bool *fastfix) {
   }
 
   if (dinst->isTaken()) {
+    //xxxx - fmt::print("3.pc={:x} l0:{} l1:{} l2:{} BB:{} @{} :", dinst->getPC(), BPred::to_s(outcome1), BPred::to_s(outcome2), BPred::to_s(outcome3), dinst->getBB(), globalClock);
+    bool last_bb = dinst->is_zero_delay_taken();
+
+    if (last_bb) {
   if (outcome1 == Outcome::Correct && outcome2 == Outcome::Correct && outcome3 == Outcome::Correct) {
-      if (dinst->is_zero_delay_taken()) {
+        nFixes1.inc(dinst->has_stats());  // Can get lucky and BB=1 predict too but weird
+        //xxxx - fmt::print(" a 1\n");
+        return bpredDelay1;
+      }
+    }else{
+      // Still allowed to fetch more BB
+      if (outcome1 != Outcome::Miss && outcome2 == Outcome::Correct && outcome3 == Outcome::Correct) {
+        nFixes0.inc(dinst->has_stats());
+        // xxxx - fmt::print(" b 0\n");
+        return 0;
+      }
+    }
+  }else{
+    //xxxx - fmt::print("4.pc={:x} l0:{} l1:{} l2:{} BB:{} @{} :", dinst->getPC(), BPred::to_s(outcome1), BPred::to_s(outcome2), BPred::to_s(outcome3), dinst->getBB(), globalClock);
+    // Not Taken can join FetchBlock if no miss predicts
+
+    // Any mix of NoBTB or Correct will do it for not-taken
+    if (outcome1 != Outcome::Miss && outcome2 != Outcome::Miss && outcome3 != Outcome::Miss) {
+      nFixes0.inc(dinst->has_stats());
+      // xxxx - fmt::print(" c 0\n");
+      return 0;
+    }
+  }
+
+
+#if 0
+  if (dinst->isTaken()) {
+    if (outcome1 == Outcome::Correct && outcome2 == Outcome::Correct && outcome3 == Outcome::Correct) {
+      // Chain if all the predictors agree
+      if (!dinst->is_zero_delay_taken()) { // BB=0
           nZero_taken_delay1.inc(dinst->has_stats());
         return 0;
       }
 
-      nFixes1.inc(dinst->has_stats());
+      // BB>0
+      nFixes1.inc(dinst->has_stats());  // Can get lucky and BB=1 predict too but weird
       return bpredDelay1;
     }
-    if (dinst->is_zero_delay_taken()) {
+    if (!dinst->is_zero_delay_taken()) { // BB=0
       if (pred3) {
+        if (outcome != Outcome::Miss && outcome2 == Outcome::Correct && outcome3 == Outcome::Correct) {
+          return bpredDelau1;
+        }
         if (outcome2 == Outcome::Correct && outcome3 == Outcome::Correct) {
           nZero_taken_delay2.inc(dinst->has_stats());
     return 0;
@@ -2017,19 +2064,23 @@ TimeDelta_t BPredictor::predict(Dinst *dinst, bool *fastfix) {
       return 0;
   }
   }
+#endif
 
   TimeDelta_t bpred_total_delay = 0;
 
   if (outcome2 == Outcome::Correct && outcome3 == Outcome::Correct) {
     nFixes2.inc(dinst->has_stats());
     bpred_total_delay = bpredDelay2;
+    // xxxx - fmt::print(" d 2\n");
   } else if (outcome3 == Outcome::Correct) {
     nFixes3.inc(dinst->has_stats());
     bpred_total_delay = bpredDelay3;
+    // xxxx - fmt::print(" d 3\n");
   } else {
     nUnFixes.inc(dinst->has_stats());
     *fastfix          = false;
     bpred_total_delay = 1;  // Anything but zero
+    // xxxx - fmt::print(" d miss\n");
   }
 
   return bpred_total_delay;

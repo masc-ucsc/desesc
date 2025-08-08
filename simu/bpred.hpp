@@ -36,6 +36,17 @@ class MemObj;
 
 class BPred {
 public:
+  static std::string to_s(Outcome o) {
+    if (o==Outcome::Correct)
+      return "Correct";
+    if (o==Outcome::None)
+      return "None";
+    if (o==Outcome::NoBTB)
+      return "NoBTB";
+    if (o==Outcome::Miss)
+      return "Miss";
+    return "BUG";
+  }
   typedef int64_t HistoryType;
   class Hash4HistoryType {
   public:
@@ -55,6 +66,7 @@ public:
 
 protected:
   const int32_t id;
+  std::string full_name;
 
   Stats_cntr nHit;   // N.B. predictors should not update these counters directly
   Stats_cntr nMiss;  // in their predict() function.
@@ -230,6 +242,7 @@ private:
   SCTable table;
 
   Addr_t pc;
+  bool one_prediction_done;
 
 protected:
 public:

@@ -177,6 +177,7 @@ private:
   Addr_t      pc;    // PC for the dinst
   Addr_t      addr;  // Either load/store address or jump/branch address
   uint64_t    inflight;
+  int16_t     bb;
 
 #ifdef ESESC_TRACE_DATA
   Addr_t   ldpc;
@@ -392,6 +393,7 @@ public:
     i->pc       = pc;
     i->addr     = address;
     i->inflight = 0;
+    i->bb        = -1;
 #ifdef ESESC_TRACE_DATA
     i->data           = 0;
     i->data2          = 0;
@@ -603,6 +605,8 @@ public:
     I(!branchMiss);
     fetched = globalClock;
   }
+  int16_t getBB() const { return bb; }
+  void setBB(int16_t b) { bb = b; }
 
   uint64_t getInflight() const { return inflight; }
 

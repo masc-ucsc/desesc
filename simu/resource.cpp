@@ -18,6 +18,9 @@
 #include "resource.hpp"
 #include "tracer.hpp"
 
+// Comment if you need to benchmark without SCB
+#define ENABLE_SCB
+
 // late allocation flag
 #define USE_PNR
 
@@ -299,7 +302,12 @@ void FULoad::executing(Dinst *dinst) {
     storeset->stldViolation(qdinst, dinst);
   }
 
-  if (dinst->isLoadForwarded() || scb->is_ld_forward(dinst->getAddr()) || !enableDcache || dinst->is_destroy_transient()) {
+#ifdef ENABLE_SCB
+  if (dinst->isLoadForwarded() || scb->is_ld_forward(dinst->getAddr()) || !enableDcache || dinst->is_destroy_transient())
+#else
+  if (dinst->isLoadForwarded() || !enableDcache || dinst->is_destroy_transient())
+#endif
+  {
     performedCB::scheduleAbs(when + LSDelay, this, dinst);
     dinst->markDispatched();
 
@@ -566,16 +574,21 @@ bool FUStore::preretire(Dinst *dinst, bool flushing) {
     performed(dinst);
     return true;
   }
+
+#ifdef ENABLE_SCB
   if (!scb->can_accept_st(dinst->getAddr())) {
     return false;
   }
+#endif
 
   if (firstLevelMemObj->isBusy(dinst->getAddr())) {
     return false;
   }
 
+#ifdef ENABLE_SCB
   scb->add_st(dinst);
-
+  performed(dinst);
+#else
   if (enableDcache && !dinst->isTransient()) {
     MemRequest::sendReqWrite(firstLevelMemObj,
                              dinst->has_stats(),
@@ -585,6 +598,7 @@ bool FUStore::preretire(Dinst *dinst, bool flushing) {
   } else {
     performed(dinst);
   }
+#endif
 
   freeEntries++;
 

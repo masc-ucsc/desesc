@@ -683,6 +683,9 @@ private:
   Stats_cntr nZero_taken_delay2;
   Stats_cntr nZero_taken_delay3;
 
+  Stats_hist avgTimeBetweenControlMiss;
+  Time_t     lastControlMiss;
+
   Stats_cntr nControl;
   Stats_cntr nBranch;
   Stats_cntr nNoPredict;

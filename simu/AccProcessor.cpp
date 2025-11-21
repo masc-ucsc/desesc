@@ -33,7 +33,7 @@ void AccProcessor::read_performed(uint32_t id, Time_t startTime)
 {
   (void)id;
   accReads.inc(true);
-  accReadLatency.sample((int)(globalClock - startTime), true);
+  accReadLatency.sample(globalClock - startTime, true);
 }
 /* }}} */
 
@@ -42,7 +42,7 @@ void AccProcessor::write_performed(uint32_t id, Time_t startTime)
 {
   (void)id;
   accWrites.inc(true);
-  accWriteLatency.sample((int)(globalClock - startTime), true);
+  accWriteLatency.sample(globalClock - startTime, true);
 }
 /* }}} */
 

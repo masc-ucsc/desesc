@@ -154,7 +154,7 @@ void Prefetcher::nextPrefetch()
     }
   } else {
 #ifdef PREFETCH_HIST
-    histPrefetchDelta.sample(pending_statsFlag, (paddr - pending_preq_addr), 1);
+    histPrefetchDelta.sample((paddr - pending_preq_addr), pending_statsFlag, 1);
 #endif
     pending_preq_addr = paddr;
     CallbackBase *cb  = 0;

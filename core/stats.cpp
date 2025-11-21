@@ -144,17 +144,18 @@ void Stats_hist::report() const {
   Report::field(fmt::format("{}:n={}\n", name, numSample));
 }
 
-void Stats_hist::sample(bool enable, int32_t key, double weight) {
-  if (enable) {
-    if (hist.find(key) == hist.end()) {
-      hist[key] = 0;
-    }
-
-    hist[key] += weight;
-
-    numSample += weight;
-    cumulative += weight * key;
+void Stats_hist::sample(int32_t key, bool enable, double weight) {
+  if (!enable) {
+    return;
   }
+  if (hist.find(key) == hist.end()) {
+    hist[key] = 0;
+  }
+
+  hist[key] += weight;
+
+  numSample += weight;
+  cumulative += weight * key;
 }
 
 void Stats_hist::reset() {

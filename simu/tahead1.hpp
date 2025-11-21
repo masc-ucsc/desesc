@@ -26,7 +26,7 @@
 // Possible conf option if updates are delayed to end of fetch_boundary (BPred.cpp:pending)
 // #define TAHEAD1_DELAY_UPDATE 1
 
-#define TAHEAD1_LOGSCALE 2
+#define TAHEAD1_LOGSCALE 4
 #define TAHEAD1_LOGT     (6 + TAHEAD1_LOGSCALE)  /* logsize of a logical  TAGE tables */
 #define TAHEAD1_LOGB     (6 + TAHEAD1_LOGSCALE)  // log of number of entries in bimodal predictor
 #define TAHEAD1_LOGBIAS  (6 + TAHEAD1_LOGSCALE)  // logsize of tables in TAHEAD1_SC
@@ -994,7 +994,7 @@ public:
 #endif
   }
 
-  bool getPrediction(uint64_t PCBRANCH) {
+  bool getPrediction(uint64_t PCBRANCH, bool& bias, bool& lowconf) {
     (void)PCBRANCH;
 
     uint64_t PC = TAHEAD1_PCBLOCK ^ (TAHEAD1_Numero << 5);
@@ -1062,6 +1062,8 @@ public:
 
     TAHEAD1_predSC = (TAHEAD1_SUMSC >= 0);
 
+    bias = (TAHEAD_TAGECONF >= 1);
+    lowconf = (TAHEAD_TAGECONF == 1);
     return TAHEAD1_pred_taken;
   }
 

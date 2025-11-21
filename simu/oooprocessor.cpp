@@ -632,7 +632,7 @@ void OoOProcessor::retire() {
       //}
     }
     avgPNRHitLoadSpec.sample(total_hit, true);
-    avgPNRMissLoadSpec.sample(true, total_miss);
+    avgPNRMissLoadSpec.sample(total_miss, true);
 #endif
   }  // ROB_Load_Spec_sampling end
 

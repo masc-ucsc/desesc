@@ -81,6 +81,7 @@ public:
   Stats_avg(const std::string &format);
 
   void sample(const double v, bool en);
+  void sample(bool en, const double v) = delete;
 
   void report() const final;
   void reset() final;
@@ -96,6 +97,7 @@ public:
   Stats_max(const std::string &format);
 
   void sample(const double v, bool en);
+  void sample(bool en, const double v) = delete;
 
   void report() const final;
   void reset() final;
@@ -112,7 +114,8 @@ protected:
 public:
   Stats_hist(const std::string &format);
 
-  void sample(bool enable, int32_t key, double weight = 1);
+  void sample(int32_t key, bool enable, double weight = 1);
+  void sample(bool enable, uint32_t key, double weight = 1) = delete;
 
   void report() const final;
   void reset() final;

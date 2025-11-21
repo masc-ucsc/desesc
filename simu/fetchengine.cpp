@@ -19,7 +19,9 @@
 extern bool MIMDmode;
 
 // Enable IDEAL_FETCHBOUNDARY if you want to "ideally fast" update history between taken branches
-// #define IDEAL_FETCHBOUNDARY 1
+//#define IDEAL_FETCHBOUNDARY 1
+
+//#define IDEAL_FETCHBOUNDARY_ENTRY 1
 
 // #define ENABLE_FAST_WARMUP 1
 // #define FETCH_TRACE 1
@@ -84,7 +86,7 @@ FetchEngine::FetchEngine(Hartid_t id, std::shared_ptr<Gmemory_system> gms_, std:
   // Get some icache L1 parameters
   il1_hit_delay = Config::get_integer(isection, "delay");
 
-  lastMissTime = 0;
+  lastFetchBubbleTime = 0;
 }
 
 FetchEngine::~FetchEngine() {}
@@ -98,10 +100,15 @@ bool FetchEngine::processBranch(Dinst *dinst) {
     return false;
   }
 
-  setMissInst(dinst);
-  setTransientInst(dinst);
+  I(!missInst);
 
-  Time_t n = (globalClock - lastMissTime);
+  missInst = true;
+#ifndef NDEBUG
+  missDinst = dinst;
+#endif
+  transientDinst = dinst;
+
+  Time_t n = (globalClock - lastFetchBubbleTime); // This includes taken bubbles and misspredicts
   avgFetchTime.sample(n, dinst->has_stats());
 
   if (fastfix) {
@@ -171,7 +178,7 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
     dinst->setBB(max_bb_cycle - maxBB);
     if (lastpc == 0) {
       bpred->fetchBoundaryBegin(dinst);
-#ifndef IDEAL_FETCHBOUNDARY
+#ifndef IDEAL_FETCHBOUNDARY_ENTRY
       if (!trace_align) {
         uint64_t entryPC = dinst->getPC() >> 2;
 
@@ -241,12 +248,13 @@ void FetchEngine::realfetch(IBucket *bucket, std::shared_ptr<Emul_base> eint, Ha
         last_taken = n2Fetch;
         maxBB--;
         // WARNING: Code zero_delay_taken only works with max_bb_cycle==2 for last TAKEN branch in bucket
-        if (maxBB==0 && max_bb_cycle==2) {
-          dinst->set_zero_delay_taken();  // To indicate that gshare could predict this
-        }
 #ifdef IDEAL_FETCHBOUNDARY
         bpred->fetchBoundaryEnd();
         lastpc = 0;
+#else
+        if (maxBB==0 && max_bb_cycle==2) {
+          dinst->set_zero_delay_taken();  // To indicate that gshare could predict this
+        }
 #endif
       }
       bool stall_fetch = processBranch(dinst);
@@ -332,9 +340,11 @@ void FetchEngine::unBlockFetchBPredDelay(Dinst *dinst, Time_t missFetchTime) {
   is_fetch_next_ready = true;
 
   Time_t n = (globalClock - missFetchTime);
-  avgFastFixWasteTime.sample(dinst->has_stats(), n);  // Not short branches
+  avgFastFixWasteTime.sample(n, dinst->has_stats());  // Not short branches
   n *= fetch_width;                                   // FOR CPU
   avgFastFixWasteInst.sample(n, dinst->has_stats());
+
+  lastFetchBubbleTime = globalClock;
 }
 
 void FetchEngine::unBlockFetch(Dinst *dinst, Time_t missFetchTime) {
@@ -346,11 +356,11 @@ void FetchEngine::unBlockFetch(Dinst *dinst, Time_t missFetchTime) {
 
   I(globalClock > missFetchTime);
   Time_t n = (globalClock - missFetchTime);
-  avgSlowFixWasteTime.sample(dinst->has_stats(), n);  // Not short branches
+  avgSlowFixWasteTime.sample(n, dinst->has_stats());  // Not short branches
   n *= fetch_width;                                   // FOR CPU
   avgSlowFixWasteInst.sample(n, dinst->has_stats());
 
-  lastMissTime = globalClock;
+  lastFetchBubbleTime = globalClock;
 }
 
 void FetchEngine::clearMissInst(Dinst *dinst, Time_t missFetchTime) {
@@ -368,18 +378,3 @@ void FetchEngine::clearMissInst(Dinst *dinst, Time_t missFetchTime) {
   cbPending.mycall();
 }
 
-void FetchEngine::setMissInst(Dinst *dinst) {
-  (void)dinst;
-  // if(!dinst->isTransient())
-  I(!missInst);
-
-  missInst = true;
-#ifndef NDEBUG
-  missDinst = dinst;
-#endif
-}
-
-void FetchEngine::setTransientInst(Dinst *dinst) {
-  (void)dinst;
-  transientDinst = dinst;
-}

@@ -595,9 +595,10 @@ Outcome BPTahead::predict(Dinst *dinst, bool doUpdate, bool doStats) {
 
   bool taken = dinst->isTaken();
 
-  // bool     bias = false;
+  bool     bias = false;
   Addr_t   pc     = dinst->getPC();
-  bool     ptaken = tahead->getPrediction(pc);  // pass taken for statistics
+  bool     ptaken = tahead->getPrediction(pc, bias);  // pass taken for statistics
+  dinst->setBiasBranch(bias);
 
   if (doUpdate) {
 #ifdef TAHEAD_DELAY_UPDATE
@@ -679,9 +680,13 @@ Outcome BPTahead1::predict(Dinst *dinst, bool doUpdate, bool doStats) {
 
   bool taken = dinst->isTaken();
 
-  // bool     bias = false;
+//#define LOWCONF
+  bool     bias = false;
+  bool      lowconf = false;
   Addr_t   pc     = dinst->getPC();
-  bool     ptaken = tahead1->getPrediction(pc);  // pass taken for statistics
+  bool     ptaken = tahead1->getPrediction(pc, bias, lowconf);  // pass taken for statistics
+  dinst->setBiasBranch(bias);
+
 
   if (doUpdate) {
 #ifdef TAHEAD1_DELAY_UPDATE
@@ -694,10 +699,17 @@ Outcome BPTahead1::predict(Dinst *dinst, bool doUpdate, bool doStats) {
     if (doUpdate) {
       btb.updateOnly(dinst->getPC(), dinst);
     }
+#ifndef LOWCONF
     return Outcome::Miss;
+#else
+    return (lowconf && ptaken) ? (Outcome::NoBTB) : Outcome::Miss;
+#endif
   }
-
+#ifndef LOWCONF
   return ptaken ? btb.predict(dinst->getPC(), dinst, doUpdate, doStats) : Outcome::Correct;
+#else
+  return (lowconf && ptaken) ? (Outcome::NoBTB) : (ptaken ? btb.predict(dinst->getPC(), dinst, doUpdate, doStats) : Outcome::Correct);
+#endif
 }
 
 /*****************************************
@@ -1731,6 +1743,7 @@ BPredictor::BPredictor(int32_t i, MemObj *iobj, MemObj *dobj, std::shared_ptr<BP
     , nZero_taken_delay1(fmt::format("P({})_BPred:nZero_taken_delay1", id))
     , nZero_taken_delay2(fmt::format("P({})_BPred:nZero_taken_delay2", id))
     , nZero_taken_delay3(fmt::format("P({})_BPred:nZero_taken_delay3", id))
+    , avgTimeBetweenControlMiss(fmt::format("P({})_BPred:avgTimeBetweenControlMiss", id))
     , nControl(fmt::format("P({})_BPred:nControl", id))
     , nBranch(fmt::format("P({})_BPred:nBranch", id))
     , nNoPredict(fmt::format("P({})_BPred:nNoPredict", id))
@@ -1859,6 +1872,7 @@ Outcome BPredictor::predict1(Dinst *dinst) {
     nBranchMiss.inc(p == Outcome::Miss && dinst->has_stats());
     nBranchBTBMiss.inc(p == Outcome::NoBTB && dinst->has_stats());
   }
+
   nControlMiss.inc((p == Outcome::Miss || p == Outcome::NoBTB) && dinst->has_stats());
 
   nNoPredict.inc(p == Outcome::None && dinst->has_stats());
@@ -2001,7 +2015,7 @@ TimeDelta_t BPredictor::predict(Dinst *dinst, bool *fastfix) {
     bool last_bb = dinst->is_zero_delay_taken();
 
     if (last_bb) {
-  if (outcome1 == Outcome::Correct && outcome2 == Outcome::Correct && outcome3 == Outcome::Correct) {
+      if (outcome1 == Outcome::Correct && outcome2 == Outcome::Correct && outcome3 == Outcome::Correct) {
         nFixes1.inc(dinst->has_stats());  // Can get lucky and BB=1 predict too but weird
         //xxxx - fmt::print(" a 1\n");
         return bpredDelay1;
@@ -2027,45 +2041,6 @@ TimeDelta_t BPredictor::predict(Dinst *dinst, bool *fastfix) {
   }
 
 
-#if 0
-  if (dinst->isTaken()) {
-    if (outcome1 == Outcome::Correct && outcome2 == Outcome::Correct && outcome3 == Outcome::Correct) {
-      // Chain if all the predictors agree
-      if (!dinst->is_zero_delay_taken()) { // BB=0
-          nZero_taken_delay1.inc(dinst->has_stats());
-        return 0;
-      }
-
-      // BB>0
-      nFixes1.inc(dinst->has_stats());  // Can get lucky and BB=1 predict too but weird
-      return bpredDelay1;
-    }
-    if (!dinst->is_zero_delay_taken()) { // BB=0
-      if (pred3) {
-        if (outcome != Outcome::Miss && outcome2 == Outcome::Correct && outcome3 == Outcome::Correct) {
-          return bpredDelau1;
-        }
-        if (outcome2 == Outcome::Correct && outcome3 == Outcome::Correct) {
-          nZero_taken_delay2.inc(dinst->has_stats());
-    return 0;
-  }
-      }else if (pred2 && pred1) {
-        if (outcome1 == Outcome::Correct && outcome2 == Outcome::Correct) {
-          nZero_taken_delay3.inc(dinst->has_stats());
-          return 0;
-        }
-      }
-    }
-
-  }else{
-    // Any mix of NoBTB or Correct will do it for not-taken
-    if (outcome1 != Outcome::Miss && outcome2 != Outcome::Miss && outcome3 != Outcome::Miss) {
-      nFixes0.inc(dinst->has_stats());
-      return 0;
-  }
-  }
-#endif
-
   TimeDelta_t bpred_total_delay = 0;
 
   if (outcome2 == Outcome::Correct && outcome3 == Outcome::Correct) {
@@ -2082,6 +2057,9 @@ TimeDelta_t BPredictor::predict(Dinst *dinst, bool *fastfix) {
     bpred_total_delay = 1;  // Anything but zero
     // xxxx - fmt::print(" d miss\n");
   }
+
+  avgTimeBetweenControlMiss.sample(globalClock - lastControlMiss, dinst->has_stats());
+  lastControlMiss = globalClock;
 
   return bpred_total_delay;
 }

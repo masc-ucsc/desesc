@@ -42,7 +42,7 @@ private:
 
   CallbackContainer cbPending;
 
-  Time_t lastMissTime;  // FIXME: maybe we need an array
+  Time_t lastFetchBubbleTime;
 
   bool il1_enable;
 
@@ -54,7 +54,7 @@ private:
   Stats_hist avgSlowFixWasteTime;
   Stats_avg avgSlowFixWasteInst;
   Stats_avg avgFastFixWasteInst;
-  Stats_avg avgFetchTime;
+  Stats_hist avgFetchTime;
   Stats_avg avgBucketInst;
   Stats_avg avgBeyondFBInst;
   Stats_avg avgFetchOneLineWasteInst;
@@ -98,14 +98,12 @@ public:
   }
 
   Dinst *get_miss_dinst() const { return transientDinst; }
-  void   setTransientInst(Dinst *dinst);
 
   bool is_fetch_next_ready;
   bool get_is_fetch_next_ready() { return is_fetch_next_ready; }
   void reset_is_fetch_next_ready() { is_fetch_next_ready = false; }
 
   void clearMissInst(Dinst *dinst, Time_t missFetchTime);
-  void setMissInst(Dinst *dinst);
 
   std::shared_ptr<BPredictor> ref_bpred() { return bpred; }
 };

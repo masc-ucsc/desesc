@@ -26,10 +26,10 @@
 // Possible conf option if updates are delayed to end of fetch_boundary (BPred.cpp:pending)
 // #define TAHEAD_DELAY_UPDATE 1
 
-#define TAHEAD_LOGSCALE 2
-#define TAHEAD_LOGT     (8 + TAHEAD_LOGSCALE)   /* logsize of a logical  TAGE tables */
-#define TAHEAD_LOGB     (11 + TAHEAD_LOGSCALE)  // log of number of entries in bimodal predictor
-#define TAHEAD_LOGBIAS  (7 + TAHEAD_LOGSCALE)   // logsize of tables in TAHEAD_SC
+#define TAHEAD_LOGSCALE 2 
+#define TAHEAD_LOGT 10
+#define TAHEAD_LOGB 15
+#define TAHEAD_LOGBIAS 11
 
 #if (TAHEAD_LOGSCALE == 4)
 #define TAHEAD_MINHIST 2
@@ -53,10 +53,10 @@
 #define TAHEAD_MAXHIST 250
 #endif
 
-#define TAHEAD_MAXBR          16  // Maximum TAHEAD_MAXBR  branches in  the block; the code assumes TAHEAD_MAXBR is a power of 2
+#define TAHEAD_MAXBR 8  // Maximum TAHEAD_MAXBR  branches in  the block; the code assumes TAHEAD_MAXBR is a power of 2
 #define TAHEAD_NBREADPERTABLE 4   // predictions read per table for a block
 
-#define TAHEAD_AHEAD 2
+#define TAHEAD_AHEAD 0
 // in the curent version:  only 0 or 2 are valid (0 corresponds to the conventional 1-block ahead, 2 coresponds to the 3-block
 // ahead)
 
@@ -981,7 +981,7 @@ public:
 #endif
   }
 
-  bool getPrediction(uint64_t PCBRANCH) {
+  bool getPrediction(uint64_t PCBRANCH, bool& bias) {
     (void)PCBRANCH;
 
     uint64_t PC = TAHEAD_PCBLOCK ^ (TAHEAD_Numero << 5);
@@ -1048,7 +1048,15 @@ public:
 #endif
 
     TAHEAD_predSC = (TAHEAD_SUMSC >= 0);
+    
+    if (TAHEAD_TAGECONF > 3)
+    {
+        printf ("*******************************************************************\n");
+        printf ("*********************** TAGE_CONF = %d ****************************\n", TAHEAD_TAGECONF);
+        printf ("*******************************************************************\n");
+    }
 
+    bias = (TAHEAD_TAGECONF >= 1);
     return TAHEAD_pred_taken;
   }
 

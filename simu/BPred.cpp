@@ -2012,22 +2012,22 @@ TimeDelta_t BPredictor::predict(Dinst *dinst, bool *fastfix) {
 
   if (dinst->isTaken()) {
     //xxxx - fmt::print("3.pc={:x} l0:{} l1:{} l2:{} BB:{} @{} :", dinst->getPC(), BPred::to_s(outcome1), BPred::to_s(outcome2), BPred::to_s(outcome3), dinst->getBB(), globalClock);
-    bool last_bb = dinst->is_zero_delay_taken();
+    // bool last_bb = dinst->is_zero_delay_taken();
 
-    if (last_bb) {
+//    if (last_bb) {
       if (outcome1 == Outcome::Correct && outcome2 == Outcome::Correct && outcome3 == Outcome::Correct) {
         nFixes1.inc(dinst->has_stats());  // Can get lucky and BB=1 predict too but weird
         //xxxx - fmt::print(" a 1\n");
         return bpredDelay1;
       }
-    }else{
-      // Still allowed to fetch more BB
-      if (outcome1 != Outcome::Miss && outcome2 == Outcome::Correct && outcome3 == Outcome::Correct) {
-        nFixes0.inc(dinst->has_stats());
-        // xxxx - fmt::print(" b 0\n");
-        return 0;
-      }
-    }
+   // }else{
+   //   // Still allowed to fetch more BB
+   //   if (outcome1 != Outcome::Miss && outcome2 == Outcome::Correct && outcome3 == Outcome::Correct) {
+   //     nFixes0.inc(dinst->has_stats());
+   //     // xxxx - fmt::print(" b 0\n");
+   //     return 0;
+   //   }
+   // }
   }else{
     //xxxx - fmt::print("4.pc={:x} l0:{} l1:{} l2:{} BB:{} @{} :", dinst->getPC(), BPred::to_s(outcome1), BPred::to_s(outcome2), BPred::to_s(outcome3), dinst->getBB(), globalClock);
     // Not Taken can join FetchBlock if no miss predicts
@@ -2058,6 +2058,7 @@ TimeDelta_t BPredictor::predict(Dinst *dinst, bool *fastfix) {
     // xxxx - fmt::print(" d miss\n");
   }
 
+  //fmt::print("4.pc={:x} l0:{} l1:{} l2:{} BB:{} @{} delta={}\n", dinst->getPC(), BPred::to_s(outcome1), BPred::to_s(outcome2), BPred::to_s(outcome3), dinst->getBB(), globalClock, globalClock-lastControlMiss);
   avgTimeBetweenControlMiss.sample(globalClock - lastControlMiss, dinst->has_stats());
   lastControlMiss = globalClock;
 

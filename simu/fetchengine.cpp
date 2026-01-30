@@ -6,7 +6,7 @@
 
 #include "absl/strings/str_split.h"
 #include "addresspredictor.hpp"
-#include "alloca.h"
+#include "desesc_alloca.h"
 #include "config.hpp"
 #include "fmt/format.h"
 #include "gmemory_system.hpp"

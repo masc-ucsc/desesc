@@ -1,7 +1,8 @@
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <sys/time.h>
+
+#include <cstdlib>
 
 #include "Report.h"
 // #include "ReportGen.h" This file doesn't exist. Replaced it with Report.h
@@ -162,9 +163,9 @@ void bench2() {
     }
     EventScheduler::advanceClock();
     if ((i % 32) == 0) {
-      for (int32_t k = 0; k < TIME_BUBBLE; k++) {
-        EventScheduler::advanceClock();
-      }
+               for (int32_t k = 0; k < TIME_BUBBLE; k++) {
+                 EventScheduler::advanceClock();
+               }
     }
   }
 

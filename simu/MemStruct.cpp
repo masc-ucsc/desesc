@@ -34,8 +34,6 @@
 
 #include "memstruct.hpp"
 
-#include <stdio.h>
-#include <string.h>
 /* }}} */
 
 CacheDebugAccess *CacheDebugAccess::getInstance() {
@@ -44,22 +42,22 @@ CacheDebugAccess *CacheDebugAccess::getInstance() {
 }
 
 void CacheDebugAccess::setCacheAccess(char *cacheLevel) {
-  string s = string(cacheLevel);
+  std::string s = std::string(cacheLevel);
   if (s.compare("DL10") == 0 || s.compare("niceCache0") == 0 || s.compare("L3") == 0 || s.compare("L20") == 0) {
     debugMap[s] = true;
   }
 }
 
 // Careful! Returns false for non-existing entry in map.
-bool CacheDebugAccess::readCacheAccess(string cacheLevel) { return debugMap[cacheLevel]; }
+bool CacheDebugAccess::readCacheAccess(std::string cacheLevel) { return debugMap[cacheLevel]; }
 
 void CacheDebugAccess::setAddrsAccessed(int a) { cacheAccesses = a; }
 
 int CacheDebugAccess::readAddrsAccessed(void) { return cacheAccesses; }
 
 int CacheDebugAccess::cacheAccessSum(void) {
-  int                         sum = 0;
-  map<string, bool>::iterator it;
+  int                                   sum = 0;
+  std::map<std::string, bool>::iterator it;
   for (it = debugMap.begin(); it != debugMap.end(); it++) {
     if (it->second) {
       sum++;

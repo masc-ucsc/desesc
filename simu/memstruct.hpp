@@ -35,10 +35,10 @@
 #ifndef memstruct_h
 #define memstruct_h
 
+#include <cstdlib>
 #include <map>
 #include <string>
 
-using namespace std;
 /* }}} */
 
 /* This file is used to pass back the data values containing the cache levels
@@ -51,7 +51,7 @@ public:
   static CacheDebugAccess *getInstance();
 
   void setCacheAccess(char *);
-  bool readCacheAccess(string);
+  bool readCacheAccess(std::string);
 
   void setAddrsAccessed(int);
   int  readAddrsAccessed(void);
@@ -60,10 +60,10 @@ public:
   void mapReset(void);
 
 private:
-  map<string, bool> debugMap;
-  int               cacheAccesses;  // Addr for where mem read starts
+  std::map<std::string, bool> debugMap;
+  int                         cacheAccesses;  // Addr for where mem read starts
 
-  CacheDebugAccess() {};                       // private constructor
+  CacheDebugAccess(){};                        // private constructor
   CacheDebugAccess(CacheDebugAccess const &);  // no accidental creation from copy constructor
   void operator=(CacheDebugAccess const &);
 };

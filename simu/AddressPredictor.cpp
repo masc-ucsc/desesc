@@ -3,8 +3,8 @@
 #include "addresspredictor.hpp"
 
 #include <math.h>
-#include <stdlib.h>
 
+#include <cstdlib>
 #include <iostream>
 
 #include "config.hpp"

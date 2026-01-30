@@ -4,7 +4,8 @@
 
 #include <pthread.h>
 #include <signal.h>
-#include <stdlib.h>
+
+#include <cstdlib>
 
 #include "accprocessor.hpp"
 #include "config.hpp"
@@ -90,8 +91,7 @@ void BootLoader::report(std::string_view str) {
 }
 
 void BootLoader::plug_emuls() {
-
-  srandom(100); // No randomize
+  srandom(100);  // No randomize
 
   auto nemuls = Config::get_array_size("soc", "emul");
 

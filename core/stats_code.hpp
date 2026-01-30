@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <cstdlib>
 #include <string>
 
 #include "absl/container/flat_hash_map.h"

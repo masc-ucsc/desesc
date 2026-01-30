@@ -10,7 +10,6 @@
 #include <net/if.h>
 #include <signal.h>
 #include <stdarg.h>
-#include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
@@ -18,6 +17,7 @@
 #include <time.h>
 #include <unistd.h>
 
+#include <cstdlib>
 #include <fstream>
 
 // #define REGRESS_COSIM 1

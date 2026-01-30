@@ -2,7 +2,9 @@
 
 #pragma once
 
+#include <cstdlib>
 #include <limits>
+#include <memory>
 #include <vector>
 
 #include "absl/container/flat_hash_map.h"

@@ -1,7 +1,6 @@
 #include "Message.h"
 
-#include <stdlib.h>
-
+#include <cstdlib>
 #include <list>
 
 #include "InterConn.h"

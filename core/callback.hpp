@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include <algorithm>  // std::find()..
-#include <vector>     // std::vector<>
+// #include <algorithm>  // std::find()..
+#include <cstdlib>
+#include <vector>  // std::vector<>
 
 #include "fmt/format.h"
 #include "iassert.hpp"

@@ -2,7 +2,7 @@
 
 #include "bpred.hpp"
 
-#include <alloca.h>
+#include "desesc_alloca.h"
 #include <assert.h>
 #include <math.h>
 #include <stdint.h>

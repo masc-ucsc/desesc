@@ -2,6 +2,7 @@
 
 #include <sys/types.h>
 
+#include <cstdlib>
 #include <string_view>
 
 #include "bootloader.hpp"

@@ -10,8 +10,9 @@
 #include <assert.h>
 #include <inttypes.h>
 #include <math.h>
-#include <stdlib.h>
 #include <string.h>
+
+#include <cstdlib>
 
 #include "opcode.hpp"
 // #include "utils.h"
@@ -53,8 +54,8 @@
 #define TAHEAD1_MAXHIST 250
 #endif
 
-#define TAHEAD1_MAXBR 8  // Maximum TAHEAD1_MAXBR  branches in  the block; the code assumes TAHEAD1_MAXBR is a power of 2
-#define TAHEAD1_NBREADPERTABLE 4   // predictions read per table for a block
+#define TAHEAD1_MAXBR          8  // Maximum TAHEAD1_MAXBR  branches in  the block; the code assumes TAHEAD1_MAXBR is a power of 2
+#define TAHEAD1_NBREADPERTABLE 4  // predictions read per table for a block
 
 #define TAHEAD1_AHEAD 0
 // in the curent version:  only 0 or 2 are valid (0 corresponds to the conventional 1-block ahead, 2 coresponds to the 3-block
@@ -96,7 +97,7 @@ int BANK1;
 
 /////////////////////////////////////////////////
 // the replacement/allocation policies described in the slide set
-//#define TAHEAD1_OPTTAGE
+// #define TAHEAD1_OPTTAGE
 #ifdef TAHEAD1_OPTTAGE
 #ifndef TAHEAD1_INTERLEAVED
 #define TAHEAD1_ADJACENTTABLE \
@@ -550,14 +551,14 @@ public:
       printf("%d ", TAHEAD1_m[i]);
     }
     printf("\n");
-    //printf ("TAHEAD1_m[TAHEAD1_NHIST] = %u\n", TAHEAD1_m[TAHEAD1_NHIST]);
+    // printf ("TAHEAD1_m[TAHEAD1_NHIST] = %u\n", TAHEAD1_m[TAHEAD1_NHIST]);
 #ifndef TAHEAD1_INTERLEAVED
     if (TAHEAD1_SHARED) {
       /* tailored for 14 tables */
-      for (int i = 1; i < TAHEAD1_NNHIST/2; i++) {
+      for (int i = 1; i < TAHEAD1_NNHIST / 2; i++) {
         TAHEAD1_gtable[i] = new TAHEAD1_gentry[(1 << (TAHEAD1_LOGG + (i <= 6))) * TAHEAD1_ASSOC];
       }
-      for (int i = TAHEAD1_NNHIST/2; i <= TAHEAD1_NHIST; i++) {
+      for (int i = TAHEAD1_NNHIST / 2; i <= TAHEAD1_NHIST; i++) {
         TAHEAD1_gtable[i] = TAHEAD1_gtable[i - 8];
       }
     }
@@ -788,11 +789,11 @@ public:
       }
       if (TAHEAD1_SHARED) {
         int X = TAHEAD1_AHGI[TAHEAD1_NPRED % 10][1] & 1;
-        for (int i = 2; i < TAHEAD1_NHIST/2; i++) {
+        for (int i = 2; i < TAHEAD1_NHIST / 2; i++) {
           TAHEAD1_AHGI[TAHEAD1_NPRED % 10][i] <<= 1;
           TAHEAD1_AHGI[TAHEAD1_NPRED % 10][i] ^= X;
         }
-        for (int i = TAHEAD1_NNHIST/2; i <= TAHEAD1_NHIST; i++) {
+        for (int i = TAHEAD1_NNHIST / 2; i <= TAHEAD1_NHIST; i++) {
           TAHEAD1_AHGI[TAHEAD1_NPRED % 10][i] <<= 1;
           TAHEAD1_AHGI[TAHEAD1_NPRED % 10][i] ^= X ^ 1;
         }
@@ -994,7 +995,7 @@ public:
 #endif
   }
 
-  bool getPrediction(uint64_t PCBRANCH, bool& bias, bool& lowconf) {
+  bool getPrediction(uint64_t PCBRANCH, bool &bias, bool &lowconf) {
     (void)PCBRANCH;
 
     uint64_t PC = TAHEAD1_PCBLOCK ^ (TAHEAD1_Numero << 5);
@@ -1062,7 +1063,7 @@ public:
 
     TAHEAD1_predSC = (TAHEAD1_SUMSC >= 0);
 
-    bias = (TAHEAD_TAGECONF >= 1);
+    bias    = (TAHEAD_TAGECONF >= 1);
     lowconf = (TAHEAD_TAGECONF == 1);
     return TAHEAD1_pred_taken;
   }
@@ -1343,7 +1344,7 @@ public:
 
       bool First = true;
 #ifdef TAHEAD1_FILTERALLOCATION
-      bool Test  = false;
+      bool Test = false;
 #endif
 
       for (int i = DEP; i <= TAHEAD1_NHIST; i++) {

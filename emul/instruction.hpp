@@ -42,8 +42,8 @@ public:
 
   // if dst == Invalid -> dst2 == invalid
   [[nodiscard]] bool hasDstRegister() const { return dst1 != RegType::LREG_InvalidOutput || dst2 != RegType::LREG_InvalidOutput; }
-  [[nodiscard]] bool hasSrc1Register() const { return src1 != RegType::LREG_NoDependence; }
-  [[nodiscard]] bool hasSrc2Register() const { return src2 != RegType::LREG_NoDependence; }
+  [[nodiscard]] bool hasSrc1Register() const { return src1 != LREG_NoDependence; }
+  [[nodiscard]] bool hasSrc2Register() const { return src2 != LREG_NoDependence; }
   [[nodiscard]] int  getnsrc() const {
     int n = hasSrc1Register() ? 1 : 0;
     n += hasSrc2Register() ? 1 : 0;

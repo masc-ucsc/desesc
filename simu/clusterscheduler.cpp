@@ -118,7 +118,7 @@ std::shared_ptr<Resource> UseClusterScheduler::getResource(Dinst* dinst) {
 
   cused[inst->getDst1()] = touse->getCluster();
   cused[inst->getDst2()] = touse->getCluster();
-  I(cused[RegType::LREG_NoDependence] == 0);
+  I(cused[LREG_NoDependence] == 0);
 
   return touse;
 }

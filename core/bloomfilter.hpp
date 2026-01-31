@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <cstdlib>
 #include <vector>
@@ -18,7 +19,7 @@ private:
   std::vector<std::vector<int32_t>> countVec;
   int32_t                           nVectors;
   std::vector<int32_t>              nonZeroCount;
-  char*                             desc;
+  const char*                       desc{nullptr};
   int32_t                           nElements;
 
   bool BFBuild;
@@ -74,17 +75,12 @@ public:
 
 class BitSelection {
 private:
-  int32_t  nBits;
-  int32_t  bits[32];
-  unsigned mask[32];
+  int32_t                  nBits;
+  std::array<int32_t, 32>  bits;
+  std::array<unsigned, 32> mask;
 
 public:
-  BitSelection() {
-    nBits = 0;
-    for (int32_t i = 0; i < 32; i++) {
-      bits[i] = 0;
-    }
-  }
+  BitSelection() : nBits{0}, bits{}, mask{} {}
 
   BitSelection(int32_t* bitPos, int32_t n) {
     nBits = 0;

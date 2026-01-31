@@ -14,18 +14,18 @@
 #include "stats.hpp"
 
 //-------------------------------------------------------------
-#define RRIP_M 4  // max value = 2^M   | 4 | 8   | 16   |
+inline constexpr int RRIP_M = 4;  // max value = 2^M   | 4 | 8   | 16   |
 //-------------------------------------------------------------
-#define DISTANT_REF  3  // 2^M - 1           | 3 | 7   | 15  |
-#define IMM_REF      1  // nearimm<imm<dist  | 1 | 1-6 | 1-14|
-#define NEAR_IMM_REF 0  // 0                 | 0 | 0   | 0   |
-#define LONG_REF     1  // 2^M - 2           | 1 | 6   | 14  |
+inline constexpr int DISTANT_REF  = 3;  // 2^M - 1           | 3 | 7   | 15  |
+inline constexpr int IMM_REF      = 1;  // nearimm<imm<dist  | 1 | 1-6 | 1-14|
+inline constexpr int NEAR_IMM_REF = 0;  // 0                 | 0 | 0   | 0   |
+inline constexpr int LONG_REF     = 1;  // 2^M - 2           | 1 | 6   | 14  |
 //-------------------------------------------------------------
 
 enum ReplacementPolicy { LRU, LRUp, RANDOM, SHIP, PAR, UAR, HAWKEYE };  // SHIP is RRIP with SHIP (ISCA 2010)
 
-#define RRIP_MAX      15
-#define RRIP_PREF_MAX 2
+inline constexpr int RRIP_MAX      = 15;
+inline constexpr int RRIP_PREF_MAX = 2;
 
 template <class State, class Addr_t>
 class CacheGeneric {
@@ -271,7 +271,7 @@ class HawkCache : public CacheGeneric<State, Addr_t> {
 
 private:
 public:
-  typedef typename CacheGeneric<State, Addr_t>::CacheLine Line;
+  using Line = typename CacheGeneric<State, Addr_t>::CacheLine;
 
 protected:
   std::vector<Line> mem;
@@ -348,7 +348,7 @@ class CacheAssoc : public CacheGeneric<State, Addr_t> {
 
 private:
 public:
-  typedef typename CacheGeneric<State, Addr_t>::CacheLine Line;
+  using Line = typename CacheGeneric<State, Addr_t>::CacheLine;
 
 protected:
   std::vector<Line> mem;
@@ -436,7 +436,7 @@ class CacheDM : public CacheGeneric<State, Addr_t> {
 
 private:
 public:
-  typedef typename CacheGeneric<State, Addr_t>::CacheLine Line;
+  using Line = typename CacheGeneric<State, Addr_t>::CacheLine;
 
 protected:
   std::vector<Line> mem;
@@ -468,7 +468,7 @@ class CacheDMSkew : public CacheGeneric<State, Addr_t> {
 
 private:
 public:
-  typedef typename CacheGeneric<State, Addr_t>::CacheLine Line;
+  using Line = typename CacheGeneric<State, Addr_t>::CacheLine;
 
 protected:
   std::vector<Line> mem;
@@ -502,7 +502,7 @@ class CacheSHIP : public CacheGeneric<State, Addr_t> {
 
 private:
 public:
-  typedef typename CacheGeneric<State, Addr_t>::CacheLine Line;
+  using Line = typename CacheGeneric<State, Addr_t>::CacheLine;
 
 protected:
   std::vector<Line> mem;
@@ -763,7 +763,7 @@ void CacheGeneric<State, Addr_t>::createStats(const std::string& section, const 
 template <class State, class Addr_t>
 CacheGeneric<State, Addr_t>* CacheGeneric<State, Addr_t>::create(const std::string& section, const std::string& append,
                                                                  const std::string& cache_name) {
-  CacheGeneric* cache = 0;
+  CacheGeneric* cache = nullptr;
 
   auto fmt_append{append};
   if (!fmt_append.empty()) {

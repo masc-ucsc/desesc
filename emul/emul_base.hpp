@@ -15,8 +15,8 @@ protected:
   std::string type;  // dromajo, trace,...
 
 public:
-  Emul_base();
-  virtual ~Emul_base();
+  Emul_base()          = default;
+  virtual ~Emul_base() = default;
 
   virtual Dinst* peek(Hartid_t fid)    = 0;
   virtual void   execute(Hartid_t fid) = 0;

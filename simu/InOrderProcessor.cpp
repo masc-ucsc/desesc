@@ -67,15 +67,15 @@ StallCause InOrderProcessor::add_inst(Dinst* dinst) {
 #if 1
 #if 0
   // Simple in-order
-  if(((RAT[smt][inst->getSrc1()] != 0) && (inst->getSrc1() != RegType::LREG_NoDependence) && (inst->getSrc1() != RegType::LREG_InvalidOutput)) ||
-    ((RAT[smt][inst->getSrc2()] != 0) && (inst->getSrc2() != RegType::LREG_NoDependence) && (inst->getSrc2() != RegType::LREG_InvalidOutput))||
+  if(((RAT[smt][inst->getSrc1()] != 0) && (inst->getSrc1() != LREG_NoDependence) && (inst->getSrc1() != RegType::LREG_InvalidOutput)) ||
+    ((RAT[smt][inst->getSrc2()] != 0) && (inst->getSrc2() != LREG_NoDependence) && (inst->getSrc2() != RegType::LREG_InvalidOutput))||
     ((RAT[smt][inst->getDst1()] != 0) && (inst->getDst1() != RegType::LREG_InvalidOutput))||
     ((RAT[smt][inst->getDst2()] != 0) && (inst->getDst2() != RegType::LREG_InvalidOutput)))
 #else
 #if 1
   // Simple in-order for RAW, but not WAW or WAR
-  if (((RAT[smt_local][inst->getSrc1()] != nullptr) && (inst->getSrc1() != RegType::LREG_NoDependence))
-      || ((RAT[smt_local][inst->getSrc2()] != nullptr) && (inst->getSrc2() != RegType::LREG_NoDependence)))
+  if (((RAT[smt_local][inst->getSrc1()] != nullptr) && (inst->getSrc1() != LREG_NoDependence))
+      || ((RAT[smt_local][inst->getSrc2()] != nullptr) && (inst->getSrc2() != LREG_NoDependence)))
 #else
   // scoreboard, no output dependence
   if (((RAT[smt][inst->getDst1()] != 0) && (inst->getDst1() != RegType::LREG_InvalidOutput))

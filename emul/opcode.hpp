@@ -268,28 +268,29 @@ public:
 };
 
 // Common alias
-#define LREG_ZERO         LREG_R0
-#define LREG_NoDependence LREG_R0
-#define NoDependence      LREG_R0
+inline constexpr RegType LREG_ZERO         = RegType::LREG_R0;
+inline constexpr RegType LREG_NoDependence = RegType::LREG_R0;
+inline constexpr RegType NoDependence      = RegType::LREG_R0;
 
 // SPARC Mappings
-#define LREG_PSR  LREG_ARCH0
-#define LREG_ICC  LREG_ARCH1
-#define LREG_CWP  LREG_ARCH2
-#define LREG_Y    LREG_ARCH3
-#define LREG_TBR  LREG_ARCH4
-#define LREG_WIM  LREG_ARCH5
-#define LREG_FSR  LREG_ARCH6
-#define LREG_FCC  LREG_ARCH7
-#define LREG_CEXC LREG_ARCH8
-#define LREG_FRS1 LREG_FRN
-#define LREG_FRS2 LREG_FRS
+inline constexpr RegType LREG_PSR  = RegType::LREG_ARCH0;
+inline constexpr RegType LREG_ICC  = RegType::LREG_ARCH1;
+inline constexpr RegType LREG_CWP  = RegType::LREG_ARCH2;
+inline constexpr RegType LREG_Y    = RegType::LREG_ARCH3;
+inline constexpr RegType LREG_TBR  = RegType::LREG_ARCH4;
+inline constexpr RegType LREG_WIM  = RegType::LREG_ARCH5;
+inline constexpr RegType LREG_FSR  = RegType::LREG_ARCH6;
+inline constexpr RegType LREG_FCC  = RegType::LREG_ARCH7;
+inline constexpr RegType LREG_CEXC = RegType::LREG_ARCH8;
+// NOTE: LREG_FRS1/FRS2 previously referenced undefined LREG_FRN/LREG_FRS - appears to be dead code
+// inline constexpr RegType LREG_FRS1 = RegType::LREG_FRN;
+// inline constexpr RegType LREG_FRS2 = RegType::LREG_FRS;
 
 // ARM Mappings
-#define LREG_CPSR    LREG_ARCH0
-#define LREG_GE_FLAG LREG_ARCH3
-#define LREG_Q_FLAG  LREG_ARCH4
-#define LREG_PC      LREG_R16
-#define LREG_LINK    LREG_R15
-#define LREG_SP      LREG_R14
-#define LREG_IP      LREG_R13
+inline constexpr RegType LREG_CPSR    = RegType::LREG_ARCH0;
+inline constexpr RegType LREG_GE_FLAG = RegType::LREG_ARCH3;
+inline constexpr RegType LREG_Q_FLAG  = RegType::LREG_ARCH4;
+inline constexpr RegType LREG_PC      = RegType::LREG_R16;
+inline constexpr RegType LREG_LINK    = RegType::LREG_R15;
+inline constexpr RegType LREG_SP      = RegType::LREG_R14;
+inline constexpr RegType LREG_IP      = RegType::LREG_R13;

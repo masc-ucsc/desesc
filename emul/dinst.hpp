@@ -284,7 +284,7 @@ private:
     pend[2].setParentDinst(0);
 #endif
 
-    first          = 0;
+    first          = nullptr;
     last           = 0;
     nDeps          = 0;
     pend[0].isUsed = false;  // false when no RAW dependence
@@ -491,29 +491,16 @@ public:
   }
   int getChained() const { return chained; }
 #else
-  static DataSign calcDataSign(int64_t data) {
-    (void)data;
-    return DS_NoData;
-  };
-  Data_t   getData() const { return 0; }
-  DataSign getDataSign() const { return DS_NoData; }
-  void     setDataSign(int64_t _data, Addr_t ldpc) {
-    (void)_data;
-    (void)ldpc;
-  }
+  static DataSign calcDataSign([[maybe_unused]] int64_t data) { return DS_NoData; }
+  Data_t          getData() const { return 0; }
+  DataSign        getDataSign() const { return DS_NoData; }
+  void            setDataSign([[maybe_unused]] int64_t _data, [[maybe_unused]] Addr_t ldpc) {}
 
-  void addDataSign(int ds, int64_t _data, Addr_t ldpc) {
-    (void)ds;
-    (void)_data;
-    (void)ldpc;
-  }
-  void   setData(uint64_t _data) { (void)_data; }
+  void   addDataSign([[maybe_unused]] int ds, [[maybe_unused]] int64_t _data, [[maybe_unused]] Addr_t ldpc) {}
+  void   setData([[maybe_unused]] uint64_t _data) {}
   Addr_t getLDPC() const { return 0; }
-  void   setChain(FetchEngine* fe, int c) {
-    (void)fe;
-    (void)c;
-  }
-  int getChained() const { return 0; }
+  void   setChain([[maybe_unused]] FetchEngine* fe, [[maybe_unused]] int c) {}
+  int    getChained() const { return 0; }
 
   int getDepDepth() const { return 0; }
 
@@ -671,8 +658,8 @@ public:
     I(n->nDeps > 0);
     n->nDeps--;
     // printf("Dinst::getNextPending::Now ndeps--:: ndeps is:first->getDinst()->ndeps-- is  %d\n", (int)n->getnDeps());
-    first->isUsed = false;     // isUsed==false : No RAW dependence
-    first->setParentDinst(0);  // setParent =0 ::reset
+    first->isUsed = false;           // isUsed==false : No RAW dependence
+    first->setParentDinst(nullptr);  // setParent =nullptr ::reset
 
     first = first->getNext();  // first <=
     // I(first);
@@ -682,7 +669,7 @@ public:
       //        first->getDinst()->getID(),
       //        first->getDinst()->isTransient());
     } else {
-      first = 0;
+      first = nullptr;
       // printf("Dinst::getnextPending Setting new first =0 as ::inst is %ld and isTransient is %b\n",
       //        this->getID(),
       //        this->isTransient());
@@ -801,7 +788,7 @@ public:
   bool isSrc1Ready() const { return !pend[0].isUsed; }  // isUsed ==true ::RAW dependence
   bool isSrc2Ready() const { return !pend[1].isUsed; }
   bool isSrc3Ready() const { return !pend[2].isUsed; }
-  void flush_first() { first = 0; }
+  void flush_first() { first = nullptr; }
   bool hasPending() const {
     // if (first) {
     //   printf("Dinst::haspending:: Current Inst %ld has pending first ==%ld\n", ID, first->getDinst()->getID());

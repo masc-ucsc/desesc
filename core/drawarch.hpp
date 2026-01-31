@@ -12,17 +12,13 @@
 #include "fmt/format.h"
 #include "iassert.hpp"
 
-using namespace std;
-
 class DrawArch {
 protected:
   std::vector<std::string> rows;
 
 public:
-  DrawArch() {
-    // Constructor
-  };
-  ~DrawArch() {}
+  DrawArch()  = default;
+  ~DrawArch() = default;
 
   void addObj(const std::string& mystr) { rows.push_back(mystr); }
 

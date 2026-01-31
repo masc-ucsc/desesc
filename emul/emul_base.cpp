@@ -4,6 +4,4 @@
 
 // #include "config.hpp"
 
-Emul_base::Emul_base() {}
-
-Emul_base::~Emul_base() {}
+// Constructor and destructor defined as = default in header

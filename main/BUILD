@@ -27,3 +27,13 @@ cc_binary(
         ":bootloader",
     ],
 )
+
+sh_test(
+    name = "goldrun_test",
+    size = "small",
+    srcs = ["goldrun_test.sh"],
+    data = [
+        ":desesc",
+        "//conf:goldrun_data",
+    ],
+)

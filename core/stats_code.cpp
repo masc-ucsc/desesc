@@ -4,13 +4,13 @@
 
 #include "report.hpp"
 
-Stats_code::Stats_code(const std::string &str) : Stats(str) {
+Stats_code::Stats_code(const std::string& str) : Stats(str) {
   reset();
   subscribe();
 }
 
 void Stats_code::report() const {
-  for (const auto &it : prof) {
+  for (const auto& it : prof) {
     const ProfEntry e = it.second;
 
     Report::field(

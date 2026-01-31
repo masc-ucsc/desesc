@@ -17,7 +17,7 @@ protected:
   Stats_avg avgTime;
 
 public:
-  explicit PortGeneric(const std::string &name);
+  explicit PortGeneric(const std::string& name);
   virtual ~PortGeneric() = default;
 
   TimeDelta_t nextSlotDelta(bool en) { return nextSlot(en) - globalClock; }
@@ -28,13 +28,13 @@ public:
   //! returns when the next slot can be free without occupying any slot
   [[nodiscard]] virtual bool is_busy_for(TimeDelta_t clk) const = 0;
 
-  static std::shared_ptr<PortGeneric> create(const std::string &name, NumUnits_t nUnits);
+  static std::shared_ptr<PortGeneric> create(const std::string& name, NumUnits_t nUnits);
 };
 
 class PortUnlimited : public PortGeneric {
 private:
 public:
-  explicit PortUnlimited(const std::string &name);
+  explicit PortUnlimited(const std::string& name);
 
   Time_t             nextSlot(bool en) override;
   [[nodiscard]] bool is_busy_for(TimeDelta_t clk) const override;
@@ -46,7 +46,7 @@ private:
   Time_t lTime;
 
 public:
-  explicit PortFullyPipe(const std::string &name);
+  explicit PortFullyPipe(const std::string& name);
 
   Time_t             nextSlot(bool en) override;
   [[nodiscard]] bool is_busy_for(TimeDelta_t clk) const override;
@@ -59,7 +59,7 @@ private:
   Time_t           lTime;
 
 public:
-  PortFullyNPipe(const std::string &name, NumUnits_t nFU);
+  PortFullyNPipe(const std::string& name, NumUnits_t nFU);
 
   Time_t             nextSlot(bool en) override;
   [[nodiscard]] bool is_busy_for(TimeDelta_t clk) const override;

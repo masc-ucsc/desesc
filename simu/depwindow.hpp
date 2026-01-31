@@ -22,16 +22,16 @@ private:
   std::shared_ptr<PortGeneric> schedPort;
 
 protected:
-  void preSelect(Dinst *dinst);
+  void preSelect(Dinst* dinst);
 
 public:
   ~DepWindow();
-  DepWindow(uint32_t cpuid, int _src_cluster_id, const std::string &clusterName, uint32_t pos);
+  DepWindow(uint32_t cpuid, int _src_cluster_id, const std::string& clusterName, uint32_t pos);
 
-  void select(Dinst *dinst);
+  void select(Dinst* dinst);
 
-  StallCause canIssue(Dinst *dinst) const;
-  void       add_inst(Dinst *dinst);
-  void       executed(Dinst *dinst);
-  void       executed_flushed(Dinst *dinst);
+  StallCause canIssue(Dinst* dinst) const;
+  void       add_inst(Dinst* dinst);
+  void       executed(Dinst* dinst);
+  void       executed_flushed(Dinst* dinst);
 };

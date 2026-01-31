@@ -208,7 +208,7 @@ int8_t TAHEAD1_FBIAS[(1 << TAHEAD1_LOGFNB)];
   ((((TAHEAD1_AHEAD) ? ((TAHEAD1_Numero ^ TAHEAD1_PCBLOCK) & (TAHEAD1_MAXBR - 1)) : (TAHEAD1_Numero & (TAHEAD1_MAXBR - 1)))) << 2)
 
 #ifdef TAHEAD1_MORESCLOGICAHEAD
-#define TAHEAD1_PCBL ((TAHEAD1_AHEAD) ? (TAHEAD1_PrevPCBLOCK ^ ((TAHEAD1_GH)&3)) : (TAHEAD1_PCBLOCK))
+#define TAHEAD1_PCBL ((TAHEAD1_AHEAD) ? (TAHEAD1_PrevPCBLOCK ^ ((TAHEAD1_GH) & 3)) : (TAHEAD1_PCBLOCK))
 #else
 #define TAHEAD1_PCBL ((TAHEAD1_AHEAD) ? (TAHEAD1_PrevPCBLOCK) : (TAHEAD1_PCBLOCK))
 #endif
@@ -288,7 +288,7 @@ public:
     OUTPOINT = OLENGTH % CLENGTH;
   }
 
-  void update(uint8_t *h, int PT) {
+  void update(uint8_t* h, int PT) {
     comp = (comp << 1) ^ h[PT & (TAHEAD1_HISTBUFFERLENGTH - 1)];
 
     comp ^= h[(PT + OLENGTH) & (TAHEAD1_HISTBUFFERLENGTH - 1)] << OUTPOINT;
@@ -361,8 +361,8 @@ TAHEAD1_folded_history tahead1_ch_i[TAHEAD1_NHIST + 1];     // utility for compu
 TAHEAD1_folded_history TAHEAD1_ch_t[2][TAHEAD1_NHIST + 1];  // utility for computing TAGE tags
 
 // For the TAGE predictor
-TAHEAD1_bentry *TAHEAD1_btable;                     // bimodal TAGE table
-TAHEAD1_gentry *TAHEAD1_gtable[TAHEAD1_NHIST + 1];  // tagged TAGE tables
+TAHEAD1_bentry* TAHEAD1_btable;                     // bimodal TAGE table
+TAHEAD1_gentry* TAHEAD1_gtable[TAHEAD1_NHIST + 1];  // tagged TAGE tables
 int             TAHEAD1_m[TAHEAD1_NHIST + 1];
 uint            TAHEAD1_GI[TAHEAD1_NHIST + 1];                  // indexes to the different tables are computed only once
 uint            TAHEAD1_GGI[TAHEAD1_ASSOC][TAHEAD1_NHIST + 1];  // indexes to the different tables are computed only once
@@ -397,8 +397,8 @@ int TAHEAD1_predictorsize() {
 #ifdef TAHEAD1_SC
 
   inter += TAHEAD1_WIDTHRES;
-  inter += (TAHEAD1_PERCWIDTH)*2 * (1 << TAHEAD1_LOGBIAS);  // TAHEAD1_BiasPC and TAHEAD1_BiasPCLMAP,
-  inter += (TAHEAD1_PERCWIDTH)*2;                           // TAHEAD1_BiasLMAP
+  inter += (TAHEAD1_PERCWIDTH) * 2 * (1 << TAHEAD1_LOGBIAS);  // TAHEAD1_BiasPC and TAHEAD1_BiasPCLMAP,
+  inter += (TAHEAD1_PERCWIDTH) * 2;                           // TAHEAD1_BiasLMAP
 
 #ifdef TAHEAD1_SCMEDIUM
 #ifdef TAHEAD1_SCFULL
@@ -449,12 +449,12 @@ public:
     }
   }
 
-  TAHEAD1_gentry &get_TAHEAD1_gtable_entry(int i, int j) {
+  TAHEAD1_gentry& get_TAHEAD1_gtable_entry(int i, int j) {
     int idx = j % TAHEAD1_getTableSize(i);
     return TAHEAD1_gtable[i][idx];
   }
 
-  TAHEAD1_bentry &get_TAHEAD1_btable_entry(int j) {
+  TAHEAD1_bentry& get_TAHEAD1_btable_entry(int j) {
     int idx = j % (1 << TAHEAD1_LOGB);
     return TAHEAD1_btable[idx];
   }
@@ -710,7 +710,7 @@ public:
   }
 
   // gindex computes a full hash of PC, TAHEAD1_ghist and TAHEAD1_phist
-  uint gindex(unsigned int PC, int bank, long long hist, TAHEAD1_folded_history *ptahead1_ch_i) {
+  uint gindex(unsigned int PC, int bank, long long hist, TAHEAD1_folded_history* ptahead1_ch_i) {
     uint index;
     int  logg  = TAHEAD1_LOGG + /* TAHEAD1_SHARED+*/ (TAHEAD1_SHARED & (bank <= 1));
     uint M     = (TAHEAD1_m[bank] > TAHEAD1_PHISTWIDTH) ? TAHEAD1_PHISTWIDTH : TAHEAD1_m[bank];
@@ -726,7 +726,7 @@ public:
   }
 
   //  tag computation
-  uint16_t gtag(unsigned int PC, int bank, TAHEAD1_folded_history *ch0, TAHEAD1_folded_history *ch1) {
+  uint16_t gtag(unsigned int PC, int bank, TAHEAD1_folded_history* ch0, TAHEAD1_folded_history* ch1) {
     int tag = PC ^ (PC >> 2);
     int M   = (TAHEAD1_m[bank] > TAHEAD1_PHISTWIDTH) ? TAHEAD1_PHISTWIDTH : TAHEAD1_m[bank];
     tag     = (tag >> 1) ^ ((tag & 1) << 10) ^ F(TAHEAD1_phist, M, bank);
@@ -738,7 +738,7 @@ public:
   }
 
   // up-down saturating counter
-  void ctrupdate(int8_t &ctr, bool taken, int nbits) {
+  void ctrupdate(int8_t& ctr, bool taken, int nbits) {
     if (taken) {
       if (ctr < ((1 << (nbits - 1)) - 1)) {
         ctr++;
@@ -995,7 +995,7 @@ public:
 #endif
   }
 
-  bool getPrediction(uint64_t PCBRANCH, bool &bias, bool &lowconf) {
+  bool getPrediction(uint64_t PCBRANCH, bool& bias, bool& lowconf) {
     (void)PCBRANCH;
 
     uint64_t PC = TAHEAD1_PCBLOCK ^ (TAHEAD1_Numero << 5);
@@ -1068,8 +1068,8 @@ public:
     return TAHEAD1_pred_taken;
   }
 
-  void HistoryUpdate(uint64_t PCBRANCH, Opcode opType, bool taken, uint64_t branchTarget, int &Y, TAHEAD1_folded_history *H,
-                     TAHEAD1_folded_history *G, TAHEAD1_folded_history *J) {
+  void HistoryUpdate(uint64_t PCBRANCH, Opcode opType, bool taken, uint64_t branchTarget, int& Y, TAHEAD1_folded_history* H,
+                     TAHEAD1_folded_history* G, TAHEAD1_folded_history* J) {
     int brtype;
 
     if ((TAHEAD1_Numero == TAHEAD1_MAXBR - 1) || (taken)) {

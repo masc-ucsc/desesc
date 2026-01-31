@@ -13,7 +13,7 @@
 
 class Stats {
 private:
-  static inline absl::flat_hash_map<std::string, Stats *> store;
+  static inline absl::flat_hash_map<std::string, Stats*> store;
 
 protected:
   const std::string name;
@@ -22,7 +22,7 @@ protected:
   void unsubscribe();
 
 public:
-  Stats(const std::string &n) : name(n){};
+  Stats(const std::string& n) : name(n) {};
   virtual ~Stats();
 
   static void report_all();
@@ -39,7 +39,7 @@ private:
 
 protected:
 public:
-  Stats_pwr(const std::string &format);
+  Stats_pwr(const std::string& format);
 
   void inc(bool transient) {
     cntr_tran += transient ? 1 : 0;
@@ -56,9 +56,9 @@ private:
 
 protected:
 public:
-  Stats_cntr(const std::string &format);
+  Stats_cntr(const std::string& format);
 
-  Stats_cntr &operator+=(const double v) {
+  Stats_cntr& operator+=(const double v) {
     data += v;
     return *this;
   }
@@ -79,7 +79,7 @@ protected:
   int64_t nData;
 
 public:
-  Stats_avg(const std::string &format);
+  Stats_avg(const std::string& format);
 
   void sample(const double v, bool en);
   void sample(bool en, const double v) = delete;
@@ -95,7 +95,7 @@ protected:
   int64_t nData;
 
 public:
-  Stats_max(const std::string &format);
+  Stats_max(const std::string& format);
 
   void sample(const double v, bool en);
   void sample(bool en, const double v) = delete;
@@ -113,7 +113,7 @@ protected:
   absl::flat_hash_map<int32_t, double> hist;
 
 public:
-  Stats_hist(const std::string &format);
+  Stats_hist(const std::string& format);
 
   void sample(int32_t key, bool enable, double weight = 1);
   void sample(bool enable, uint32_t key, double weight = 1) = delete;

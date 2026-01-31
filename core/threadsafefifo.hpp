@@ -38,13 +38,13 @@ public:
   ThreadSafeFIFO() : tail(0), head(0) {}
   virtual ~ThreadSafeFIFO() {}
 
-  Type *getTailRef() { return &array[tail]; }
+  Type* getTailRef() { return &array[tail]; }
 
   void push() {
     // AtomicAdd(&tail,static_cast<IndexType>(1));
     tail = (tail + 1) & 32767;
   };
-  void push(const Type *item_) {
+  void push(const Type* item_) {
     array[tail] = *item_;
     push();
   };
@@ -74,9 +74,9 @@ public:
     // AtomicAdd(&head,static_cast<IndexType>(1));
     head = (head + 1) & 32767;
   };
-  Type *getHeadRef() { return &array[head]; }
-  Type *getNextHeadRef() { return &array[static_cast<IndexType>((head + 1) & 32767)]; }
-  void  pop(Type *obj) {
+  Type* getHeadRef() { return &array[head]; }
+  Type* getNextHeadRef() { return &array[static_cast<IndexType>((head + 1) & 32767)]; }
+  void  pop(Type* obj) {
     *obj = array[head];
     // AtomicAdd(&head,static_cast<IndexType>(1));
     head = (head + 1) & 32767;

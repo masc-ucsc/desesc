@@ -7,8 +7,8 @@
 #include "config.hpp"
 #include "gprocessor.hpp"
 
-IBucket::IBucket(size_t size, Pipeline *p, bool clean)
-    : FastQueue<Dinst *>(size), cleanItem(clean), pipeLine(p), markFetchedCB(this) {}
+IBucket::IBucket(size_t size, Pipeline* p, bool clean)
+    : FastQueue<Dinst*>(size), cleanItem(clean), pipeLine(p), markFetchedCB(this) {}
 
 void IBucket::markFetched() {
 #ifndef NDEBUG
@@ -25,7 +25,7 @@ void IBucket::markFetched() {
   pipeLine->readyItem(this);
 }
 
-bool PipeIBucketLess::operator()(const IBucket *x, const IBucket *y) const { return x->getPipelineId() > y->getPipelineId(); }
+bool PipeIBucketLess::operator()(const IBucket* x, const IBucket* y) const { return x->getPipelineId() > y->getPipelineId(); }
 
 Pipeline::Pipeline(size_t s, size_t fetch, int32_t maxReqs)
     : PipeLength(s)
@@ -43,7 +43,7 @@ Pipeline::Pipeline(size_t s, size_t fetch, int32_t maxReqs)
   I(bucketPool.empty());
 
   for (size_t i = 0; i < bucketPoolMaxSize; i++) {
-    IBucket *ib = new IBucket(fetch + 1, this);  // +1 instructions
+    IBucket* ib = new IBucket(fetch + 1, this);  // +1 instructions
     bucketPool.push_back(ib);
   }
 
@@ -65,7 +65,7 @@ Pipeline::~Pipeline() {
   }
 }
 
-void Pipeline::readyItem(IBucket *b) {
+void Pipeline::readyItem(IBucket* b) {
   b->setClock();
 
   nIRequests++;
@@ -91,7 +91,7 @@ void Pipeline::readyItem(IBucket *b) {
 
 void Pipeline::clearItems() {
   while (!received.empty()) {
-    IBucket *b = received.top();
+    IBucket* b = received.top();
 
     if (b->getPipelineId() != minItemCntr) {
       break;
@@ -109,7 +109,7 @@ void Pipeline::clearItems() {
   }
 }
 
-void Pipeline::doneItem(IBucket *b) {
+void Pipeline::doneItem(IBucket* b) {
   I(b->getPipelineId() < minItemCntr);
   I(b->empty());
   b->clock = 0;
@@ -120,12 +120,12 @@ bool Pipeline::transient_buffer_empty() { return transient_buffer.empty(); }
 
 void Pipeline::flush_transient_inst_from_buffer() {
   while (!buffer.empty()) {
-    auto *bucket = buffer.end_data();
+    auto* bucket = buffer.end_data();
     I(bucket);
     I(!bucket->empty());
 
     while (!bucket->empty()) {
-      auto *dinst = bucket->end_data();
+      auto* dinst = bucket->end_data();
       I(dinst);
       I(!dinst->is_present_in_rob());
       if (dinst->isTransient()) {
@@ -145,7 +145,7 @@ void Pipeline::flush_transient_inst_from_buffer() {
   }
 }
 
-IBucket *Pipeline::nextItem() {
+IBucket* Pipeline::nextItem() {
   while (1) {
     if (buffer.empty()) {
 #ifndef NDEBUG
@@ -180,7 +180,7 @@ IBucket *Pipeline::nextItem() {
           );
 #endif
     }
-    IBucket *b = buffer.top();
+    IBucket* b = buffer.top();
     buffer.pop();
     // fprintf(stderr,"@%lld: Popping Bucket[%p]\n",(long long int)globalClock ,b);
     I(!b->empty());
@@ -194,24 +194,24 @@ IBucket *Pipeline::nextItem() {
 }
 
 PipeQueue::PipeQueue(CPU_t i)
-    : pipeLine(
-        Config::get_integer("soc", "core", i, "decode_delay", 1, 64) + Config::get_integer("soc", "core", i, "rename_delay", 1, 8),
-        Config::get_integer("soc", "core", i, "fetch_width", 1, 64), Config::get_integer("soc", "core", i, "ftq_size", 1, 64))
-    , instQueue(Config::get_integer("soc", "core", i, "decode_bucket_size", 1, 128)) {
-}
+    : pipeLine(Config::get_integer("soc", "core", i, "decode_delay", 1, 64)
+                   + Config::get_integer("soc", "core", i, "rename_delay", 1, 8),
+               Config::get_integer("soc", "core", i, "fetch_width", 1, 64),
+               Config::get_integer("soc", "core", i, "ftq_size", 1, 64))
+    , instQueue(Config::get_integer("soc", "core", i, "decode_bucket_size", 1, 128)) {}
 
 PipeQueue::~PipeQueue() {
   // do nothing
 }
 
-IBucket *Pipeline::newItem() {
+IBucket* Pipeline::newItem() {
   if (nIRequests == 0 || bucketPool.empty()) {
     return 0;
   }
 
   nIRequests--;
 
-  IBucket *b = bucketPool.back();
+  IBucket* b = bucketPool.back();
   bucketPool.pop_back();
 
   b->setPipelineId(maxItemCntr);

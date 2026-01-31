@@ -8,7 +8,7 @@
 #include "memrequest.hpp"
 #include "snippets.hpp"
 
-MSHR::MSHR(const std::string &n, int32_t size, int16_t lineSize, int16_t nsub)
+MSHR::MSHR(const std::string& n, int32_t size, int16_t lineSize, int16_t nsub)
     : name(n)
     , Log2LineSize(log2i(lineSize))
     , nEntries(size)
@@ -56,7 +56,7 @@ bool MSHR::canIssue(Addr_t addr) const {
   return true;
 }
 
-void MSHR::addEntry(Addr_t addr, CallbackBase *c, MemRequest *mreq) {
+void MSHR::addEntry(Addr_t addr, CallbackBase* c, MemRequest* mreq) {
   I(mreq->isRetrying());
   I(nFreeEntries <= nEntries);
   nFreeEntries--;  // it can go negative because invalidate and writeback requests
@@ -82,7 +82,7 @@ void MSHR::addEntry(Addr_t addr, CallbackBase *c, MemRequest *mreq) {
 #endif
 }
 
-void MSHR::blockEntry(Addr_t addr, MemRequest *mreq) {
+void MSHR::blockEntry(Addr_t addr, MemRequest* mreq) {
   I(!mreq->isRetrying());
   I(nFreeEntries <= nEntries);
   nFreeEntries--;  // it can go negative because invalidate and writeback requests
@@ -103,7 +103,7 @@ void MSHR::blockEntry(Addr_t addr, MemRequest *mreq) {
 #endif
 }
 
-bool MSHR::retire(Addr_t addr, MemRequest *mreq) {
+bool MSHR::retire(Addr_t addr, MemRequest* mreq) {
   I(mreq);
   uint32_t pos = calcEntry(addr);
   I(entry[pos].nUse);
@@ -112,7 +112,7 @@ bool MSHR::retire(Addr_t addr, MemRequest *mreq) {
   I(entry[pos].pending_mreq.front() == mreq);
   entry[pos].pending_mreq.pop_front();
   if (!entry[pos].pending_mreq.empty()) {
-    MemRequest *mreq2 = entry[pos].pending_mreq.front();
+    MemRequest* mreq2 = entry[pos].pending_mreq.front();
     if (mreq2 != entry[pos].block_mreq) {
       I(mreq2->isRetrying());
     } else {

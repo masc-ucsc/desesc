@@ -45,7 +45,7 @@
 #include "fetchengine.hpp"
 #include "gmemory_system.hpp"
 
-GPUSMProcessor::GPUSMProcessor(Gmemory_system *gm, CPU_t i)
+GPUSMProcessor::GPUSMProcessor(Gmemory_system* gm, CPU_t i)
     : GProcessor(gm, i, 1), IFID(i, this, gm), pipeQ(i), lsq(i), clusterManager(gm, this) { /*{{{*/
 
   numSP             = Config::get_power2("soc", "core", i, "sp_per_sm");
@@ -60,8 +60,8 @@ GPUSMProcessor::GPUSMProcessor(Gmemory_system *gm, CPU_t i)
 
   uint64_t ratsize = LREG_MAX * numSP * maxwarps;  // 16777216; //2^24
   // uint64_t ratsize =4294967296; //2^32
-  RAT = new Dinst *[ratsize];
-  bzero(RAT, sizeof(Dinst *) * ratsize);
+  RAT = new Dinst*[ratsize];
+  bzero(RAT, sizeof(Dinst*) * ratsize);
 } /*}}}*/
 
 GPUSMProcessor::~GPUSMProcessor() { /*{{{*/
@@ -100,8 +100,8 @@ bool GPUSMProcessor::advance_clock() {
   return advance_clock_drain();
 }
 
-StallCause GPUSMProcessor::add_inst(Dinst *dinst) {
-  const Instruction *inst = dinst->getInst();
+StallCause GPUSMProcessor::add_inst(Dinst* dinst) {
+  const Instruction* inst = dinst->getInst();
 
   if (((RAT[inst->getSrc1()] != 0) && (inst->getSrc1() != LREG_NoDependence) && (inst->getSrc1() != LREG_InvalidOutput))
       || ((RAT[inst->getSrc2()] != 0) && (inst->getSrc2() != LREG_NoDependence) && (inst->getSrc2() != LREG_InvalidOutput))
@@ -152,9 +152,9 @@ StallCause GPUSMProcessor::add_inst(Dinst *dinst) {
     return DivergeStall;
   }
 #endif
-  Cluster *cluster = dinst->getCluster();
+  Cluster* cluster = dinst->getCluster();
   if (!cluster) {
-    Resource *res = clusterManager.getResource(dinst);
+    Resource* res = clusterManager.getResource(dinst);
     cluster       = res->getCluster();
     dinst->setCluster(cluster, res);
   }
@@ -219,7 +219,7 @@ void GPUSMProcessor::retire() { /*{{{*/
   // Pass all the ready instructions to the rrob
   bool stats = false;
   while (!ROB.empty()) {
-    Dinst *dinst = ROB.top();
+    Dinst* dinst = ROB.top();
     stats        = dinst->has_stats();
 
     if (!dinst->isExecuted()) {
@@ -241,7 +241,7 @@ void GPUSMProcessor::retire() { /*{{{*/
   rrobUsed.sample(rROB.size(), stats);
 
   for (uint16_t i = 0; i < RetireWidth && !rROB.empty(); i++) {
-    Dinst *dinst = rROB.top();
+    Dinst* dinst = rROB.top();
 
     if (!dinst->isExecuted()) {
       break;
@@ -264,7 +264,7 @@ void GPUSMProcessor::retire() { /*{{{*/
 
 } /*}}}*/
 
-void GPUSMProcessor::replay(Dinst *dinst) { /*{{{*/
+void GPUSMProcessor::replay(Dinst* dinst) { /*{{{*/
 
   MSG("GPU_SM cores(which are essentially inorder) do not support replays. Set MemoryReplay = false at the confguration");
 

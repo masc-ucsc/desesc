@@ -10,7 +10,7 @@
 #include "config.hpp"
 #include "memory_system.hpp"
 
-MemController::MemController(Memory_system *current, const std::string &sec, const std::string &n)
+MemController::MemController(Memory_system* current, const std::string& sec, const std::string& n)
     /* constructor {{{1 */
     : MemObj(sec, n)
     , delay(Config::get_integer(sec, "delay", 1, 1024))
@@ -23,7 +23,7 @@ MemController::MemController(Memory_system *current, const std::string &sec, con
     , avgMemLat(fmt::format("{}_avgMemLat", n))
     , readHit(fmt::format("{}:readHit", n))
     , memRequestBufferSize(Config::get_integer(sec, "memRequestBufferSize", 1, 1024)) {
-  MemObj *lower_level = NULL;
+  MemObj* lower_level = NULL;
 
   NumUnits_t num = Config::get_integer(section, "port_num");
 
@@ -60,7 +60,7 @@ MemController::MemController(Memory_system *current, const std::string &sec, con
 }
 /* }}} */
 
-void MemController::doReq(MemRequest *mreq)
+void MemController::doReq(MemRequest* mreq)
 /* request reaches the memory controller {{{1 */
 {
   readHit.inc(mreq->has_stats());
@@ -68,26 +68,26 @@ void MemController::doReq(MemRequest *mreq)
 }
 /* }}} */
 
-void MemController::doReqAck(MemRequest *mreq) {
+void MemController::doReqAck(MemRequest* mreq) {
   (void)mreq;
   I(0);
 }
 
-void MemController::doDisp(MemRequest *mreq) { addMemRequest(mreq); }
+void MemController::doDisp(MemRequest* mreq) { addMemRequest(mreq); }
 
-void MemController::doSetState(MemRequest *mreq) {
+void MemController::doSetState(MemRequest* mreq) {
   (void)mreq;
   I(0);
 }
 
-void MemController::doSetStateAck(MemRequest *mreq) { (void)mreq; }
+void MemController::doSetStateAck(MemRequest* mreq) { (void)mreq; }
 
 bool MemController::isBusy(Addr_t addr) const {
   (void)addr;
   return false;
 }
 
-void MemController::tryPrefetch(Addr_t addr, bool doStats, int degree, Addr_t pref_sign, Addr_t pc, CallbackBase *cb) {
+void MemController::tryPrefetch(Addr_t addr, bool doStats, int degree, Addr_t pref_sign, Addr_t pc, CallbackBase* cb) {
   (void)addr;
   (void)doStats;
   (void)degree;
@@ -109,9 +109,9 @@ TimeDelta_t MemController::ffwrite(Addr_t addr) {
   return delay + RowAccessLatency;
 }
 
-void MemController::addMemRequest(MemRequest *mreq) {
+void MemController::addMemRequest(MemRequest* mreq) {
   I(0);  // really, a new?? FIXME:
-  FCFSField *newEntry = new FCFSField;
+  FCFSField* newEntry = new FCFSField;
 
   newEntry->Bank        = getBank(mreq);
   newEntry->Row         = getRow(mreq);
@@ -138,7 +138,7 @@ void MemController::manageRam(void) {
       bankState[curBank].state = ACTIVE;
 
       for (FCFSList::iterator it = curMemRequests.begin(); it != curMemRequests.end(); it++) {
-        FCFSField *tempMem = *it;
+        FCFSField* tempMem = *it;
 
         // If current memory request has completed, finish processing the request by sending the proper ACK
         if ((curBank == tempMem->Bank) && (bankState[curBank].activeRow == tempMem->Row)) {
@@ -147,7 +147,7 @@ void MemController::manageRam(void) {
           if (tempMem->mreq->isDisp()) {
             tempMem->mreq->ack();  // Fixed doDisp Acknowledge -- LNB 5/28/2014
           } else {
-            MemRequest *mreq = tempMem->mreq;
+            MemRequest* mreq = tempMem->mreq;
             I(mreq->isReq());
 
             if (mreq->getAction() == ma_setValid || mreq->getAction() == ma_setExclusive) {
@@ -267,16 +267,16 @@ void MemController::scheduleNextAction(void) {
   }
 }
 
-uint32_t MemController::getBank(MemRequest *mreq) const {
+uint32_t MemController::getBank(MemRequest* mreq) const {
   uint32_t bank = (mreq->getAddr() & bankMask) >> bankOffset;
   return bank;
 }
-uint32_t MemController::getRow(MemRequest *mreq) const {
+uint32_t MemController::getRow(MemRequest* mreq) const {
   uint32_t row = (mreq->getAddr() & rowMask) >> rowOffset;
   return row;
 }
 
-uint32_t MemController::getColumn(MemRequest *mreq) const {
+uint32_t MemController::getColumn(MemRequest* mreq) const {
   uint32_t column = (mreq->getAddr() & columnMask) >> columnOffset;
   return column;
 }

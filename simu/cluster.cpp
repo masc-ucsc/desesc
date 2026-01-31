@@ -16,7 +16,7 @@ Cluster::~Cluster() {
   // Nothing to do
 }
 
-Cluster::Cluster(const std::string &clusterName, uint32_t pos, uint32_t _cpuid)
+Cluster::Cluster(const std::string& clusterName, uint32_t pos, uint32_t _cpuid)
     : window(_cpuid, cluster_id_counter, clusterName, pos)
     , MaxWinSize(Config::get_integer(clusterName, "win_size", 1, 32768))
     , windowSize(Config::get_integer(clusterName, "win_size"))
@@ -30,8 +30,8 @@ Cluster::Cluster(const std::string &clusterName, uint32_t pos, uint32_t _cpuid)
   nready = 0;
 }
 
-std::shared_ptr<Resource> Cluster::buildUnit(const std::string &clusterName, uint32_t pos, std::shared_ptr<Gmemory_system> ms,
-                                             std::shared_ptr<Cluster> cluster, Opcode op, GProcessor *gproc) {
+std::shared_ptr<Resource> Cluster::buildUnit(const std::string& clusterName, uint32_t pos, std::shared_ptr<Gmemory_system> ms,
+                                             std::shared_ptr<Cluster> cluster, Opcode op, GProcessor* gproc) {
   auto unitType = fmt::format("{}", op);
 
   if (!Config::has_entry(clusterName, unitType)) {
@@ -161,10 +161,10 @@ std::shared_ptr<Resource> Cluster::buildUnit(const std::string &clusterName, uin
   return r;
 }
 
-std::pair<std::shared_ptr<Cluster>, Opcode_array<std::shared_ptr<Resource>>> Cluster::create(const std::string &clusterName,
+std::pair<std::shared_ptr<Cluster>, Opcode_array<std::shared_ptr<Resource>>> Cluster::create(const std::string& clusterName,
                                                                                              uint32_t           pos,
                                                                                              std::shared_ptr<Gmemory_system> ms,
-                                                                                             uint32_t cpuid, GProcessor *gproc) {
+                                                                                             uint32_t cpuid, GProcessor* gproc) {
   // Constraints
   Opcode_array<std::shared_ptr<Resource>> res;
 
@@ -205,13 +205,13 @@ std::pair<std::shared_ptr<Cluster>, Opcode_array<std::shared_ptr<Resource>>> Clu
   return std::pair(cluster, res);
 }
 
-void Cluster::select(Dinst *dinst) {
+void Cluster::select(Dinst* dinst) {
   I(nready >= 0);
   nready++;
   window.select(dinst);
 }
 
-StallCause Cluster::canIssue(Dinst *dinst) const {
+StallCause Cluster::canIssue(Dinst* dinst) const {
   if (regPool <= 0) {
     // printf("Cluster::can_issue SmallREGstall dinstID %ld\n", dinst->getID());
     return SmallREGStall;
@@ -231,7 +231,7 @@ StallCause Cluster::canIssue(Dinst *dinst) const {
   return dinst->getClusterResource()->canIssue(dinst);
 }
 
-void Cluster::add_inst(Dinst *dinst) {
+void Cluster::add_inst(Dinst* dinst) {
   rdRegPool.add(2, dinst->has_stats());  // 2 reads
 
   if (!lateAlloc && dinst->getInst()->hasDstRegister()) {
@@ -264,7 +264,7 @@ void Cluster::add_inst(Dinst *dinst) {
 
 //************ Executing Cluster Class
 
-void ExecutingCluster::executing(Dinst *dinst) {
+void ExecutingCluster::executing(Dinst* dinst) {
   nready--;
 
   if (lateAlloc && dinst->getInst()->hasDstRegister()) {
@@ -276,7 +276,7 @@ void ExecutingCluster::executing(Dinst *dinst) {
 
   delEntry();
 }
-void ExecutingCluster::flushed(Dinst *dinst) {
+void ExecutingCluster::flushed(Dinst* dinst) {
   nready--;
 
   if (lateAlloc && dinst->getInst()->hasDstRegister()) {
@@ -294,24 +294,24 @@ void ExecutingCluster::flushed(Dinst *dinst) {
 
 }*/
 
-void ExecutingCluster::try_flushed(Dinst *dinst) {
+void ExecutingCluster::try_flushed(Dinst* dinst) {
   delEntry();
   bool done = dinst->getClusterResource()->try_flushed(dinst);
   if (!done) {
     printf(" ");
   }
 }
-void ExecutingCluster::del_entry_flush(Dinst *dinst) {
+void ExecutingCluster::del_entry_flush(Dinst* dinst) {
   dinst->mark_del_entry();
   delEntry();
 }
 
-void ExecutingCluster::executed(Dinst *dinst) {
+void ExecutingCluster::executed(Dinst* dinst) {
   window.executed(dinst);
   dinst->getGProc()->executed(dinst);
 }
 
-bool ExecutingCluster::retire(Dinst *dinst, bool reply) {
+bool ExecutingCluster::retire(Dinst* dinst, bool reply) {
   bool done = dinst->getClusterResource()->retire(dinst, reply);
 
   if (!done) {
@@ -332,7 +332,7 @@ bool ExecutingCluster::retire(Dinst *dinst, bool reply) {
 
 //************ Executed Cluster Class
 // Only this Executed cluster is used in desesc now: desc.toml
-void ExecutedCluster::executing(Dinst *dinst) {
+void ExecutedCluster::executing(Dinst* dinst) {
   //<<<<<<< HEAD
   // if(!dinst->is_in_cluster() && !dinst->isIssued()) {
   // window.add_inst(dinst);
@@ -351,7 +351,7 @@ void ExecutedCluster::executing(Dinst *dinst) {
   dinst->getGProc()->executing(dinst);
 }
 
-void ExecutedCluster::executed(Dinst *dinst) {
+void ExecutedCluster::executed(Dinst* dinst) {
   // printf("Cluster::ExecutedCluster::executed: for instID %ld at @Clockcycle %ld\n", dinst->getID(), globalClock);
   window.executed(dinst);
   dinst->getGProc()->executed(dinst);
@@ -373,7 +373,7 @@ void ExecutedCluster::executed(Dinst *dinst) {
   //        dinst->getID(),
   //        globalClock);
 }
-void ExecutedCluster::flushed(Dinst *dinst) {
+void ExecutedCluster::flushed(Dinst* dinst) {
   window.executed_flushed(dinst);
   dinst->getGProc()->flushed(dinst);
   // I(!dinst->hasPending());
@@ -381,7 +381,7 @@ void ExecutedCluster::flushed(Dinst *dinst) {
   // delEntry();
 }
 
-void ExecutedCluster::try_flushed(Dinst *dinst) {
+void ExecutedCluster::try_flushed(Dinst* dinst) {
   // if (!dinst->isExecuted()) {
   // delEntry();
   // }
@@ -391,7 +391,7 @@ void ExecutedCluster::try_flushed(Dinst *dinst) {
   }
 }
 
-void ExecutedCluster::del_entry_flush(Dinst *dinst) {
+void ExecutedCluster::del_entry_flush(Dinst* dinst) {
   if (!dinst->is_del_entry()) {
     // printf("Cluster::ExecutedCluster::del_entry_flush:: no_del_entry ::windowsize is %d: for instID %ld at @Clockcycle %ld\n",
     //        get_window_size(),
@@ -411,7 +411,7 @@ void ExecutedCluster::del_entry_flush(Dinst *dinst) {
   // }
 }
 
-bool ExecutedCluster::retire(Dinst *dinst, bool reply) {
+bool ExecutedCluster::retire(Dinst* dinst, bool reply) {
   // printf("ClusterExecuted::retire:: Entering Insit %ld regPool is %d and nRegs is %d\n", dinst->getID(), regPool, nRegs);
   if (dinst->is_del_entry()) {
     // delEntry();
@@ -448,7 +448,7 @@ bool ExecutedCluster::retire(Dinst *dinst, bool reply) {
 // This is done here for desec!!!
 //************ RetiredCluster Class
 
-void RetiredCluster::executing(Dinst *dinst) {
+void RetiredCluster::executing(Dinst* dinst) {
   nready--;
 
   if (lateAlloc && dinst->getInst()->hasDstRegister()) {
@@ -458,12 +458,12 @@ void RetiredCluster::executing(Dinst *dinst) {
   dinst->getGProc()->executing(dinst);
 }
 
-void RetiredCluster::executed(Dinst *dinst) {
+void RetiredCluster::executed(Dinst* dinst) {
   window.executed(dinst);
   dinst->getGProc()->executed(dinst);
 }
 
-bool RetiredCluster::retire(Dinst *dinst, bool reply) {
+bool RetiredCluster::retire(Dinst* dinst, bool reply) {
   bool done = dinst->getClusterResource()->retire(dinst, reply);
   if (!done) {
     return false;
@@ -484,7 +484,7 @@ bool RetiredCluster::retire(Dinst *dinst, bool reply) {
 
   return true;
 }
-void RetiredCluster::try_flushed(Dinst *dinst) {
+void RetiredCluster::try_flushed(Dinst* dinst) {
   delEntry();
   bool done = dinst->getClusterResource()->try_flushed(dinst);
   if (!done) {
@@ -492,7 +492,7 @@ void RetiredCluster::try_flushed(Dinst *dinst) {
   }
 }
 
-void RetiredCluster::flushed(Dinst *dinst) {
+void RetiredCluster::flushed(Dinst* dinst) {
   bool done = dinst->getClusterResource()->flushed(dinst);
   if (!done) {
     // return false;
@@ -509,7 +509,7 @@ void RetiredCluster::flushed(Dinst *dinst) {
 
   winNotUsed.sample(windowSize, dinst->has_stats());
 }
-void RetiredCluster::del_entry_flush(Dinst *dinst) {
+void RetiredCluster::del_entry_flush(Dinst* dinst) {
   dinst->mark_del_entry();
   delEntry();
 }

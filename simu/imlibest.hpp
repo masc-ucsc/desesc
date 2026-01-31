@@ -283,7 +283,7 @@ public:
     OUTPOINT = OLENGTH % CLENGTH;
   }
 
-  void update(uint8_t *h, int PT) {
+  void update(uint8_t* h, int PT) {
     comp = (comp << 1) ^ h[PT & (HISTBUFFERLENGTH - 1)];
     comp ^= h[(PT + OLENGTH) & (HISTBUFFERLENGTH - 1)] << OUTPOINT;
     comp ^= (comp >> CLENGTH);
@@ -657,7 +657,7 @@ public:
 #define CTRBITS    3  // Chop 2 bits
 
   uint32_t postpsize;
-  int8_t  *postp;
+  int8_t*  postp;
   uint32_t ppi;
 
   uint32_t postp_index(uint32_t a, uint32_t b, uint32_t c) {
@@ -840,8 +840,8 @@ public:
       STORAGESIZE += x;
     }
 
-    STORAGESIZE += 2 * (SIZEUSEALT)*4;
-    fprintf(stderr, " altna size=%d log2entries=%d\n", 2 * (SIZEUSEALT)*4, LOGSIZEUSEALT);
+    STORAGESIZE += 2 * (SIZEUSEALT) * 4;
+    fprintf(stderr, " altna size=%d log2entries=%d\n", 2 * (SIZEUSEALT) * 4, LOGSIZEUSEALT);
 
     inter = bwidth * (1 << (log2fetchwidth + blogb));
     fprintf(stderr, " bimodal table size=%d log2entries=%d\n", inter, blogb);
@@ -864,7 +864,7 @@ public:
 
       inter += 16;                   // global histories for SC
       inter = 8 * (1 << LOGSIZEUP);  // the update threshold counters
-      inter += (PERCWIDTH)*4 * (1 << (LOGBIAS));
+      inter += (PERCWIDTH) * 4 * (1 << (LOGBIAS));
       inter += (GNB - 2) * (1 << (LOGGNB)) * (PERCWIDTH - 1) + (1 << (LOGGNB - 1)) * (2 * PERCWIDTH - 1);
 
       inter += (PNB - 2) * (1 << (LOGPNB)) * (PERCWIDTH - 1) + (1 << (LOGPNB - 1)) * (2 * PERCWIDTH - 1);
@@ -1100,13 +1100,13 @@ public:
   }
 
   //  tag computation
-  uint16_t gtag(unsigned int PC, int bank, folded_history *ch0, folded_history *ch1) {
+  uint16_t gtag(unsigned int PC, int bank, folded_history* ch0, folded_history* ch1) {
     int tag = PC ^ ch0[bank].comp ^ (ch1[bank].comp << 1);
     return (tag & ((1 << TB[bank]) - 1));
   }
 
   // up-down saturating counter
-  void ctrupdate(int8_t &ctr, bool taken, int nbits) {
+  void ctrupdate(int8_t& ctr, bool taken, int nbits) {
     if (taken) {
       if (ctr < ((1 << (nbits - 1)) - 1)) {
         ctr++;
@@ -1140,7 +1140,8 @@ public:
       if (ltable[index].TAG == LTAG) {
         LHIT   = i;
         LVALID = ((ltable[index].confid == CONFLOOP) || (ltable[index].confid * ltable[index].NbIter > 128));
-        {}
+        {
+        }
         if (ltable[index].CurrentIter + 1 == ltable[index].NbIter) {
           return (!(ltable[index].dir));
         } else {
@@ -1409,7 +1410,7 @@ public:
     }
   }
 
-  bool getPrediction(Addr_t PC, bool &bias, uint32_t &sign) {
+  bool getPrediction(Addr_t PC, bool& bias, uint32_t& sign) {
     fetchBoundaryOffsetBranch(PC);
     setTAGEPred();
 
@@ -1529,8 +1530,8 @@ public:
     return pred_taken;
   }
 
-  void HistoryUpdate(Addr_t PC, Opcode brtype, bool taken, Addr_t target, long long &X, int &Y, std::vector<folded_history> &H,
-                     std::vector<folded_history> &G, std::vector<folded_history> &J, long long &LH, long long &GBRHIST) {
+  void HistoryUpdate(Addr_t PC, Opcode brtype, bool taken, Addr_t target, long long& X, int& Y, std::vector<folded_history>& H,
+                     std::vector<folded_history>& G, std::vector<folded_history>& J, long long& LH, long long& GBRHIST) {
     // special treatment for unconditional branchs;
     int maxt;
     if (brtype == Opcode::iBALU_LBRANCH) {
@@ -1583,8 +1584,8 @@ public:
       J[i].set(sign2);  // Not used in DOLC
     }
 #else
-    int T            = ((PC) << 1) + taken;
-    int PATH         = PC;
+    int T    = ((PC) << 1) + taken;
+    int PATH = PC;
 #endif
 
     for (int t = 0; t < maxt; t++) {
@@ -1890,7 +1891,7 @@ public:
       & ((1 << (logs - (i >= (NBR - 2)))) - 1)
 
   template <std::size_t S1, std::size_t S2>
-  int Gpredict(Addr_t PC, long long BHIST, const int *length, const std::array<std::array<int8_t, S1>, (1 << S2)> &tab) {
+  int Gpredict(Addr_t PC, long long BHIST, const int* length, const std::array<std::array<int8_t, S1>, (1 << S2)>& tab) {
     int       PERCSUM = 0;
     const int NBR     = tab.size();
     const int logs    = tab[0].size();
@@ -1904,7 +1905,7 @@ public:
   }
 
   template <std::size_t S1, std::size_t S2>
-  void Gupdate(Addr_t PC, bool taken, long long BHIST, const int *length, std::array<std::array<int8_t, S1>, (1 << S2)> &tab) {
+  void Gupdate(Addr_t PC, bool taken, long long BHIST, const int* length, std::array<std::array<int8_t, S1>, (1 << S2)>& tab) {
     const int NBR  = tab.size();
     const int logs = tab[0].size();
     for (int i = 0; i < NBR; i++) {

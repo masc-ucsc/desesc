@@ -25,7 +25,7 @@ Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
 #include "fmt/format.h"
 
-SCTable::SCTable(const std::string &str, size_t size, uint8_t bits)
+SCTable::SCTable(const std::string& str, size_t size, uint8_t bits)
     : sizeMask(size - 1), Saturate(bits > 1 ? (1 << (bits - 1)) : 1), MaxValue((1 << bits) - 1) {
   if ((size & (size - 1)) != 0) {
     fmt::print("SCTable ({}) size [{}] a power of two\n", str, (int)size);
@@ -59,7 +59,7 @@ void SCTable::clear(uint32_t cid) {
 }
 
 bool SCTable::predict(uint32_t cid, bool taken) {
-  uint8_t *entry = &table[cid & sizeMask];
+  uint8_t* entry = &table[cid & sizeMask];
 
   bool ptaken = ((*entry) >= Saturate);
 
@@ -77,7 +77,7 @@ bool SCTable::predict(uint32_t cid, bool taken) {
 }
 
 void SCTable::inc(uint32_t cid, int d) {
-  uint8_t *entry = &table[cid & sizeMask];
+  uint8_t* entry = &table[cid & sizeMask];
   if ((d + *entry) < MaxValue) {
     *entry = (*entry) + d;
   } else {
@@ -86,7 +86,7 @@ void SCTable::inc(uint32_t cid, int d) {
 }
 
 void SCTable::dec(uint32_t cid, int d) {
-  uint8_t *entry = &table[cid & sizeMask];
+  uint8_t* entry = &table[cid & sizeMask];
   if ((d - *entry) > 0) {
     *entry = (*entry) + d;
   } else {
@@ -95,7 +95,7 @@ void SCTable::dec(uint32_t cid, int d) {
 }
 
 void SCTable::update(uint32_t cid, bool taken) {
-  uint8_t *entry = &table[cid & sizeMask];
+  uint8_t* entry = &table[cid & sizeMask];
 
   if (taken) {
     if (*entry < MaxValue) {

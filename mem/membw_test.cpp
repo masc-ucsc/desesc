@@ -42,8 +42,8 @@ double frequency = 1e9;
 
 #ifdef ENABLE_NBSD
 #include "MemRequest.h"
-void meminterface_start_snoop_req(uint64_t addr, bool inv, uint16_t coreid, bool dcache, void *_mreq) { I(0); }
-void meminterface_req_done(void *param, int mesi) { I(0); }
+void meminterface_start_snoop_req(uint64_t addr, bool inv, uint16_t coreid, bool dcache, void* _mreq) { I(0); }
+void meminterface_req_done(void* param, int mesi) { I(0); }
 #endif
 
 enum currState {
@@ -53,7 +53,7 @@ enum currState {
   Invalid     // 3
 };
 
-currState getState(CCache *cache, Addr_t addr) {
+currState getState(CCache* cache, Addr_t addr) {
   currState state;
 
   if (cache->Modified(addr)) {
@@ -75,13 +75,13 @@ currState getState(CCache *cache, Addr_t addr) {
   return state;
 }
 
-DInst   *ld;
-DInst   *st;
+DInst*   ld;
+DInst*   st;
 RAWDInst rinst;
 
 bool one_finished;
 
-void rdDone(DInst *dinst) {
+void rdDone(DInst* dinst) {
   fmt::print("rddone @{}\n", (long long)globalClock);
 
   one_finished = true;
@@ -90,7 +90,7 @@ void rdDone(DInst *dinst) {
   dinst->recycle();
 }
 
-void wrDone(DInst *dinst) {
+void wrDone(DInst* dinst) {
   fmt::print("wrdone @{}\n", (long long)globalClock);
 
   one_finished = true;
@@ -104,19 +104,19 @@ static void waitAllMemOpsDone() {
   }
 }
 
-typedef CallbackFunction1<DInst *, &rdDone> rdDoneCB;
-typedef CallbackFunction1<DInst *, &wrDone> wrDoneCB;
+typedef CallbackFunction1<DInst*, &rdDone> rdDoneCB;
+typedef CallbackFunction1<DInst*, &wrDone> wrDoneCB;
 
-static void doread(MemObj *cache, Addr_t addr) {
+static void doread(MemObj* cache, Addr_t addr) {
   num_operations++;
-  DInst *ldClone = ld->clone();
+  DInst* ldClone = ld->clone();
   ldClone->setAddr(addr);
 
   while (cache->isBusy(addr)) {
     EventScheduler::advanceClock();
   }
 
-  rdDoneCB *cb = rdDoneCB::create(ldClone);
+  rdDoneCB* cb = rdDoneCB::create(ldClone);
   fmt::print("rd {:x} @{}\n", (unsigned int)addr, (long long)globalClock);
 
   if (nc) {
@@ -127,32 +127,32 @@ static void doread(MemObj *cache, Addr_t addr) {
   rd_pending++;
 }
 
-static void doprefetch(MemObj *cache, Addr_t addr) {
+static void doprefetch(MemObj* cache, Addr_t addr) {
   num_operations++;
-  DInst *ldClone = ld->clone();
+  DInst* ldClone = ld->clone();
   ldClone->setAddr(addr);
 
   while (cache->isBusy(addr)) {
     EventScheduler::advanceClock();
   }
 
-  rdDoneCB *cb = rdDoneCB::create(ldClone);
+  rdDoneCB* cb = rdDoneCB::create(ldClone);
   fmt::print("rd {:x} @{}\n", (unsigned int)addr, (long long)globalClock);
 
   MemRequest::sendReqReadPrefetch(cache, ldClone->has_stats(), addr, cb);
   rd_pending++;
 }
 
-static void dowrite(MemObj *cache, Addr_t addr) {
+static void dowrite(MemObj* cache, Addr_t addr) {
   num_operations++;
-  DInst *stClone = st->clone();
+  DInst* stClone = st->clone();
   stClone->setAddr(addr);
 
   while (cache->isBusy(addr)) {
     EventScheduler::advanceClock();
   }
 
-  wrDoneCB *cb = wrDoneCB::create(stClone);
+  wrDoneCB* cb = wrDoneCB::create(stClone);
   fmt::print("wr {:x} @{}\n", (unsigned int)addr, (long long)globalClock);
 
   if (nc) {
@@ -163,28 +163,28 @@ static void dowrite(MemObj *cache, Addr_t addr) {
   wr_pending++;
 }
 
-static void dodisp(MemObj *cache, Addr_t addr) {
+static void dodisp(MemObj* cache, Addr_t addr) {
   num_operations++;
-  DInst *stClone = st->clone();
+  DInst* stClone = st->clone();
   stClone->setAddr(addr);
 
   while (cache->isBusy(addr)) {
     EventScheduler::advanceClock();
   }
 
-  wrDoneCB *cb = wrDoneCB::create(stClone);
+  wrDoneCB* cb = wrDoneCB::create(stClone);
   fmt::print("disp {:x} @{}\n", (unsigned int)addr, (long long)globalClock);
 
-  MRouter *router = cache->getRouter();
-  MemObj  *mobj   = router->getDownNode();
+  MRouter* router = cache->getRouter();
+  MemObj*  mobj   = router->getDownNode();
   MemRequest::sendDirtyDisp(mobj, cache, addr, stClone->has_stats(), cb);
   wr_pending++;
 }
 
 bool            pluggedin = false;
-Gmemory_system *gms_p0    = 0;
-Gmemory_system *gms_p1    = 0;
-Gmemory_system *gms_p4    = 0;
+Gmemory_system* gms_p0    = 0;
+Gmemory_system* gms_p1    = 0;
+Gmemory_system* gms_p4    = 0;
 void            initialize() {
   if (!pluggedin) {
     int arg1 = 1;
@@ -202,20 +202,20 @@ void            initialize() {
   }
 
   // Create a LD (e5d33000) with PC = 0xfeeffeef and address 1203
-  Instruction *ld_inst = new Instruction();
+  Instruction* ld_inst = new Instruction();
   ld_inst->set(iLALU_LD, LREG_R1, LREG_R2, LREG_R3, LREG_R4);
   ld = DInst::create(ld_inst, 0xfeeffeef, 1203, 0, true);
 
-  Instruction *st_inst = new Instruction();
+  Instruction* st_inst = new Instruction();
   st_inst->set(iSALU_ST, LREG_R1, LREG_R2, LREG_R3, LREG_R4);
   st = DInst::create(st_inst, 0x410, 0x400, 0, true);
 }
 
-CCache *getDL1(Gmemory_system *gms) {
-  MemObj *dl1 = gms->getDL1();
+CCache* getDL1(Gmemory_system* gms) {
+  MemObj* dl1 = gms->getDL1();
   if (strcasecmp(dl1->getDeviceType(), "cache") != 0) {
     fmt::print("going down from {}\n", dl1->getDeviceType());
-    MRouter *router = dl1->getRouter();
+    MRouter* router = dl1->getRouter();
     dl1             = router->getDownNode();
     if (strcasecmp(dl1->getDeviceType(), "cache") != 0) {
       fmt::print("ERROR: Neither first or second level is a cache {}\n", dl1->getDeviceType());
@@ -223,13 +223,13 @@ CCache *getDL1(Gmemory_system *gms) {
     }
   }
 
-  CCache *cdl1 = static_cast<CCache *>(dl1);
+  CCache* cdl1 = static_cast<CCache*>(dl1);
   return cdl1;
 }
 
-CCache *getL3(MemObj *L2) {
-  MRouter *router2 = L2->getRouter();
-  MemObj  *L3      = router2->getDownNode();
+CCache* getL3(MemObj* L2) {
+  MRouter* router2 = L2->getRouter();
+  MemObj*  L3      = router2->getDownNode();
   if (strncasecmp(L3->getName(), "L3", 2) != 0) {
     return 0;
   }
@@ -237,29 +237,29 @@ CCache *getL3(MemObj *L2) {
     return 0;
   }
 
-  CCache *l3c = static_cast<CCache *>(L3);
+  CCache* l3c = static_cast<CCache*>(L3);
   return l3c;
 }
 
-CCache *getL2(MemObj *P0DL1) {
-  MRouter *router = P0DL1->getRouter();
-  MemObj  *L2     = router->getDownNode();
-  CCache  *l2c    = static_cast<CCache *>(L2);
+CCache* getL2(MemObj* P0DL1) {
+  MRouter* router = P0DL1->getRouter();
+  MemObj*  L2     = router->getDownNode();
+  CCache*  l2c    = static_cast<CCache*>(L2);
   // l2c->setNeedsCoherence();
   return l2c;
 }
 
 class MemInterface {
 protected:
-  CCache *p0dl1;
-  CCache *p1dl1;
-  CCache *p4dl1;
+  CCache* p0dl1;
+  CCache* p1dl1;
+  CCache* p4dl1;
 
-  CCache *p0l2;
-  CCache *p1l2;
-  CCache *p4l2;
+  CCache* p0l2;
+  CCache* p1l2;
+  CCache* p4l2;
 
-  CCache *l3;
+  CCache* l3;
 
 public:
   MemInterface() {
@@ -284,7 +284,7 @@ public:
 };
 
 void MemInterface::testbw(bool rd, int id, int wait) {
-  CCache *cache = 0;
+  CCache* cache = 0;
 
   if (id == 0 || id == 2) {
     cache = p0l2;
@@ -349,8 +349,8 @@ void MemInterface::testbw(bool rd, int id, int wait) {
 }
 
 void MemInterface::testsnoop(bool rd, int id, int wait) {
-  CCache *ncache = 0;
-  CCache *cache  = 0;
+  CCache* ncache = 0;
+  CCache* cache  = 0;
 
   if (id == 0 || id == 2) {
     cache  = p0l2;
@@ -419,7 +419,7 @@ void MemInterface::testsnoop(bool rd, int id, int wait) {
 }
 
 void MemInterface::testlat(int id) {
-  CCache *cache = 0;
+  CCache* cache = 0;
 
   if (id == 0 || id == 2) {
     cache = p0dl1;
@@ -524,7 +524,7 @@ void MemInterface::testlat(int id) {
   printf("L2 LAT wr/rd dir hit, l2 miss: %lld\n", l2filltime);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   MemInterface mi;
 
   frequency = Config::get_integer("soc", "core", 0, "frequency_mhz") * 1.0e6;

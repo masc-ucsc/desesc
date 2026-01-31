@@ -40,23 +40,23 @@ protected:
   Stats_avg  avgMemLat;
 
 public:
-  Nice_cache(Memory_system *gms, const std::string &section, const std::string &name);
+  Nice_cache(Memory_system* gms, const std::string& section, const std::string& name);
 
   // Entry points to schedule that may schedule a do?? if needed
-  void req(MemRequest *req) { doReq(req); };
-  void reqAck(MemRequest *req) { doReqAck(req); };
-  void setState(MemRequest *req) { doSetState(req); };
-  void setStateAck(MemRequest *req) { doSetStateAck(req); };
-  void disp(MemRequest *req) { doDisp(req); }
+  void req(MemRequest* req) { doReq(req); };
+  void reqAck(MemRequest* req) { doReqAck(req); };
+  void setState(MemRequest* req) { doSetState(req); };
+  void setStateAck(MemRequest* req) { doSetStateAck(req); };
+  void disp(MemRequest* req) { doDisp(req); }
 
   // This do the real work
-  void doReq(MemRequest *r);
-  void doReqAck(MemRequest *req);
-  void doSetState(MemRequest *req);
-  void doSetStateAck(MemRequest *req);
-  void doDisp(MemRequest *req);
+  void doReq(MemRequest* r);
+  void doReqAck(MemRequest* req);
+  void doSetState(MemRequest* req);
+  void doSetStateAck(MemRequest* req);
+  void doDisp(MemRequest* req);
 
-  void tryPrefetch(Addr_t addr, bool doStats, int degree, Addr_t pref_sign, Addr_t pc, CallbackBase *cb = 0);
+  void tryPrefetch(Addr_t addr, bool doStats, int degree, Addr_t pref_sign, Addr_t pc, CallbackBase* cb = 0);
 
   TimeDelta_t ffread(Addr_t addr);
   TimeDelta_t ffwrite(Addr_t addr);

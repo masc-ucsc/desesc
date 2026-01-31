@@ -12,17 +12,17 @@ LSQFull::LSQFull(Hartid_t hid, int32_t size)
     : LSQ(size), stldForwarding(fmt::format("P({}):stldForwarding", hid)) {}
 /* }}} */
 
-bool LSQFull::insert(Dinst *dinst)
+bool LSQFull::insert(Dinst* dinst)
 /* Insert dinst in LSQ (in-order) {{{1 */
 {
   I(dinst->getAddr());
-  instMap.insert(std::pair<Addr_t, Dinst *>(calcWord(dinst), dinst));
+  instMap.insert(std::pair<Addr_t, Dinst*>(calcWord(dinst), dinst));
 
   return true;
 }
 /* }}} */
 
-Dinst *LSQFull::executing(Dinst *dinst)
+Dinst* LSQFull::executing(Dinst* dinst)
 /* dinst got executed (out-of-order) {{{1 */
 {
   I(dinst->getAddr());
@@ -30,8 +30,8 @@ Dinst *LSQFull::executing(Dinst *dinst)
 
   Addr_t tag = calcWord(dinst);
 
-  const Instruction *inst   = dinst->getInst();
-  Dinst             *faulty = 0;
+  const Instruction* inst   = dinst->getInst();
+  Dinst*             faulty = 0;
 
 #if 0
   AddrDinstQMap::const_iterator instIt = instMap.begin();
@@ -51,13 +51,13 @@ Dinst *LSQFull::executing(Dinst *dinst)
     I(instIt->first == tag);
 
     // inst->dump("Executed");
-    Dinst *qdinst = instIt->second;
+    Dinst* qdinst = instIt->second;
     if (qdinst == dinst) {
       // printf("LSQFull::executing::NOTunresolve-- :: qdinst==dinst dinstID %ld\n", dinst->getID());
       continue;
     }
 
-    const Instruction *qinst = qdinst->getInst();
+    const Instruction* qinst = qdinst->getInst();
 
     // bool beforeInst = qdinst->getID() < dinst->getID();
     bool oooExecuted = qdinst->getID() > dinst->getID();
@@ -86,7 +86,7 @@ Dinst *LSQFull::executing(Dinst *dinst)
 }
 /* }}} */
 
-void LSQFull::remove(Dinst *dinst)
+void LSQFull::remove(Dinst* dinst)
 /* Remove from the LSQ {{{1 (in-order) */
 {
   I(dinst->getAddr());
@@ -117,13 +117,13 @@ LSQNone::LSQNone(Hartid_t hid, int32_t size)
     : LSQ(size) {
   (void)hid;
 
-  for (auto &e : addrTable) {
+  for (auto& e : addrTable) {
     e = 0;
   }
 }
 /* }}} */
 
-bool LSQNone::insert(Dinst *dinst)
+bool LSQNone::insert(Dinst* dinst)
 /* Insert dinst in LSQ (in-order) {{{1 */
 {
   int i = getEntry(dinst->getAddr());
@@ -137,7 +137,7 @@ bool LSQNone::insert(Dinst *dinst)
 }
 /* }}} */
 
-Dinst *LSQNone::executing(Dinst *dinst)
+Dinst* LSQNone::executing(Dinst* dinst)
 /* dinst got executed (out-of-order) {{{1 */
 {
   int i = getEntry(dinst->getAddr());
@@ -150,7 +150,7 @@ Dinst *LSQNone::executing(Dinst *dinst)
 }
 /* }}} */
 
-void LSQNone::remove(Dinst *dinst)
+void LSQNone::remove(Dinst* dinst)
 /* Remove from the LSQ {{{1 (in-order) */
 {
   (void)dinst;
@@ -162,17 +162,17 @@ LSQVPC::LSQVPC(int32_t size)
     : LSQ(size), LSQVPC_replays("LSQVPC_replays") {}
 /* }}} */
 
-bool LSQVPC::insert(Dinst *dinst)
+bool LSQVPC::insert(Dinst* dinst)
 /* Insert dinst in LSQ (in-order) {{{1 */
 {
   I(dinst->getAddr());
-  instMap.insert(std::pair<Addr_t, Dinst *>(calcWord(dinst), dinst));
+  instMap.insert(std::pair<Addr_t, Dinst*>(calcWord(dinst), dinst));
 
   return true;
 }
 /* }}} */
 
-Dinst *LSQVPC::executing(Dinst *dinst) {
+Dinst* LSQVPC::executing(Dinst* dinst) {
   (void)dinst;
   I(0);
   // printf("LSQVPC::executing::unresolve-- dinstID %ld\n", dinst->getID());
@@ -180,11 +180,11 @@ Dinst *LSQVPC::executing(Dinst *dinst) {
   return 0;
 }
 
-Addr_t LSQVPC::replayCheck(Dinst *dinst)  // return non-zero if replay needed
+Addr_t LSQVPC::replayCheck(Dinst* dinst)  // return non-zero if replay needed
 /* dinst got executed (out-of-order) {{{1 */
 {
-  Addr_t                                   tag = calcWord(dinst);
-  std::multimap<Addr_t, Dinst *>::iterator instIt;
+  Addr_t                                  tag = calcWord(dinst);
+  std::multimap<Addr_t, Dinst*>::iterator instIt;
   // instIt = instMap.begin();
   instIt = instMap.find(tag);
   // Addr_t storefound = 0;
@@ -211,11 +211,11 @@ Addr_t LSQVPC::replayCheck(Dinst *dinst)  // return non-zero if replay needed
 }
 /* }}} */
 
-void LSQVPC::remove(Dinst *dinst)
+void LSQVPC::remove(Dinst* dinst)
 /* Remove from the LSQ {{{1 (in-order) */
 {
   I(dinst->getAddr());
-  std::multimap<Addr_t, Dinst *>::iterator instIt;
+  std::multimap<Addr_t, Dinst*>::iterator instIt;
   // instIt = instMap.begin();
   Addr_t tag = calcWord(dinst);
   instIt     = instMap.find(tag);

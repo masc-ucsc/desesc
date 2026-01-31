@@ -45,7 +45,7 @@ private:
 
 protected:
 public:
-  Stats_code(const std::string &format);
+  Stats_code(const std::string& format);
 
   void sample(const uint64_t pc, const double nCommitted, const double clockTicks, double wt, double et, bool flush, bool prefetch,
               int ldbr = 0, bool bp1_miss = 0, bool bp2_miss = 0, bool bp3_miss = 0, bool bp1_hit = 0, bool bp2_hit = 0,

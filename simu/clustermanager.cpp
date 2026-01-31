@@ -8,7 +8,7 @@
 #include "gmemory_system.hpp"
 #include "resource.hpp"
 
-ClusterManager::ClusterManager(std::shared_ptr<Gmemory_system> ms, uint32_t cpuid, GProcessor *gproc) {
+ClusterManager::ClusterManager(std::shared_ptr<Gmemory_system> ms, uint32_t cpuid, GProcessor* gproc) {
   auto coreSection = Config::get_string("soc", "core", cpuid);
   auto nClusters   = Config::get_array_size(coreSection, "cluster");
 

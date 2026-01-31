@@ -12,18 +12,18 @@
 void Report::init() {
   report_file = "desesc";
 
-  const char *rep1 = getenv("REPORTFILE");
+  const char* rep1 = getenv("REPORTFILE");
   if (rep1) {
     absl::StrAppend(&report_file, "_", rep1);
   }
-  const char *rep2 = getenv("REPORTFILE2");
+  const char* rep2 = getenv("REPORTFILE2");
   if (rep2) {
     absl::StrAppend(&report_file, "_", rep2);
   }
 
   absl::StrAppend(&report_file, ".XXXXXX");
 
-  char *f = (char *)malloc(report_file.size() + 10);
+  char* f = (char*)malloc(report_file.size() + 10);
   strcpy(f, report_file.c_str());
   fd = ::mkstemp(f);
   if (fd == -1) {
@@ -53,7 +53,7 @@ void Report::reinit() {
 
 void Report::close() { ::close(fd); }
 
-void Report::field(const std::string &msg) {
+void Report::field(const std::string& msg) {
   auto sz = write(fd, msg.data(), msg.size());
   I(sz == msg.size());
   if (msg.back() != '\n') {

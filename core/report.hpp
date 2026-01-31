@@ -12,7 +12,7 @@ private:
 public:
   static void init();
   static void reinit();
-  static void field(const std::string &msg);
+  static void field(const std::string& msg);
   static void close();
 
   static const std::string get_extension();

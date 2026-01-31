@@ -15,10 +15,10 @@ protected:
   ResourcesPoolType res;
 
 public:
-  ClusterScheduler(const ResourcesPoolType &ores);
+  ClusterScheduler(const ResourcesPoolType& ores);
   virtual ~ClusterScheduler();
 
-  virtual std::shared_ptr<Resource> getResource(Dinst *dinst) = 0;
+  virtual std::shared_ptr<Resource> getResource(Dinst* dinst) = 0;
 };
 
 class RoundRobinClusterScheduler : public ClusterScheduler {
@@ -27,19 +27,19 @@ private:
   Opcode_array<uint32_t> pos;
 
 public:
-  RoundRobinClusterScheduler(const ResourcesPoolType &res);
+  RoundRobinClusterScheduler(const ResourcesPoolType& res);
   ~RoundRobinClusterScheduler();
 
-  std::shared_ptr<Resource> getResource(Dinst *dinst);
+  std::shared_ptr<Resource> getResource(Dinst* dinst);
 };
 
 class LRUClusterScheduler : public ClusterScheduler {
 private:
 public:
-  LRUClusterScheduler(const ResourcesPoolType &res);
+  LRUClusterScheduler(const ResourcesPoolType& res);
   ~LRUClusterScheduler();
 
-  std::shared_ptr<Resource> getResource(Dinst *dinst);
+  std::shared_ptr<Resource> getResource(Dinst* dinst);
 };
 
 class UseClusterScheduler : public ClusterScheduler {
@@ -49,8 +49,8 @@ private:
   RegType_array<std::shared_ptr<Cluster>> cused;
 
 public:
-  UseClusterScheduler(const ResourcesPoolType &res);
+  UseClusterScheduler(const ResourcesPoolType& res);
   ~UseClusterScheduler();
 
-  std::shared_ptr<Resource> getResource(Dinst *dinst);
+  std::shared_ptr<Resource> getResource(Dinst* dinst);
 };

@@ -7,7 +7,7 @@
 
 int32_t BloomFilter::numDumps = 0;
 
-BloomFilter::BloomFilter(const std::vector<int> &bits, const std::vector<int> &size) {
+BloomFilter::BloomFilter(const std::vector<int>& bits, const std::vector<int>& size) {
   I(bits.size() == size.size());
 
   nVectors     = bits.size();
@@ -15,7 +15,7 @@ BloomFilter::BloomFilter(const std::vector<int> &bits, const std::vector<int> &s
   vBits        = new int[nVectors];
   vMask        = new unsigned[nVectors];
   rShift       = new int[nVectors];
-  countVec     = new int *[nVectors];
+  countVec     = new int*[nVectors];
   nonZeroCount = new int[nVectors];
 
   for (int32_t i = 0; i < nVectors; i++) {
@@ -55,7 +55,7 @@ BloomFilter::~BloomFilter() {
   delete[] countVec;
 }
 
-BloomFilter::BloomFilter(const BloomFilter &bf) {
+BloomFilter::BloomFilter(const BloomFilter& bf) {
   if (!bf.BFBuild) {
     BFBuild = false;
     return;
@@ -69,7 +69,7 @@ BloomFilter::BloomFilter(const BloomFilter &bf) {
   vBits        = new int[nVectors];
   vMask        = new unsigned[nVectors];
   rShift       = new int[nVectors];
-  countVec     = new int *[nVectors];
+  countVec     = new int*[nVectors];
   nonZeroCount = new int[nVectors];
   nElements    = bf.nElements;
 
@@ -88,7 +88,7 @@ BloomFilter::BloomFilter(const BloomFilter &bf) {
   }
 }
 
-BloomFilter &BloomFilter::operator=(const BloomFilter &bf) {
+BloomFilter& BloomFilter::operator=(const BloomFilter& bf) {
   if (this == &bf) {
     return *this;
   }
@@ -229,7 +229,7 @@ bool BloomFilter::mayExist(unsigned e) {
   return true;
 }
 
-bool BloomFilter::mayIntersect(BloomFilter &otherbf) {
+bool BloomFilter::mayIntersect(BloomFilter& otherbf) {
   if (!BFBuild || !otherbf.BFBuild) {
     return true;
   }
@@ -258,7 +258,7 @@ bool BloomFilter::mayIntersect(BloomFilter &otherbf) {
   return true;
 }
 
-void BloomFilter::mergeWith(BloomFilter &otherbf) {
+void BloomFilter::mergeWith(BloomFilter& otherbf) {
   if (!BFBuild || !otherbf.BFBuild) {
     return;
   }
@@ -281,7 +281,7 @@ void BloomFilter::mergeWith(BloomFilter &otherbf) {
   }
 }
 
-void BloomFilter::subtract(BloomFilter &otherbf) {
+void BloomFilter::subtract(BloomFilter& otherbf) {
   if (!BFBuild || !otherbf.BFBuild) {
     return;
   }
@@ -305,7 +305,7 @@ void BloomFilter::subtract(BloomFilter &otherbf) {
   }
 }
 
-void BloomFilter::dump(const char *msg) {
+void BloomFilter::dump(const char* msg) {
   printf("%s:", msg);
 
   if (!BFBuild) {
@@ -359,7 +359,7 @@ int32_t BloomFilter::getSizeRLE(int32_t base, int32_t runBits) {
   return rleSize;
 }
 
-bool BloomFilter::isSubsetOf(BloomFilter &otherbf) {
+bool BloomFilter::isSubsetOf(BloomFilter& otherbf) {
   if (!BFBuild || !otherbf.BFBuild) {
     return true;
   }
@@ -382,7 +382,7 @@ bool BloomFilter::isSubsetOf(BloomFilter &otherbf) {
   return true;
 }
 
-void BloomFilter::begin_dump_pychart(const char *bname) {
+void BloomFilter::begin_dump_pychart(const char* bname) {
   auto str = fmt::format("{}.{}.py", bname, numDumps);
 
   numDumps++;
@@ -444,7 +444,7 @@ int32_t BloomFilter::countAlias(unsigned e) {
   return a;
 }
 
-void BloomFilter::intersectionWith(BloomFilter &otherbf, BloomFilter &inter) {
+void BloomFilter::intersectionWith(BloomFilter& otherbf, BloomFilter& inter) {
   for (int32_t v = 0; v < nVectors; v++) {
     for (int32_t e = 0; e < vSize[v]; e++) {
       if (countVec[v][e] != 0 && otherbf.countVec[v][e] != 0) {

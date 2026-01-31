@@ -14,9 +14,9 @@ private:
 
   LSQNone lsq;
 
-  bool *inst_perpe_percyc;  // Only needed for the GPUSMProc
+  bool* inst_perpe_percyc;  // Only needed for the GPUSMProc
 
-  Dinst **RAT;
+  Dinst** RAT;
 
   void fetch(Hartid_t fid);
 
@@ -26,17 +26,17 @@ protected:
   bool advance_clock_drain() override final;
   bool advance_clock() override final;
 
-  StallCause add_inst(Dinst *dinst) override final;
+  StallCause add_inst(Dinst* dinst) override final;
 
   void retire();
   // END VIRTUAL FUNCTIONS of GProcessor
 
 public:
-  GPUSMProcessor(Gmemory_system *gm, CPU_t i);
+  GPUSMProcessor(Gmemory_system* gm, CPU_t i);
   virtual ~GPUSMProcessor();
 
-  LSQ *getLSQ() { return &lsq; }
-  void replay(Dinst *dinst);
+  LSQ* getLSQ() { return &lsq; }
+  void replay(Dinst* dinst);
 
   bool is_nuking() override final { return false; }
 

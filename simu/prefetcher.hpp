@@ -12,7 +12,7 @@ class MemObj;
 
 class Prefetcher {
 private:
-  MemObj *DL1;  // L1 cache
+  MemObj* DL1;  // L1 cache
 
   Stats_avg  avgPrefetchNum;
   Stats_avg  avgPrefetchConf;
@@ -32,7 +32,7 @@ private:
   Addr_t       pending_preq_pc;
   uint16_t     pending_preq_conf;
   bool         pending_statsFlag;
-  FetchEngine *pending_chain_fetch;
+  FetchEngine* pending_chain_fetch;
 
   uint16_t conf = 0;
   Addr_t   pending_preq_addr;
@@ -42,9 +42,9 @@ private:
   StaticCallbackMember0<Prefetcher, &Prefetcher::nextPrefetch> nextPrefetchCB;
 
 public:
-  Prefetcher(MemObj *l1, int cpud_id);
+  Prefetcher(MemObj* l1, int cpud_id);
   ~Prefetcher() {}
 
-  void exe(Dinst *dinst);
-  void ret(Dinst *dinst);
+  void exe(Dinst* dinst);
+  void ret(Dinst* dinst);
 };

@@ -11,14 +11,14 @@
 
 class BloomFilter {
 private:
-  int32_t  *vSize;
-  int32_t  *vBits;
-  unsigned *vMask;
-  int32_t  *rShift;
-  int32_t **countVec;
+  int32_t*  vSize;
+  int32_t*  vBits;
+  unsigned* vMask;
+  int32_t*  rShift;
+  int32_t** countVec;
   int32_t   nVectors;
-  int32_t  *nonZeroCount;
-  char     *desc;
+  int32_t*  nonZeroCount;
+  char*     desc;
   int32_t   nElements;
 
   bool BFBuild;
@@ -31,12 +31,12 @@ public:
 
   // the chunk parameters are from the least significant to
   // the most significant portion of the address
-  BloomFilter(const std::vector<int> &bits, const std::vector<int> &size);
+  BloomFilter(const std::vector<int>& bits, const std::vector<int>& size);
   BloomFilter() : BFBuild(false) {}
 
-  BloomFilter(const BloomFilter &bf);
+  BloomFilter(const BloomFilter& bf);
 
-  BloomFilter &operator=(const BloomFilter &bf);
+  BloomFilter& operator=(const BloomFilter& bf);
 
   void insert(unsigned e);
   void remove(unsigned e);
@@ -44,19 +44,19 @@ public:
   void clear();
 
   bool mayExist(unsigned e);
-  bool mayIntersect(BloomFilter &otherbf);
+  bool mayIntersect(BloomFilter& otherbf);
 
-  void intersectionWith(BloomFilter &otherbf, BloomFilter &inter);
+  void intersectionWith(BloomFilter& otherbf, BloomFilter& inter);
 
-  void mergeWith(BloomFilter &otherbf);
-  void subtract(BloomFilter &otherbf);
+  void mergeWith(BloomFilter& otherbf);
+  void subtract(BloomFilter& otherbf);
 
-  bool isSubsetOf(BloomFilter &otherbf);
+  bool isSubsetOf(BloomFilter& otherbf);
 
   int32_t countAlias(unsigned e);
 
-  void        dump(const char *msg);
-  const char *getDesc() { return desc; }
+  void        dump(const char* msg);
+  const char* getDesc() { return desc; }
 
   int32_t size() {  // # of elements encoded
     return nElements;
@@ -65,9 +65,9 @@ public:
   int32_t getSize();  // size of the vectors in bits
   int32_t getSizeRLE(int32_t base = 0, int32_t runBits = 7);
 
-  FILE          *dumpPtr;
+  FILE*          dumpPtr;
   static int32_t numDumps;
-  void           begin_dump_pychart(const char *bname = "bf");
+  void           begin_dump_pychart(const char* bname = "bf");
   void           end_dump_pychart();
   void           add_dump_line(unsigned e);
 };
@@ -86,7 +86,7 @@ public:
     }
   }
 
-  BitSelection(int32_t *bitPos, int32_t n) {
+  BitSelection(int32_t* bitPos, int32_t n) {
     nBits = 0;
     for (int32_t i = 0; i < n; i++) {
       addBit(bitPos[i]);
@@ -112,7 +112,7 @@ public:
     return res;
   }
 
-  void dump(const char *msg) {
+  void dump(const char* msg) {
     printf("%s:", msg);
     for (int32_t i = 0; i < nBits; i++) {
       printf(" %d", bits[i]);

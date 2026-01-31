@@ -26,16 +26,16 @@ public:
 template <class T>
 class SmartPtr {
 private:
-  T *ref;
+  T* ref;
 
 public:
   SmartPtr(void) : ref(0) {}
-  SmartPtr(const SmartPtr &src) : ref(src.ref) {
+  SmartPtr(const SmartPtr& src) : ref(src.ref) {
     if (ref) {
       ref->addRef();
     }
   }
-  SmartPtr(T *ptr) : ref(ptr) {
+  SmartPtr(T* ptr) : ref(ptr) {
     if (ref) {
       ref->addRef();
     }
@@ -45,10 +45,10 @@ public:
       ref->delRef();
     }
   }
-  operator T *() const { return ref; }
-  T &operator*() const { return *ref; }
-  T *operator->() const { return ref; }
-  T *operator=(T *ptr) {
+     operator T*() const { return ref; }
+  T& operator*() const { return *ref; }
+  T* operator->() const { return ref; }
+  T* operator=(T* ptr) {
     if (ptr) {
       ptr->addRef();
     }
@@ -58,7 +58,7 @@ public:
     ref = ptr;
     return ptr;
   }
-  SmartPtr<T> &operator=(const SmartPtr<T> &src) {
+  SmartPtr<T>& operator=(const SmartPtr<T>& src) {
     (*this) = src.ref;
     return *this;
   }

@@ -207,9 +207,9 @@ void initialize() {
 
 class resource_test : public ::testing::Test {
 protected:
-  FULoad                       *ful;
-  LSQ                          *lsq;
-  GProcessor                   *gproc;
+  FULoad*                       ful;
+  LSQ*                          lsq;
+  GProcessor*                   gproc;
   std::shared_ptr<Prefetcher>   pref;
   std::shared_ptr<Store_buffer> scb;
   std::shared_ptr<Cluster>      cls;
@@ -220,14 +220,14 @@ protected:
   TimeDelta_t                   l;
   int32_t                       size;
   int32_t                       id;
-  const char                   *cad;
+  const char*                   cad;
 
   void SetUp() override { initialize(); }
 
   void TearDown() override { delete ful; }
 
 public:
-  void setupFULoad(const std::string &clusterName) {
+  void setupFULoad(const std::string& clusterName) {
     size    = 256 * 1024;
     type    = Opcode::iLALU_LD;
     gproc   = new OoOProcessor(global_mem_sys_p0, 0);
@@ -243,8 +243,8 @@ public:
 
     ful = new FULoad(Opcode::iLALU_LD, cls, aGen, lsq, ss, pref, scb, lsdelay, l, global_mem_sys_p0, size, id, "specld");
   }
-  Dinst *createLDInstAddr(Addr_t addr) {
-    auto *st_inst
+  Dinst* createLDInstAddr(Addr_t addr) {
+    auto* st_inst
         = Dinst::create(Instruction(Opcode::iLALU_LD, RegType::LREG_R1, RegType::LREG_R2, RegType::LREG_R3, RegType::LREG_R4),
                         0xdeaddead  // pc
                         ,
@@ -266,7 +266,7 @@ public:
 TEST_F(resource_test, can_issue_an_load_instruction) {
   this->setupFULoad("munit");
   Addr_t any_addr = 0x111;
-  auto  *ld_inst  = this->createLDInstAddr(any_addr);
+  auto*  ld_inst  = this->createLDInstAddr(any_addr);
   EXPECT_EQ(ful->canIssue(ld_inst), 0);
   EXPECT_EQ(true, true);
 }
@@ -274,7 +274,7 @@ TEST_F(resource_test, can_issue_an_load_instruction) {
 TEST_F(resource_test, can_issue_multiple_load_instruction) {
   this->setupFULoad("munit");
   for (auto i = 0; i < 16; i++) {
-    auto *ld_inst = this->createLDInstAddr(this->randomAddrGen());
+    auto* ld_inst = this->createLDInstAddr(this->randomAddrGen());
     if (i == 0) {
       EXPECT_EQ(ful->canIssue(ld_inst), 0);
     } else {

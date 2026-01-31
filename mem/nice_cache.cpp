@@ -6,7 +6,7 @@
 #include "memory_system.hpp"
 #include "memrequest.hpp"
 
-Nice_cache::Nice_cache(Memory_system *gms, const std::string &sec, const std::string &n)
+Nice_cache::Nice_cache(Memory_system* gms, const std::string& sec, const std::string& n)
     : MemObj(sec, n)
     , hitDelay(Config::get_integer(sec, "delay"))
     , bsize(Config::get_power2(sec, "line_size"))
@@ -29,7 +29,7 @@ Nice_cache::Nice_cache(Memory_system *gms, const std::string &sec, const std::st
   warmupSlowEvery = 16;
 }
 
-void Nice_cache::doReq(MemRequest *mreq) {
+void Nice_cache::doReq(MemRequest* mreq) {
   TimeDelta_t hdelay = hitDelay;
 
   if (mreq->isWarmup()) {
@@ -58,22 +58,22 @@ void Nice_cache::doReq(MemRequest *mreq) {
   router->scheduleReqAck(mreq, hdelay);
 }
 
-void Nice_cache::doReqAck(MemRequest *req) {
+void Nice_cache::doReqAck(MemRequest* req) {
   (void)req;
   I(0);
 }
 
-void Nice_cache::doSetState(MemRequest *req) {
+void Nice_cache::doSetState(MemRequest* req) {
   (void)req;
   I(0);
 }
 
-void Nice_cache::doSetStateAck(MemRequest *req) {
+void Nice_cache::doSetStateAck(MemRequest* req) {
   (void)req;
   I(0);
 }
 
-void Nice_cache::doDisp(MemRequest *mreq) {
+void Nice_cache::doDisp(MemRequest* mreq) {
   writeHit.inc(mreq->has_stats());
   mreq->ack(hitDelay);
 }
@@ -83,7 +83,7 @@ bool Nice_cache::isBusy(Addr_t addr) const {
   return false;
 }
 
-void Nice_cache::tryPrefetch(Addr_t addr, bool doStats, int degree, Addr_t pref_sign, Addr_t pc, CallbackBase *cb) {
+void Nice_cache::tryPrefetch(Addr_t addr, bool doStats, int degree, Addr_t pref_sign, Addr_t pc, CallbackBase* cb) {
   (void)addr;
   (void)doStats;
   (void)degree;

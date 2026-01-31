@@ -39,7 +39,7 @@ uint64_t nReplays = 0;
 #define GPROCESSOR_H 1
 class GProcessor {
 public:
-  void replay(Dinst *dinst) { nReplays++; }
+  void replay(Dinst* dinst) { nReplays++; }
 };
 //*********** END CREATE FAKE PROCESSOR CLASS
 #include "config.hpp"
@@ -47,7 +47,7 @@ public:
 
 long long instTotal = 0;
 
-LSQ *lsq;
+LSQ* lsq;
 
 void doTest() {
 #if 0
@@ -61,7 +61,7 @@ void doTest() {
 
 // FIXME: this is a broken test/benchmark, but it would be good to have one for the LSQ
 
-int main(int argc, const char **argv) {
+int main(int argc, const char** argv) {
   Config::init();
 
   GProcessor gproc;

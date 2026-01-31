@@ -5,7 +5,7 @@
 #include "config.hpp"
 #include "memory_system.hpp"
 
-UnMemXBar::UnMemXBar(Memory_system *current, const std::string &sec, const std::string &n)
+UnMemXBar::UnMemXBar(Memory_system* current, const std::string& sec, const std::string& n)
     /* constructor {{{1 */
     : GXBar(sec, n) {
   Xbar_unXbar_balance--;  // decrement balance of XBars
@@ -21,14 +21,14 @@ UnMemXBar::UnMemXBar(Memory_system *current, const std::string &sec, const std::
 }
 /* }}} */
 
-void UnMemXBar::doReq(MemRequest *mreq)
+void UnMemXBar::doReq(MemRequest* mreq)
 /* read if splitter above L1 (down) {{{1 */
 {
   router->scheduleReq(mreq);
 }
 /* }}} */
 
-void UnMemXBar::doReqAck(MemRequest *mreq)
+void UnMemXBar::doReqAck(MemRequest* mreq)
 /* req ack (up) {{{1 */
 {
   I(!mreq->isHomeNode());
@@ -38,7 +38,7 @@ void UnMemXBar::doReqAck(MemRequest *mreq)
 }
 /* }}} */
 
-void UnMemXBar::doSetState(MemRequest *mreq)
+void UnMemXBar::doSetState(MemRequest* mreq)
 /* setState (up) {{{1 */
 {
   uint32_t pos = common_addr_hash(mreq->getAddr(), LineSize, num_banks);
@@ -46,14 +46,14 @@ void UnMemXBar::doSetState(MemRequest *mreq)
 }
 /* }}} */
 
-void UnMemXBar::doSetStateAck(MemRequest *mreq)
+void UnMemXBar::doSetStateAck(MemRequest* mreq)
 /* setStateAck (down) {{{1 */
 {
   router->scheduleSetStateAck(mreq);
 }
 /* }}} */
 
-void UnMemXBar::doDisp(MemRequest *mreq)
+void UnMemXBar::doDisp(MemRequest* mreq)
 /* disp (down) {{{1 */
 {
   router->scheduleDisp(mreq);

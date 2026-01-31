@@ -41,10 +41,10 @@ protected:
 public:
   virtual ~AddressPredictor() {}
 
-  static AddressPredictor *create(const char *section, const char *str);
+  static AddressPredictor* create(const char* section, const char* str);
 
   virtual Addr_t     predict(Addr_t pc, int distance, bool inLine = false)   = 0;
-  virtual bool       try_chain_predict(MemObj *dl1, Addr_t pc, int distance) = 0;
+  virtual bool       try_chain_predict(MemObj* dl1, Addr_t pc, int distance) = 0;
   virtual Conf_level exe_update(Addr_t pc, Addr_t addr, Data_t data = 0)     = 0;
   virtual Conf_level ret_update(Addr_t pc, Addr_t addr, Data_t data = 0)     = 0;
 };
@@ -125,11 +125,11 @@ private:
   BimodalStride bimodal;
 
 public:
-  Stride_address_predictor(Hartid_t hartid, const std::string &section);
+  Stride_address_predictor(Hartid_t hartid, const std::string& section);
   virtual ~Stride_address_predictor() {}
 
   Addr_t     predict(Addr_t pc, int distance, bool inLine);
-  bool       try_chain_predict(MemObj *dl1, Addr_t pc, int distance);
+  bool       try_chain_predict(MemObj* dl1, Addr_t pc, int distance);
   Conf_level exe_update(Addr_t pc, Addr_t addr, Data_t data);
   Conf_level ret_update(Addr_t pc, Addr_t addr, Data_t data);
 };
@@ -267,11 +267,11 @@ protected:
   uint16_t hit_bank;
   uint16_t alt_bank;
 
-  int    *m;     // [NHIST + 1]; // history lengths
-  int    *TB;    //[NHIST + 1];   // tag width for the different tagged tables
-  int    *logg;  // [NHIST + 1];  // log of number entries of the different tagged tables
-  Addr_t *GI;    //[NHIST + 1];   // indexes to the different tables are computed only once
-  Addr_t *GTAG;  //[NHIST + 1];    // tags for the different tables are computed only once
+  int*    m;     // [NHIST + 1]; // history lengths
+  int*    TB;    //[NHIST + 1];   // tag width for the different tagged tables
+  int*    logg;  // [NHIST + 1];  // log of number entries of the different tagged tables
+  Addr_t* GI;    //[NHIST + 1];   // indexes to the different tables are computed only once
+  Addr_t* GTAG;  //[NHIST + 1];    // tags for the different tables are computed only once
 
   Addr_t lastBoundaryPC;  // last PC that fetchBoundary was called
   int    TICK;            // for reset of u counter
@@ -281,7 +281,7 @@ protected:
   bool   use_alt_pred;
   int8_t use_alt_on_na;
 
-  void rename(Dinst *dinst);
+  void rename(Dinst* dinst);
 
   uint16_t get_offset(Addr_t pc) const { return (pc & ((1UL << log2fetchwidth) - 1)) >> 2; };
   Addr_t   get_boundary(Addr_t pc) const { return (pc >> log2fetchwidth) << log2fetchwidth; };
@@ -299,14 +299,14 @@ protected:
   int            tmp = 0;
   const uint16_t log2fetchwidth;
   const uint16_t nhist;  // num of tagged tables
-  vtage_gentry **gtable;
+  vtage_gentry** gtable;
 
 public:
-  Tage_address_predictor(Hartid_t hartid, const std::string &section);
+  Tage_address_predictor(Hartid_t hartid, const std::string& section);
   virtual ~Tage_address_predictor() {}
 
   Addr_t     predict(Addr_t pc, int dist, bool inLine);
-  bool       try_chain_predict(MemObj *dl1, Addr_t pc, int distance);
+  bool       try_chain_predict(MemObj* dl1, Addr_t pc, int distance);
   Conf_level exe_update(Addr_t pc, Addr_t addr, Data_t data);
   Conf_level ret_update(Addr_t pc, Addr_t addr, Data_t data);
 };
@@ -320,18 +320,18 @@ private:
 
   BimodalStride bimodal;
 
-  void performed(MemObj *DL1, Addr_t pc, Addr_t ld1_addr);
+  void performed(MemObj* DL1, Addr_t pc, Addr_t ld1_addr);
 
   std::vector<Addr_t> last_pcs;  // Last n PCs
   Addr_t              last_pcs_pos;
 
 public:
-  typedef CallbackMember3<Indirect_address_predictor, MemObj *, Addr_t, Addr_t, &Indirect_address_predictor::performed> performedCB;
-  Indirect_address_predictor(Hartid_t hartid, const std::string &section);
+  typedef CallbackMember3<Indirect_address_predictor, MemObj*, Addr_t, Addr_t, &Indirect_address_predictor::performed> performedCB;
+  Indirect_address_predictor(Hartid_t hartid, const std::string& section);
   virtual ~Indirect_address_predictor() {}
 
   Addr_t     predict(Addr_t pc, int distance, bool inLine);
-  bool       try_chain_predict(MemObj *dl1, Addr_t pc, int distance);
+  bool       try_chain_predict(MemObj* dl1, Addr_t pc, int distance);
   Conf_level exe_update(Addr_t pc, Addr_t addr, Data_t data);
   Conf_level ret_update(Addr_t pc, Addr_t addr, Data_t data);
 };

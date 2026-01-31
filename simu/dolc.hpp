@@ -15,9 +15,9 @@ private:
   uint16_t  rl1;
   uint16_t  rl2;
   uint16_t  rl3;
-  uint64_t *hist;
-  uint64_t *histMask;
-  uint64_t *histBits;
+  uint64_t* hist;
+  uint64_t* histMask;
+  uint64_t* histBits;
 
   void allocate() {
     uint64_t lastMask = (((uint64_t)1) << lastBits) - 1;

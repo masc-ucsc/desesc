@@ -18,11 +18,11 @@ extern DrawArch arch;
 
 Memory_system::Memory_system(int32_t processorId) : Gmemory_system(processorId) { build_memory_system(); }
 
-MemObj *Memory_system::buildMemoryObj(const std::string &device_type, const std::string &dev_section, const std::string &dev_name)
+MemObj* Memory_system::buildMemoryObj(const std::string& device_type, const std::string& dev_section, const std::string& dev_name)
 /* build the correct memory object {{{1 */
 {
   // Returns new created MemoryObj or NULL in known-error mode
-  MemObj  *mdev    = 0;
+  MemObj*  mdev    = 0;
   uint32_t devtype = 0;  // CCache
 
   std::string mystr("");

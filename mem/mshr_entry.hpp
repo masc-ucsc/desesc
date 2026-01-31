@@ -17,7 +17,7 @@ public:
 
   void setup(int32_t size) { nFreeSEntries = size; }
 
-  bool addEntry(CallbackBase *rcb) {
+  bool addEntry(CallbackBase* rcb) {
     if (nFreeSEntries == 0) {
       return false;
     }

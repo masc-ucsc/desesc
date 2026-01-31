@@ -18,19 +18,19 @@
 static int rd_pending = 0;
 static int wr_pending = 0;
 
-DInst   *ld;
-DInst   *st;
+DInst*   ld;
+DInst*   st;
 ARMCrack crackInstARM;
 
 RAWDInst rinst;
-void     rdDone(DInst *dinst) {
+void     rdDone(DInst* dinst) {
   printf("rddone @%lld\n", (long long)globalClock);
 
   rd_pending--;
   dinst->recycle();
 }
 
-void wrDone(DInst *dinst) {
+void wrDone(DInst* dinst) {
   printf("wrdone @%lld\n", (long long)globalClock);
   wr_pending--;
   dinst->recycle();
@@ -42,21 +42,21 @@ static void waitAllMemOpsDone() {
   }
 }
 
-typedef CallbackFunction1<DInst *, &rdDone> rdDoneCB;
-typedef CallbackFunction1<DInst *, &wrDone> wrDoneCB;
+typedef CallbackFunction1<DInst*, &rdDone> rdDoneCB;
+typedef CallbackFunction1<DInst*, &wrDone> wrDoneCB;
 
 long long num_operations = 0;
 
-static void doread(MemObj *cache, Addr_t addr) {
+static void doread(MemObj* cache, Addr_t addr) {
   num_operations++;
-  DInst *ldClone = ld->clone();
+  DInst* ldClone = ld->clone();
   ldClone->setAddr(addr);
 
   while (cache->isBusy(addr)) {
     EventScheduler::advanceClock();
   }
 
-  rdDoneCB *cb = rdDoneCB::create(ldClone);
+  rdDoneCB* cb = rdDoneCB::create(ldClone);
   printf("rd %x @%lld\n", (unsigned int)addr, (long long)globalClock);
 
   ExtraParameters param;
@@ -65,16 +65,16 @@ static void doread(MemObj *cache, Addr_t addr) {
   rd_pending++;
 }
 
-static void dowrite(MemObj *cache, Addr_t addr) {
+static void dowrite(MemObj* cache, Addr_t addr) {
   num_operations++;
-  DInst *stClone = st->clone();
+  DInst* stClone = st->clone();
   stClone->setAddr(addr);
 
   while (cache->isBusy(addr)) {
     EventScheduler::advanceClock();
   }
 
-  wrDoneCB *cb = wrDoneCB::create(stClone);
+  wrDoneCB* cb = wrDoneCB::create(stClone);
   printf("wr %x @%lld\n", (unsigned int)addr, (long long)globalClock);
 
   ExtraParameters param;
@@ -85,12 +85,12 @@ static void dowrite(MemObj *cache, Addr_t addr) {
 }
 
 void single() {
-  GProcessor *gproc = TaskHandler::getSimu(0);
+  GProcessor* gproc = TaskHandler::getSimu(0);
   I(gproc);
 
-  MemObj *cache1 = gproc->get_memory_system()->getDL1();
+  MemObj* cache1 = gproc->get_memory_system()->getDL1();
   I(cache1);
-  MemObj *cache2 = gproc->get_memory_system()->getIL1();
+  MemObj* cache2 = gproc->get_memory_system()->getIL1();
   I(cache2);
 
   printf("trivial test\n");
@@ -116,10 +116,10 @@ void single() {
 }
 
 void isca_demo() {
-  GProcessor *gproc = TaskHandler::getSimu(0);
+  GProcessor* gproc = TaskHandler::getSimu(0);
   I(gproc);
 
-  MemObj *cache1 = gproc->get_memory_system()->getDL1();
+  MemObj* cache1 = gproc->get_memory_system()->getDL1();
   I(cache1);
 
   printf("access even address 0x102\n");
@@ -137,16 +137,16 @@ void multi() {
     exit(-2);
   }
 
-  GProcessor *gproc0 = TaskHandler::getSimu(0);
+  GProcessor* gproc0 = TaskHandler::getSimu(0);
   I(gproc0);
 
-  MemObj *P0DL1 = gproc0->get_memory_system()->getDL1();
+  MemObj* P0DL1 = gproc0->get_memory_system()->getDL1();
   I(P0DL1);
 
-  GProcessor *gproc1 = TaskHandler::getSimu(1);
+  GProcessor* gproc1 = TaskHandler::getSimu(1);
   I(gproc1);
 
-  MemObj *P1DL1 = gproc1->get_memory_system()->getDL1();
+  MemObj* P1DL1 = gproc1->get_memory_system()->getDL1();
   I(P1DL1);
 
   printf("Multicore trivial test\n");
@@ -177,16 +177,16 @@ void memcpy() {
     exit(-2);
   }
 
-  GProcessor *gproc0 = TaskHandler::getSimu(0);
+  GProcessor* gproc0 = TaskHandler::getSimu(0);
   I(gproc0);
 
-  MemObj *P0DL1 = gproc0->get_memory_system()->getDL1();
+  MemObj* P0DL1 = gproc0->get_memory_system()->getDL1();
   I(P0DL1);
 
-  GProcessor *gproc1 = TaskHandler::getSimu(1);
+  GProcessor* gproc1 = TaskHandler::getSimu(1);
   I(gproc1);
 
-  MemObj *P1DL1 = gproc1->get_memory_system()->getDL1();
+  MemObj* P1DL1 = gproc1->get_memory_system()->getDL1();
   I(P1DL1);
 
   printf("Multicore trivial test\n");
@@ -228,22 +228,22 @@ void memcpy() {
 void test2() {
   // fix scenario read read write read
 
-  GProcessor *gproc0 = TaskHandler::getSimu(0);
+  GProcessor* gproc0 = TaskHandler::getSimu(0);
   I(gproc0);
 
-  MemObj *P0DL1 = gproc0->get_memory_system()->getDL1();
+  MemObj* P0DL1 = gproc0->get_memory_system()->getDL1();
   I(P0DL1);
 
-  GProcessor *gproc1 = TaskHandler::getSimu(1);
+  GProcessor* gproc1 = TaskHandler::getSimu(1);
   I(gproc1);
 
-  MemObj *P1DL1 = gproc1->get_memory_system()->getDL1();
+  MemObj* P1DL1 = gproc1->get_memory_system()->getDL1();
   I(P1DL1);
 
-  GProcessor *gproc2 = TaskHandler::getSimu(2);
+  GProcessor* gproc2 = TaskHandler::getSimu(2);
   I(gproc2);
 
-  MemObj *P2DL1 = gproc2->get_memory_system()->getDL1();
+  MemObj* P2DL1 = gproc2->get_memory_system()->getDL1();
   I(P2DL1);
 
   /*
@@ -280,28 +280,28 @@ void test2() {
 // Test 3 - Core 0 writes to address 0x400, then core 1 writes to the same address, core 0's L1 data at addr 0x400 should be
 // invalidated.
 void test3() {
-  GProcessor *gproc0 = TaskHandler::getSimu(0);
+  GProcessor* gproc0 = TaskHandler::getSimu(0);
   I(gproc0);
 
-  MemObj *P0DL1 = gproc0->get_memory_system()->getDL1();
+  MemObj* P0DL1 = gproc0->get_memory_system()->getDL1();
   I(P0DL1);
 
-  GProcessor *gproc1 = TaskHandler::getSimu(1);
+  GProcessor* gproc1 = TaskHandler::getSimu(1);
   I(gproc1);
 
-  MemObj *P1DL1 = gproc1->get_memory_system()->getDL1();
+  MemObj* P1DL1 = gproc1->get_memory_system()->getDL1();
   I(P1DL1);
 
-  GProcessor *gproc2 = TaskHandler::getSimu(2);
+  GProcessor* gproc2 = TaskHandler::getSimu(2);
   I(gproc2);
 
-  MemObj *P2DL1 = gproc2->get_memory_system()->getDL1();
+  MemObj* P2DL1 = gproc2->get_memory_system()->getDL1();
   I(P2DL1);
 
-  GProcessor *gproc3 = TaskHandler::getSimu(3);
+  GProcessor* gproc3 = TaskHandler::getSimu(3);
   I(gproc3);
 
-  MemObj *P3DL1 = gproc3->get_memory_system()->getDL1();
+  MemObj* P3DL1 = gproc3->get_memory_system()->getDL1();
   I(P3DL1);
 
   // rinst->set(insn,pc,addr,data,L1clkRatio,L3clkRatio,keepStats);
@@ -366,12 +366,12 @@ void test3() {
 // Test 4 - Test that if colisions happen in L1 (changed it to be direct mapped), the data is still available in cache L2 and L3 and
 // that the data  is replaced in L1 Note: It seems like the cache does not take in account the associativity or colisions
 void test4() {
-  GProcessor *gproc = TaskHandler::getSimu(0);
+  GProcessor* gproc = TaskHandler::getSimu(0);
   I(gproc);
 
-  MemObj *cache1 = gproc->get_memory_system()->getDL1();
+  MemObj* cache1 = gproc->get_memory_system()->getDL1();
   I(cache1);
-  MemObj *cache2 = gproc->get_memory_system()->getIL1();
+  MemObj* cache2 = gproc->get_memory_system()->getIL1();
   I(cache2);
 
   printf("Test 4\n");
@@ -602,7 +602,7 @@ void test7()
 
 #endif
 
-int main(int argc, const char **argv) {
+int main(int argc, const char** argv) {
   BootLoader::plug(argc, argv);
 
   // Create a LD (e5d33000) with PC = 0xfeeffeef and address 1203

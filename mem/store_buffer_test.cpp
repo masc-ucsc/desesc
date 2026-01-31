@@ -76,7 +76,7 @@ void initialize() {
 #define PR(a) printf("%s", a)
 class Store_buffer_test : public ::testing::Test {
 protected:
-  Store_buffer *sb;
+  Store_buffer* sb;
   void          SetUp() override { initialize(); }
   void          TearDown() override {
     delete sb;
@@ -85,9 +85,9 @@ protected:
 
 public:
   void   setupStoreBuffer() { sb = new Store_buffer(0, global_mem_sys_p0); }
-  Dinst *createStInst() {
+  Dinst* createStInst() {
     Addr_t addr = 0x200;
-    auto  *st_inst
+    auto*  st_inst
         = Dinst::create(Instruction(Opcode::iSALU_ST, RegType::LREG_R1, RegType::LREG_R2, RegType::LREG_R3, RegType::LREG_R4),
                         0xdeaddead  // pc
                         ,
@@ -126,7 +126,7 @@ TEST_F(Store_buffer_test, store_buf_line_is_load_forward) {
 by adding a store instruction to the store buffer and then checking a data_forwarding load */
 TEST_F(Store_buffer_test, store_buf_is_load_forward) {
   this->setupStoreBuffer();
-  auto  *st_inst  = this->createStInst();
+  auto*  st_inst  = this->createStInst();
   Addr_t any_addr = 0x111;
   EXPECT_EQ(sb->can_accept_st(any_addr), true);
   EXPECT_EQ(sb->can_accept_st(this->createStInst()->getAddr()), true);

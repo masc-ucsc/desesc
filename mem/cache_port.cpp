@@ -4,7 +4,7 @@
 
 #include "config.hpp"
 
-Cache_port::Cache_port(const std::string &section, const std::string &name) {
+Cache_port::Cache_port(const std::string& section, const std::string& name) {
   int numPorts = Config::get_integer(section, "port_num");
 
   hitDelay  = Config::get_integer(section, "delay", 1, 1024);
@@ -84,7 +84,7 @@ Time_t Cache_port::nextBankSlot(Addr_t addr, bool en) {
   return bkPort[bank]->nextSlot(en);
 }
 
-Time_t Cache_port::reqDone(MemRequest *mreq, bool retrying) {
+Time_t Cache_port::reqDone(MemRequest* mreq, bool retrying) {
   if (mreq->isWarmup() || mreq->isDropped()) {
     return globalClock + 1;
   }
@@ -103,7 +103,7 @@ Time_t Cache_port::reqDone(MemRequest *mreq, bool retrying) {
   return when;
 }
 
-Time_t Cache_port::reqAckDone(MemRequest *mreq) {
+Time_t Cache_port::reqAckDone(MemRequest* mreq) {
   if (mreq->isWarmup() || mreq->isDropped()) {
     return globalClock + 1;
   }
@@ -127,7 +127,7 @@ bool Cache_port::isBusy(Addr_t addr) const {
   return false;
 }
 
-void Cache_port::startPrefetch(MemRequest *mreq) {
+void Cache_port::startPrefetch(MemRequest* mreq) {
   I(mreq->isPrefetch());
   I(!mreq->isDropped());
 
@@ -138,7 +138,7 @@ void Cache_port::startPrefetch(MemRequest *mreq) {
   }
 }
 
-void Cache_port::reqRetire(MemRequest *mreq) {
+void Cache_port::reqRetire(MemRequest* mreq) {
   if (mreq->isPrefetch() && maxPrefetch) {
     curPrefetch--;
   } else {
@@ -150,7 +150,7 @@ void Cache_port::reqRetire(MemRequest *mreq) {
   GI(curPrefetch, maxPrefetch);  // curPrefech == 0 unless maxPrefetch
 
   while (!overflow.empty()) {
-    MemRequest *oreq = overflow.back();
+    MemRequest* oreq = overflow.back();
     overflow.pop_back();
     req2(oreq);
     if (curRequests >= maxRequests) {
@@ -162,7 +162,7 @@ void Cache_port::reqRetire(MemRequest *mreq) {
   }
 }
 
-void Cache_port::req2(MemRequest *mreq) {
+void Cache_port::req2(MemRequest* mreq) {
   // I(curRequests<=maxRequests && !mreq->isWarmup());
 
   I(!mreq->isDropped());
@@ -183,7 +183,7 @@ void Cache_port::req2(MemRequest *mreq) {
     mreq->redoReqAbs(nextBankSlot(mreq->getAddr(), mreq->has_stats()) + tagDelay);
   }
 }
-void Cache_port::req(MemRequest *mreq)
+void Cache_port::req(MemRequest* mreq)
 /* main processor read entry point {{{1 */
 {
   if (!mreq->isRetrying() && !mreq->isPrefetch()) {
@@ -192,7 +192,7 @@ void Cache_port::req(MemRequest *mreq)
       return;
     }
     while (!overflow.empty()) {
-      MemRequest *oreq = overflow.back();
+      MemRequest* oreq = overflow.back();
       overflow.pop_back();
       req2(oreq);
       if (curRequests >= maxRequests) {
@@ -212,7 +212,7 @@ void Cache_port::req(MemRequest *mreq)
 }
 // }}}
 
-Time_t Cache_port::snoopFillBankUse(MemRequest *mreq) {
+Time_t Cache_port::snoopFillBankUse(MemRequest* mreq) {
   if (mreq->isNonCacheable()) {
     return globalClock;
   }
@@ -236,7 +236,7 @@ Time_t Cache_port::snoopFillBankUse(MemRequest *mreq) {
   return max;
 }
 
-void Cache_port::blockFill(MemRequest *mreq)
+void Cache_port::blockFill(MemRequest* mreq)
 // Block the cache ports for fill requests {{{1
 {
   if (mreq->isDropped()) {
@@ -252,7 +252,7 @@ void Cache_port::blockFill(MemRequest *mreq)
 }
 // }}}
 
-void Cache_port::reqAck(MemRequest *mreq)
+void Cache_port::reqAck(MemRequest* mreq)
 /* request Ack {{{1 */
 {
   Time_t until;
@@ -271,21 +271,21 @@ void Cache_port::reqAck(MemRequest *mreq)
 }
 // }}}
 
-void Cache_port::setState(MemRequest *mreq)
+void Cache_port::setState(MemRequest* mreq)
 /* set state {{{1 */
 {
   mreq->redoSetStateAbs(globalClock + 1);
 }
 // }}}
 
-void Cache_port::setStateAck(MemRequest *mreq)
+void Cache_port::setStateAck(MemRequest* mreq)
 /* set state ack {{{1 */
 {
   mreq->redoSetStateAckAbs(globalClock + 1);
 }
 // }}}
 
-void Cache_port::disp(MemRequest *mreq)
+void Cache_port::disp(MemRequest* mreq)
 /* displace a CCache line {{{1 */
 {
   Time_t t  = snoopFillBankUse(mreq);

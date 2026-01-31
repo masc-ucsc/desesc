@@ -36,12 +36,12 @@
 
 /* }}} */
 
-CacheDebugAccess *CacheDebugAccess::getInstance() {
-  static CacheDebugAccess *c = new CacheDebugAccess();
+CacheDebugAccess* CacheDebugAccess::getInstance() {
+  static CacheDebugAccess* c = new CacheDebugAccess();
   return c;
 }
 
-void CacheDebugAccess::setCacheAccess(char *cacheLevel) {
+void CacheDebugAccess::setCacheAccess(char* cacheLevel) {
   std::string s = std::string(cacheLevel);
   if (s.compare("DL10") == 0 || s.compare("niceCache0") == 0 || s.compare("L3") == 0 || s.compare("L20") == 0) {
     debugMap[s] = true;

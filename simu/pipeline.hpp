@@ -15,23 +15,23 @@ class IBucket;
 
 class PipeIBucketLess {
 public:
-  bool operator()(const IBucket *x, const IBucket *y) const;
+  bool operator()(const IBucket* x, const IBucket* y) const;
 };
 
 class Pipeline {
 private:
-  const size_t         PipeLength;
-  const size_t         bucketPoolMaxSize;
-  const int32_t        MaxIRequests;
-  int32_t              nIRequests;
-  FastQueue<IBucket *> buffer;
-  FastQueue<IBucket *> transient_buffer;
+  const size_t        PipeLength;
+  const size_t        bucketPoolMaxSize;
+  const int32_t       MaxIRequests;
+  int32_t             nIRequests;
+  FastQueue<IBucket*> buffer;
+  FastQueue<IBucket*> transient_buffer;
 
-  typedef std::vector<IBucket *> IBucketCont;
-  IBucketCont                    bucketPool;
+  typedef std::vector<IBucket*> IBucketCont;
+  IBucketCont                   bucketPool;
 
   // typedef boost::heap::priority_queue<IBucket *,boost::heap::compare<PipeIBucketLess> > ReceivedType;
-  typedef std::priority_queue<IBucket *, std::vector<IBucket *>, PipeIBucketLess> ReceivedType;
+  typedef std::priority_queue<IBucket*, std::vector<IBucket*>, PipeIBucketLess> ReceivedType;
   // std::priority_queue<IBucket *, std::vector<IBucket*>, PipeIBucketLess> received;
   ReceivedType received;
 
@@ -48,19 +48,19 @@ public:
   void cleanMark();
 
   // FastQueue<Dinst *>   transient_buffer;
-  IBucket *newItem();
+  IBucket* newItem();
   bool     hasOutstandingItems() const;
-  void     readyItem(IBucket *b);
-  void     doneItem(IBucket *b);
+  void     readyItem(IBucket* b);
+  void     doneItem(IBucket* b);
   void     flush_transient_inst_from_buffer();
   bool     transient_buffer_empty();
-  IBucket *nextItem();
+  IBucket* nextItem();
 
   size_t size() const { return buffer.size(); }
   size_t bucketPool_size() const { return bucketPool.size(); }
 };
 
-class IBucket : public FastQueue<Dinst *> {
+class IBucket : public FastQueue<Dinst*> {
 private:
 protected:
   const bool cleanItem;
@@ -71,7 +71,7 @@ protected:
   friend class Pipeline;
   friend class PipeIBucketLess;
 
-  Pipeline *const pipeLine;
+  Pipeline* const pipeLine;
 #ifndef NDEBUG
   bool fetched;
 #endif
@@ -85,7 +85,7 @@ protected:
   void   setClock() { clock = globalClock; }
 
 public:
-  IBucket(size_t size, Pipeline *p, bool clean = false);
+  IBucket(size_t size, Pipeline* p, bool clean = false);
   virtual ~IBucket() {}
 
   StaticCallbackMember0<IBucket, &IBucket::markFetched> markFetchedCB;
@@ -96,6 +96,6 @@ public:
   PipeQueue(CPU_t i);
   ~PipeQueue();
 
-  Pipeline             pipeLine;
-  FastQueue<IBucket *> instQueue;
+  Pipeline            pipeLine;
+  FastQueue<IBucket*> instQueue;
 };

@@ -72,7 +72,7 @@ SSID_t StoreSet::create_set(uint64_t PC)
 }
 /* }}} */
 #ifdef STORESET_MERGING
-void StoreSet::merge_sets(Dinst *m_dinst, Dinst *d_dinst)
+void StoreSet::merge_sets(Dinst* m_dinst, Dinst* d_dinst)
 /* merge two loads into the src LD's set {{{1 */
 {
   uint64_t merge_this_set_pc   = m_dinst->getPC();  // <<1 + m_dinst->getUopOffset();
@@ -115,7 +115,7 @@ void StoreSet::clearStoreSetsTimer()
 /* }}} */
 #endif
 
-bool StoreSet::insert(Dinst *dinst)
+bool StoreSet::insert(Dinst* dinst)
 /* insert a store/load in the store set {{{1 */
 {
   uint64_t inst_pc   = dinst->getPC();  // <<1+dinst->getUopOffset();
@@ -126,7 +126,7 @@ bool StoreSet::insert(Dinst *dinst)
     return true;  // instruction does not belong to an existing set.
   }
 
-  const Instruction *inst = dinst->getInst();
+  const Instruction* inst = dinst->getInst();
 
   if (inst->isStoreAddress()) {
     printf("Store Address passed to StoreSet insert. exit\n");
@@ -135,7 +135,7 @@ bool StoreSet::insert(Dinst *dinst)
   I(!dinst->isExecuted());
   dinst->setSSID(inst_SSID);
 
-  Dinst *lfs_dinst = get_LFS(inst_SSID);
+  Dinst* lfs_dinst = get_LFS(inst_SSID);
   set_LFS(inst_SSID,
           dinst);  // make this instruction the Last Fetched Store(Should be renamed to instruction since loads are included).
 
@@ -151,7 +151,7 @@ bool StoreSet::insert(Dinst *dinst)
 }
 /* }}} */
 
-void StoreSet::remove(Dinst *dinst)
+void StoreSet::remove(Dinst* dinst)
 /* remove a store from store sets {{{1 */
 {
   I(!dinst->getInst()->isStoreAddress());
@@ -162,7 +162,7 @@ void StoreSet::remove(Dinst *dinst)
     return;
   }
 
-  Dinst *lfs_dinst = get_LFS(inst_SSID);
+  Dinst* lfs_dinst = get_LFS(inst_SSID);
 
   if (dinst == lfs_dinst) {
     I(isValidSSID(inst_SSID));
@@ -171,7 +171,7 @@ void StoreSet::remove(Dinst *dinst)
 }
 /* }}} */
 
-void StoreSet::stldViolation(Dinst *ld_dinst, uint64_t st_pc)
+void StoreSet::stldViolation(Dinst* ld_dinst, uint64_t st_pc)
 /* add a new st/ld violation {{{1 */
 {
   return;  // FIXME: no store set
@@ -186,14 +186,14 @@ void StoreSet::stldViolation(Dinst *ld_dinst, uint64_t st_pc)
 }
 /* }}} */
 
-void StoreSet::stldViolation(Dinst *ld_dinst, Dinst *st_dinst)
+void StoreSet::stldViolation(Dinst* ld_dinst, Dinst* st_dinst)
 /* add a new st/ld violation {{{1 */
 {
   stldViolation(ld_dinst, st_dinst->getPC());
 }
 /* }}} */
 
-void StoreSet::stldViolation_withmerge(Dinst *ld_dinst, Dinst *st_dinst)
+void StoreSet::stldViolation_withmerge(Dinst* ld_dinst, Dinst* st_dinst)
 /* add a new st/ld violation {{{1 */
 {
   I(st_dinst->getInst()->isStore());
@@ -251,7 +251,7 @@ SSID_t StoreSet::mergeset(SSID_t id1, SSID_t id2)
 }
 /* }}} */
 
-void StoreSet::VPC_misspredict(Dinst *ld_dinst, uint64_t st_pc)
+void StoreSet::VPC_misspredict(Dinst* ld_dinst, uint64_t st_pc)
 /* add a new st/ld violation {{{1 */
 {
   I(st_pc);
@@ -265,12 +265,12 @@ void StoreSet::VPC_misspredict(Dinst *ld_dinst, uint64_t st_pc)
 }
 /* }}} */
 
-void StoreSet::assign_SSID(Dinst *dinst, SSID_t target_SSID) {
+void StoreSet::assign_SSID(Dinst* dinst, SSID_t target_SSID) {
   /* force this dinst to join the specified set (for merging) {{{1 */
   SSID_t   inst_SSID = dinst->getSSID();
   uint64_t inst_pc   = dinst->getPC();
   if (isValidSSID(inst_SSID)) {
-    Dinst *lfs_dinst = get_LFS(inst_SSID);
+    Dinst* lfs_dinst = get_LFS(inst_SSID);
     if (lfs_dinst != nullptr) {
       // if(dinst->getID() == lfs_dinst->getID()){ //is this store or load the most recent from the set
       // if(dinst->getpersistentID() == lfs_dinst->getpersistentID()){ //is this store or load the most recent from the set

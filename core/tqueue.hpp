@@ -19,8 +19,8 @@ ESESC; see the file COPYING.  If not, write to the  Free Software Foundation, 59
 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 */
 
-#include <cstdlib>
 #include <algorithm>
+#include <cstdlib>
 #include <vector>
 
 #include "fmt/format.h"
@@ -268,10 +268,7 @@ public:
 
 template <class Data, class Time>
 TQueue<Data, Time>::TQueue(uint32_t MaxTimeDiff)
-    : AccessSize(MaxTimeDiff)
-    , AccessMask(AccessSize - 1)
-    , access(AccessSize)
-    , accessTail(AccessSize) {
+    : AccessSize(MaxTimeDiff), AccessMask(AccessSize - 1), access(AccessSize), accessTail(AccessSize) {
   I(AccessSize > 7);
   I((AccessSize & (AccessSize - 1)) == 0);
 

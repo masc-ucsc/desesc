@@ -9,7 +9,7 @@
 void Config::init(const std::string f) {
   filename = f;
 
-  const char *e = getenv("DESESCCONF");
+  const char* e = getenv("DESESCCONF");
   if (e) {
     filename = e;
   }
@@ -28,14 +28,14 @@ void Config::exit_on_error() {
   }
 
   fmt::print("\n");
-  for (const auto &e : errors) {
+  for (const auto& e : errors) {
     fmt::print("ERROR:{}\n", e);
   }
 
   abort();  // Abort no exit to avoid the likely seg-faults of a bad configuration
 }
 
-bool Config::check(const std::string &block, const std::string &name) {
+bool Config::check(const std::string& block, const std::string& name) {
   if (block.empty()) {
     errors.emplace_back(fmt::format("section is empty for configuration:{}\n", filename));
     return false;
@@ -55,7 +55,7 @@ bool Config::check(const std::string &block, const std::string &name) {
   return true;
 }
 
-std::string Config::get_string(const std::string &block, const std::string &name, const std::vector<std::string> allowed) {
+std::string Config::get_string(const std::string& block, const std::string& name, const std::vector<std::string> allowed) {
   if (!check(block, name)) {
     return "INVALID";
   }
@@ -66,7 +66,7 @@ std::string Config::get_string(const std::string &block, const std::string &name
   {
     std::string env_var = fmt::format("DESESC_{}_{}", block, name);
 
-    const char *e = getenv(env_var.c_str());
+    const char* e = getenv(env_var.c_str());
     if (e) {
       val = e;
     }
@@ -103,7 +103,7 @@ std::string Config::get_string(const std::string &block, const std::string &name
   return val;
 }
 
-std::string Config::get_string(const std::string &block, const std::string &name, size_t pos,
+std::string Config::get_string(const std::string& block, const std::string& name, size_t pos,
                                const std::vector<std::string> allowed) {
   auto val = get_block2(block, name, pos);
 
@@ -129,14 +129,14 @@ std::string Config::get_string(const std::string &block, const std::string &name
   return val;
 }
 
-std::string Config::get_string(const std::string &block, const std::string &name, size_t pos, const std::string &name2,
+std::string Config::get_string(const std::string& block, const std::string& name, size_t pos, const std::string& name2,
                                const std::vector<std::string> allowed) {
   auto block2 = get_block2(block, name, pos);
 
   {
     std::string env_var = fmt::format("DESESC_{}_{}", block2, name2);
 
-    const char *e = getenv(env_var.c_str());
+    const char* e = getenv(env_var.c_str());
     if (e) {
       std::string v{e};
 
@@ -174,7 +174,7 @@ std::string Config::get_string(const std::string &block, const std::string &name
   return val;
 }
 
-int Config::get_integer(const std::string &block, const std::string &name, int from, int to) {
+int Config::get_integer(const std::string& block, const std::string& name, int from, int to) {
   if (!check(block, name)) {
     return 0;
   }
@@ -185,7 +185,7 @@ int Config::get_integer(const std::string &block, const std::string &name, int f
   {
     std::string env_var = fmt::format("DESESC_{}_{}", block, name);
 
-    const char *e = getenv(env_var.c_str());
+    const char* e = getenv(env_var.c_str());
     if (e) {
       val      = std::atoi(e);
       env_used = true;
@@ -222,7 +222,7 @@ int Config::get_integer(const std::string &block, const std::string &name, int f
   return val;
 }
 
-int Config::get_integer(const std::string &block, const std::string &name, size_t pos, const std::string &name2, int from, int to) {
+int Config::get_integer(const std::string& block, const std::string& name, size_t pos, const std::string& name2, int from, int to) {
   auto block2 = get_block2(block, name, pos);
   if (block2.empty()) {
     return 0;
@@ -233,7 +233,7 @@ int Config::get_integer(const std::string &block, const std::string &name, size_
   {
     std::string env_var = fmt::format("DESESC_{}_{}", block2, name2);
 
-    const char *e = getenv(env_var.c_str());
+    const char* e = getenv(env_var.c_str());
     if (e) {
       val      = std::atoi(e);
       env_used = true;
@@ -270,7 +270,7 @@ int Config::get_integer(const std::string &block, const std::string &name, size_
   return val;
 }
 
-size_t Config::get_array_size(const std::string &block, const std::string &name, size_t max_size) {
+size_t Config::get_array_size(const std::string& block, const std::string& name, size_t max_size) {
   if (!check(block, name)) {
     return 0;
   }
@@ -290,7 +290,7 @@ size_t Config::get_array_size(const std::string &block, const std::string &name,
   return i;
 }
 
-int Config::get_array_integer(const std::string &block, const std::string &name, size_t pos) {
+int Config::get_array_integer(const std::string& block, const std::string& name, size_t pos) {
   if (!check(block, name)) {
     return 0;
   }
@@ -325,7 +325,7 @@ int Config::get_array_integer(const std::string &block, const std::string &name,
   return val;
 }
 
-std::string Config::get_array_string(const std::string &block, const std::string &name, size_t pos) {
+std::string Config::get_array_string(const std::string& block, const std::string& name, size_t pos) {
   if (!check(block, name)) {
     return "INVALID";
   }
@@ -357,9 +357,9 @@ std::string Config::get_array_string(const std::string &block, const std::string
   return val;
 }
 
-void Config::add_error(const std::string &err) { errors.emplace_back(err); }
+void Config::add_error(const std::string& err) { errors.emplace_back(err); }
 
-bool Config::has_entry(const std::string &block, const std::string &name) {
+bool Config::has_entry(const std::string& block, const std::string& name) {
   if (block.empty()) {
     return false;
   }
@@ -372,7 +372,7 @@ bool Config::has_entry(const std::string &block, const std::string &name) {
   return sec.contains(name);
 }
 
-bool Config::has_entry(const std::string &block, const std::string &name, size_t pos, const std::string &name2) {
+bool Config::has_entry(const std::string& block, const std::string& name, size_t pos, const std::string& name2) {
   if (!has_entry(block, name)) {
     return false;
   }
@@ -397,7 +397,7 @@ bool Config::has_entry(const std::string &block, const std::string &name, size_t
   return ent2.contains(name2);
 }
 
-bool Config::get_bool(const std::string &block, const std::string &name) {
+bool Config::get_bool(const std::string& block, const std::string& name) {
   if (!check(block, name)) {
     return false;
   }
@@ -408,7 +408,7 @@ bool Config::get_bool(const std::string &block, const std::string &name) {
   {
     std::string env_var = fmt::format("DESESC_{}_{}", block, name);
 
-    const char *e = getenv(env_var.c_str());
+    const char* e = getenv(env_var.c_str());
     if (e) {
       val      = strcasecmp(e, "true") == 0;
       env_used = true;
@@ -430,7 +430,7 @@ bool Config::get_bool(const std::string &block, const std::string &name) {
   return val;
 }
 
-bool Config::get_bool(const std::string &block, const std::string &name, size_t pos, const std::string &name2) {
+bool Config::get_bool(const std::string& block, const std::string& name, size_t pos, const std::string& name2) {
   if (!check(block, name)) {
     return false;
   }
@@ -462,7 +462,7 @@ bool Config::get_bool(const std::string &block, const std::string &name, size_t 
   {
     std::string env_var = fmt::format("DESESC_{}_{}", block, name);
 
-    const char *e = getenv(env_var.c_str());
+    const char* e = getenv(env_var.c_str());
     if (e) {
       val      = strcasecmp(e, "true") == 0;
       env_used = true;
@@ -484,7 +484,7 @@ bool Config::get_bool(const std::string &block, const std::string &name, size_t 
   return val;
 }
 
-int Config::check_power2(const std::string &block, const std::string &name, int v) {
+int Config::check_power2(const std::string& block, const std::string& name, int v) {
   if (v == 0) {
     return 0;
   }
@@ -501,7 +501,7 @@ int Config::check_power2(const std::string &block, const std::string &name, int 
   return v;
 }
 
-std::string Config::get_block2(const std::string &block, const std::string &name, size_t pos) {
+std::string Config::get_block2(const std::string& block, const std::string& name, size_t pos) {
   if (!check(block, name)) {
     return "";
   }
@@ -532,7 +532,7 @@ std::string Config::get_block2(const std::string &block, const std::string &name
   return val;
 }
 
-void Config::add_used(const std::string &block, const std::string &name, size_t pos, const std::string &val) {
+void Config::add_used(const std::string& block, const std::string& name, size_t pos, const std::string& val) {
   if (used[block].second.size() <= pos) {
     used[block].second.resize(pos + 1);
     used[block].first = name;
@@ -541,7 +541,7 @@ void Config::add_used(const std::string &block, const std::string &name, size_t 
 }
 
 void Config::dump(int fd) {
-  for (const auto &u : used) {
+  for (const auto& u : used) {
     auto str = fmt::format("[{}]\n", u.first);
     auto sz  = ::write(fd, str.c_str(), str.size());
     (void)sz;
@@ -551,7 +551,7 @@ void Config::dump(int fd) {
     } else {
       str        = fmt::format("{} = {{ ", u.second.first);
       bool first = true;
-      for (const auto &e : u.second.second) {
+      for (const auto& e : u.second.second) {
         if (first) {
           str += fmt::format("{}", e);
         } else {
@@ -565,13 +565,13 @@ void Config::dump(int fd) {
   }
 }
 
-int Config::get_power2(const std::string &block, const std::string &name, int from, int to) {
+int Config::get_power2(const std::string& block, const std::string& name, int from, int to) {
   int v = get_integer(block, name, from, to);
 
   return check_power2(block, name, v);
 }
 
-int Config::get_power2(const std::string &block, const std::string &name, size_t pos, const std::string &name2, int from, int to) {
+int Config::get_power2(const std::string& block, const std::string& name, size_t pos, const std::string& name2, int from, int to) {
   int v = get_integer(block, name, pos, name2, from, to);
 
   return check_power2(block, name, v);

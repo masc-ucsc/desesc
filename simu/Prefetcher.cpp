@@ -13,7 +13,7 @@
 
 // #define PREFETCH_HIST 1
 
-Prefetcher::Prefetcher(MemObj *_l1, int hartid)
+Prefetcher::Prefetcher(MemObj* _l1, int hartid)
     /* constructor {{{1 */
     : DL1(_l1)
     , avgPrefetchNum(fmt::format("P({})_pref_avgPrefetchNum", hartid))
@@ -56,7 +56,7 @@ Prefetcher::Prefetcher(MemObj *_l1, int hartid)
 }
 /* }}} */
 
-void Prefetcher::exe(Dinst *dinst)
+void Prefetcher::exe(Dinst* dinst)
 /* forward bus read {{{1 */
 {
   if (apred == nullptr) {
@@ -100,7 +100,7 @@ void Prefetcher::exe(Dinst *dinst)
 }
 /* }}} */
 
-void Prefetcher::ret(Dinst *dinst)
+void Prefetcher::ret(Dinst* dinst)
 // {{{1 update prefetcher state at retirement
 {
   if (apred == nullptr) {
@@ -157,7 +157,7 @@ void Prefetcher::nextPrefetch()
     histPrefetchDelta.sample((paddr - pending_preq_addr), pending_statsFlag, 1);
 #endif
     pending_preq_addr = paddr;
-    CallbackBase *cb  = 0;
+    CallbackBase* cb  = 0;
     if (pending_chain_fetch) {
       cb = FetchEngine::chainPrefDoneCB::create(pending_chain_fetch, pending_preq_pc, curPrefetch + 4, paddr);
     }

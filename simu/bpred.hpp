@@ -37,20 +37,24 @@ class MemObj;
 class BPred {
 public:
   static std::string to_s(Outcome o) {
-    if (o==Outcome::Correct)
+    if (o == Outcome::Correct) {
       return "Correct";
-    if (o==Outcome::None)
+    }
+    if (o == Outcome::None) {
       return "None";
-    if (o==Outcome::NoBTB)
+    }
+    if (o == Outcome::NoBTB) {
       return "NoBTB";
-    if (o==Outcome::Miss)
+    }
+    if (o == Outcome::Miss) {
       return "Miss";
+    }
     return "BUG";
   }
   typedef int64_t HistoryType;
   class Hash4HistoryType {
   public:
-    size_t operator()(const HistoryType &addr) const { return ((addr) ^ (addr >> 16)); }
+    size_t operator()(const HistoryType& addr) const { return ((addr) ^ (addr >> 16)); }
   };
 
   HistoryType calcHist(Addr_t pc) const {
@@ -66,7 +70,7 @@ public:
 
 protected:
   const int32_t id;
-  std::string full_name;
+  std::string   full_name;
 
   Stats_cntr nHit;   // N.B. predictors should not update these counters directly
   Stats_cntr nMiss;  // in their predict() function.
@@ -75,14 +79,14 @@ protected:
   int32_t maxCores;
 
 public:
-  BPred(int32_t i, const std::string &section, const std::string &sname, const std::string &name);
+  BPred(int32_t i, const std::string& section, const std::string& sname, const std::string& name);
   virtual ~BPred();
 
-  virtual Outcome predict(Dinst *dinst, bool doUpdate, bool doStats) = 0;
-  virtual void    fetchBoundaryBegin(Dinst *dinst);  // If the branch predictor support fetch boundary model, do it
+  virtual Outcome predict(Dinst* dinst, bool doUpdate, bool doStats) = 0;
+  virtual void    fetchBoundaryBegin(Dinst* dinst);  // If the branch predictor support fetch boundary model, do it
   virtual void    fetchBoundaryEnd();                // If the branch predictor support fetch boundary model, do it
 
-  Outcome doPredict(Dinst *dinst, bool doStats = true) {
+  Outcome doPredict(Dinst* dinst, bool doStats = true) {
     Outcome pred = predict(dinst, true, doStats);
     if (pred == Outcome::None) {
       return pred;
@@ -98,7 +102,7 @@ public:
     return pred;
   }
 
-  void update(Dinst *dinst) { predict(dinst, true, false); }
+  void update(Dinst* dinst) { predict(dinst, true, false); }
 };
 
 class BPRas : public BPred {
@@ -111,11 +115,11 @@ private:
 
 protected:
 public:
-  BPRas(int32_t i, const std::string &section, const std::string &sname);
+  BPRas(int32_t i, const std::string& section, const std::string& sname);
   ~BPRas();
-  Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
+  Outcome predict(Dinst* dinst, bool doUpdate, bool doStats);
 
-  void tryPrefetch(MemObj *il1, bool doStats, int degree);
+  void tryPrefetch(MemObj* il1, bool doStats, int degree);
 };
 
 class BPBTB {
@@ -123,7 +127,7 @@ private:
   Stats_cntr nHit;
   Stats_cntr nMiss;
   Stats_cntr nHitLabel;  // hits to the icache label (ibtb)
-  DOLC      *dolc;
+  DOLC*      dolc;
   bool       btbicache;
   uint64_t   btbHistorySize;
 
@@ -141,15 +145,15 @@ private:
 
   typedef CacheGeneric<BTBState, Addr_t> BTBCache;
 
-  BTBCache *data;
+  BTBCache* data;
 
 protected:
 public:
-  BPBTB(int32_t i, const std::string &section, const std::string &sname, const std::string &name = "btb");
+  BPBTB(int32_t i, const std::string& section, const std::string& sname, const std::string& name = "btb");
   ~BPBTB();
 
-  Outcome predict(Addr_t pc, Dinst *dinst, bool doUpdate, bool doStats);
-  void    updateOnly(Addr_t pc, Dinst *dinst);
+  Outcome predict(Addr_t pc, Dinst* dinst, bool doUpdate, bool doStats);
+  void    updateOnly(Addr_t pc, Dinst* dinst);
 };
 
 class BPOracle : public BPred {
@@ -158,10 +162,10 @@ private:
 
 protected:
 public:
-  BPOracle(int32_t i, const std::string &section, const std::string &sname)
+  BPOracle(int32_t i, const std::string& section, const std::string& sname)
       : BPred(i, section, sname, "Oracle"), btb(i, section, sname) {}
 
-  Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
+  Outcome predict(Dinst* dinst, bool doUpdate, bool doStats);
 };
 
 class BPNotTaken : public BPred {
@@ -170,23 +174,23 @@ private:
 
 protected:
 public:
-  BPNotTaken(int32_t i, const std::string &section, const std::string &sname)
+  BPNotTaken(int32_t i, const std::string& section, const std::string& sname)
       : BPred(i, section, sname, "NotTaken"), btb(i, section, sname) {
     // Done
   }
 
-  Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
+  Outcome predict(Dinst* dinst, bool doUpdate, bool doStats);
 };
 
 class BPMiss : public BPred {
 private:
 protected:
 public:
-  BPMiss(int32_t i, const std::string &section, const std::string &sname) : BPred(i, section, sname, "Miss") {
+  BPMiss(int32_t i, const std::string& section, const std::string& sname) : BPred(i, section, sname, "Miss") {
     // Done
   }
 
-  Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
+  Outcome predict(Dinst* dinst, bool doUpdate, bool doStats);
 };
 
 class BPNotTakenEnhanced : public BPred {
@@ -195,12 +199,12 @@ private:
 
 protected:
 public:
-  BPNotTakenEnhanced(int32_t i, const std::string &section, const std::string &sname)
+  BPNotTakenEnhanced(int32_t i, const std::string& section, const std::string& sname)
       : BPred(i, section, sname, "NotTakenEnhanced"), btb(i, section, sname) {
     // Done
   }
 
-  Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
+  Outcome predict(Dinst* dinst, bool doUpdate, bool doStats);
 };
 
 class BPTaken : public BPred {
@@ -209,12 +213,12 @@ private:
 
 protected:
 public:
-  BPTaken(int32_t i, const std::string &section, const std::string &sname)
+  BPTaken(int32_t i, const std::string& section, const std::string& sname)
       : BPred(i, section, sname, "Taken"), btb(i, section, sname) {
     // Done
   }
 
-  Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
+  Outcome predict(Dinst* dinst, bool doUpdate, bool doStats);
 };
 
 class BP2bit : public BPred {
@@ -227,11 +231,11 @@ private:
 
 protected:
 public:
-  BP2bit(int32_t i, const std::string &section, const std::string &sname);
+  BP2bit(int32_t i, const std::string& section, const std::string& sname);
 
-  void    fetchBoundaryBegin(Dinst *dinst);
+  void    fetchBoundaryBegin(Dinst* dinst);
   void    fetchBoundaryEnd();
-  Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
+  Outcome predict(Dinst* dinst, bool doUpdate, bool doStats);
 };
 
 // Similar to BP2bit but try to learn only for taken, and bias to non-taken unless confident
@@ -242,15 +246,15 @@ private:
   SCTable table;
 
   Addr_t pc;
-  bool one_prediction_done;
+  bool   one_prediction_done;
 
 protected:
 public:
-  BP2bitL0(int32_t i, const std::string &section, const std::string &sname);
+  BP2bitL0(int32_t i, const std::string& section, const std::string& sname);
 
-  void    fetchBoundaryBegin(Dinst *dinst);
+  void    fetchBoundaryBegin(Dinst* dinst);
   void    fetchBoundaryEnd();
-  Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
+  Outcome predict(Dinst* dinst, bool doUpdate, bool doStats);
 };
 class IMLIBest;
 
@@ -264,11 +268,11 @@ private:
 
 protected:
 public:
-  BPIMLI(int32_t i, const std::string &section, const std::string &sname);
+  BPIMLI(int32_t i, const std::string& section, const std::string& sname);
 
-  void    fetchBoundaryBegin(Dinst *dinst);
+  void    fetchBoundaryBegin(Dinst* dinst);
   void    fetchBoundaryEnd();
-  Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
+  Outcome predict(Dinst* dinst, bool doUpdate, bool doStats);
 };
 
 // FIXME: convert to just class Tahead;
@@ -292,11 +296,11 @@ private:
 
 protected:
 public:
-  BPTahead(int32_t i, const std::string &section, const std::string &sname);
+  BPTahead(int32_t i, const std::string& section, const std::string& sname);
 
-  void    fetchBoundaryBegin(Dinst *dinst);
+  void    fetchBoundaryBegin(Dinst* dinst);
   void    fetchBoundaryEnd();
-  Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
+  Outcome predict(Dinst* dinst, bool doUpdate, bool doStats);
 };
 
 // FIXME: convert to just class Tahead;
@@ -320,14 +324,12 @@ private:
 
 protected:
 public:
-  BPTahead1(int32_t i, const std::string &section, const std::string &sname);
+  BPTahead1(int32_t i, const std::string& section, const std::string& sname);
 
-  void    fetchBoundaryBegin(Dinst *dinst);
+  void    fetchBoundaryBegin(Dinst* dinst);
   void    fetchBoundaryEnd();
-  Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
+  Outcome predict(Dinst* dinst, bool doUpdate, bool doStats);
 };
-
-
 
 // class PREDICTOR;
 #include "predictor.hpp"
@@ -343,11 +345,11 @@ private:
 
 protected:
 public:
-  BPSuperbp(int32_t i, const std::string &section, const std::string &sname);
+  BPSuperbp(int32_t i, const std::string& section, const std::string& sname);
 
-  void    fetchBoundaryBegin(Dinst *dinst);
+  void    fetchBoundaryBegin(Dinst* dinst);
   void    fetchBoundaryEnd();
-  Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
+  Outcome predict(Dinst* dinst, bool doUpdate, bool doStats);
 };
 
 class BP2level : public BPred {
@@ -363,15 +365,15 @@ private:
   SCTable globalTable;
 
   DOLC         dolc;
-  HistoryType *historyTable;  // LHR
+  HistoryType* historyTable;  // LHR
   bool         useDolc;
 
 protected:
 public:
-  BP2level(int32_t i, const std::string &section, const std::string &sname);
+  BP2level(int32_t i, const std::string& section, const std::string& sname);
   ~BP2level();
 
-  Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
+  Outcome predict(Dinst* dinst, bool doUpdate, bool doStats);
 };
 
 class BPHybrid : public BPred {
@@ -390,10 +392,10 @@ private:
 
 protected:
 public:
-  BPHybrid(int32_t i, const std::string &section, const std::string &sname);
+  BPHybrid(int32_t i, const std::string& section, const std::string& sname);
   ~BPHybrid();
 
-  Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
+  Outcome predict(Dinst* dinst, bool doUpdate, bool doStats);
 };
 
 class BP2BcgSkew : public BPred {
@@ -418,10 +420,10 @@ private:
 
 protected:
 public:
-  BP2BcgSkew(int32_t i, const std::string &section, const std::string &sname);
+  BP2BcgSkew(int32_t i, const std::string& section, const std::string& sname);
   ~BP2BcgSkew();
 
-  Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
+  Outcome predict(Dinst* dinst, bool doUpdate, bool doStats);
 };
 
 class BPyags : public BPred {
@@ -437,20 +439,20 @@ private:
 
   HistoryType ghr;  // Global History Register
 
-  uint8_t    *CacheTaken;
+  uint8_t*    CacheTaken;
   HistoryType CacheTakenMask;
   HistoryType CacheTakenTagMask;
 
-  uint8_t    *CacheNotTaken;
+  uint8_t*    CacheNotTaken;
   HistoryType CacheNotTakenMask;
   HistoryType CacheNotTakenTagMask;
 
 protected:
 public:
-  BPyags(int32_t i, const std::string &section, const std::string &sname);
+  BPyags(int32_t i, const std::string& section, const std::string& sname);
   ~BPyags();
 
-  Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
+  Outcome predict(Dinst* dinst, bool doUpdate, bool doStats);
 };
 
 class BPOgehl : public BPred {
@@ -468,31 +470,31 @@ private:
   int32_t THETAUP;
   int32_t PREDUP;
 
-  int64_t *ghist;
-  int32_t *histLength;
-  int32_t *usedHistLength;
+  int64_t* ghist;
+  int32_t* histLength;
+  int32_t* usedHistLength;
 
-  int32_t *T;
+  int32_t* T;
   int32_t  AC;
   uint8_t  miniTag;
-  uint8_t *MINITAG;
+  uint8_t* MINITAG;
 
-  uint8_t genMiniTag(const Dinst *dinst) const {
+  uint8_t genMiniTag(const Dinst* dinst) const {
     Addr_t t = dinst->getPC() >> 2;
     return (uint8_t)((t ^ (t >> 3)) & 3);
   }
 
-  char  **pred;
+  char**  pred;
   int32_t TC;
 
 protected:
-  int32_t geoidx(uint64_t Add, int64_t *histo, int32_t m, int32_t funct);
+  int32_t geoidx(uint64_t Add, int64_t* histo, int32_t m, int32_t funct);
 
 public:
-  BPOgehl(int32_t i, const std::string &section, const std::string &sname);
+  BPOgehl(int32_t i, const std::string& section, const std::string& sname);
   ~BPOgehl();
 
-  Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
+  Outcome predict(Dinst* dinst, bool doUpdate, bool doStats);
 };
 
 class LoopPredictor {
@@ -513,7 +515,7 @@ private:
   };
 
   const uint32_t nentries;
-  LoopEntry     *table;  // TODO: add assoc, now just BIG
+  LoopEntry*     table;  // TODO: add assoc, now just BIG
 
 public:
   LoopPredictor(int size);
@@ -544,10 +546,10 @@ private:
 
 protected:
 public:
-  BPTData(int32_t i, const std::string &section, const std::string &sname);
+  BPTData(int32_t i, const std::string& section, const std::string& sname);
   ~BPTData() {}
 
-  Outcome predict(Dinst *dinst, bool doUpdate, bool doStats);
+  Outcome predict(Dinst* dinst, bool doUpdate, bool doStats);
 };
 
 /*LOAD BRANCH PREDICTOR (LDBP)*/
@@ -571,12 +573,12 @@ private:
 
 public:
   const int DOC_SIZE;
-  MemObj   *DL1;
+  MemObj*   DL1;
 
-  BPLdbp(int32_t i, const std::string &section, const std::string &sname, MemObj *dl1 = 0);
+  BPLdbp(int32_t i, const std::string& section, const std::string& sname, MemObj* dl1 = 0);
   ~BPLdbp() {}
 
-  Outcome  predict(Dinst *dinst, bool doUpdate, bool doStats);
+  Outcome  predict(Dinst* dinst, bool doUpdate, bool doStats);
   bool     outcome_calculator(BrOpType br_op, Data_t br_data1, Data_t br_data2);
   BrOpType branch_type(Addr_t brpc);
 
@@ -645,7 +647,7 @@ public:
   std::vector<data_outcome_correlator> doc_table = std::vector<data_outcome_correlator>(DOC_SIZE);
   // std::vector<data_outcome_correlator> doc_table;
 
-  int outcome_doc(Dinst *dinst, Addr_t _tag, bool outcome) {
+  int outcome_doc(Dinst* dinst, Addr_t _tag, bool outcome) {
     (void)dinst;
     // tag is 2n bits
     Addr_t t     = (_tag >> (int)log2i(DOC_SIZE)) & (DOC_SIZE - 1);  // upper n bits for tag
@@ -664,8 +666,8 @@ class BPredictor {
 private:
   const int32_t id;
   const bool    SMTcopy;
-  MemObj       *il1;  // For prefetch
-  MemObj       *dl1;  //
+  MemObj*       il1;  // For prefetch
+  MemObj*       dl1;  //
 
   std::unique_ptr<BPRas> ras;
   std::shared_ptr<BPred> pred1;
@@ -719,18 +721,18 @@ private:
   Stats_cntr nUnFixes;
 
 protected:
-  Outcome predict1(Dinst *dinst);
-  Outcome predict2(Dinst *dinst);
-  Outcome predict3(Dinst *dinst);
+  Outcome predict1(Dinst* dinst);
+  Outcome predict2(Dinst* dinst);
+  Outcome predict3(Dinst* dinst);
 
 public:
-  BPredictor(int32_t i, MemObj *il1, MemObj *DL1, std::shared_ptr<BPredictor> bpred = nullptr);
+  BPredictor(int32_t i, MemObj* il1, MemObj* DL1, std::shared_ptr<BPredictor> bpred = nullptr);
 
-  static std::unique_ptr<BPred> getBPred(int32_t id, const std::string &sname, const std::string &sec, MemObj *dl1 = 0);
+  static std::unique_ptr<BPred> getBPred(int32_t id, const std::string& sname, const std::string& sec, MemObj* dl1 = 0);
 
-  void        fetchBoundaryBegin(Dinst *dinst);
+  void        fetchBoundaryBegin(Dinst* dinst);
   void        fetchBoundaryEnd();
-  TimeDelta_t predict(Dinst *dinst, bool *fastfix);
-  bool        Miss_Prediction(Dinst *dinst);
-  void        dump(const std::string &str) const;
+  TimeDelta_t predict(Dinst* dinst, bool* fastfix);
+  bool        Miss_Prediction(Dinst* dinst);
+  void        dump(const std::string& str) const;
 };

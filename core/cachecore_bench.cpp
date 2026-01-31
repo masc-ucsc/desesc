@@ -14,7 +14,7 @@ public:
 
 using MyCacheType = CacheGeneric<SampleState, long>;
 
-MyCacheType *cache;
+MyCacheType* cache;
 
 timeval stTime;
 timeval endTime;
@@ -27,7 +27,7 @@ void startBench() {
   gettimeofday(&stTime, 0);
 }
 
-void endBench(const char *str) {
+void endBench(const char* str) {
   gettimeofday(&endTime, 0);
 
   double usecs = (endTime.tv_sec - stTime.tv_sec) * 1000000 + (endTime.tv_usec - stTime.tv_usec);
@@ -41,10 +41,10 @@ double A[MSIZE][MSIZE];
 double B[MSIZE][MSIZE];
 double C[MSIZE][MSIZE];
 
-void benchMatrix(const char *str) {
+void benchMatrix(const char* str) {
   startBench();
 
-  MyCacheType::CacheLine *line;
+  MyCacheType::CacheLine* line;
 
   for (int32_t i = 0; i < MSIZE; i++) {
     for (int32_t j = 0; j < MSIZE; j++) {
@@ -122,7 +122,7 @@ static void setup_config() {
   file.close();
 }
 
-static void BM_cachecore(benchmark::State &state) {
+static void BM_cachecore(benchmark::State& state) {
   Report::init();
   Config::init("cachecore.toml");
 
@@ -132,7 +132,7 @@ static void BM_cachecore(benchmark::State &state) {
   for (int32_t i = 0; i < assoc; i++) {
     uint64_t addr = (i << 8) + 0xfa;
 
-    MyCacheType::CacheLine *line = cache->findLine(addr);
+    MyCacheType::CacheLine* line = cache->findLine(addr);
     if (line) {
       fmt::print("ERROR: Line {:x} ({:x}) found\n", cache->calcAddr4Tag(line->getTag()), addr);
       exit(-1);
@@ -144,7 +144,7 @@ static void BM_cachecore(benchmark::State &state) {
   for (int32_t i = 0; i < assoc; i++) {
     uint64_t addr = (i << 8) + 0xFa;
 
-    MyCacheType::CacheLine *line = cache->findLine(addr);
+    MyCacheType::CacheLine* line = cache->findLine(addr);
     if (line == 0) {
       fmt::print("ERROR: Line ({:x}) NOT found\n", addr);
       exit(-1);
@@ -175,7 +175,7 @@ BENCHMARK(BM_cachecore)->Arg(2);
 BENCHMARK(BM_cachecore)->Arg(4);
 #endif
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   setup_config();
   benchmark::Initialize(&argc, argv);
   benchmark::RunSpecifiedBenchmarks();

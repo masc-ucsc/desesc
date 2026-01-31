@@ -8,11 +8,11 @@
 
 // #define DUMP_TRACE 1
 
-ClusterScheduler::ClusterScheduler(const ResourcesPoolType &ores) : res(ores) {}
+ClusterScheduler::ClusterScheduler(const ResourcesPoolType& ores) : res(ores) {}
 
 ClusterScheduler::~ClusterScheduler() {}
 
-RoundRobinClusterScheduler::RoundRobinClusterScheduler(const ResourcesPoolType &ores) : ClusterScheduler(ores) {
+RoundRobinClusterScheduler::RoundRobinClusterScheduler(const ResourcesPoolType& ores) : ClusterScheduler(ores) {
   for (const auto op : Opcodes) {
     nres[op] = res[op].size();
   }
@@ -20,8 +20,8 @@ RoundRobinClusterScheduler::RoundRobinClusterScheduler(const ResourcesPoolType &
 
 RoundRobinClusterScheduler::~RoundRobinClusterScheduler() {}
 
-std::shared_ptr<Resource> RoundRobinClusterScheduler::getResource(Dinst *dinst) {
-  const auto *inst = dinst->getInst();
+std::shared_ptr<Resource> RoundRobinClusterScheduler::getResource(Dinst* dinst) {
+  const auto* inst = dinst->getInst();
   auto        op   = inst->getOpcode();
 
   unsigned int i = pos[op];
@@ -37,12 +37,12 @@ std::shared_ptr<Resource> RoundRobinClusterScheduler::getResource(Dinst *dinst) 
   return res[op][i];
 }
 
-LRUClusterScheduler::LRUClusterScheduler(const ResourcesPoolType &ores) : ClusterScheduler(ores) {}
+LRUClusterScheduler::LRUClusterScheduler(const ResourcesPoolType& ores) : ClusterScheduler(ores) {}
 
 LRUClusterScheduler::~LRUClusterScheduler() {}
 
-std::shared_ptr<Resource> LRUClusterScheduler::getResource(Dinst *dinst) {
-  const auto *inst = dinst->getInst();
+std::shared_ptr<Resource> LRUClusterScheduler::getResource(Dinst* dinst) {
+  const auto* inst = dinst->getInst();
   auto        op   = inst->getOpcode();
 
   std::shared_ptr<Resource> touse = res[op][0];
@@ -57,7 +57,7 @@ std::shared_ptr<Resource> LRUClusterScheduler::getResource(Dinst *dinst) {
   return touse;
 }
 
-UseClusterScheduler::UseClusterScheduler(const ResourcesPoolType &ores) : ClusterScheduler(ores) {
+UseClusterScheduler::UseClusterScheduler(const ResourcesPoolType& ores) : ClusterScheduler(ores) {
   for (const auto op : Opcodes) {
     nres[op] = res[op].size();
   }
@@ -65,8 +65,8 @@ UseClusterScheduler::UseClusterScheduler(const ResourcesPoolType &ores) : Cluste
 
 UseClusterScheduler::~UseClusterScheduler() {}
 
-std::shared_ptr<Resource> UseClusterScheduler::getResource(Dinst *dinst) {
-  const auto *inst = dinst->getInst();
+std::shared_ptr<Resource> UseClusterScheduler::getResource(Dinst* dinst) {
+  const auto* inst = dinst->getInst();
   auto        op   = inst->getOpcode();
 
   auto p = pos[op];

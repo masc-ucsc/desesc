@@ -52,15 +52,15 @@ bool InOrderProcessor::advance_clock() {
   return advance_clock_drain();
 }
 
-void InOrderProcessor::executing(Dinst *dinst) { (void)dinst; }
+void InOrderProcessor::executing(Dinst* dinst) { (void)dinst; }
 
-void InOrderProcessor::executed(Dinst *dinst) { (void)dinst; }
+void InOrderProcessor::executed(Dinst* dinst) { (void)dinst; }
 
-void InOrderProcessor::flushed(Dinst *dinst) { (void)dinst; }
-void InOrderProcessor::try_flush(Dinst *dinst) { (void)dinst; }
+void InOrderProcessor::flushed(Dinst* dinst) { (void)dinst; }
+void InOrderProcessor::try_flush(Dinst* dinst) { (void)dinst; }
 
-StallCause InOrderProcessor::add_inst(Dinst *dinst) {
-  const Instruction *inst = dinst->getInst();
+StallCause InOrderProcessor::add_inst(Dinst* dinst) {
+  const Instruction* inst = dinst->getInst();
 
   size_t smt_local = dinst->getFlowId() % get_smt_size();
 
@@ -184,7 +184,7 @@ void InOrderProcessor::retire() { /*{{{*/
   // Pass all the ready instructions to the rrob
   bool stats = false;
   while (!ROB.empty()) {
-    Dinst *dinst = ROB.top();
+    Dinst* dinst = ROB.top();
     stats        = dinst->has_stats();
 
     I(hid == dinst->getFlowId());
@@ -204,7 +204,7 @@ void InOrderProcessor::retire() { /*{{{*/
   rrobUsed.sample(rROB.size(), stats);
 
   for (uint16_t i = 0; i < RetireWidth && !rROB.empty(); i++) {
-    Dinst *dinst = rROB.top();
+    Dinst* dinst = rROB.top();
 
     if (!dinst->isExecuted()) {
       break;
@@ -235,7 +235,7 @@ void InOrderProcessor::retire() { /*{{{*/
 
 } /*}}}*/
 
-void InOrderProcessor::replay(Dinst *dinst) { /*{{{*/
+void InOrderProcessor::replay(Dinst* dinst) { /*{{{*/
 
   // FIXME: foo should be equal to the number of in-flight instructions (check OoOProcessor)
   size_t foo = 1;

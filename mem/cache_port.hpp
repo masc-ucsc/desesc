@@ -38,28 +38,28 @@ protected:
 
   Time_t blockTime;
 
-  std::list<MemRequest *> overflow;
+  std::list<MemRequest*> overflow;
 
-  Time_t snoopFillBankUse(MemRequest *mreq);
+  Time_t snoopFillBankUse(MemRequest* mreq);
 
   Time_t nextBankSlot(Addr_t addr, bool en);
-  void   req2(MemRequest *mreq);
+  void   req2(MemRequest* mreq);
 
 public:
-  Cache_port(const std::string &section, const std::string &name);
+  Cache_port(const std::string& section, const std::string& name);
   ~Cache_port() = default;
 
-  void   blockFill(MemRequest *mreq);
-  void   req(MemRequest *mreq);
-  void   startPrefetch(MemRequest *mreq);
-  Time_t reqDone(MemRequest *mreq, bool retrying);
-  Time_t reqAckDone(MemRequest *mreq);
-  void   reqRetire(MemRequest *mreq);
+  void   blockFill(MemRequest* mreq);
+  void   req(MemRequest* mreq);
+  void   startPrefetch(MemRequest* mreq);
+  Time_t reqDone(MemRequest* mreq, bool retrying);
+  Time_t reqAckDone(MemRequest* mreq);
+  void   reqRetire(MemRequest* mreq);
 
-  void reqAck(MemRequest *mreq);
-  void setState(MemRequest *mreq);
-  void setStateAck(MemRequest *mreq);
-  void disp(MemRequest *mreq);
+  void reqAck(MemRequest* mreq);
+  void setState(MemRequest* mreq);
+  void setStateAck(MemRequest* mreq);
+  void disp(MemRequest* mreq);
 
   bool isBusy(Addr_t addr) const;
 };

@@ -15,7 +15,7 @@ private:
 
   LSQNone lsq;
 
-  std::vector<RegType_array<Dinst *>> RAT;
+  std::vector<RegType_array<Dinst*>> RAT;
 
 protected:
   ClusterManager clusterManager;
@@ -26,21 +26,21 @@ protected:
 
   void retire();
 
-  StallCause add_inst(Dinst *dinst) override final;
-  void       try_flush(Dinst *dinst) override final;
+  StallCause add_inst(Dinst* dinst) override final;
+  void       try_flush(Dinst* dinst) override final;
   // END VIRTUAL FUNCTIONS of GProcessor
 
 public:
   InOrderProcessor(std::shared_ptr<Gmemory_system> gm, CPU_t i);
   virtual ~InOrderProcessor();
 
-  void executing(Dinst *dinst) override final;
-  void executed(Dinst *dinst) override final;
-  void flushed(Dinst *dinst) override final;
+  void executing(Dinst* dinst) override final;
+  void executed(Dinst* dinst) override final;
+  void flushed(Dinst* dinst) override final;
 
   // No LSQ speculation, so not memory replay (just populate accordingly)
-  LSQ *getLSQ() override final { return &lsq; }
-  void replay(Dinst *dinst) override final;
+  LSQ* getLSQ() override final { return &lsq; }
+  void replay(Dinst* dinst) override final;
   bool is_nuking() override final {
     I(0);
     return false;

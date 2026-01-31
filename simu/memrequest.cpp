@@ -81,7 +81,7 @@ void MemRequest::startDisp() {
   currMemObj->disp(this);
 }
 
-void MemRequest::addPendingSetStateAck(MemRequest *mreq) {
+void MemRequest::addPendingSetStateAck(MemRequest* mreq) {
   I(mreq->id < id);
   I(mreq->mt == mt_setState || mreq->mt == mt_req || mreq->mt == mt_reqAck);
   I(mt == mt_setState);
@@ -91,7 +91,7 @@ void MemRequest::addPendingSetStateAck(MemRequest *mreq) {
 }
 
 void MemRequest::setStateAckDone(TimeDelta_t lat) {
-  MemRequest *orig = setStateAckOrig;
+  MemRequest* orig = setStateAckOrig;
   if (orig == 0) {
     return;
   }
@@ -122,10 +122,10 @@ void MemRequest::setStateAckDone(TimeDelta_t lat) {
   }
 }
 
-MemRequest *MemRequest::create(MemObj *mobj, Addr_t addr, bool keep_stats, CallbackBase *cb) {
+MemRequest* MemRequest::create(MemObj* mobj, Addr_t addr, bool keep_stats, CallbackBase* cb) {
   I(mobj);
 
-  MemRequest *r = actPool.out();
+  MemRequest* r = actPool.out();
 
   r->addr                    = addr;
   r->homeMemObj              = mobj;
@@ -161,7 +161,7 @@ MemRequest *MemRequest::create(MemObj *mobj, Addr_t addr, bool keep_stats, Callb
 
 #ifdef DEBUG_CALLPATH
 void MemRequest::dump_all() {
-  MemRequest *mreq = actPool.firstInUse();
+  MemRequest* mreq = actPool.firstInUse();
   while (mreq) {
     mreq->dump_calledge(0, true);
     mreq = actPool.nextInUse(mreq);
@@ -201,7 +201,7 @@ void MemRequest::rawdump_calledge(TimeDelta_t lat, Time_t total) {
   printf("digraph path{\n");
   printf("  ce [label=\"0x%x addr id %ld delta %lu @%lld\"]\n", (unsigned int)addr, id, total, (long long)globalClock);
 
-  CacheDebugAccess *c = CacheDebugAccess::getInstance();
+  CacheDebugAccess* c = CacheDebugAccess::getInstance();
   c->mapReset();
 
   char   gname[1024];
@@ -209,7 +209,7 @@ void MemRequest::rawdump_calledge(TimeDelta_t lat, Time_t total) {
   for (size_t i = 0; i < calledge.size(); i++) {
     CallEdge ce = calledge[i];
     // get Type
-    const char *t;
+    const char* t;
     switch (ce.mt) {
       case mt_req: t = "RQ"; break;
       case mt_reqAck: t = "RA"; break;
@@ -218,7 +218,7 @@ void MemRequest::rawdump_calledge(TimeDelta_t lat, Time_t total) {
       case mt_disp: t = "DI"; break;
       default: I(0);
     }
-    const char *a;
+    const char* a;
     switch (ce.ma) {
       case ma_setInvalid: a = "I"; break;
       case ma_setValid: a = "V"; break;
@@ -230,7 +230,7 @@ void MemRequest::rawdump_calledge(TimeDelta_t lat, Time_t total) {
       default: I(0);
     }
     int         k;
-    const char *name;
+    const char* name;
     // get START NAME
     k = 0;
     if (ce.s == 0) {
@@ -279,12 +279,12 @@ void MemRequest::upce() {
   ce.ma    = ma;
   I(globalClock >= lastCallTime);
   lastCallTime  = globalClock;
-  MemRequest *p = this;
+  MemRequest* p = this;
   p->calledge.push_back(ce);
 }
 #endif
 
-void MemRequest::setNextHop(MemObj *newMemObj) {
+void MemRequest::setNextHop(MemObj* newMemObj) {
   I(currMemObj != newMemObj);
   prevMemObj = currMemObj;
   currMemObj = newMemObj;

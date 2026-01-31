@@ -57,10 +57,10 @@ protected:
     bool needsDisp() const { return state == M; }
 
     bool      shouldNotifyLowerLevels(MsgAction ma, bool incoherent) const;
-    bool      shouldNotifyHigherLevels(MemRequest *mreq, int16_t port_id) const;
+    bool      shouldNotifyHigherLevels(MemRequest* mreq, int16_t port_id) const;
     StateType getState() const { return state; };
-    StateType calcAdjustState(MemRequest *mreq) const;
-    void      adjustState(MemRequest *mreq, int16_t port_id);
+    StateType calcAdjustState(MemRequest* mreq) const;
+    void      adjustState(MemRequest* mreq, int16_t port_id);
 
     static MsgAction othersNeed(MsgAction ma) {
       switch (ma) {
@@ -106,15 +106,15 @@ protected:
     }
     void clearSharing() { nSharers = 0; }
 
-    void set(const MemRequest *mreq);
+    void set(const MemRequest* mreq);
   }; /*}}}*/
 
   typedef CacheGeneric<CState, Addr_t>            CacheType;
   typedef CacheGeneric<CState, Addr_t>::CacheLine Line;
 
-  CacheType *cacheBank;
-  MSHR      *mshr;
-  MSHR      *pmshr;
+  CacheType* cacheBank;
+  MSHR*      mshr;
+  MSHR*      pmshr;
 
   Time_t lastUpMsg;  // can not bypass up messages (races)
   Time_t inOrderUpMessageAbs(Time_t when) {
@@ -202,12 +202,12 @@ protected:
   Stats_cntr nPrefetchHitBusy;
   Stats_cntr nPrefetchDropped;
 
-  Stats_cntr *s_reqHit[ma_MAX];
-  Stats_cntr *s_reqMissLine[ma_MAX];
-  Stats_cntr *s_reqMissState[ma_MAX];
-  Stats_cntr *s_reqHalfMiss[ma_MAX];
-  Stats_cntr *s_reqAck[ma_MAX];
-  Stats_cntr *s_reqSetState[ma_MAX];
+  Stats_cntr* s_reqHit[ma_MAX];
+  Stats_cntr* s_reqMissLine[ma_MAX];
+  Stats_cntr* s_reqMissState[ma_MAX];
+  Stats_cntr* s_reqHalfMiss[ma_MAX];
+  Stats_cntr* s_reqAck[ma_MAX];
+  Stats_cntr* s_reqSetState[ma_MAX];
 
   // Statistics currently not used.
   // Only defined here to prevent bogus warnings from the powermodel.
@@ -216,14 +216,14 @@ protected:
   Addr_t maxMissAddr;
 
   // END Statistics
-  void  displaceLine(Addr_t addr, MemRequest *mreq, Line *l);
-  Line *allocateLine(Addr_t addr, MemRequest *mreq);
-  void  mustForwardReqDown(MemRequest *mreq, bool miss);
+  void  displaceLine(Addr_t addr, MemRequest* mreq, Line* l);
+  Line* allocateLine(Addr_t addr, MemRequest* mreq);
+  void  mustForwardReqDown(MemRequest* mreq, bool miss);
 
-  bool notifyLowerLevels(Line *l, MemRequest *mreq);
-  bool notifyHigherLevels(Line *l, MemRequest *mreq);
+  bool notifyLowerLevels(Line* l, MemRequest* mreq);
+  bool notifyHigherLevels(Line* l, MemRequest* mreq);
 
-  void dropPrefetch(MemRequest *mreq);
+  void dropPrefetch(MemRequest* mreq);
 
   void
   cleanup();  // FIXME: Expose this to MemObj and call it from core on ctx switch or syscall (move to public and remove callback)
@@ -231,27 +231,27 @@ protected:
   Cache_port                                      port;
 
 public:
-  CCache(Memory_system *gms, const std::string &descr_section, const std::string &name);
+  CCache(Memory_system* gms, const std::string& descr_section, const std::string& name);
   virtual ~CCache();
 
   int32_t getLineSize() const { return lineSize; }
 
   // Entry points to schedule that may schedule a do?? if needed
-  void req(MemRequest *req);
-  void blockFill(MemRequest *req);
-  void reqAck(MemRequest *req);
-  void setState(MemRequest *req);
-  void setStateAck(MemRequest *req);
-  void disp(MemRequest *req);
+  void req(MemRequest* req);
+  void blockFill(MemRequest* req);
+  void reqAck(MemRequest* req);
+  void setState(MemRequest* req);
+  void setStateAck(MemRequest* req);
+  void disp(MemRequest* req);
 
-  void tryPrefetch(Addr_t paddr, bool doStats, int degree, Addr_t pref_sign, Addr_t pc, CallbackBase *cb = 0);
+  void tryPrefetch(Addr_t paddr, bool doStats, int degree, Addr_t pref_sign, Addr_t pc, CallbackBase* cb = 0);
 
   // This do the real work
-  void doReq(MemRequest *req);
-  void doReqAck(MemRequest *req);
-  void doSetState(MemRequest *req);
-  void doSetStateAck(MemRequest *req);
-  void doDisp(MemRequest *req);
+  void doReq(MemRequest* req);
+  void doReqAck(MemRequest* req);
+  void doSetState(MemRequest* req);
+  void doSetStateAck(MemRequest* req);
+  void doDisp(MemRequest* req);
 
   TimeDelta_t ffread(Addr_t addr);
   TimeDelta_t ffwrite(Addr_t addr);
@@ -266,7 +266,7 @@ public:
   bool isJustDirectory() const { return justDirectory; }
 
   bool Modified(Addr_t addr) const {
-    Line *cl = cacheBank->findLineNoEffect(addr);
+    Line* cl = cacheBank->findLineNoEffect(addr);
     if (cl != 0) {
       return cl->isModified();
     }
@@ -275,7 +275,7 @@ public:
   }
 
   bool Exclusive(Addr_t addr) const {
-    Line *cl = cacheBank->findLineNoEffect(addr);
+    Line* cl = cacheBank->findLineNoEffect(addr);
     if (cl != 0) {
       return cl->isExclusive();
     }
@@ -284,7 +284,7 @@ public:
   }
 
   bool Shared(Addr_t addr) const {
-    Line *cl = cacheBank->findLineNoEffect(addr);
+    Line* cl = cacheBank->findLineNoEffect(addr);
     if (cl != 0) {
       return cl->isShared();
     }
@@ -292,7 +292,7 @@ public:
   }
 
   bool Invalid(Addr_t addr) const {
-    Line *cl = cacheBank->findLineNoEffect(addr);
+    Line* cl = cacheBank->findLineNoEffect(addr);
     if (cl == 0) {
       return true;
     }
@@ -300,8 +300,8 @@ public:
   }
 
 #ifndef NDEBUG
-  void trackAddress(MemRequest *mreq);
+  void trackAddress(MemRequest* mreq);
 #else
-  void trackAddress(MemRequest *mreq) { (void)mreq; }
+  void trackAddress(MemRequest* mreq) { (void)mreq; }
 #endif
 };

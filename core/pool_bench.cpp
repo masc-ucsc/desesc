@@ -49,7 +49,7 @@ timeval stTime;
 
 void start() { gettimeofday(&stTime, 0); }
 
-void finish(const char *str, int niters) {
+void finish(const char* str, int niters) {
   timeval endTime;
   gettimeofday(&endTime, 0);
 
@@ -63,7 +63,7 @@ void finish(const char *str, int niters) {
 void pool_test() {
   pool<DummyObjTest> pool1(16);
 
-  std::vector<DummyObjTest *> p(64);
+  std::vector<DummyObjTest*> p(64);
   p.clear();
 
   long long total  = 0;
@@ -73,14 +73,14 @@ void pool_test() {
 
   for (int32_t i = 0; i < 612333; i++) {
     for (char j = 0; j < 12; j++) {
-      DummyObjTest *o = pool1.out();
+      DummyObjTest* o = pool1.out();
       pooled++;
       o->put(j, j);
       p.push_back(o);
     }
 
     for (char j = 0; j < 12; j++) {
-      DummyObjTest *o = p.back();
+      DummyObjTest* o = p.back();
       total += o->get();
       p.pop_back();
       pool1.in(o);
@@ -89,14 +89,14 @@ void pool_test() {
 
   for (int32_t i = 0; i < 752333; i++) {
     for (char j = 0; j < 20; j++) {
-      DummyObjTest *o = pool1.out();
+      DummyObjTest* o = pool1.out();
       pooled++;
       o->put(j - 7, j);
       p.push_back(o);
     }
 
     for (char j = 0; j < 20; j++) {
-      DummyObjTest *o = p.back();
+      DummyObjTest* o = p.back();
       total += o->get();
       p.pop_back();
       pool1.in(o);
@@ -104,7 +104,7 @@ void pool_test() {
   }
 
   for (int32_t i = 0; i < 20552333; i++) {
-    DummyObjTest *o = pool1.out();
+    DummyObjTest* o = pool1.out();
     pooled++;
     o->put(i - 1952333, 2);
     total += o->get();
@@ -118,7 +118,7 @@ void pool_test() {
 void tspool_test() {
   tspool<DummyObjTest> pool1(16);
 
-  std::vector<DummyObjTest *> p(64);
+  std::vector<DummyObjTest*> p(64);
   p.clear();
 
   long long total  = 0;
@@ -128,14 +128,14 @@ void tspool_test() {
 
   for (int32_t i = 0; i < 612333; i++) {
     for (char j = 0; j < 12; j++) {
-      DummyObjTest *o = pool1.out();
+      DummyObjTest* o = pool1.out();
       pooled++;
       o->put(j, j);
       p.push_back(o);
     }
 
     for (char j = 0; j < 12; j++) {
-      DummyObjTest *o = p.back();
+      DummyObjTest* o = p.back();
       total += o->get();
       p.pop_back();
       pool1.in(o);
@@ -144,14 +144,14 @@ void tspool_test() {
 
   for (int32_t i = 0; i < 752333; i++) {
     for (char j = 0; j < 20; j++) {
-      DummyObjTest *o = pool1.out();
+      DummyObjTest* o = pool1.out();
       pooled++;
       o->put(j - 7, j);
       p.push_back(o);
     }
 
     for (char j = 0; j < 20; j++) {
-      DummyObjTest *o = p.back();
+      DummyObjTest* o = p.back();
       total += o->get();
       p.pop_back();
       pool1.in(o);
@@ -159,7 +159,7 @@ void tspool_test() {
   }
 
   for (int32_t i = 0; i < 20552333; i++) {
-    DummyObjTest *o = pool1.out();
+    DummyObjTest* o = pool1.out();
     pooled++;
     o->put(i - 1952333, 2);
     total += o->get();
@@ -173,7 +173,7 @@ void tspool_test() {
 
 ThreadSafeFIFO<DummyObjTest2> tsfifo;
 
-extern "C" void *bootstrap(void *threadargs) {
+extern "C" void* bootstrap(void* threadargs) {
   (void)threadargs;
   // Producer
 
@@ -194,7 +194,7 @@ extern "C" void *bootstrap(void *threadargs) {
 void test_tspool_threaded() {
   pthread_t qemu_thread;
 
-  pthread_create(&qemu_thread, 0, &bootstrap, (void *)0);
+  pthread_create(&qemu_thread, 0, &bootstrap, (void*)0);
 
   // Consumer
   start();

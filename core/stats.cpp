@@ -33,7 +33,7 @@ void Stats::unsubscribe() {
 void Stats::report_all() {
   Report::field(fmt::format("#BEGIN Stats"));
 
-  for (const auto &e : store) {
+  for (const auto& e : store) {
     e.second->report();
   }
 
@@ -41,14 +41,14 @@ void Stats::report_all() {
 }
 
 void Stats::reset_all() {
-  for (auto &e : store) {
+  for (auto& e : store) {
     e.second->reset();
   }
 }
 
 /*********************** Stats_pwr */
 
-Stats_pwr::Stats_pwr(const std::string &str) : Stats(str) { subscribe(); }
+Stats_pwr::Stats_pwr(const std::string& str) : Stats(str) { subscribe(); }
 
 void Stats_pwr::report() const { Report::field(fmt::format("pwr_{}:real={} tran={}\n", name, cntr_real, cntr_tran)); }
 
@@ -59,7 +59,7 @@ void Stats_pwr::reset() {
 
 /*********************** Stats_cntr */
 
-Stats_cntr::Stats_cntr(const std::string &str) : Stats(str) {
+Stats_cntr::Stats_cntr(const std::string& str) : Stats(str) {
   data = 0;
 
   subscribe();
@@ -71,7 +71,7 @@ void Stats_cntr::reset() { data = 0; }
 
 /*********************** Stats_avg */
 
-Stats_avg::Stats_avg(const std::string &str) : Stats(str) {
+Stats_avg::Stats_avg(const std::string& str) : Stats(str) {
   data  = 0;
   nData = 0;
 
@@ -96,7 +96,7 @@ void Stats_avg::reset() {
 
 /*********************** Stats_max */
 
-Stats_max::Stats_max(const std::string &str) : Stats(str) {
+Stats_max::Stats_max(const std::string& str) : Stats(str) {
   maxValue = 0;
   nData    = 0;
 
@@ -120,7 +120,7 @@ void Stats_max::reset() {
 
 /*********************** Stats_hist */
 
-Stats_hist::Stats_hist(const std::string &str) : Stats(str), numSample(0), cumulative(0) {
+Stats_hist::Stats_hist(const std::string& str) : Stats(str), numSample(0), cumulative(0) {
   numSample  = 0;
   cumulative = 0;
 
@@ -130,7 +130,7 @@ Stats_hist::Stats_hist(const std::string &str) : Stats(str), numSample(0), cumul
 void Stats_hist::report() const {
   int32_t maxKey = 0;
 
-  for (const auto &e : hist) {
+  for (const auto& e : hist) {
     Report::field(fmt::format("{}({})={}\n", name, e.first, e.second));
     if (e.first > maxKey) {
       maxKey = e.first;

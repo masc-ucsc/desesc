@@ -75,7 +75,7 @@ GProcessor::GProcessor(std::shared_ptr<Gmemory_system> gm, Hartid_t i)
 
 GProcessor::~GProcessor() {}
 
-void GProcessor::buildInstStats(const std::string &txt) {
+void GProcessor::buildInstStats(const std::string& txt) {
   for (const auto t : Opcodes) {
     nInst[t] = std::make_unique<Stats_cntr>(fmt::format("P({})_{}_{}:n", hid, txt, t));
   }
@@ -122,7 +122,7 @@ void GProcessor::fetch() {
     return;
   }
 
-  IBucket *bucket = pipeQ.pipeLine.newItem();
+  IBucket* bucket = pipeQ.pipeLine.newItem();
 
   auto smt_hid = hid;  // FIXME: do SMT fetch
   if (bucket) {
@@ -160,7 +160,7 @@ void GProcessor::dump_rob()
   for (uint32_t i = 0; i < size; i++) {
     uint32_t pos = ROB.getIDFromTop(i);
 
-    Dinst *dinst = ROB.getData(pos);
+    Dinst* dinst = ROB.getData(pos);
     if (dinst->isTransient()) {
       dinst->clearRATEntry();
     }
@@ -173,7 +173,7 @@ void GProcessor::flush_transient_from_rob() {
   // try the for loop scan
   // printf("gprocessor::flush_transient_rob on before new fetch!!!\n");
   while (!ROB.empty()) {
-    auto *dinst = ROB.end_data();
+    auto* dinst = ROB.end_data();
     // makes sure isExecuted in preretire()
     // printf("gprocessor::flush_transient_rob ROB size is %ld!!!\n", ROB.size());
 
@@ -214,7 +214,7 @@ void GProcessor::flush_transient_from_rob() {
       // dinst->clearRATEntry();
       while (dinst->hasPending()) {
         // printf("GPROCCESOR::flush_Rob :: isRetired() Pending for instID %ld at @Clockcycle %ld\n", dinst->getID(), globalClock);
-        Dinst *dstReady = dinst->getNextPending();
+        Dinst* dstReady = dinst->getNextPending();
         I(dstReady->isTransient());
       }
       bool hasDest = (dinst->getInst()->hasDstRegister());
@@ -370,7 +370,7 @@ void GProcessor::flush_transient_from_rob() {
   // ROB.pop_from_back();
   // }
   while (!ROB.empty_pipe_in_cluster()) {
-    auto *dinst = ROB.back_pipe_in_cluster();  // get last element from vector:back()
+    auto* dinst = ROB.back_pipe_in_cluster();  // get last element from vector:back()
 
     if (dinst->is_flush_transient() && dinst->isExecuted() && !dinst->hasDeps() && !dinst->hasPending()) {
       if (dinst->getCluster()->get_window_size() < dinst->getCluster()->get_window_maxsize() - 1) {
@@ -420,10 +420,10 @@ void GProcessor::flush_transient_from_rob() {
 void GProcessor::flush_transient_inst_from_inst_queue() {
   // printf("gprocessor::flush_transient_inst_queue Entering before new fetch!!!\n");
   while (!pipeQ.instQueue.empty()) {
-    auto *bucket = pipeQ.instQueue.end_data();
+    auto* bucket = pipeQ.instQueue.end_data();
     if (bucket) {
       while (!bucket->empty()) {
-        auto *dinst = bucket->end_data();
+        auto* dinst = bucket->end_data();
         if (dinst->isTransient()) {
           dinst->destroyTransientInst();
           bucket->pop_from_back();
@@ -480,10 +480,10 @@ uint64_t GProcessor::random_reg_gen(bool reg) {
   }
 }
 
-void GProcessor::add_inst_transient_on_branch_miss(IBucket *bucket, Addr_t pc) {
+void GProcessor::add_inst_transient_on_branch_miss(IBucket* bucket, Addr_t pc) {
   int i = 0;
   while (i < 2) {
-    Dinst  *alu_dinst;
+    Dinst*  alu_dinst;
     RegType src1 = RegType::LREG_INVALID;
     RegType src2 = RegType::LREG_INVALID;
     RegType dst1 = RegType::LREG_INVALID;
@@ -533,7 +533,7 @@ int32_t GProcessor::issue() {
   I(!pipeQ.instQueue.empty());
 
   do {
-    IBucket *bucket = pipeQ.instQueue.top();
+    IBucket* bucket = pipeQ.instQueue.top();
     do {
       I(!bucket->empty());
       if (i >= IssueWidth) {
@@ -542,7 +542,7 @@ int32_t GProcessor::issue() {
 
       I(!bucket->empty());
 
-      Dinst *dinst = bucket->top();
+      Dinst* dinst = bucket->top();
       // if (dinst->isTransient()) {
       //   printf("gProc::Issue Transient  gets from bucketsize %ld \n", bucket->size());
       // } else {
@@ -585,7 +585,7 @@ bool GProcessor::decode_stage() {
 
   // ID Stage (insert to instQueue)
   if (spaceInInstQueue >= FetchWidth) {
-    IBucket *bucket = pipeQ.pipeLine.nextItem();
+    IBucket* bucket = pipeQ.pipeLine.nextItem();
     if (bucket) {
       I(!bucket->empty());
       spaceInInstQueue -= bucket->size();

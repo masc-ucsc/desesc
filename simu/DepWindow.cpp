@@ -9,7 +9,7 @@
 #include "resource.hpp"
 #include "tracer.hpp"
 
-DepWindow::DepWindow(uint32_t cpuid, int src_id, const std::string &clusterName, uint32_t pos)
+DepWindow::DepWindow(uint32_t cpuid, int src_id, const std::string& clusterName, uint32_t pos)
     : src_cluster_id(src_id), inter_cluster_fwd(fmt::format("P({})_{}{}_inter_cluster_fwd", cpuid, clusterName, pos)) {
   auto cadena    = fmt::format("P(P{}_{}{}_sched", cpuid, clusterName, pos);
   auto sched_num = Config::get_integer(clusterName, "sched_num");
@@ -21,12 +21,12 @@ DepWindow::DepWindow(uint32_t cpuid, int src_id, const std::string &clusterName,
 
 DepWindow::~DepWindow() {}
 
-StallCause DepWindow::canIssue(Dinst *dinst) const {
+StallCause DepWindow::canIssue(Dinst* dinst) const {
   (void)dinst;
   return NoStall;
 }
 
-void DepWindow::add_inst(Dinst *dinst) {
+void DepWindow::add_inst(Dinst* dinst) {
   I(dinst->getCluster() != 0);  // Resource::schedule must set the resource field
 
   // newHEAD<<<<<<< HEAD
@@ -59,7 +59,7 @@ void DepWindow::add_inst(Dinst *dinst) {
   }
 }
 
-void DepWindow::preSelect(Dinst *dinst) {
+void DepWindow::preSelect(Dinst* dinst) {
   // At the end of the wakeUp, we can start to read the register file
   I(!dinst->hasDeps());
 
@@ -72,7 +72,7 @@ void DepWindow::preSelect(Dinst *dinst) {
   dinst->getCluster()->select(dinst);
 }
 
-void DepWindow::select(Dinst *dinst) {
+void DepWindow::select(Dinst* dinst) {
   Time_t schedTime = schedPort->nextSlot(dinst->has_stats());
   if (dinst->hasInterCluster()) {
     schedTime += inter_cluster_lat;
@@ -85,7 +85,7 @@ void DepWindow::select(Dinst *dinst) {
   Resource::executingCB::scheduleAbs(schedTime, dinst->getClusterResource().get(), dinst);  // NASTY to avoid callback ptr
 }
 
-void DepWindow::executed_flushed(Dinst *dinst) {
+void DepWindow::executed_flushed(Dinst* dinst) {
   //  MSG("execute [0x%x] @%lld",dinst, globalClock);
 
   if (dinst->isTransient()) {
@@ -99,7 +99,7 @@ void DepWindow::executed_flushed(Dinst *dinst) {
 }
 
 // Called when dinst finished execution. Look for dependent to wakeUp
-void DepWindow::executed(Dinst *dinst) {
+void DepWindow::executed(Dinst* dinst) {
   //  MSG("execute [0x%x] @%lld",dinst, globalClock);
   //<<<<<<< HEAD
 
@@ -161,7 +161,7 @@ void DepWindow::executed(Dinst *dinst) {
   }*/
 
   while (dinst->hasPending()) {
-    Dinst *dstReady = dinst->getNextPending();
+    Dinst* dstReady = dinst->getNextPending();
     I(dstReady);
     // std::cout << "Depwindow_Jose:: Executed::hasPending():: executed_dinst dstReadyInst asm is " <<
     // dstReady->getInst()->get_asm()

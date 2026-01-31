@@ -50,22 +50,22 @@ protected:
     CallbackContainer cc;
     int32_t           nUse;
 #ifndef NDEBUG
-    std::deque<MemRequest *> pending_mreq;
-    MemRequest              *block_mreq;
+    std::deque<MemRequest*> pending_mreq;
+    MemRequest*             block_mreq;
 #endif
   };
 
   std::vector<EntryType> entry;
 
 public:
-  MSHR(const std::string &name, int32_t size, int16_t lineSize, int16_t nSubEntries);
+  MSHR(const std::string& name, int32_t size, int16_t lineSize, int16_t nSubEntries);
   virtual ~MSHR() {}
   bool hasFreeEntries() const { return (nFreeEntries > 0); }
 
   bool canAccept(Addr_t paddr) const;
   bool canIssue(Addr_t addr) const;
-  void addEntry(Addr_t addr, CallbackBase *c, MemRequest *mreq);
-  void blockEntry(Addr_t addr, MemRequest *mreq);
-  bool retire(Addr_t addr, MemRequest *mreq);
+  void addEntry(Addr_t addr, CallbackBase* c, MemRequest* mreq);
+  void blockEntry(Addr_t addr, MemRequest* mreq);
+  bool retire(Addr_t addr, MemRequest* mreq);
   void dump() const;
 };

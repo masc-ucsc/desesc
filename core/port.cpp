@@ -2,9 +2,9 @@
 
 #include "port.hpp"
 
-PortGeneric::PortGeneric(const std::string &name) : avgTime(name) {}
+PortGeneric::PortGeneric(const std::string& name) : avgTime(name) {}
 
-std::shared_ptr<PortGeneric> PortGeneric::create(const std::string &unitName, NumUnits_t nUnits) {
+std::shared_ptr<PortGeneric> PortGeneric::create(const std::string& unitName, NumUnits_t nUnits) {
   // Search for the configuration with the best performance. In theory
   // everything can be solved with PortNPipe, but it is the slowest.
   // Sorry, but I'm a performance freak!
@@ -26,7 +26,7 @@ std::shared_ptr<PortGeneric> PortGeneric::create(const std::string &unitName, Nu
   return gen;
 }
 
-PortUnlimited::PortUnlimited(const std::string &name) : PortGeneric(name) {}
+PortUnlimited::PortUnlimited(const std::string& name) : PortGeneric(name) {}
 
 Time_t PortUnlimited::nextSlot(bool en) {
   avgTime.sample(0, en);  // Just to keep usage statistics
@@ -38,7 +38,7 @@ bool PortUnlimited::is_busy_for(TimeDelta_t clk) const {
   return false;
 }
 
-PortFullyPipe::PortFullyPipe(const std::string &name) : PortGeneric(name) { lTime = globalClock; }
+PortFullyPipe::PortFullyPipe(const std::string& name) : PortGeneric(name) { lTime = globalClock; }
 
 Time_t PortFullyPipe::nextSlot(bool en) {
   if (lTime < globalClock) {
@@ -51,7 +51,7 @@ Time_t PortFullyPipe::nextSlot(bool en) {
 
 bool PortFullyPipe::is_busy_for(TimeDelta_t clk) const { return lTime - clk >= globalClock; }
 
-PortFullyNPipe::PortFullyNPipe(const std::string &name, NumUnits_t nFU) : PortGeneric(name), nUnitsMinusOne(nFU - 1) {
+PortFullyNPipe::PortFullyNPipe(const std::string& name, NumUnits_t nFU) : PortGeneric(name), nUnitsMinusOne(nFU - 1) {
   I(nFU > 0);  // For unlimited resources use the FUUnlimited
 
   lTime = globalClock;

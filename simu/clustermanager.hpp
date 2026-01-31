@@ -16,7 +16,7 @@ private:
 
 protected:
 public:
-  ClusterManager(std::shared_ptr<Gmemory_system> gms, uint32_t cpuid, GProcessor *gproc);
+  ClusterManager(std::shared_ptr<Gmemory_system> gms, uint32_t cpuid, GProcessor* gproc);
 
-  std::shared_ptr<Resource> getResource(Dinst *dinst) const { return scheduler->getResource(dinst); }
+  std::shared_ptr<Resource> getResource(Dinst* dinst) const { return scheduler->getResource(dinst); }
 };

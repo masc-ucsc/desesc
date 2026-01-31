@@ -4,7 +4,7 @@
 
 #include "config.hpp"
 
-Bus::Bus(Memory_system *current, const std::string &sec, const std::string &n)
+Bus::Bus(Memory_system* current, const std::string& sec, const std::string& n)
     : MemObj(sec, n), delay(Config::get_integer(sec, "delay")) {
   NumUnits_t num = Config::get_integer(section, "port_num");
 
@@ -12,14 +12,14 @@ Bus::Bus(Memory_system *current, const std::string &sec, const std::string &n)
   cmdPort  = PortGeneric::create(name + "_cmd", num);
 
   I(current);
-  MemObj *lower_level = current->declareMemoryObj(section, "lower_level");
+  MemObj* lower_level = current->declareMemoryObj(section, "lower_level");
   if (lower_level) {
     addLowerLevel(lower_level);
   }
 }
 /* }}} */
 
-void Bus::doReq(MemRequest *mreq)
+void Bus::doReq(MemRequest* mreq)
 /* forward bus read {{{1 */
 {
   TimeDelta_t when = cmdPort->nextSlotDelta(mreq->has_stats()) + delay;
@@ -27,7 +27,7 @@ void Bus::doReq(MemRequest *mreq)
 }
 /* }}} */
 
-void Bus::doDisp(MemRequest *mreq)
+void Bus::doDisp(MemRequest* mreq)
 /* forward bus read {{{1 */
 {
   TimeDelta_t when = dataPort->nextSlotDelta(mreq->has_stats()) + delay;
@@ -35,7 +35,7 @@ void Bus::doDisp(MemRequest *mreq)
 }
 /* }}} */
 
-void Bus::doReqAck(MemRequest *mreq)
+void Bus::doReqAck(MemRequest* mreq)
 /* data is coming back {{{1 */
 {
   TimeDelta_t when = dataPort->nextSlotDelta(mreq->has_stats()) + delay;
@@ -49,7 +49,7 @@ void Bus::doReqAck(MemRequest *mreq)
 }
 /* }}} */
 
-void Bus::doSetState(MemRequest *mreq)
+void Bus::doSetState(MemRequest* mreq)
 /* forward set state to all the upper nodes {{{1 */
 {
   if (router->isTopLevel()) {
@@ -61,7 +61,7 @@ void Bus::doSetState(MemRequest *mreq)
 }
 /* }}} */
 
-void Bus::doSetStateAck(MemRequest *mreq)
+void Bus::doSetStateAck(MemRequest* mreq)
 /* forward set state to all the lower nodes {{{1 */
 {
   if (mreq->isHomeNode()) {
@@ -77,7 +77,7 @@ bool Bus::isBusy(Addr_t addr) const {
   return false;
 }
 
-void Bus::tryPrefetch(Addr_t addr, bool doStats, int degree, Addr_t pref_sign, Addr_t pc, CallbackBase *cb) {
+void Bus::tryPrefetch(Addr_t addr, bool doStats, int degree, Addr_t pref_sign, Addr_t pc, CallbackBase* cb) {
   router->tryPrefetch(addr, doStats, degree, pref_sign, pc, cb);
 }
 

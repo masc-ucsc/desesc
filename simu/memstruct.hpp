@@ -48,9 +48,9 @@
 // Implementing singleton design. Only one instance of CacheDebugAccess exists
 class CacheDebugAccess {
 public:
-  static CacheDebugAccess *getInstance();
+  static CacheDebugAccess* getInstance();
 
-  void setCacheAccess(char *);
+  void setCacheAccess(char*);
   bool readCacheAccess(std::string);
 
   void setAddrsAccessed(int);
@@ -63,8 +63,8 @@ private:
   std::map<std::string, bool> debugMap;
   int                         cacheAccesses;  // Addr for where mem read starts
 
-  CacheDebugAccess(){};                        // private constructor
-  CacheDebugAccess(CacheDebugAccess const &);  // no accidental creation from copy constructor
-  void operator=(CacheDebugAccess const &);
+  CacheDebugAccess() {};                      // private constructor
+  CacheDebugAccess(CacheDebugAccess const&);  // no accidental creation from copy constructor
+  void operator=(CacheDebugAccess const&);
 };
 #endif

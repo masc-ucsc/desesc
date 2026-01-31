@@ -52,7 +52,7 @@ void Store_buffer::remove_clean() {
   scb_clean_lines = num;
 }
 
-void Store_buffer::add_st(Dinst *dinst) {
+void Store_buffer::add_st(Dinst* dinst) {
   auto st_addr = dinst->getAddr();
   I(can_accept_st(st_addr));
 
@@ -72,7 +72,7 @@ void Store_buffer::add_st(Dinst *dinst) {
     lines.insert({st_addr_line, line});
     line.set_waiting_wb();
 
-    CallbackBase *cb = ownership_doneCB::create(this, st_addr);
+    CallbackBase* cb = ownership_doneCB::create(this, st_addr);
     if (dl1) {
       MemRequest::sendReqWrite(dl1, dinst->has_stats(), st_addr, dinst->getPC(), cb);
     } else {
@@ -98,7 +98,7 @@ void Store_buffer::add_st(Dinst *dinst) {
   }
   --scb_clean_lines;
   if (dl1) {
-    auto *cb = ownership_doneCB::create(this, st_addr);
+    auto* cb = ownership_doneCB::create(this, st_addr);
     MemRequest::sendReqWrite(dl1, dinst->has_stats(), st_addr, dinst->getPC(), cb);
   } else {
     ownership_doneCB::schedule(1, this, st_addr);

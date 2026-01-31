@@ -157,7 +157,7 @@ bool OoOProcessor::advance_clock() {
   return advance_clock_drain();
 }
 
-void OoOProcessor::executing(Dinst *dinst)
+void OoOProcessor::executing(Dinst* dinst)
 // {{{1 Called when the instruction starts to execute
 {
   if (dinst->isTransient()) {
@@ -179,7 +179,7 @@ void OoOProcessor::executing(Dinst *dinst)
 #endif
 #ifdef TRACK_FORWARDING
   if (dinst->has_stats()) {
-    const Instruction *inst = dinst->getInst();
+    const Instruction* inst = dinst->getInst();
     avgNumSrc.sample(inst->getnsrc(), true);
 
     int nForward = 0;
@@ -221,7 +221,7 @@ void OoOProcessor::executing(Dinst *dinst)
 }
 // 1}}}
 //
-void OoOProcessor::executed([[maybe_unused]] Dinst *dinst) {
+void OoOProcessor::executed([[maybe_unused]] Dinst* dinst) {
   // printf("OOOProc::Executed::dump_rat is called\n");
   // dump_rat();
   // if (dinst->isTransient()) {
@@ -235,13 +235,13 @@ void OoOProcessor::executed([[maybe_unused]] Dinst *dinst) {
   fwdDone[dinst->getInst()->getDst2()] = globalClock;
 #endif
 }
-void OoOProcessor::flushed(Dinst *dinst)
+void OoOProcessor::flushed(Dinst* dinst)
 // {{{1 Called when the instruction is flushed
 {
   (void)dinst;
 }
 
-StallCause OoOProcessor::add_inst(Dinst *dinst) {
+StallCause OoOProcessor::add_inst(Dinst* dinst) {
   // if (dinst->isTransient()) {
   //   printf("OOOProc::add_inst_Transient Entering for  dinstID %ld\n", dinst->getID());
   // }
@@ -255,7 +255,7 @@ StallCause OoOProcessor::add_inst(Dinst *dinst) {
     return SmallROBStall;
   }
 
-  const Instruction *inst = dinst->getInst();
+  const Instruction* inst = dinst->getInst();
 
   if (nTotalRegs <= 0) {
     Tracer::stage(dinst, "Wreg");
@@ -514,7 +514,7 @@ void OoOProcessor::retire_lock_check()
 }
 /* }}} */
 
-void OoOProcessor::try_flush(Dinst *dinst) {
+void OoOProcessor::try_flush(Dinst* dinst) {
   // printf("OOOProcessor::try_flush for Inst %ld\n", dinst->getID());
   if (dinst->getInst()->hasDstRegister()) {
     nTotalRegs++;
@@ -522,10 +522,9 @@ void OoOProcessor::try_flush(Dinst *dinst) {
 }
 
 void OoOProcessor::retire() {
-
   // Pass all the ready instructions to the rrob
   while (!ROB.empty()) {
-    auto *dinst = ROB.top();
+    auto* dinst = ROB.top();
 
     I(dinst->getCluster());
     bool done = dinst->getClusterResource()->preretire(dinst, flushing);
@@ -549,12 +548,12 @@ void OoOProcessor::retire() {
         dinst->clearRATEntry();
         // dinst->getCluster()->delEntry();
         while (dinst->hasPending()) {
-          Dinst *dstReady = dinst->getNextPending();
+          Dinst* dstReady = dinst->getNextPending();
           I(dstReady->isTransient());
         }
       } else {
         while (dinst->hasPending()) {
-          Dinst *dstReadyPending = dinst->getNextPending();
+          Dinst* dstReadyPending = dinst->getNextPending();
           I(dstReadyPending->isTransient());
         }
       }
@@ -577,7 +576,7 @@ void OoOProcessor::retire() {
         // Tracer::stage(dinst, "TR");
 
         while (dinst->hasPending()) {
-          Dinst *dstReady = dinst->getNextPending();
+          Dinst* dstReady = dinst->getNextPending();
           I(dstReady->isTransient());
         }
       }
@@ -586,7 +585,7 @@ void OoOProcessor::retire() {
         nTotalRegs++;
       }
       while (dinst->hasPending()) {
-        Dinst *dstReady = dinst->getNextPending();
+        Dinst* dstReady = dinst->getNextPending();
         I(dstReady->isTransient());
       }
 
@@ -611,7 +610,7 @@ void OoOProcessor::retire() {
     int total_miss = 0;
     for (uint32_t i = 0; i < ROB.size(); i++) {
       uint32_t pos   = ROB.getIDFromTop(i);
-      Dinst   *dinst = ROB.getData(pos);
+      Dinst*   dinst = ROB.getData(pos);
 
       if (!dinst->has_stats()) {
         continue;
@@ -642,7 +641,7 @@ void OoOProcessor::retire() {
 #ifdef ESESC_CODEPROFILE
     if (rROB.top()->has_stats()) {
       if (codeProfile_trigger <= clockTicks.getDouble()) {
-        Dinst *dinst = rROB.top();
+        Dinst* dinst = rROB.top();
 
         codeProfile_trigger = clockTicks.getDouble() + 121;
 
@@ -672,7 +671,7 @@ void OoOProcessor::retire() {
 
   // rROB_loop_starts
   for (uint16_t i = 0; i < RetireWidth && !rROB.empty(); i++) {
-    Dinst *dinst = rROB.top();
+    Dinst* dinst = rROB.top();
     dinst->mark_rrob();
 
     if (last_serialized == dinst) {
@@ -783,7 +782,7 @@ void OoOProcessor::retire() {
   }  // !rROB.empty()_loop_ends
 }
 
-void OoOProcessor::replay(Dinst *target)
+void OoOProcessor::replay(Dinst* target)
 /* trigger a processor replay {{{1 */
 {
   if (serialize_for) {
@@ -827,7 +826,7 @@ void OoOProcessor::dumpROB()
   for (uint32_t i = 0; i < size; i++) {
     uint32_t pos = ROB.getIDFromTop(i);
 
-    Dinst *dinst = ROB.getData(pos);
+    Dinst* dinst = ROB.getData(pos);
     dinst->dump("");
   }
 
@@ -836,7 +835,7 @@ void OoOProcessor::dumpROB()
   for (uint32_t i = 0; i < size; i++) {
     uint32_t pos = rROB.getIDFromTop(i);
 
-    Dinst *dinst = rROB.getData(pos);
+    Dinst* dinst = rROB.getData(pos);
     if (dinst->isReplay()) {
       fmt::print("-----REPLAY--------\n");
     }
@@ -853,7 +852,7 @@ bool OoOProcessor::loadIsSpec() {
   if (robSize > 0) {
     for (uint32_t i = 0u; i < robSize; i++) {
       uint32_t pos   = ROB.getIDFromTop(i);
-      Dinst   *dinst = ROB.getData(pos);
+      Dinst*   dinst = ROB.getData(pos);
       if (dinst->getInst()->isMemory()) {
         if (!dinst->isExecuting()) {
           mem_unresolved.push_back(pos);

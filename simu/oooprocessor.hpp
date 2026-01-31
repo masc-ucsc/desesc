@@ -30,9 +30,9 @@ private:
   public:
     Time_t r_dinst_ID;
     Time_t dinst_ID;
-    Dinst *r_dinst;
-    Dinst *dinst;
-    bool   operator==(const RetireState &a) const { return a.dinst_ID == dinst_ID || a.r_dinst_ID == r_dinst_ID; };
+    Dinst* r_dinst;
+    Dinst* dinst;
+    bool   operator==(const RetireState& a) const { return a.dinst_ID == dinst_ID || a.r_dinst_ID == r_dinst_ID; };
     RetireState() {
       r_dinst_ID = 0;
       dinst_ID   = 0;
@@ -50,16 +50,16 @@ private:
   uint32_t serialize;
   int32_t  serialize_for;
   uint32_t forwardProg_threshold;
-  Dinst   *last_serialized;
-  Dinst   *last_serializedST;
+  Dinst*   last_serialized;
+  Dinst*   last_serializedST;
 
-  RegType_array<Dinst *> RAT;
-  RegType_array<Dinst *> TRAT;
-  int32_t                nTotalRegs;
+  RegType_array<Dinst*> RAT;
+  RegType_array<Dinst*> TRAT;
+  int32_t               nTotalRegs;
 
-  RegType_array<Dinst *> serializeRAT;
-  RegType                last_serializeLogical;
-  Addr_t                 last_serializePC;
+  RegType_array<Dinst*> serializeRAT;
+  RegType               last_serializeLogical;
+  Addr_t                last_serializePC;
 
   bool   replayRecovering;
   Time_t replayID;
@@ -87,7 +87,7 @@ protected:
   bool advance_clock_drain() override final;
   bool advance_clock() override final;
 
-  StallCause add_inst(Dinst *dinst) override final;
+  StallCause add_inst(Dinst* dinst) override final;
   void       retire();
 
   // END VIRTUAL FUNCTIONS of GProcessor
@@ -95,12 +95,12 @@ public:
   OoOProcessor(std::shared_ptr<Gmemory_system> gm, CPU_t i);
   virtual ~OoOProcessor();
 
-  void   executing(Dinst *dinst) override final;
-  void   executed(Dinst *dinst) override final;
-  void   flushed(Dinst *dinst) override final;
-  void   try_flush(Dinst *dinst) override final;
-  LSQ   *getLSQ() override final { return &lsq; }
-  void   replay(Dinst *target) override final;
+  void   executing(Dinst* dinst) override final;
+  void   executed(Dinst* dinst) override final;
+  void   flushed(Dinst* dinst) override final;
+  void   try_flush(Dinst* dinst) override final;
+  LSQ*   getLSQ() override final { return &lsq; }
+  void   replay(Dinst* target) override final;
   bool   is_nuking() override final { return flushing; }
   bool   isReplayRecovering() override final { return replayRecovering; }
   Time_t getReplayID() override final { return replayID; }

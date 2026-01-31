@@ -19,8 +19,8 @@ class Resource;
 
 class Cluster {
 private:
-  std::shared_ptr<Resource> buildUnit(const std::string &clusterName, uint32_t pos, std::shared_ptr<Gmemory_system> ms,
-                                      std::shared_ptr<Cluster> cluster, Opcode type, GProcessor *gproc);
+  std::shared_ptr<Resource> buildUnit(const std::string& clusterName, uint32_t pos, std::shared_ptr<Gmemory_system> ms,
+                                      std::shared_ptr<Cluster> cluster, Opcode type, GProcessor* gproc);
 
 protected:
   DepWindow window;
@@ -65,7 +65,7 @@ protected:
     I(windowSize >= 0);
   }
 
-  Cluster(const std::string &clusterName, uint32_t pos, uint32_t cpuid);
+  Cluster(const std::string& clusterName, uint32_t pos, uint32_t cpuid);
 
 public:
   virtual ~Cluster();
@@ -86,7 +86,7 @@ public:
   }
 
   //<<<<<<< HEAD
-  void add_inst_retry(Dinst *dinst) {
+  void add_inst_retry(Dinst* dinst) {
     if (!dinst->is_in_cluster()) {
       window.add_inst(dinst);
     }
@@ -103,25 +103,25 @@ public:
   int32_t get_window_maxsize() { return MaxWinSize; }
   //>>>>>>> upstream/main
 
-  void select(Dinst *dinst);
+  void select(Dinst* dinst);
 
-  virtual void executing(Dinst *dinst)           = 0;
-  virtual void executed(Dinst *dinst)            = 0;
-  virtual bool retire(Dinst *dinst, bool replay) = 0;
-  virtual void flushed(Dinst *dinst)             = 0;
-  virtual void try_flushed(Dinst *dinst)         = 0;
-  virtual void del_entry_flush(Dinst *dinst)     = 0;
+  virtual void executing(Dinst* dinst)           = 0;
+  virtual void executed(Dinst* dinst)            = 0;
+  virtual bool retire(Dinst* dinst, bool replay) = 0;
+  virtual void flushed(Dinst* dinst)             = 0;
+  virtual void try_flushed(Dinst* dinst)         = 0;
+  virtual void del_entry_flush(Dinst* dinst)     = 0;
 
-  static std::pair<std::shared_ptr<Cluster>, Opcode_array<std::shared_ptr<Resource>>> create(const std::string &clusterName,
+  static std::pair<std::shared_ptr<Cluster>, Opcode_array<std::shared_ptr<Resource>>> create(const std::string& clusterName,
                                                                                              uint32_t           pos,
                                                                                              std::shared_ptr<Gmemory_system> ms,
-                                                                                             uint32_t cpuid, GProcessor *gproc);
+                                                                                             uint32_t cpuid, GProcessor* gproc);
 
-  const std::string &getName() const { return name; }
+  const std::string& getName() const { return name; }
   int                get_id() const { return cluster_id; }
 
-  StallCause canIssue(Dinst *dinst) const;
-  void       add_inst(Dinst *dinst);
+  StallCause canIssue(Dinst* dinst) const;
+  void       add_inst(Dinst* dinst);
 
   int32_t getAvailSpace() const {
     if (regPool < windowSize) {
@@ -137,39 +137,39 @@ class ExecutingCluster : public Cluster {
 public:
   virtual ~ExecutingCluster() {}
 
-  ExecutingCluster(const std::string &clusterName, uint32_t pos, uint32_t _cpuid) : Cluster(clusterName, pos, _cpuid) {}
+  ExecutingCluster(const std::string& clusterName, uint32_t pos, uint32_t _cpuid) : Cluster(clusterName, pos, _cpuid) {}
 
-  void executing(Dinst *dinst);
-  void executed(Dinst *dinst);
-  bool retire(Dinst *dinst, bool replay);
-  void flushed(Dinst *dinst);
-  void try_flushed(Dinst *dinst);
-  void del_entry_flush(Dinst *dinst);
+  void executing(Dinst* dinst);
+  void executed(Dinst* dinst);
+  bool retire(Dinst* dinst, bool replay);
+  void flushed(Dinst* dinst);
+  void try_flushed(Dinst* dinst);
+  void del_entry_flush(Dinst* dinst);
 };
 
 class ExecutedCluster : public Cluster {
 public:
   virtual ~ExecutedCluster() {}
 
-  ExecutedCluster(const std::string &clusterName, uint32_t pos, uint32_t _cpuid) : Cluster(clusterName, pos, _cpuid) {}
+  ExecutedCluster(const std::string& clusterName, uint32_t pos, uint32_t _cpuid) : Cluster(clusterName, pos, _cpuid) {}
 
-  void executing(Dinst *dinst);
-  void executed(Dinst *dinst);
-  bool retire(Dinst *dinst, bool replay);
-  void flushed(Dinst *dinst);
-  void try_flushed(Dinst *dinst);
-  void del_entry_flush(Dinst *dinst);
+  void executing(Dinst* dinst);
+  void executed(Dinst* dinst);
+  bool retire(Dinst* dinst, bool replay);
+  void flushed(Dinst* dinst);
+  void try_flushed(Dinst* dinst);
+  void del_entry_flush(Dinst* dinst);
 };
 
 class RetiredCluster : public Cluster {
 public:
   virtual ~RetiredCluster() {}
-  RetiredCluster(const std::string &clusterName, uint32_t pos, uint32_t _cpuid) : Cluster(clusterName, pos, _cpuid) {}
+  RetiredCluster(const std::string& clusterName, uint32_t pos, uint32_t _cpuid) : Cluster(clusterName, pos, _cpuid) {}
 
-  void executing(Dinst *dinst);
-  void executed(Dinst *dinst);
-  bool retire(Dinst *dinst, bool replay);
-  void flushed(Dinst *dinst);
-  void try_flushed(Dinst *dinst);
-  void del_entry_flush(Dinst *dinst);
+  void executing(Dinst* dinst);
+  void executed(Dinst* dinst);
+  bool retire(Dinst* dinst, bool replay);
+  void flushed(Dinst* dinst);
+  void try_flushed(Dinst* dinst);
+  void del_entry_flush(Dinst* dinst);
 };

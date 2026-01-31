@@ -14,7 +14,7 @@
 
 uint16_t MemObj::id_counter = 0;
 
-MemObj::MemObj(const std::string &sSection, const std::string &sName)
+MemObj::MemObj(const std::string& sSection, const std::string& sName)
     /* constructor {{{1 */
     : section(sSection), name(sName), id(id_counter++) {
   mem_type = Config::get_string(section, "type");
@@ -56,18 +56,18 @@ MemObj::~MemObj()
 {}
 /* }}} */
 
-void MemObj::addLowerLevel(MemObj *obj) {
+void MemObj::addLowerLevel(MemObj* obj) {
   router->addDownNode(obj);
   I(obj);
   obj->addUpperLevel(this);
 }
 
-void MemObj::addUpperLevel(MemObj *obj) {
+void MemObj::addUpperLevel(MemObj* obj) {
   // printf("%s upper level is %s\n",getName(),obj->getName());
   router->addUpNode(obj);
 }
 
-void MemObj::blockFill(MemRequest *mreq) {
+void MemObj::blockFill(MemRequest* mreq) {
   (void)mreq;
   // Most objects do nothing
 }
@@ -95,19 +95,19 @@ DummyMemObj::DummyMemObj()
     : MemObj("dummySection", "dummyMem") {}
 /* }}} */
 
-DummyMemObj::DummyMemObj(const std::string &_section, const std::string &sName)
+DummyMemObj::DummyMemObj(const std::string& _section, const std::string& sName)
     /* dummy constructor {{{1 */
     : MemObj(_section, sName) {}
 /* }}} */
 
-void DummyMemObj::doReq(MemRequest *req)
+void DummyMemObj::doReq(MemRequest* req)
 /* req {{{1 */
 {
   req->ack();
 }
 /* }}} */
 
-void DummyMemObj::doReqAck(MemRequest *req)
+void DummyMemObj::doReqAck(MemRequest* req)
 /* reqAck {{{1 */
 {
   (void)req;
@@ -115,7 +115,7 @@ void DummyMemObj::doReqAck(MemRequest *req)
 }
 /* }}} */
 
-void DummyMemObj::doSetState(MemRequest *req)
+void DummyMemObj::doSetState(MemRequest* req)
 /* setState {{{1 */
 {
   (void)req;
@@ -124,7 +124,7 @@ void DummyMemObj::doSetState(MemRequest *req)
 }
 /* }}} */
 
-void DummyMemObj::doSetStateAck(MemRequest *req)
+void DummyMemObj::doSetStateAck(MemRequest* req)
 /* setStateAck {{{1 */
 {
   (void)req;
@@ -132,7 +132,7 @@ void DummyMemObj::doSetStateAck(MemRequest *req)
 }
 /* }}} */
 
-void DummyMemObj::doDisp(MemRequest *req)
+void DummyMemObj::doDisp(MemRequest* req)
 /* disp {{{1 */
 {
   (void)req;
@@ -164,7 +164,7 @@ TimeDelta_t DummyMemObj::ffwrite(Addr_t addr)
 }
 /* }}} */
 
-void DummyMemObj::tryPrefetch(Addr_t addr, bool doStats, int degree, Addr_t pref_sign, Addr_t pc, CallbackBase *cb)
+void DummyMemObj::tryPrefetch(Addr_t addr, bool doStats, int degree, Addr_t pref_sign, Addr_t pc, CallbackBase* cb)
 /* forward tryPrefetch {{{1 */
 {
   (void)addr;
@@ -179,13 +179,13 @@ void DummyMemObj::tryPrefetch(Addr_t addr, bool doStats, int degree, Addr_t pref
 /* }}} */
 
 /* Optional virtual methods {{{1 */
-bool MemObj::checkL2TLBHit(MemRequest *req) {
+bool MemObj::checkL2TLBHit(MemRequest* req) {
   // If called, it should be redefined by the object
   (void)req;
   I(0);
   return false;
 }
-void MemObj::replayCheckLSQ_removeStore(Dinst *dinst) {
+void MemObj::replayCheckLSQ_removeStore(Dinst* dinst) {
   (void)dinst;
   I(0);
 }

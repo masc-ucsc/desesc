@@ -52,7 +52,7 @@ enum currState {
   Invalid     // 3
 };
 
-currState getState(CCache *cache, Addr_t addr) {
+currState getState(CCache* cache, Addr_t addr) {
   currState state;
 
   if (cache->Modified(addr)) {
@@ -74,14 +74,14 @@ currState getState(CCache *cache, Addr_t addr) {
   return state;
 }
 
-void rdDone(Dinst *dinst) {
+void rdDone(Dinst* dinst) {
   // printf("rddone @%lld\n", (long long)globalClock);
 
   rd_pending--;
   dinst->scrap();
 }
 
-void wrDone(Dinst *dinst) {
+void wrDone(Dinst* dinst) {
   // printf("wrdone @%lld\n", (long long)globalClock);
 
   wr_pending--;
@@ -94,13 +94,13 @@ static void waitAllMemOpsDone() {
   }
 }
 
-typedef CallbackFunction1<Dinst *, &rdDone> rdDoneCB;
-typedef CallbackFunction1<Dinst *, &wrDone> wrDoneCB;
+typedef CallbackFunction1<Dinst*, &rdDone> rdDoneCB;
+typedef CallbackFunction1<Dinst*, &wrDone> wrDoneCB;
 
-static void doread(MemObj *cache, Addr_t addr) {
+static void doread(MemObj* cache, Addr_t addr) {
   num_operations++;
 
-  auto *ldClone
+  auto* ldClone
       = Dinst::create(Instruction(Opcode::iLALU_LD, RegType::LREG_R1, RegType::LREG_R2, RegType::LREG_R3, RegType::LREG_R4),
                       0xdeaddead  // pc
                       ,
@@ -112,17 +112,17 @@ static void doread(MemObj *cache, Addr_t addr) {
     EventScheduler::advanceClock();
   }
 
-  rdDoneCB *cb = rdDoneCB::create(ldClone);
+  rdDoneCB* cb = rdDoneCB::create(ldClone);
   // printf("rd %x @%lld\n", (unsigned int)addr, (long long)globalClock);
 
   MemRequest::sendReqRead(cache, ldClone->has_stats(), ldClone->getAddr(), ldClone->getPC(), cb);
   rd_pending++;
 }
 
-static void doprefetch(MemObj *cache, Addr_t addr) {
+static void doprefetch(MemObj* cache, Addr_t addr) {
   num_operations++;
 
-  auto *ldClone
+  auto* ldClone
       = Dinst::create(Instruction(Opcode::iLALU_LD, RegType::LREG_R5, RegType::LREG_R6, RegType::LREG_R7, RegType::LREG_R8),
                       0xbeefbeef  // pc
                       ,
@@ -134,17 +134,17 @@ static void doprefetch(MemObj *cache, Addr_t addr) {
     EventScheduler::advanceClock();
   }
 
-  rdDoneCB *cb = rdDoneCB::create(ldClone);
+  rdDoneCB* cb = rdDoneCB::create(ldClone);
   // printf("rd %x @%lld\n", (unsigned int)addr, (long long)globalClock);
 
   cache->tryPrefetch(ldClone->has_stats(), ldClone->getAddr(), 1, 0xF00D, ldClone->getPC(), cb);
   rd_pending++;
 }
 
-static void dowrite(MemObj *cache, Addr_t addr) {
+static void dowrite(MemObj* cache, Addr_t addr) {
   num_operations++;
 
-  auto *stClone
+  auto* stClone
       = Dinst::create(Instruction(Opcode::iSALU_ST, RegType::LREG_R5, RegType::LREG_R6, RegType::LREG_R7, RegType::LREG_R8),
                       0x200  // pc
                       ,
@@ -156,15 +156,15 @@ static void dowrite(MemObj *cache, Addr_t addr) {
     EventScheduler::advanceClock();
   }
 
-  wrDoneCB *cb = wrDoneCB::create(stClone);
+  wrDoneCB* cb = wrDoneCB::create(stClone);
   // printf("wr %x @%lld\n", (unsigned int)addr, (long long)globalClock);
 
   MemRequest::sendReqWrite(cache, stClone->has_stats(), stClone->getAddr(), stClone->getPC(), cb);
   wr_pending++;
 }
 
-Gmemory_system *gms_p0 = nullptr;
-Gmemory_system *gms_p1 = nullptr;
+Gmemory_system* gms_p0 = nullptr;
+Gmemory_system* gms_p1 = nullptr;
 
 static void setup_config() {
   std::ofstream file;
@@ -262,45 +262,45 @@ void initialize() {
   }
 }
 
-CCache *getDL1(Gmemory_system *gms) {
-  MemObj *dl1 = gms->getDL1();
+CCache* getDL1(Gmemory_system* gms) {
+  MemObj* dl1 = gms->getDL1();
   if (dl1->get_type() != "cache") {
     fmt::print("ERROR: The first level must be a cache {}\n", dl1->get_type());
     exit(-1);
   }
 
-  CCache *cdl1 = static_cast<CCache *>(dl1);
+  CCache* cdl1 = static_cast<CCache*>(dl1);
   return cdl1;
 }
 
-CCache *getL3(MemObj *L2) {
-  MRouter *router2 = L2->getRouter();
-  MemObj  *L3      = router2->getDownNode();
+CCache* getL3(MemObj* L2) {
+  MRouter* router2 = L2->getRouter();
+  MemObj*  L3      = router2->getDownNode();
   if (L3->get_type() != "cache") {
     return nullptr;
   }
 
-  CCache *l3c = static_cast<CCache *>(L3);
+  CCache* l3c = static_cast<CCache*>(L3);
   return l3c;
 }
 
-CCache *getL2(MemObj *P0DL1) {
-  MRouter *router = P0DL1->getRouter();
-  MemObj  *L2     = router->getDownNode();
+CCache* getL2(MemObj* P0DL1) {
+  MRouter* router = P0DL1->getRouter();
+  MemObj*  L2     = router->getDownNode();
   I(L2->get_type() == "cache");
 
-  CCache *l2c = static_cast<CCache *>(L2);
+  CCache* l2c = static_cast<CCache*>(L2);
   // l2c->setNeedsCoherence();
   return l2c;
 }
 
 class CacheTest : public testing::Test {
 protected:
-  CCache      *p0dl1;
-  CCache      *p0l2;
-  CCache      *p1l2;
-  CCache      *l3;
-  CCache      *p1dl1;
+  CCache*      p0dl1;
+  CCache*      p0l2;
+  CCache*      p1l2;
+  CCache*      l3;
+  CCache*      p1dl1;
   virtual void SetUp() {
     initialize();
 

@@ -70,8 +70,8 @@ protected:
   std::shared_ptr<Prefetcher>   prefetcher;
   std::shared_ptr<Store_buffer> scb;
 
-  FastQueue<Dinst *> rROB;  // ready/retiring/executed ROB
-  FastQueue<Dinst *> ROB;
+  FastQueue<Dinst*> rROB;  // ready/retiring/executed ROB
+  FastQueue<Dinst*> ROB;
 
   uint32_t smt;  // 1...
   bool     busy;
@@ -96,16 +96,16 @@ protected:
   uint64_t lastReplay;
 
   // Construction
-  void buildInstStats(const std::string &txt);
-  void buildUnit(const std::string &clusterName, std::shared_ptr<Gmemory_system> ms, Cluster *cluster, Opcode type);
+  void buildInstStats(const std::string& txt);
+  void buildUnit(const std::string& clusterName, std::shared_ptr<Gmemory_system> ms, Cluster* cluster, Opcode type);
 
   GProcessor(std::shared_ptr<Gmemory_system> gm, Hartid_t i);
 
   int32_t issue();
   void    fetch();
 
-  virtual StallCause add_inst(Dinst *dinst)  = 0;
-  virtual void       try_flush(Dinst *dinst) = 0;
+  virtual StallCause add_inst(Dinst* dinst)  = 0;
+  virtual void       try_flush(Dinst* dinst) = 0;
 
   bool use_stats;  // Stats mode to use when dinst->has_stats() is not available
 
@@ -124,15 +124,15 @@ public:
 #endif
   virtual ~GProcessor();
 
-  virtual void   executing(Dinst *dinst) = 0;
-  virtual void   executed(Dinst *dinst)  = 0;
-  virtual void   flushed(Dinst *dinst)   = 0;
-  virtual LSQ   *getLSQ()                = 0;
+  virtual void   executing(Dinst* dinst) = 0;
+  virtual void   executed(Dinst* dinst)  = 0;
+  virtual void   flushed(Dinst* dinst)   = 0;
+  virtual LSQ*   getLSQ()                = 0;
   virtual bool   is_nuking()             = 0;
   virtual bool   isReplayRecovering()    = 0;
   virtual Time_t getReplayID()           = 0;
 
-  virtual void replay(Dinst *target) { (void)target; };  // = 0;
+  virtual void replay(Dinst* target) { (void)target; };  // = 0;
 
   bool isROBEmpty() const { return (ROB.empty() && rROB.empty()); }
   int  getROBsize() const { return (ROB.size() + rROB.size()); }
@@ -141,17 +141,17 @@ public:
   int getROBSizeOnly() const { return ROB.size(); }
 
   uint32_t getIDFromTop(int position) const { return ROB.getIDFromTop(position); }
-  Dinst   *getData(uint32_t position) const { return ROB.getData(position); }
+  Dinst*   getData(uint32_t position) const { return ROB.getData(position); }
 
   // Returns the maximum number of flows this processor can support
   size_t get_smt_size() const override { return smt_size; }
 
-  void add_inst_transient_on_branch_miss(IBucket *bucket, Addr_t pc);
+  void add_inst_transient_on_branch_miss(IBucket* bucket, Addr_t pc);
   void flush_transient_inst_on_fetch_ready();
   void flush_transient_inst_from_inst_queue();
   void flush_transient_from_rob();
   void dump_rob();
-  void report(const std::string &str);
+  void report(const std::string& str);
 
   // Addr_t   random_addr_gen();
   uint64_t random_reg_gen(bool reg);

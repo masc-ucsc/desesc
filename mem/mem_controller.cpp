@@ -46,7 +46,7 @@ MemController::MemController(Memory_system* current, const std::string& sec, con
   bankMask   = numBanks - 1;
   bankMask   = bankMask << bankOffset;
 
-  bankState = new BankStatus[numBanks];
+  bankState.resize(numBanks);
   for (uint32_t curBank = 0; curBank < numBanks; curBank++) {
     bankState[curBank].activeRow = 0;
     bankState[curBank].state     = INIT;  // Changed from ACTIVE (LNB)
@@ -68,10 +68,7 @@ void MemController::doReq(MemRequest* mreq)
 }
 /* }}} */
 
-void MemController::doReqAck(MemRequest* mreq) {
-  (void)mreq;
-  I(0);
-}
+void MemController::doReqAck([[maybe_unused]] MemRequest* mreq) { I(0); }
 
 void MemController::doDisp(MemRequest* mreq) { addMemRequest(mreq); }
 

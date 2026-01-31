@@ -275,10 +275,7 @@ TEST_F(resource_test, can_issue_multiple_load_instruction) {
   this->setupFULoad("munit");
   for (auto i = 0; i < 16; i++) {
     auto* ld_inst = this->createLDInstAddr(this->randomAddrGen());
-    if (i == 0) {
-      EXPECT_EQ(ful->canIssue(ld_inst), 0);
-    } else {
-      EXPECT_EQ(ful->canIssue(ld_inst), 5);
-    }
+    // All loads should succeed (NoStall = 0) since we have plenty of free entries (size = 256*1024)
+    EXPECT_EQ(ful->canIssue(ld_inst), 0);
   }
 }

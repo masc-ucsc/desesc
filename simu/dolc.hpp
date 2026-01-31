@@ -1,6 +1,9 @@
+#pragma once
 
-#ifndef DOLC_H
-#define DOLC_H
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <vector>
 
 // #define DOLC_RLE
 
@@ -11,21 +14,21 @@ private:
   uint64_t lastBits;
   uint64_t currBits;
 
-  uint64_t  phase;
-  uint16_t  rl1;
-  uint16_t  rl2;
-  uint16_t  rl3;
-  uint64_t* hist;
-  uint64_t* histMask;
-  uint64_t* histBits;
+  uint64_t              phase;
+  uint16_t              rl1;
+  uint16_t              rl2;
+  uint16_t              rl3;
+  std::vector<uint64_t> hist;
+  std::vector<uint64_t> histMask;
+  std::vector<uint64_t> histBits;
 
   void allocate() {
     uint64_t lastMask = (((uint64_t)1) << lastBits) - 1;
     uint64_t currMask = (((uint64_t)1) << currBits) - 1;
 
-    hist     = new uint64_t[depth];
-    histBits = new uint64_t[depth];
-    histMask = new uint64_t[depth];
+    hist.resize(depth);
+    histBits.resize(depth);
+    histMask.resize(depth);
 
     phase = 0;
     rl1   = 0;
@@ -160,7 +163,7 @@ public:
 
   void setPhase(uint64_t addr) { phase = addr; }
 
-  uint64_t getSign(uint16_t bits, uint16_t m) const {
+  [[nodiscard]] uint64_t getSign(uint16_t bits, uint16_t m) const {
     uint16_t nbits = 0;
     uint64_t sign  = 0;
 
@@ -212,5 +215,3 @@ public:
     return sign & ((1 << (bits)) - 1);
   }
 };
-
-#endif

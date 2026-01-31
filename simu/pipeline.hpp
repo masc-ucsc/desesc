@@ -10,7 +10,7 @@
 #include "fastqueue.hpp"
 #include "iassert.hpp"
 
-typedef uint32_t CPU_t;
+using CPU_t = uint32_t;
 class IBucket;
 
 class PipeIBucketLess {
@@ -27,11 +27,11 @@ private:
   FastQueue<IBucket*> buffer;
   FastQueue<IBucket*> transient_buffer;
 
-  typedef std::vector<IBucket*> IBucketCont;
-  IBucketCont                   bucketPool;
+  using IBucketCont = std::vector<IBucket*>;
+  IBucketCont bucketPool;
 
-  // typedef boost::heap::priority_queue<IBucket *,boost::heap::compare<PipeIBucketLess> > ReceivedType;
-  typedef std::priority_queue<IBucket*, std::vector<IBucket*>, PipeIBucketLess> ReceivedType;
+  // using ReceivedType = boost::heap::priority_queue<IBucket *,boost::heap::compare<PipeIBucketLess> >;
+  using ReceivedType = std::priority_queue<IBucket*, std::vector<IBucket*>, PipeIBucketLess>;
   // std::priority_queue<IBucket *, std::vector<IBucket*>, PipeIBucketLess> received;
   ReceivedType received;
 
@@ -48,16 +48,16 @@ public:
   void cleanMark();
 
   // FastQueue<Dinst *>   transient_buffer;
-  IBucket* newItem();
-  bool     hasOutstandingItems() const;
-  void     readyItem(IBucket* b);
-  void     doneItem(IBucket* b);
-  void     flush_transient_inst_from_buffer();
-  bool     transient_buffer_empty();
-  IBucket* nextItem();
+  [[nodiscard]] IBucket* newItem();
+  [[nodiscard]] bool     hasOutstandingItems() const;
+  void                   readyItem(IBucket* b);
+  void                   doneItem(IBucket* b);
+  void                   flush_transient_inst_from_buffer();
+  [[nodiscard]] bool     transient_buffer_empty();
+  [[nodiscard]] IBucket* nextItem();
 
-  size_t size() const { return buffer.size(); }
-  size_t bucketPool_size() const { return bucketPool.size(); }
+  [[nodiscard]] size_t size() const noexcept { return buffer.size(); }
+  [[nodiscard]] size_t bucketPool_size() const noexcept { return bucketPool.size(); }
 };
 
 class IBucket : public FastQueue<Dinst*> {
@@ -76,17 +76,17 @@ protected:
   bool fetched;
 #endif
 
-  Time_t getPipelineId() const { return pipeId; }
-  void   setPipelineId(Time_t i) { pipeId = i; }
+  [[nodiscard]] Time_t getPipelineId() const noexcept { return pipeId; }
+  void                 setPipelineId(Time_t i) { pipeId = i; }
 
   void markFetched();
 
-  Time_t getClock() const { return clock; }
-  void   setClock() { clock = globalClock; }
+  [[nodiscard]] Time_t getClock() const noexcept { return clock; }
+  void                 setClock() { clock = globalClock; }
 
 public:
   IBucket(size_t size, Pipeline* p, bool clean = false);
-  virtual ~IBucket() {}
+  virtual ~IBucket() = default;
 
   StaticCallbackMember0<IBucket, &IBucket::markFetched> markFetchedCB;
 };

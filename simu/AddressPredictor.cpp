@@ -154,12 +154,12 @@ Tage_address_predictor::Tage_address_predictor(Hartid_t hartid, const std::strin
     , log2fetchwidth(log2(Config::get_power2("soc", "core", hartid, "fetch_width")))
     , nhist(Config::get_integer(section, "ntables", 2)) {
   // auto bwidth         = Config::get_integer(section, "bimodal_width", 1);
-  m      = new int[nhist + 1];
-  TB     = new int[nhist + 1];
-  logg   = new int[nhist + 1];
-  GI     = new Addr_t[nhist + 1];
-  GTAG   = new Addr_t[nhist + 1];
-  gtable = new vtage_gentry*[nhist + 1];
+  m.resize(nhist + 1);
+  TB.resize(nhist + 1);
+  logg.resize(nhist + 1);
+  GI.resize(nhist + 1);
+  GTAG.resize(nhist + 1);
+  gtable.resize(nhist + 1);
 
   // geometric history length calculation for tagged tables
   m[0]     = 0;
@@ -179,7 +179,7 @@ Tage_address_predictor::Tage_address_predictor(Hartid_t hartid, const std::strin
   }
 
   for (uint64_t i = 1; i <= nhist; i++) {
-    gtable[i] = new vtage_gentry[(1 << (logg[i])) + 1];
+    gtable[i].resize((1 << (logg[i])) + 1);
     for (int j = 0; j < (1 << logg[i]); j++) {
       gtable[i][j].allocate();
     }

@@ -153,7 +153,7 @@ IBucket* Pipeline::nextItem() {
       clearItems();
       I(buffer.empty());
 #endif
-      return 0;
+      return nullptr;
     }
 
     if (((buffer.top())->getClock() + PipeLength) > globalClock) {
@@ -167,7 +167,7 @@ IBucket* Pipeline::nextItem() {
            ,PipeLength
            );
 #endif
-      return 0;
+      return nullptr;
     } else {
 #if 0
 //#if 1
@@ -187,7 +187,7 @@ IBucket* Pipeline::nextItem() {
     I(!b->cleanItem);
 
     I(!b->empty());
-    I(b->top() != 0);
+    I(b->top() != nullptr);
 
     return b;
   }

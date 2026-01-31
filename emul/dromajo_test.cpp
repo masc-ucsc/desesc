@@ -41,7 +41,7 @@
 
 #define BRANCHPROF
 #ifdef BRANCHPROF
-FILE *pc_trace;
+FILE* pc_trace;
 
 void print_branch_info(uint64_t last_pc, uint32_t insn_raw) {
   static uint64_t last_last_pc;
@@ -102,9 +102,9 @@ void print_branch_info(uint64_t last_pc, uint32_t insn_raw) {
 #endif
 
 #ifdef SIMPOINT_BB
-FILE *simpoint_bb_file = nullptr;
+FILE* simpoint_bb_file = nullptr;
 
-int simpoint_step(RISCVMachine *m, int hartid) {
+int simpoint_step(RISCVMachine* m, int hartid) {
   assert(hartid == 0);  // Only single core for simpoint creation
 
   static uint64_t ninst = 0;  // ninst in BB
@@ -114,7 +114,7 @@ int simpoint_step(RISCVMachine *m, int hartid) {
 
     assert(!m->common.simpoints.empty());
 
-    auto &sp = m->common.simpoints[m->common.simpoint_next];
+    auto& sp = m->common.simpoints[m->common.simpoint_next];
     if (ninst > sp.start) {
       char str[100];
       sprintf(str, "sp%d", sp.id);
@@ -176,13 +176,13 @@ int simpoint_step(RISCVMachine *m, int hartid) {
 }
 #endif
 
-int iterate_core(RISCVMachine *m, int hartid) {
+int iterate_core(RISCVMachine* m, int hartid) {
   if (m->common.maxinsns-- <= 0) {
     /* Succeed after N instructions without failure. */
     return 0;
   }
 
-  RISCVCPUState *cpu = m->cpu_state[hartid];
+  RISCVCPUState* cpu = m->cpu_state[hartid];
 
   /* Instruction that raises exceptions should be marked as such in
    * the trace of retired instructions.
@@ -244,7 +244,7 @@ int iterate_core(RISCVMachine *m, int hartid) {
 }
 
 static double    execution_start_ts;
-static uint64_t *execution_progress_meassure;
+static uint64_t* execution_progress_meassure;
 
 static void sigintr_handler(int dummy) {
   double t = get_current_time_in_seconds();
@@ -254,8 +254,8 @@ static void sigintr_handler(int dummy) {
   exit(1);
 }
 
-int main(int argc, char **argv) {
-  const char *port_name = nullptr;
+int main(int argc, char** argv) {
+  const char* port_name = nullptr;
   int         port_num  = 0;
   for (;;) {
     int option_index = 0;
@@ -279,7 +279,7 @@ int main(int argc, char **argv) {
   };
 
 #ifdef REGRESS_COSIM
-  dromajo_cosim_state_t *costate = 0;
+  dromajo_cosim_state_t* costate = 0;
   costate                        = dromajo_cosim_init(argc, argv);
 
   if (!costate) {
@@ -292,7 +292,7 @@ int main(int argc, char **argv) {
   dromajo_cosim_fini(costate);
 #else
 
-  RISCVMachine *m = virt_machine_main(argc, argv);
+  RISCVMachine* m = virt_machine_main(argc, argv);
   if (!m) {
     return 1;
   }

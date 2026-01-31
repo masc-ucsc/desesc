@@ -25,7 +25,7 @@ protected:
 public:
   static int64_t sample_count;
 
-  static void plug(int argc, const char **argv);
+  static void plug(int argc, const char** argv);
   static void boot();
   static void report(std::string_view str);
   static void unboot();

@@ -17,12 +17,12 @@ private:
   friend class pool<PBTestMsg>;
 
 public:
-  static PBTestMsg *create(const ProtocolBase *srcPB, const ProtocolBase *dstPB) {
+  static PBTestMsg* create(const ProtocolBase* srcPB, const ProtocolBase* dstPB) {
     // ProtocolBase *src;
     // src = (ProtocolBase *)srcPB; //Ehsan
     // ProtocolBase *dst=dstPB;  //Ehsan
-    PBTestMsg *msg = msgPool.out();
-    msg->setupMessage((ProtocolBase *)srcPB, (ProtocolBase *)dstPB, TestMsg);
+    PBTestMsg* msg = msgPool.out();
+    msg->setupMessage((ProtocolBase*)srcPB, (ProtocolBase*)dstPB, TestMsg);
     //  msg->setupMessage((ProtocolBase *)1, (ProtocolBase *)2, TestMsg);
 
     return msg;
@@ -38,9 +38,9 @@ private:
   friend class pool<PBTestAckMsg>;
 
 public:
-  static PBTestAckMsg *create(const ProtocolBase *srcPB, const ProtocolBase *dstPB) {
-    PBTestAckMsg *msg = msgPool.out();
-    msg->setupMessage((ProtocolBase *)srcPB, (ProtocolBase *)dstPB, TestAckMsg);
+  static PBTestAckMsg* create(const ProtocolBase* srcPB, const ProtocolBase* dstPB) {
+    PBTestAckMsg* msg = msgPool.out();
+    msg->setupMessage((ProtocolBase*)srcPB, (ProtocolBase*)dstPB, TestAckMsg);
     // edited by Ehsan (added typecast of srcPB and dstPB to( ProtocolBase *))
     return msg;
   };
@@ -57,8 +57,8 @@ int32_t nMessages;
 // Based on the indents, it looks like it.
 class ProtocolA : public ProtocolBase {
 public:
-  ProtocolA(InterConnection *net, RouterID_t rID) : ProtocolBase(net, rID) {
-    ProtocolCBBase *pcb = new ProtocolCB<ProtocolA, &ProtocolA::TestHandler>(this);
+  ProtocolA(InterConnection* net, RouterID_t rID) : ProtocolBase(net, rID) {
+    ProtocolCBBase* pcb = new ProtocolCB<ProtocolA, &ProtocolA::TestHandler>(this);
     registerHandler(pcb, TestMsg);
 
     pcb = new ProtocolCB<ProtocolA, &ProtocolA::TestAckHandler>(this);
@@ -68,15 +68,15 @@ public:
     registerHandler(pcb, DefaultMessage);
   };
 
-  void defaultHandler(Message *msg) {
+  void defaultHandler(Message* msg) {
     I(0);
     nMessages++;
     msg->garbageCollect();
   };
 
-  void TestHandler(Message *m) {
+  void TestHandler(Message* m) {
     nMessages++;
-    PBTestMsg     *msg   = static_cast<PBTestMsg *>(m);
+    PBTestMsg*     msg   = static_cast<PBTestMsg*>(m);
     static uint8_t conta = 0;
     conta++;
 
@@ -89,7 +89,7 @@ public:
     msg->garbageCollect();
   };
 
-  void TestAckHandler(Message *msg) {
+  void TestAckHandler(Message* msg) {
     nMessages++;
     msg->garbageCollect();
   };
@@ -103,9 +103,9 @@ pool<PBTestAckMsg> PBTestAckMsg::msgPool(1024);
 #define NMSG        100000
 #define TIME_BUBBLE 128
 
-std::vector<ProtocolA *> pa;
+std::vector<ProtocolA*> pa;
 
-InterConnection *net;
+InterConnection* net;
 size_t           nRouters;
 
 Time_t  stClock;
@@ -118,7 +118,7 @@ void startBench() {
   nMessages = 0;
 };
 
-void endBench(const char *str) {
+void endBench(const char* str) {
   gettimeofday(&endTime, 0);
 
   double msecs = (endTime.tv_sec - stTime.tv_sec) * 1000 + (endTime.tv_usec - stTime.tv_usec) / 1000;
@@ -134,7 +134,7 @@ void bench1() {
   // Two neighbours messages
 
   for (int32_t i = 0; i < NMSG; i++) {
-    Message *msg = PBTestMsg::create(pa[nRouters / 2], pa[nRouters / 2 + 1]);
+    Message* msg = PBTestMsg::create(pa[nRouters / 2], pa[nRouters / 2 + 1]);
     //   Message *msg = PBTestMsg::create(pa[1],pa[2]);
     net->sendMsg(msg);
     EventScheduler::advanceClock();
@@ -157,15 +157,15 @@ void bench2() {
     for (size_t k = 0; k < nRouters; k++) {
       //  Message *msg = PBTestMsg::create(pa[(k*7) % nRouters]
                ,pa[(k*3)% nRouters]);
-               Message *msg = PBTestMsg::create(pa[(k * 5) % nRouters], pa[(k * 3) % nRouters]);
+               Message* msg = PBTestMsg::create(pa[(k * 5) % nRouters], pa[(k * 3) % nRouters]);
 
                net->sendMsg(msg);
     }
     EventScheduler::advanceClock();
     if ((i % 32) == 0) {
-               for (int32_t k = 0; k < TIME_BUBBLE; k++) {
-                 EventScheduler::advanceClock();
-               }
+      for (int32_t k = 0; k < TIME_BUBBLE; k++) {
+        EventScheduler::advanceClock();
+      }
     }
   }
 
@@ -189,7 +189,7 @@ int32_t main(int32_t argc, char **argv, char **envp)
  */
 
 // Version 3 from Ehsan
-int32_t main(int32_t argc, char **argv, char **envp) {
+int32_t main(int32_t argc, char** argv, char** envp) {
   if (argc < 2) {
     fprintf(stderr, "Usage:\n\t%s <router.conf>\n", argv[0]);
     exit(0);
@@ -198,14 +198,14 @@ int32_t main(int32_t argc, char **argv, char **envp) {
   Report::openFile("netBench.log");
   // edited by ehsan
   // SescConf = new SConfig(argv[1]);   // First thing to do
-  SescConf = new SConfig(argc, (const char **)argv);
+  SescConf = new SConfig(argc, (const char**)argv);
 
   net = new InterConnection("network1");
 
   nRouters = net->getnRouters();
 
   for (size_t i = 0; i < nRouters; i++) {
-    ProtocolA *p = new ProtocolA(net, i);
+    ProtocolA* p = new ProtocolA(net, i);
     pa.push_back(p);
   }
 

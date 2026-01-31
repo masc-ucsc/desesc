@@ -11,7 +11,7 @@ pool<PMessage> PMessage::msgPool;
 // For each message type there is an associated size and name
 typedef struct _SizeNameInfo {
   unsigned short size;
-  const char    *name;
+  const char*    name;
 } SizeNameInfo;
 
 // assume 8 word line size..this is reasonable
@@ -67,8 +67,8 @@ static SizeNameInfo MessageType2SizeName[] = {{4, "Default Message"},
 
 PMessage::PMessage() { setType(DefaultMessage); }
 
-PMessage *PMessage::createMsg(MessageType msgType, ProtocolBase *srcPB, ProtocolBase *dstPB, MemRequest *memReq) {
-  PMessage *msg = msgPool.out();
+PMessage* PMessage::createMsg(MessageType msgType, ProtocolBase* srcPB, ProtocolBase* dstPB, MemRequest* memReq) {
+  PMessage* msg = msgPool.out();
 
   msg->setupMessage(srcPB, dstPB, msgType);
   msg->mreq = memReq;
@@ -78,14 +78,14 @@ PMessage *PMessage::createMsg(MessageType msgType, ProtocolBase *srcPB, Protocol
 
 int32_t PMessage::getUniqueProtID() const { return getUniqueProtID(msgType, dstPB->getNetDeviceID()); }
 
-void PMessage::forwardMessage(ProtocolBase *newDstPB) {
+void PMessage::forwardMessage(ProtocolBase* newDstPB) {
   srcPB = dstPB;
   dstPB = newDstPB;
 
   init(srcPB->getRouterID(), srcPB->getPortID(), dstPB->getRouterID(), dstPB->getPortID());
 }
 
-void PMessage::forwardMessage(ProtocolBase *newDstPB, MessageType t) {
+void PMessage::forwardMessage(ProtocolBase* newDstPB, MessageType t) {
   srcPB = dstPB;
   dstPB = newDstPB;
 
@@ -94,7 +94,7 @@ void PMessage::forwardMessage(ProtocolBase *newDstPB, MessageType t) {
   setType(t);
 }
 
-void PMessage::setupMessage(ProtocolBase *src, ProtocolBase *dst, MessageType t) {
+void PMessage::setupMessage(ProtocolBase* src, ProtocolBase* dst, MessageType t) {
   srcPB = src;
   dstPB = dst;
 
@@ -110,7 +110,7 @@ void PMessage::setupMessage(ProtocolBase *src, ProtocolBase *dst, MessageType t)
 }
 
 void PMessage::reverseDirection() {
-  ProtocolBase *tmp = srcPB;
+  ProtocolBase* tmp = srcPB;
   srcPB             = dstPB;
   dstPB             = tmp;
 
@@ -124,7 +124,7 @@ void PMessage::redirect(NetDevice_t newDstID) {
   init(srcPB->getRouterID(), srcPB->getPortID(), dstPB->getRouterID(), dstPB->getPortID());
 }
 
-void PMessage::trace(const char *format, ...) {
+void PMessage::trace(const char* format, ...) {
   va_list ap;
 
   fprintf(stderr, "@%lld ", (long long)globalClock);
@@ -136,9 +136,9 @@ void PMessage::trace(const char *format, ...) {
   va_end(ap);
 }
 
-const char *PMessage::getName() const { return MessageType2SizeName[msgType].name; }
+const char* PMessage::getName() const { return MessageType2SizeName[msgType].name; }
 
-const char *PMessage::getName(MessageType t) { return MessageType2SizeName[t].name; }
+const char* PMessage::getName(MessageType t) { return MessageType2SizeName[t].name; }
 
 void PMessage::setType(MessageType t) {
   msgType = t;

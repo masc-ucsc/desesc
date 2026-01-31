@@ -8,7 +8,7 @@
 #include "bootloader.hpp"
 #include "iassert.hpp"
 
-int main(int argc, const char **argv) {
+int main(int argc, const char** argv) {
   BootLoader::plug(argc, argv);
   BootLoader::boot();
   BootLoader::report("done");

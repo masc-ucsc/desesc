@@ -383,13 +383,6 @@ Conf_level Tage_address_predictor::exe_update(Addr_t pc, Addr_t addr, Data_t dat
   }
 #endif
 
-#if 0
-  if (ndelta>1024 || ndelta <1024) {
-    last[get_last_index(pc)].reset(addr,pc);
-    return 0;
-  }
-#endif
-
   setVtagePrediction(pc);
 
   updateVtage(pc, ndelta, offset);
@@ -532,13 +525,6 @@ void Tage_address_predictor::updateVtage(Addr_t pc, int ndelta, uint16_t loff) {
       }
     }
   }
-
-#if 0
-  // Always update bimodal to use the conf
-  if (alt_bank==0) {
-    bimodal.update_delta(pc,ndelta);
-  }
-#endif
 }
 
 void Tage_address_predictor::rename(Dinst* dinst) { (void)dinst; }
@@ -748,12 +734,8 @@ Conf_level Indirect_address_predictor::ret_update(Addr_t pc, Addr_t addr, Data_t
             Addr_t base = addr - factor * adhist[ppc].data;
             // PTRACE("pc:%llx matches addr:%llx pc:%llx with la:%llx + factor:%d * d:%d,
             // base:%llx",pc,addr,ppc,last_addr,factor,adhist[ppc].data_delta,base);
-            pa.source_pc = ppc;
-            pa.conf      = 1;
-#if 0
-            pa.base      = base;
-            pa.factor    = factor;
-#endif
+            pa.source_pc       = ppc;
+            pa.conf            = 1;
             adhist[ppc].factor = factor;
             adhist[ppc].base   = base;
             break;

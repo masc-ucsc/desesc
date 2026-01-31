@@ -26,14 +26,14 @@ class GProcessor;
 
 class DinstNext {
 private:
-  Dinst *dinst{nullptr};
+  Dinst* dinst{nullptr};
 #ifdef DINST_PARENT
-  Dinst *parentDinst{};
+  Dinst* parentDinst{};
 #endif
 public:
   DinstNext() { dinst = 0; }
 
-  DinstNext *nextDep;
+  DinstNext* nextDep;
   bool       isUsed;  // true while non-satisfied RAW dependence
                       // fasle when no RAW dependence
                       // true  when RAW dependence
@@ -44,27 +44,27 @@ public:
                         bool       isUsed{};  // true while non-satisfied RAW dependence
                       >>>>>>> upstream/main*/
 
-  const DinstNext *getNext() const { return nextDep; }
-  DinstNext       *getNext() { return nextDep; }
+  const DinstNext* getNext() const { return nextDep; }
+  DinstNext*       getNext() { return nextDep; }
 
-  void setNextDep(DinstNext *n) { nextDep = n; }
+  void setNextDep(DinstNext* n) { nextDep = n; }
 
-  void init(Dinst *d) {
+  void init(Dinst* d) {
     I(dinst == 0);
     dinst = d;
   }
 
-  Dinst *getDinst() const { return dinst; }
+  Dinst* getDinst() const { return dinst; }
   // void  set_dinst(Dinst *d) {  dinst = d; }
 
 #ifdef DINST_PARENT
-  Dinst *getParentDinst() const { return parentDinst; }
-  void   setParentDinst(Dinst *d) {
+  Dinst* getParentDinst() const { return parentDinst; }
+  void   setParentDinst(Dinst* d) {
     GI(d, isUsed);
     parentDinst = d;
   }
 #else
-  void            setParentDinst(Dinst *d) {}
+  void setParentDinst(Dinst* d) {}
 #endif
 };
 
@@ -120,8 +120,8 @@ private:
   static pool<Dinst> dInstPool;
 
   DinstNext  pend[MAX_PENDING_SOURCES];
-  DinstNext *last;
-  DinstNext *first;
+  DinstNext* last;
+  DinstNext* first;
 
   Hartid_t fid;
 
@@ -202,11 +202,11 @@ private:
 
   std::shared_ptr<Cluster>  cluster;
   std::shared_ptr<Resource> resource;
-  Dinst                   **RAT1Entry;
-  Dinst                   **RAT2Entry;
-  Dinst                   **serializeEntry;
-  FetchEngine              *fetch;
-  GProcessor               *gproc;
+  Dinst**                   RAT1Entry;
+  Dinst**                   RAT2Entry;
+  Dinst**                   serializeEntry;
+  FetchEngine*              fetch;
+  GProcessor*               gproc;
 
   char nDeps;  // 0, 1 or 2 for RISC processors
 
@@ -384,8 +384,8 @@ public:
   bool is_to_be_destroyed() { return to_be_destroyed; }
   //=======
 
-  static Dinst *create(Instruction &&inst, Addr_t pc, Addr_t address, Hartid_t fid, bool keep_stats) {
-    Dinst *i = dInstPool.out();
+  static Dinst* create(Instruction&& inst, Addr_t pc, Addr_t address, Hartid_t fid, bool keep_stats) {
+    Dinst* i = dInstPool.out();
     I(inst.getOpcode() != Opcode::iOpInvalid);
 
     i->fid      = fid;
@@ -393,7 +393,7 @@ public:
     i->pc       = pc;
     i->addr     = address;
     i->inflight = 0;
-    i->bb        = -1;
+    i->bb       = -1;
 #ifdef ESESC_TRACE_DATA
     i->data           = 0;
     i->data2          = 0;
@@ -482,7 +482,7 @@ public:
   void setData2(uint64_t _data) { data2 = _data; }
 
   Addr_t getLDPC() const { return ldpc; }
-  void   setChain(FetchEngine *fe, int c) {
+  void   setChain(FetchEngine* fe, int c) {
     I(fetch == 0);
     I(c);
     I(fe);
@@ -509,7 +509,7 @@ public:
   }
   void   setData(uint64_t _data) { (void)_data; }
   Addr_t getLDPC() const { return 0; }
-  void   setChain(FetchEngine *fe, int c) {
+  void   setChain(FetchEngine* fe, int c) {
     (void)fe;
     (void)c;
   }
@@ -538,15 +538,15 @@ public:
   std::shared_ptr<Resource> getClusterResource() const { return resource; }
 
   void clearRATEntry();
-  void setRAT1Entry(Dinst **rentry) {
+  void setRAT1Entry(Dinst** rentry) {
     I(!RAT1Entry);
     RAT1Entry = rentry;
   }
-  void setRAT2Entry(Dinst **rentry) {
+  void setRAT2Entry(Dinst** rentry) {
     I(!RAT2Entry);
     RAT2Entry = rentry;
   }
-  void setSerializeEntry(Dinst **rentry) {
+  void setSerializeEntry(Dinst** rentry) {
     I(!serializeEntry);
     serializeEntry = rentry;
   }
@@ -562,7 +562,7 @@ public:
   Addr_t getConflictStorePC() const { return conflictStorePC; }
 
 #ifdef DINST_PARENT
-  Dinst *getParentSrc1() const {
+  Dinst* getParentSrc1() const {
     if (pend[0].isUsed) {  // true when RAW dependence
       // printf("Dinst::getparentsrc1:parent inst src1 is %ld and current Inst isTransient is %b\n",
       //        pend[0].getParentDinst()->getID(),
@@ -572,7 +572,7 @@ public:
     }
     return 0;
   }
-  Dinst *getParentSrc2() const {
+  Dinst* getParentSrc2() const {
     if (pend[1].isUsed) {  // true when RAW dependence
       // printf("Dinst::getparentsrc2:Inst is %ld and isTransient is %b\n", pend[1].getParentDinst()->getID(), isTransient());
       // std::cout << "Dinst::getparentsrc2:: asm is " << pend[1].getParentDinst()->getInst()->get_asm() << std::endl;
@@ -580,7 +580,7 @@ public:
     }
     return 0;
   }
-  Dinst *getParentSrc3() const {
+  Dinst* getParentSrc3() const {
     if (pend[2].isUsed) {  // true when RAW dependence
       return pend[2].getParentDinst();
     }
@@ -588,7 +588,7 @@ public:
   }
 #endif
 
-  void lockFetch(FetchEngine *fe) {
+  void lockFetch(FetchEngine* fe) {
     I(!branchMiss);
     I(fetch == 0);
     fetch      = fe;
@@ -606,7 +606,7 @@ public:
     fetched = globalClock;
   }
   int16_t getBB() const { return bb; }
-  void setBB(int16_t b) { bb = b; }
+  void    setBB(int16_t b) { bb = b; }
 
   uint64_t getInflight() const { return inflight; }
 
@@ -643,23 +643,23 @@ public:
   bool isLevel3_NoPrediction() const { return level3_NoPrediction; }
 
   bool         isBranchMiss() const { return branchMiss; }
-  FetchEngine *getFetchEngine() const { return fetch; }
+  FetchEngine* getFetchEngine() const { return fetch; }
 
   Time_t getFetchTime() const { return fetched; }
 
-  void setGProc(GProcessor *_gproc) {
+  void setGProc(GProcessor* _gproc) {
     I(gproc == 0 || gproc == _gproc);
     gproc = _gproc;
   }
 
-  GProcessor *getGProc() const {
+  GProcessor* getGProc() const {
     I(gproc);
     return gproc;
   }
 
-  Dinst *getNextPending() {
+  Dinst* getNextPending() {
     I(first);
-    Dinst *n = first->getDinst();
+    Dinst* n = first->getDinst();
 
     // printf("Dinst::getnextPending :: current inst is %ld and isTransient is %b\n", this->getID(), this->isTransient());
     // std::cout << "Dinst::getNextPending:: current inst ::asm is " << this->getInst()->get_asm() << std::endl;
@@ -690,7 +690,7 @@ public:
     return n;
   }
 
-  void addSrc1(Dinst *d) {
+  void addSrc1(Dinst* d) {
     I(d->nDeps < MAX_PENDING_SOURCES);
 
     // printf("Entering Dinst::addSrc1::Current RAT Inst is %ld and isTransient is %b\n", getID(), isTransient());
@@ -704,7 +704,7 @@ public:
 
     I(executed == 0);
     I(d->executed == 0);
-    DinstNext *n = &d->pend[0];
+    DinstNext* n = &d->pend[0];
     // printf("Dinst::addSrc1:::&d->pend[0]::  is %ld and isTransient is %b\n", n->getDinst()->getID(),
     // n->getDinst()->isTransient()); std::cout << "Dinst::addScr1::&d->pend[0]::  asm is " << n->getDinst()->getInst()->get_asm()
     // << std::endl;
@@ -725,7 +725,7 @@ public:
     last       = n;
   }
 
-  void addSrc2(Dinst *d) {
+  void addSrc2(Dinst* d) {
     I(d->nDeps < MAX_PENDING_SOURCES);
 
     // printf("Entering Dinst::addSrc2::Current RAT Inst is %ld and isTransient is %b\n", getID(), isTransient());
@@ -738,7 +738,7 @@ public:
     I(d->executed == 0);
 
     // printf("Dinst::addsrc2::  ndeps++ is: first->getDinst()->ndeps is %d\n", (int)d->getnDeps());
-    DinstNext *n = &d->pend[1];
+    DinstNext* n = &d->pend[1];
     // printf("Dinst::addSrc2::&d->pend[1] ::is %ld and isTransient is %b\n", n->getDinst()->getID(), n->getDinst()->isTransient());
     // std::cout << "Dinst::addScr2::&d->pend[1]::  asm is " << n->getDinst()->getInst()->get_asm() << std::endl;
     I(!n->isUsed);
@@ -761,7 +761,7 @@ public:
     last       = n;
   }
 
-  void addSrc3(Dinst *d) {
+  void addSrc3(Dinst* d) {
     // printf("Dinst::addSrc3::Inst is %ld and isTransient is %b\n", getID(), isTransient());
     // std::cout << "Dinst::addScr3::dinst Inst asm is " << getInst()->get_asm() << std::endl;
     I(d->nDeps < MAX_PENDING_SOURCES);
@@ -769,7 +769,7 @@ public:
     I(executed == 0);
     I(d->executed == 0);
 
-    DinstNext *n = &d->pend[2];
+    DinstNext* n = &d->pend[2];
     I(!n->isUsed);
     // printf("Dinst::addSrc3::dinstNextRAW is %ld and isTransient is %b\n", n->getDinst()->getID(), n->getDinst()->isTransient());
     // std::cout << "Dinst::addScr3::dinstNextRAW n asm is " << n->getDinst()->getInst()->get_asm() << std::endl;
@@ -842,10 +842,10 @@ public:
     return nDeps != 0;
   }
 
-  const Dinst     *getFirstPending() const { return first->getDinst(); }
-  const DinstNext *getFirst() const { return first; }
+  const Dinst*     getFirstPending() const { return first->getDinst(); }
+  const DinstNext* getFirst() const { return first; }
 
-  const Instruction *getInst() const { return &inst; }
+  const Instruction* getInst() const { return &inst; }
 
   void dump(std::string_view txt);
 
@@ -971,5 +971,5 @@ public:
 
 class Hash4Dinst {
 public:
-  size_t operator()(const Dinst *dinst) const { return (size_t)(dinst); }
+  size_t operator()(const Dinst* dinst) const { return (size_t)(dinst); }
 };

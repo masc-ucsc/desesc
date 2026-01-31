@@ -382,18 +382,8 @@ public:
   }
 
   ~pool() {
-    // The last pool whould delete all the crap
-#if 0
-    while(first) {
-      Holder *h = first;
-      first = first->holderNext;
-      ::delete h;
-    }
-    first = nullptr;
-#ifndef NDEBUG
-    deleted=true;
-#endif
-#endif
+    // Note: Destructors are intentionally disabled to avoid double-free issues
+    // Objects remain in the pool for the lifetime of the program
   }
 
   void doChecks() {

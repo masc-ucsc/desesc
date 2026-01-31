@@ -62,9 +62,9 @@ TEST_F(Emul_Dromajo_test, dhrystone_test) {
   EXPECT_NE(dromajo_ptr, nullptr);
 
   dromajo_ptr->skip_rabbit(0, 606);
-  Dinst *dinst = dromajo_ptr->peek(0);  // c.j
+  Dinst* dinst = dromajo_ptr->peek(0);  // c.j
   EXPECT_EQ(0x0000000080002c1a, dinst->getPC());
-  const Instruction *inst = dinst->getInst();
+  const Instruction* inst = dinst->getInst();
   EXPECT_TRUE(inst->isJump());
   EXPECT_FALSE(inst->hasSrc1Register());
   EXPECT_FALSE(inst->hasDstRegister());

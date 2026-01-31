@@ -8,7 +8,7 @@
 
 ProtocolBase::NetDevType ProtocolBase::netDev;
 
-ProtocolBase::ProtocolBase(InterConnection *net, RouterID_t rID, PortID_t pID) : network(net), routerID(rID), portID(pID) {
+ProtocolBase::ProtocolBase(InterConnection* net, RouterID_t rID, PortID_t pID) : network(net), routerID(rID), portID(pID) {
   I(network);
 
   NetDevType::iterator netDevEntry = netDev.find(network);
@@ -20,7 +20,7 @@ ProtocolBase::ProtocolBase(InterConnection *net, RouterID_t rID, PortID_t pID) :
     netDevEntry     = netDev.find(network);
   }
 
-  DevList *devList = netDevEntry->second;
+  DevList* devList = netDevEntry->second;
 
   myID = devList->size();
   devList->push_back(this);
@@ -28,17 +28,17 @@ ProtocolBase::ProtocolBase(InterConnection *net, RouterID_t rID, PortID_t pID) :
   //    myID, this, network);
 }
 
-void ProtocolBase::registerHandler(ProtocolCBBase *pcb, MessageType msgType) {
+void ProtocolBase::registerHandler(ProtocolCBBase* pcb, MessageType msgType) {
   network->registerProtocol(pcb, msgType, routerID, portID, myID);
 }
 
-ProtocolBase *ProtocolBase::getProtocolBase(NetDevice_t netID) {
+ProtocolBase* ProtocolBase::getProtocolBase(NetDevice_t netID) {
   I(network);
 
   NetDevType::iterator it = netDev.find(network);
   I(it != netDev.end());
 
-  DevList *devList = (*it).second;
+  DevList* devList = (*it).second;
 
   I(netID < devList->size());
 

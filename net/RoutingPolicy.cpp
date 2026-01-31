@@ -11,7 +11,7 @@
        RoutingPolicy
 *******************************/
 
-RoutingPolicy::RoutingPolicy(const char *section, size_t ports)
+RoutingPolicy::RoutingPolicy(const char* section, size_t ports)
     : nRouters(SescConf->getInt(section, "nRouters"))
     //  : nRouters(SescConf->getRecordSize("","cpucore"))
     , nPorts(ports)
@@ -20,7 +20,7 @@ RoutingPolicy::RoutingPolicy(const char *section, size_t ports)
   table.resize(nRouters);
 }
 
-void RoutingPolicy::make(const char *section) {
+void RoutingPolicy::make(const char* section) {
   adjacent.resize(nRouters);
   next.resize(nRouters);
   for (size_t i = 0; i < nRouters; i++) {

@@ -6,7 +6,7 @@
 #include "InterConn.h"
 #include "SescConf.h"
 
-Router::Router(const char *section, RouterID_t id, InterConnection *n, RoutingTable *rt)
+Router::Router(const char* section, RouterID_t id, InterConnection* n, RoutingTable* rt)
     : myID(id)
     , crossLat(SescConf->getInt(section, "crossLat"))
     , localNum(SescConf->getInt(section, "localNum"))
@@ -70,7 +70,7 @@ Router::~Router() {
   // nothing to do
 }
 
-void Router::launchMsg(Message *msg) {
+void Router::launchMsg(Message* msg) {
 #ifdef DEBUG
 #if 0
   MSG("router(%d)::launchMsg [%d:%d] to [%d:%d]",
@@ -97,7 +97,7 @@ void Router::launchMsg(Message *msg) {
     msg->setDstRouterID(myID);
   }
 
-  Router *dstRouter = net->getRouter(msg->getDstRouterID());
+  Router* dstRouter = net->getRouter(msg->getDstRouterID());
 
   if (msg->getDstRouterID() == myID && msg->getDstPortID() == portid && msg->getDelivery() == Message::PT_TO_PT) {
     I(msg->getDstPortID() == portid);
@@ -126,7 +126,7 @@ void Router::launchMsg(Message *msg) {
   }
 }
 
-void Router::forwardMsg(Message *msg) {
+void Router::forwardMsg(Message* msg) {
   // routerEnergy.inc() ;
 
   // called when a packet head is already in the router, and it needs
@@ -141,7 +141,7 @@ void Router::forwardMsg(Message *msg) {
 
   // linkEnergy.inc();
 
-  const RoutingTable::Wire *wire;
+  const RoutingTable::Wire* wire;
 
   switch (msg->getDelivery()) {
     case Message::RCV_AND_PASS:
@@ -177,7 +177,7 @@ void Router::forwardMsg(Message *msg) {
   msg->forwardMsgAbs(when + crossLat + wire->dist, net->getRouter(wire->rID));
 }
 
-void Router::receiveMsg(Message *msg) {
+void Router::receiveMsg(Message* msg) {
   I(msg->getDstRouterID() == myID || msg->getDelivery() == Message::RCV_AND_PASS);
 
   // bufferEnergy.inc() ;  // write
@@ -198,7 +198,7 @@ void Router::receiveMsg(Message *msg) {
   msg->notifyMsgAbs(when + calcNumFlits(msg), this);
 }
 
-void Router::notifyMsg(Message *msg) {
+void Router::notifyMsg(Message* msg) {
   I(msg->getDstRouterID() == myID || msg->getDelivery() == Message::RCV_AND_PASS);
 
   // Karin: remove the following if block to enable processing
@@ -232,9 +232,9 @@ void Router::notifyMsg(Message *msg) {
 
 void Router::dump() { fprintf(stderr, "Router #%d\n", myID); }
 
-void Router::registerProtocol(ProtocolCBBase *pcb, PortID_t pID, int32_t id) {
+void Router::registerProtocol(ProtocolCBBase* pcb, PortID_t pID, int32_t id) {
   I(localPortProtocol.find(id) == localPortProtocol.end());
   localPortProtocol[id] = pcb;
 }
 
-unsigned short Router::calcNumFlits(Message *msg) const { return (unsigned short)ceil(msg->getSize() / net->getLinkBytes()); }
+unsigned short Router::calcNumFlits(Message* msg) const { return (unsigned short)ceil(msg->getSize() / net->getLinkBytes()); }

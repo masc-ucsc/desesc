@@ -7,7 +7,7 @@
 
 class Emul_dromajo : public Emul_base {
 private:
-  RISCVMachine *machine = nullptr;
+  RISCVMachine* machine = nullptr;
 
   uint64_t num;
   uint64_t detail;
@@ -27,15 +27,15 @@ private:
 
 public:
   Emul_dromajo();
-  Emul_dromajo(const Emul_dromajo &)            = default;
-  Emul_dromajo(Emul_dromajo &&)                 = delete;
-  Emul_dromajo &operator=(const Emul_dromajo &) = default;
-  Emul_dromajo &operator=(Emul_dromajo &&)      = delete;
-  ~Emul_dromajo() override                      = default;
+  Emul_dromajo(const Emul_dromajo&)            = default;
+  Emul_dromajo(Emul_dromajo&&)                 = delete;
+  Emul_dromajo& operator=(const Emul_dromajo&) = default;
+  Emul_dromajo& operator=(Emul_dromajo&&)      = delete;
+  ~Emul_dromajo() override                     = default;
 
   void destroy_machine();
 
-  Dinst *peek(Hartid_t fid) final;
+  Dinst* peek(Hartid_t fid) final;
 
   void skip_rabbit(Hartid_t fid, size_t ninst) final;
   void execute(Hartid_t fid) final;

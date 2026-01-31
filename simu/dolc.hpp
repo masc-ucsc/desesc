@@ -83,43 +83,6 @@ public:
     }
   }
 
-#if 0
-  DOLC(const DOLC &other) {
-    if(depth != other.depth || olderBits != other.olderBits || lastBits != other.lastBits || currBits != other.currBits) {
-      delete hist;
-      delete histBits;
-      delete histMask;
-
-      depth     = other.depth;
-      olderBits = other.olderBits;
-      lastBits  = other.lastBits;
-      currBits  = other.currBits;
-
-      allocate();
-    }
-
-    for(uint64_t i = 0; i < depth; i++) {
-      hist[i] = other.hist[i];
-    }
-  }
-
-  void mix(uint64_t addr) {
-    MSG("mix %lx",addr);
-
-    uint32_t drop  = hist[0] >> 10;
-    uint32_t sign1 = hist[0] ^ drop ^ (drop << (5));
-    uint32_t sign2 = (sign1 << (5)) + addr;
-
-    hist[0] = sign2;
-  }
-
-  void reset(uint64_t sign) {
-    for(uint64_t i = 0; i < depth; i++) {
-      hist[i] = sign & histMask[i];
-    }
-  }
-#endif
-
   void update(uint64_t addr) {
 #ifdef DOLC_RLE
     if (hist[0] == addr) {  // Same patter, RLE compress
@@ -198,19 +161,6 @@ public:
         sign = sign + (sign >> (i * bits));
       }
     }
-
-#if 0
-    uint64_t key = sign;
-    key         += (key << 12);
-    key         ^= (key >> 22);
-    key         += (key << 4);
-    key         ^= (key >> 9);
-    key         += (key << 10);
-    key         ^= (key >> 2);
-    key         += (key << 7);
-    key         ^= (key >> 12);
-    sign         = key;
-#endif
 
     return sign & ((1 << (bits)) - 1);
   }

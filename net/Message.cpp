@@ -15,9 +15,9 @@ Message::Message() : launchMsgCB(this), forwardMsgCB(this), receiveMsgCB(this), 
 #endif
 }
 
-void Message::forwardMsg(TimeDelta_t lat, Router *r) { forwardMsgCB.schedule(lat, r); }
+void Message::forwardMsg(TimeDelta_t lat, Router* r) { forwardMsgCB.schedule(lat, r); }
 
-void Message::forwardMsgAbs(Time_t time, Router *r) { forwardMsgCB.scheduleAbs(time, r); }
+void Message::forwardMsgAbs(Time_t time, Router* r) { forwardMsgCB.scheduleAbs(time, r); }
 
 void Message::dump() {
   MSG("MESSAGE #%d: src[%d:%d] dst[%d:%d] size[%d] latency[%lld]",
@@ -30,17 +30,17 @@ void Message::dump() {
       (long long)(globalClock - launchTime));
 }
 
-void Message::launchMsg(Router *router) {
+void Message::launchMsg(Router* router) {
   launchTime = globalClock;
 
   router->launchMsg(this);
 }
 
-void Message::forwardMsg(Router *router) { router->forwardMsg(this); }
+void Message::forwardMsg(Router* router) { router->forwardMsg(this); }
 
-void Message::receiveMsg(Router *router) { router->receiveMsg(this); }
+void Message::receiveMsg(Router* router) { router->receiveMsg(this); }
 
-void Message::notifyMsg(Router *router) {
+void Message::notifyMsg(Router* router) {
   I(interConnection);
   interConnection->updateAvgMsgLatency(launchTime);
 
@@ -49,7 +49,7 @@ void Message::notifyMsg(Router *router) {
 
 void Message::setSize(uint32_t size) { nSize = size; }
 
-void Message::setInterConnection(InterConnection *intercon) {
+void Message::setInterConnection(InterConnection* intercon) {
   I(intercon);
   interConnection = intercon;
 }

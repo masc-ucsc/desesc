@@ -72,7 +72,7 @@ void Emul_dromajo::destroy_machine() {
 
 static inline uint32_t C_reg_decode(uint32_t rn) { return rn + 8; }
 
-Dinst *Emul_dromajo::peek(Hartid_t fid) {
+Dinst* Emul_dromajo::peek(Hartid_t fid) {
   uint32_t insn_raw = last[fid].insns;
 
   // Assume compressed, default to 32-bit insn
@@ -377,16 +377,16 @@ Dinst *Emul_dromajo::peek(Hartid_t fid) {
   I(dst1 != RegType::LREG_INVALID);
 
   uint64_t paddr = 0u;
-  uint64_t pc = last[fid].pc;
+  uint64_t pc    = last[fid].pc;
   if (opcode == Opcode::iLALU_LD || opcode == Opcode::iSALU_ST) {
     paddr = last[fid].addr;
   } else if (opcode == Opcode::iBALU_LBRANCH || opcode == Opcode::iBALU_RBRANCH) {
     paddr = last[fid].next_pc;
-    if ((paddr == pc+2) || paddr == pc+4) {
-      paddr = 0; // Not taken Control flow instruction
+    if ((paddr == pc + 2) || paddr == pc + 4) {
+      paddr = 0;  // Not taken Control flow instruction
     }
-  } else if (opcode == Opcode::iBALU_LJUMP || opcode == Opcode::iBALU_RJUMP || opcode == Opcode::iBALU_LCALL || opcode == Opcode::iBALU_RCALL
-             || opcode == Opcode::iBALU_RET) {
+  } else if (opcode == Opcode::iBALU_LJUMP || opcode == Opcode::iBALU_RJUMP || opcode == Opcode::iBALU_LCALL
+             || opcode == Opcode::iBALU_RCALL || opcode == Opcode::iBALU_RET) {
     paddr = last[fid].next_pc;
   }
 
@@ -431,7 +431,7 @@ bool Emul_dromajo::is_sleeping(Hartid_t fid) const {
 void Emul_dromajo::init_dromajo_machine() {
   assert(type == "dromajo");
 
-  std::vector<char *> dromajo_args;
+  std::vector<char*> dromajo_args;
   dromajo_args.push_back(strdup("desesc_drom"));
   if (!bench.empty()) {
     dromajo_args.push_back(strdup(bench.c_str()));
@@ -458,27 +458,27 @@ void Emul_dromajo::init_dromajo_machine() {
                                         "gdbinit",
                                         "clear_ids"};
 
-  for (auto &&item : list_args) {
+  for (auto&& item : list_args) {
     if (Config::has_entry(section, item)) {
       std::string arg = "--" + item + "=" + Config::get_string(section, item);
       dromajo_args.push_back(strdup(arg.c_str()));
     }
   }
-  char **argv = (char **)malloc(sizeof(char *)*(dromajo_args.size()+1));
+  char** argv = (char**)malloc(sizeof(char*) * (dromajo_args.size() + 1));
   for (auto i = 0u; i < dromajo_args.size(); ++i) {
     argv[i] = dromajo_args[i];
   }
-  argv[dromajo_args.size()]= nullptr;
+  argv[dromajo_args.size()] = nullptr;
 
   fmt::print("\ndromajo arguments:");
-  for (const auto *str : dromajo_args) {
+  for (const auto* str : dromajo_args) {
     fmt::print(" {}", str);
   }
   fmt::print("\n");
 
   machine = virt_machine_main(dromajo_args.size(), argv);
 
-  for (auto *ptr : dromajo_args) {
+  for (auto* ptr : dromajo_args) {
     free(ptr);
   }
   free(argv);

@@ -72,12 +72,9 @@ void MemController::doReqAck([[maybe_unused]] MemRequest* mreq) { I(0); }
 
 void MemController::doDisp(MemRequest* mreq) { addMemRequest(mreq); }
 
-void MemController::doSetState(MemRequest* mreq) {
-  (void)mreq;
-  I(0);
-}
+void MemController::doSetState([[maybe_unused]] MemRequest* mreq) { I(0); }
 
-void MemController::doSetStateAck(MemRequest* mreq) { (void)mreq; }
+void MemController::doSetStateAck([[maybe_unused]] MemRequest* mreq) {}
 
 bool MemController::isBusy(Addr_t addr) const {
   (void)addr;

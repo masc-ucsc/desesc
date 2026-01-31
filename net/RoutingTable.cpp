@@ -11,9 +11,9 @@
           RoutingTable
 *******************************/
 
-void RoutingTable::Wire::dump(const char *str) const { MSG("%s: next router %d through port %d in %d clk", str, rID, port, dist); }
+void RoutingTable::Wire::dump(const char* str) const { MSG("%s: next router %d through port %d in %d clk", str, rID, port, dist); }
 
-RoutingTable::RoutingTable(const char *section, RouterID_t id, size_t size, PortID_t np)
+RoutingTable::RoutingTable(const char* section, RouterID_t id, size_t size, PortID_t np)
     : myID(id), fixMessagePath(SescConf->getBool(section, "fixMessagePath")), nPorts(np) {
   SescConf->isBool(section, "fixMessagePath");
 
@@ -22,7 +22,7 @@ RoutingTable::RoutingTable(const char *section, RouterID_t id, size_t size, Port
 
 RoutingTable::~RoutingTable() {}
 
-void RoutingTable::addNeighborWire(RouterID_t id, const Wire &wire) {
+void RoutingTable::addNeighborWire(RouterID_t id, const Wire& wire) {
   while (nextHop.size() < id) {
     nextHop.push_back(Wires4Router());
   }
@@ -55,7 +55,7 @@ void RoutingTable::addNeighborWire(RouterID_t id, const Wire &wire) {
   nextHop[id].succs.push_back(wire);
 }
 
-const RoutingTable::Wire *RoutingTable::getWire(RouterID_t destid) {
+const RoutingTable::Wire* RoutingTable::getWire(RouterID_t destid) {
   size_t pos = nextHop[destid].prevTurn + 1;
   I(!nextHop[destid].succs.empty());
 
@@ -68,7 +68,7 @@ const RoutingTable::Wire *RoutingTable::getWire(RouterID_t destid) {
   return &nextHop[destid].succs[pos];
 }
 
-const RoutingTable::Wire *RoutingTable::getPortWire(RouterID_t id, PortID_t port) const {
+const RoutingTable::Wire* RoutingTable::getPortWire(RouterID_t id, PortID_t port) const {
   size_t nSuccs = nextHop[id].succs.size();
 
   for (size_t i = 0; i < nSuccs; i++) {

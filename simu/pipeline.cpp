@@ -157,28 +157,7 @@ IBucket* Pipeline::nextItem() {
     }
 
     if (((buffer.top())->getClock() + PipeLength) > globalClock) {
-#if 0
-//#if 1
-        fprintf(stderr,"1 @%lld Buffer[%p] .top.ID (%d) ->getClock(@%lld) to be issued after %d cycles\n" 
-           ,(long long int) globalClock
-           ,buffer.top()
-           ,(int) ((buffer.top())->top())->getID()
-           ,(long long int)((buffer.top())->getClock())
-           ,PipeLength
-           );
-#endif
       return nullptr;
-    } else {
-#if 0
-//#if 1
-       fprintf(stderr,"2 @%lld Buffer[%p] .top.ID (%d) ->getClock(@%lld) to be issued after %d cycles\n"1
-          ,(long long int) globalClock
-          ,buffer.top()
-          ,(int) ((buffer.top())->top())->getID()
-          ,(long long int)((buffer.top())->getClock())
-          ,PipeLength
-          );
-#endif
     }
     IBucket* b = buffer.top();
     buffer.pop();
@@ -226,20 +205,4 @@ IBucket* Pipeline::newItem() {
   return b;
 }
 
-bool Pipeline::hasOutstandingItems() const {
-  // bucketPool.size() has lineal time O(n)
-#if 0
-  if (!buffer.empty()){
-    MSG("Pipeline !buffer.empty()");
-  }
-
-  if (!received.empty()){
-    MSG("Pipeline !received.empty()");
-  }
-
-  if (nIRequests < MaxIRequests){
-    MSG("Pipeline nIRequests(%d) < MaxIRequests(%d)",nIRequests, MaxIRequests);
-  }
-#endif
-  return !buffer.empty() || !received.empty() || nIRequests < MaxIRequests;
-}
+bool Pipeline::hasOutstandingItems() const { return !buffer.empty() || !received.empty() || nIRequests < MaxIRequests; }

@@ -139,7 +139,7 @@ void BootLoader::plug_simus() {
   }
 }
 
-void BootLoader::plug(int argc, const char **argv) {
+void BootLoader::plug(int argc, const char** argv) {
   // Before boot
 
   std::string conf_file  = "desesc.toml";

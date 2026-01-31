@@ -41,7 +41,7 @@
 #include "RoutingPolicy.h"
 #include "SescConf.h"
 
-InterConnection::InterConnection(const char *section)
+InterConnection::InterConnection(const char* section)
     : descrSection(strdup(section)), msgLatency("%s_msgLatency", section), netType(strdup(SescConf->getCharPtr(section, "type"))) {
   if (strcasecmp(netType, "mesh") == 0) {
     rPolicy = new MeshMultiPathRoutingPolicy(section);
@@ -84,11 +84,11 @@ void InterConnection::destroyRouters() {
   }
 }
 
-void InterConnection::registerProtocol(ProtocolCBBase *pcb, MessageType msgType, RouterID_t rID, PortID_t pID, NetDevice_t netID) {
+void InterConnection::registerProtocol(ProtocolCBBase* pcb, MessageType msgType, RouterID_t rID, PortID_t pID, NetDevice_t netID) {
   routers[rID]->registerProtocol(pcb, pID, PMessage::getUniqueProtID(msgType, netID));
 }
 
-uint32_t InterConnection::getNextFreeRouter(const char *section) {
+uint32_t InterConnection::getNextFreeRouter(const char* section) {
   ValHash::iterator it = routersCtr.find(section);
 
   if (it == routersCtr.end()) {
@@ -100,7 +100,7 @@ uint32_t InterConnection::getNextFreeRouter(const char *section) {
   return routersCtr[section];
 }
 
-PortID_t InterConnection::getPort(const char *section) {
+PortID_t InterConnection::getPort(const char* section) {
   PortHash::iterator it = portsCtr.find(section);
 
   if (it == portsCtr.end()) {

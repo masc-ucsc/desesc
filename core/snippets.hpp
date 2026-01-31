@@ -6,14 +6,14 @@
 
 //**************************************************
 // Types used for time (move to callback?)
-typedef uint64_t Time_t;
-const uint64_t   MaxTime = ((~0ULL) - 1024);  // -1024 is to give a little bit of margin
+using Time_t               = uint64_t;
+constexpr uint64_t MaxTime = ((~0ULL) - 1024);  // -1024 is to give a little bit of margin
 
 extern Time_t globalClock;  // Defined in Thread.cpp
 extern Time_t deadClock;    // Defined in Thread.cpp
 
-typedef uint16_t TimeDelta_t;
-const uint16_t   MaxDeltaTime = (65535 - 1024);  // -1024 is to give a little bit of margin
+using TimeDelta_t               = uint16_t;
+constexpr uint16_t MaxDeltaTime = (65535 - 1024);  // -1024 is to give a little bit of margin
 
 // x, y are integers and x,y > 0
 #define CEILDiv(x, y) ((x) - 1) / (y) + 1

@@ -3,8 +3,8 @@
 #pragma once
 
 #include <pthread.h>
-#include <string.h>
-#include <strings.h>
+
+#include <cstring>
 
 #include "fmt/format.h"
 #include "iassert.hpp"
@@ -58,7 +58,7 @@ protected:
   Holder* first;  // List of free nodes
 
   void reproduce() {
-    I(first == 0);
+    I(first == nullptr);
 
     for (int32_t i = 0; i < Size; i++) {
       Holder* h     = ::new Holder(p1);
@@ -84,17 +84,17 @@ public:
     warn_psize = s * 8;
 #endif
 
-    first = 0;
+    first = nullptr;
 
 #ifdef POOL_TIMEOUT
     need2cycle = globalClock + POOL_CHECK_CYCLE;
 #endif
 #ifndef NDEBUG
-    allFirst = 0;
+    allFirst = nullptr;
     thid     = 0;
 #endif
 
-    if (first == 0) {
+    if (first == nullptr) {
       reproduce();
     }
   }
@@ -106,7 +106,7 @@ public:
       first     = first->holderNext;
       ::delete h;
     }
-    first = 0;
+    first = nullptr;
 #ifndef NDEBUG
     deleted = true;
 #endif
@@ -182,7 +182,7 @@ public:
 
     Ttype* h = static_cast<Ttype*>(first);
     first    = first->holderNext;
-    if (first == 0) {
+    if (first == nullptr) {
       reproduce();
     }
 
@@ -229,7 +229,7 @@ protected:
   };
 
   void reproduce() {
-    I(first == 0);
+    I(first == nullptr);
 
     for (int32_t i = 0; i < Size; i++) {
       Holder* h = ::new Holder;
@@ -244,7 +244,7 @@ public:
     deleted = false;
 #endif
 
-    first = 0;
+    first = nullptr;
 
     reproduce();
   };
@@ -256,7 +256,7 @@ public:
       first              = first->holderNext;
       ::delete h;
     }
-    first = 0;
+    first = nullptr;
 #ifndef NDEBUG
     deleted = true;
 #endif
@@ -288,11 +288,11 @@ public:
       old_first = AtomicCompareSwap(&first, c_first, c_first->holderNext);
     } while (old_first != c_first);
 
-    if (first == 0) {
+    if (first == nullptr) {
       reproduce();
     }
 
-    Ttype* h = (Ttype*)(c_first);
+    Ttype* h = const_cast<Ttype*>(static_cast<const Ttype*>(c_first));
 #ifndef NDEBUG
     I(c_first->inPool);
     c_first->inPool = false;
@@ -337,12 +337,12 @@ protected:
   Holder* first;  // List of free nodes
 
   void reproduce() {
-    I(first == 0);
+    I(first == nullptr);
 
     for (int32_t i = 0; i < Size; i++) {
       Holder* h = ::new Holder;
 #ifdef CLEAR_ON_INSERT
-      bzero(h, sizeof(Holder));
+      std::memset(h, 0, sizeof(Holder));
 #endif
       h->holderNext = first;
 #ifndef NDEBUG
@@ -366,17 +366,17 @@ public:
     warn_psize = s * 8;
 #endif
 
-    first = 0;
+    first = nullptr;
 
 #ifdef POOL_TIMEOUT
     need2cycle = globalClock + POOL_CHECK_CYCLE;
 #endif
 #ifndef NDEBUG
-    allFirst = 0;
+    allFirst = nullptr;
     thid     = 0;
 #endif
 
-    if (first == 0) {
+    if (first == nullptr) {
       reproduce();
     }
   }
@@ -389,7 +389,7 @@ public:
       first = first->holderNext;
       ::delete h;
     }
-    first = 0;
+    first = nullptr;
 #ifndef NDEBUG
     deleted=true;
 #endif
@@ -413,7 +413,7 @@ public:
   }
 
 #ifndef NDEBUG
-  Ttype* nextInUse(Ttype* current) {
+  [[nodiscard]] Ttype* nextInUse(Ttype* current) {
     Holder* tmp = static_cast<Holder*>(current);
     tmp         = tmp->allNext;
     while (tmp) {
@@ -422,9 +422,9 @@ public:
       }
       tmp = tmp->allNext;
     }
-    return 0;
+    return nullptr;
   }
-  Ttype* firstInUse() { return nextInUse(static_cast<Ttype*>(allFirst)); }
+  [[nodiscard]] Ttype* firstInUse() { return nextInUse(static_cast<Ttype*>(allFirst)); }
 #endif
 
   void in(Ttype* data) {
@@ -438,7 +438,7 @@ public:
     Holder* h = static_cast<Holder*>(data);
 
 #ifdef CLEAR_ON_INSERT
-    bzero(data, sizeof(Ttype));
+    std::memset(data, 0, sizeof(Ttype));
 #endif
 
 #ifndef NDEBUG
@@ -484,7 +484,7 @@ public:
 
     Ttype* h = static_cast<Ttype*>(first);
     first    = first->holderNext;
-    if (first == 0) {
+    if (first == nullptr) {
       reproduce();
     }
 
@@ -535,7 +535,7 @@ protected:
   Holder* first;  // List of free nodes
 
   void reproduce() {
-    I(first == 0);
+    I(first == nullptr);
 
     for (int32_t i = 0; i < Size; i++) {
       Holder* h     = ::new Holder;
@@ -561,16 +561,16 @@ public:
     warn_psize = s * 8;
 #endif
 
-    first = 0;
+    first = nullptr;
 
 #ifdef POOL_TIMEOUT
     need2cycle = globalClock + POOL_CHECK_CYCLE;
 #endif
 #ifndef NDEBUG
-    allFirst = 0;
+    allFirst = nullptr;
 #endif
 
-    if (first == 0) {
+    if (first == nullptr) {
       reproduce();
     }
   }
@@ -582,7 +582,7 @@ public:
       first     = first->holderNext;
       ::delete h;
     }
-    first = 0;
+    first = nullptr;
 #ifndef NDEBUG
     deleted = true;
 #endif
@@ -646,7 +646,7 @@ public:
 
     Ttype* h = static_cast<Ttype*>(first);
     first    = first->holderNext;
-    if (first == 0) {
+    if (first == nullptr) {
       reproduce();
     }
 

@@ -11,15 +11,15 @@
 
 class BloomFilter {
 private:
-  int32_t*  vSize;
-  int32_t*  vBits;
-  unsigned* vMask;
-  int32_t*  rShift;
-  int32_t** countVec;
-  int32_t   nVectors;
-  int32_t*  nonZeroCount;
-  char*     desc;
-  int32_t   nElements;
+  std::vector<int32_t>              vSize;
+  std::vector<int32_t>              vBits;
+  std::vector<unsigned>             vMask;
+  std::vector<int32_t>              rShift;
+  std::vector<std::vector<int32_t>> countVec;
+  int32_t                           nVectors;
+  std::vector<int32_t>              nonZeroCount;
+  char*                             desc;
+  int32_t                           nElements;
 
   bool BFBuild;
 
@@ -27,7 +27,7 @@ private:
   int32_t getIndex(unsigned val, int32_t chunkPos);
 
 public:
-  ~BloomFilter();
+  ~BloomFilter() = default;
 
   // the chunk parameters are from the least significant to
   // the most significant portion of the address
@@ -43,27 +43,27 @@ public:
 
   void clear();
 
-  bool mayExist(unsigned e);
-  bool mayIntersect(BloomFilter& otherbf);
+  [[nodiscard]] bool mayExist(unsigned e);
+  [[nodiscard]] bool mayIntersect(BloomFilter& otherbf);
 
   void intersectionWith(BloomFilter& otherbf, BloomFilter& inter);
 
   void mergeWith(BloomFilter& otherbf);
   void subtract(BloomFilter& otherbf);
 
-  bool isSubsetOf(BloomFilter& otherbf);
+  [[nodiscard]] bool isSubsetOf(BloomFilter& otherbf);
 
-  int32_t countAlias(unsigned e);
+  [[nodiscard]] int32_t countAlias(unsigned e);
 
-  void        dump(const char* msg);
-  const char* getDesc() { return desc; }
+  void                      dump(const char* msg);
+  [[nodiscard]] const char* getDesc() const noexcept { return desc; }
 
-  int32_t size() {  // # of elements encoded
+  [[nodiscard]] int32_t size() const noexcept {  // # of elements encoded
     return nElements;
   }
 
-  int32_t getSize();  // size of the vectors in bits
-  int32_t getSizeRLE(int32_t base = 0, int32_t runBits = 7);
+  [[nodiscard]] int32_t getSize() const;  // size of the vectors in bits
+  [[nodiscard]] int32_t getSizeRLE(int32_t base = 0, int32_t runBits = 7) const;
 
   FILE*          dumpPtr;
   static int32_t numDumps;
@@ -93,9 +93,9 @@ public:
     }
   }
 
-  ~BitSelection() {}
+  ~BitSelection() = default;
 
-  int32_t getNBits() { return nBits; }
+  [[nodiscard]] int32_t getNBits() const noexcept { return nBits; }
 
   void addBit(int32_t b) {
     bits[nBits] = b;

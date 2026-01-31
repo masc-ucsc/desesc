@@ -2,31 +2,26 @@
 
 #include "bloomfilter.hpp"
 
-#include <stdarg.h>
-#include <string.h>
+#include <algorithm>
 
 int32_t BloomFilter::numDumps = 0;
 
 BloomFilter::BloomFilter(const std::vector<int>& bits, const std::vector<int>& size) {
   I(bits.size() == size.size());
 
-  nVectors     = bits.size();
-  vSize        = new int[nVectors];
-  vBits        = new int[nVectors];
-  vMask        = new unsigned[nVectors];
-  rShift       = new int[nVectors];
-  countVec     = new int*[nVectors];
-  nonZeroCount = new int[nVectors];
+  nVectors = bits.size();
+  vSize.resize(nVectors);
+  vBits.resize(nVectors);
+  vMask.resize(nVectors);
+  rShift.resize(nVectors);
+  countVec.resize(nVectors);
+  nonZeroCount.resize(nVectors);
 
   for (int32_t i = 0; i < nVectors; i++) {
     vBits[i] = bits[i];
     vSize[i] = size[i];
 
-    countVec[i] = new int[vSize[i]];
-    for (int32_t j = 0; j < vSize[i]; j++) {
-      countVec[i][j] = 0;
-    }
-
+    countVec[i].resize(vSize[i], 0);
     nonZeroCount[i] = 0;
   }
 
@@ -37,56 +32,17 @@ BloomFilter::BloomFilter(const std::vector<int>& bits, const std::vector<int>& s
   BFBuild = true;
 }
 
-BloomFilter::~BloomFilter() {
-  if (!BFBuild) {
-    return;
-  }
-
-  delete[] vSize;
-  delete[] vBits;
-  delete[] vMask;
-  delete[] rShift;
-  delete[] nonZeroCount;
-
-  for (int32_t i = 0; i < nVectors; i++) {
-    delete[] countVec[i];
-  }
-
-  delete[] countVec;
-}
-
-BloomFilter::BloomFilter(const BloomFilter& bf) {
-  if (!bf.BFBuild) {
-    BFBuild = false;
-    return;
-  }
-
-  BFBuild = true;
-
-  nVectors = bf.nVectors;
-
-  vSize        = new int[nVectors];
-  vBits        = new int[nVectors];
-  vMask        = new unsigned[nVectors];
-  rShift       = new int[nVectors];
-  countVec     = new int*[nVectors];
-  nonZeroCount = new int[nVectors];
-  nElements    = bf.nElements;
-
-  for (int32_t i = 0; i < nVectors; i++) {
-    vSize[i]        = bf.vSize[i];
-    vBits[i]        = bf.vBits[i];
-    vMask[i]        = bf.vMask[i];
-    rShift[i]       = bf.rShift[i];
-    nonZeroCount[i] = bf.nonZeroCount[i];
-
-    countVec[i] = new int[vSize[i]];
-
-    for (int32_t j = 0; j < vSize[i]; j++) {
-      countVec[i][j] = bf.countVec[i][j];
-    }
-  }
-}
+BloomFilter::BloomFilter(const BloomFilter& bf)
+    : vSize(bf.vSize)
+    , vBits(bf.vBits)
+    , vMask(bf.vMask)
+    , rShift(bf.rShift)
+    , countVec(bf.countVec)
+    , nVectors(bf.nVectors)
+    , nonZeroCount(bf.nonZeroCount)
+    , desc(bf.desc)
+    , nElements(bf.nElements)
+    , BFBuild(bf.BFBuild) {}
 
 BloomFilter& BloomFilter::operator=(const BloomFilter& bf) {
   if (this == &bf) {
@@ -109,19 +65,14 @@ BloomFilter& BloomFilter::operator=(const BloomFilter& bf) {
   }
 #endif
 
-  nVectors = bf.nVectors;
-  for (int32_t i = 0; i < nVectors; i++) {
-    vSize[i]        = bf.vSize[i];
-    vBits[i]        = bf.vBits[i];
-    vMask[i]        = bf.vMask[i];
-    rShift[i]       = bf.rShift[i];
-    nonZeroCount[i] = bf.nonZeroCount[i];
-    for (int32_t j = 0; j < vSize[i]; j++) {
-      countVec[i][j] = bf.countVec[i][j];
-    }
-  }
-
-  nElements = bf.nElements;
+  nVectors     = bf.nVectors;
+  vSize        = bf.vSize;
+  vBits        = bf.vBits;
+  vMask        = bf.vMask;
+  rShift       = bf.rShift;
+  nonZeroCount = bf.nonZeroCount;
+  countVec     = bf.countVec;
+  nElements    = bf.nElements;
 
   return *this;
 }
@@ -205,12 +156,10 @@ void BloomFilter::clear() {
     return;
   }
 
-  for (int32_t i = 0; i < nVectors; i++) {
-    for (int32_t j = 0; j < vSize[i]; j++) {
-      countVec[i][j] = 0;
-    }
-    nonZeroCount[i] = 0;
+  for (auto& vec : countVec) {
+    std::fill(vec.begin(), vec.end(), 0);
   }
+  std::fill(nonZeroCount.begin(), nonZeroCount.end(), 0);
 
   nElements = 0;
 }
@@ -319,21 +268,21 @@ void BloomFilter::dump(const char* msg) {
   printf("\t%d \t%d\n", getSize(), getSizeRLE(0, 7));
 }
 
-int32_t BloomFilter::getSize() {
+int32_t BloomFilter::getSize() const {
   if (!BFBuild) {
     return 0;
   }
 
   int32_t size = 0;
 
-  for (int32_t i = 0; i < nVectors; i++) {
-    size += vSize[i];
+  for (auto vsize : vSize) {
+    size += vsize;
   }
 
   return size;
 }
 
-int32_t BloomFilter::getSizeRLE(int32_t base, int32_t runBits) {
+int32_t BloomFilter::getSizeRLE(int32_t base, int32_t runBits) const {
   if (!BFBuild) {
     return 0;
   }

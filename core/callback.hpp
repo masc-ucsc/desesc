@@ -29,7 +29,7 @@
 
 class EventScheduler : public TQueue<EventScheduler*, Time_t>::User {
 private:
-  typedef TQueue<EventScheduler*, Time_t> TimedCallbacksQueue;
+  using TimedCallbacksQueue = TQueue<EventScheduler*, Time_t>;
 
   static TimedCallbacksQueue cbQ;
 
@@ -120,9 +120,9 @@ protected:
   void          setNextCallbackBase(CallbackBase* cb) { nextCB4Container = cb; }
   friend class CallbackContainer;
 #ifndef NDEBUG
-  CallbackBase() { nextCB4Container = 0; }
+  CallbackBase() { nextCB4Container = nullptr; }
   virtual ~CallbackBase() {
-    I(nextCB4Container == 0);  // Destroying a callback still enqueed?
+    I(nextCB4Container == nullptr);  // Destroying a callback still enqueed?
   }
 #endif
 public:
@@ -149,8 +149,9 @@ class StaticCallbackBase : public CallbackBase {
 template <class Parameter1, class Parameter2, class Parameter3, void (*funcPtr)(Parameter1, Parameter2, Parameter3)>
 class CallbackFunction3 : public CallbackBase {
 private:
-  typedef pool<CallbackFunction3> poolType;
-  static poolType                 cbPool;
+  using poolType = pool<CallbackFunction3>;
+
+  static poolType cbPool;
   friend class pool<CallbackFunction3>;
 
   Parameter1 p1;
@@ -207,8 +208,9 @@ typename CallbackFunction3<Parameter1, Parameter2, Parameter3, funcPtr>::poolTyp
 template <class Parameter1, class Parameter2, void (*funcPtr)(Parameter1, Parameter2)>
 class CallbackFunction2 : public CallbackBase {
 private:
-  typedef pool<CallbackFunction2> poolType;
-  static poolType                 cbPool;
+  using poolType = pool<CallbackFunction2>;
+
+  static poolType cbPool;
   friend class pool<CallbackFunction2>;
 
   Parameter1 p1;
@@ -262,8 +264,9 @@ typename CallbackFunction2<Parameter1, Parameter2, funcPtr>::poolType CallbackFu
 template <class Parameter1, void (*funcPtr)(Parameter1)>
 class CallbackFunction1 : public CallbackBase {
 private:
-  typedef pool<CallbackFunction1> poolType;
-  static poolType                 cbPool;
+  using poolType = pool<CallbackFunction1>;
+
+  static poolType cbPool;
   friend class pool<CallbackFunction1>;
 
   Parameter1 p1;
@@ -313,8 +316,9 @@ typename CallbackFunction1<Parameter1, funcPtr>::poolType CallbackFunction1<Para
 template <void (*funcPtr)()>
 class CallbackFunction0 : public CallbackBase {
 private:
-  typedef pool<CallbackFunction0> poolType;
-  static poolType                 cbPool;
+  using poolType = pool<CallbackFunction0>;
+
+  static poolType cbPool;
   friend class pool<CallbackFunction0>;
 
 protected:
@@ -461,8 +465,9 @@ template <class ClassType, class Parameter1, class Parameter2, class Parameter3,
           class Parameter6, void (ClassType::*memberPtr)(Parameter1, Parameter2, Parameter3, Parameter4, Parameter5, Parameter6)>
 class CallbackMember6 : public CallbackBase {
 private:
-  typedef pool<CallbackMember6> poolType;
-  static poolType               cbPool;
+  using poolType = pool<CallbackMember6>;
+
+  static poolType cbPool;
   friend class pool<CallbackMember6>;
 
   Parameter1 p1;
@@ -537,8 +542,9 @@ template <class ClassType, class Parameter1, class Parameter2, class Parameter3,
           void (ClassType::*memberPtr)(Parameter1, Parameter2, Parameter3, Parameter4, Parameter5)>
 class CallbackMember5 : public CallbackBase {
 private:
-  typedef pool<CallbackMember5> poolType;
-  static poolType               cbPool;
+  using poolType = pool<CallbackMember5>;
+
+  static poolType cbPool;
   friend class pool<CallbackMember5>;
 
   Parameter1 p1;
@@ -606,8 +612,9 @@ template <class ClassType, class Parameter1, class Parameter2, class Parameter3,
           void (ClassType::*memberPtr)(Parameter1, Parameter2, Parameter3, Parameter4)>
 class CallbackMember4 : public CallbackBase {
 private:
-  typedef pool<CallbackMember4> poolType;
-  static poolType               cbPool;
+  using poolType = pool<CallbackMember4>;
+
+  static poolType cbPool;
   friend class pool<CallbackMember4>;
 
   Parameter1 p1;
@@ -670,8 +677,9 @@ template <class ClassType, class Parameter1, class Parameter2, class Parameter3,
           void (ClassType::*memberPtr)(Parameter1, Parameter2, Parameter3)>
 class CallbackMember3 : public CallbackBase {
 private:
-  typedef pool<CallbackMember3> poolType;
-  static poolType               cbPool;
+  using poolType = pool<CallbackMember3>;
+
+  static poolType cbPool;
   friend class pool<CallbackMember3>;
 
   Parameter1 p1;
@@ -731,8 +739,9 @@ typename CallbackMember3<ClassType, Parameter1, Parameter2, Parameter3, memberPt
 template <class ClassType, class Parameter1, class Parameter2, void (ClassType::*memberPtr)(Parameter1, Parameter2)>
 class CallbackMember2 : public CallbackBase {
 private:
-  typedef pool<CallbackMember2> poolType;
-  static poolType               cbPool;
+  using poolType = pool<CallbackMember2>;
+
+  static poolType cbPool;
   friend class pool<CallbackMember2>;
 
   Parameter1 p1;
@@ -789,8 +798,9 @@ typename CallbackMember2<ClassType, Parameter1, Parameter2, memberPtr>::poolType
 template <class ClassType, class Parameter1, void (ClassType::*memberPtr)(Parameter1)>
 class CallbackMember1 : public CallbackBase {
 private:
-  typedef pool<CallbackMember1> poolType;
-  static poolType               cbPool;
+  using poolType = pool<CallbackMember1>;
+
+  static poolType cbPool;
   friend class pool<CallbackMember1>;
 
   Parameter1 p1;
@@ -845,8 +855,9 @@ typename CallbackMember1<ClassType, Parameter1, memberPtr>::poolType CallbackMem
 template <class ClassType, void (ClassType::*memberPtr)()>
 class CallbackMember0 : public CallbackBase {
 private:
-  typedef pool<CallbackMember0> poolType;
-  static poolType               cbPool;
+  using poolType = pool<CallbackMember0>;
+
+  static poolType cbPool;
   friend class pool<CallbackMember0>;
 
   ClassType* instance;
@@ -1087,8 +1098,8 @@ private:
 public:
   uint64_t size;
   CallbackContainer() {
-    first = 0;
-    last  = 0;
+    first = nullptr;
+    last  = nullptr;
     size  = 0;
   }
 
@@ -1098,7 +1109,7 @@ public:
     I(c->getNextCallbackBase() == 0);
     c->setNextCallbackBase(0);
 
-    if (last == 0) {
+    if (last == nullptr) {
       first = c;
       last  = c;
     } else {
@@ -1110,7 +1121,7 @@ public:
 
   void call() {
     // optimization for te most common case
-    if (first == 0) {
+    if (first == nullptr) {
       return;
     }
 
@@ -1123,7 +1134,7 @@ public:
 #ifndef NDEBUG
       t->setNextCallbackBase(0);
 #endif
-      if (first == 0) {
+      if (first == nullptr) {
         last = 0;
       }
       cb->call();
@@ -1133,7 +1144,7 @@ public:
 
   void mycall() {
     // optimization for te most common case
-    if (first == 0) {
+    if (first == nullptr) {
       return;
     }
 
@@ -1147,7 +1158,7 @@ public:
 #ifndef NDEBUG
       t->setNextCallbackBase(0);
 #endif
-      if (first == 0) {
+      if (first == nullptr) {
         last = 0;
       }
       cb->call();
@@ -1157,7 +1168,7 @@ public:
   }
 
   void callNext() {
-    if (first == 0) {
+    if (first == nullptr) {
       return;
     }
 
@@ -1169,14 +1180,14 @@ public:
 #ifndef NDEBUG
     t->setNextCallbackBase(0);
 #endif
-    if (first == 0) {
+    if (first == nullptr) {
       last = 0;
     }
 
     cb->call();
   }
 
-  bool empty() const { return first == 0; }
+  [[nodiscard]] bool empty() const noexcept { return first == nullptr; }
 
-  void makeEmpty() { first = 0; }
+  void makeEmpty() { first = nullptr; }
 };

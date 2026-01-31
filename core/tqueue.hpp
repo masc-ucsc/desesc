@@ -108,14 +108,14 @@ private:
 
     uint32_t pos = ((uint32_t)(minPos + time - minTime)) & AccessMask;
 
-    if (access[pos] == 0) {
+    if (access[pos] == nullptr) {
       access[pos] = node;
     } else {
       accessTail[pos]->setTQNext(node);
     }
     accessTail[pos] = node;
     node->setInFastQueue();
-    node->setTQNext(0);
+    node->setTQNext(nullptr);
     nNodes++;
   };
 
@@ -165,19 +165,19 @@ public:
     if (nNodes == 0) {
       minTime = cTime;
       minPos  = 0;
-      return 0;
+      return nullptr;
     }
 
     Data node = access[minPos];
 
-    while (node == 0 && minTime < cTime) {
+    while (node == nullptr && minTime < cTime) {
       minPos = (minPos + 1) & AccessMask;
       minTime++;
       node = access[minPos];
     }
 
-    if (node == 0) {
-      return 0;
+    if (node == nullptr) {
+      return nullptr;
     }
 
     I(minTime <= cTime);
@@ -203,8 +203,7 @@ public:
         }
 
       } else {
-        typedef typename std::vector<Data>::iterator DataIter;
-        DataIter                                     it = std::find(tooFar.begin(), tooFar.end(), node);
+        auto it = std::find(tooFar.begin(), tooFar.end(), node);
 
         I(it != tooFar.end());
         tooFar.erase(it);
@@ -222,7 +221,7 @@ public:
       } else {
         uint32_t pos = ((uint32_t)(minPos + time - minTime)) & AccessMask;
 
-        Data prev = 0;
+        Data prev = nullptr;
         Data curr = access[pos];
 
         while (curr != node) {
@@ -231,7 +230,7 @@ public:
         }
         I(curr == node);
 
-        if (prev == 0) {
+        if (prev == nullptr) {
           access[pos] = access[pos]->getTQNext();
         } else {
           prev->setTQNext(curr->getTQNext());
@@ -260,8 +259,8 @@ public:
     insert(node, rTime);
   };
 
-  size_t size() const { return nNodes + tooFar.size(); };
-  bool   empty() const { return nNodes == 0 && tooFar.empty(); };
+  [[nodiscard]] size_t size() const noexcept { return nNodes + tooFar.size(); };
+  [[nodiscard]] bool   empty() const noexcept { return nNodes == 0 && tooFar.empty(); };
 
   void dump();
 };

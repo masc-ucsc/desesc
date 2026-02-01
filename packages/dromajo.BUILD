@@ -10,6 +10,7 @@ cc_library(
     ),
     hdrs = glob(["include/*.h"]),
     includes = ["include"],
+    copts = ["-Wno-unused-parameter"],
     visibility = ["//visibility:public"],
     deps = [
       "@libelf"

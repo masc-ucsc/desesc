@@ -23,8 +23,12 @@ Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
 #if (defined __GNUC__)
 #include <cstdlib>
+#ifndef alloca
 #define alloca __builtin_alloca
+#endif
 #else
 extern void *alloca(uint32_t __size);
+#ifndef alloca
 #define alloca __builtin_alloca
+#endif
 #endif /* __GNUC__ */

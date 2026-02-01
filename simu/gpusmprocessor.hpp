@@ -35,17 +35,17 @@ public:
   GPUSMProcessor(Gmemory_system* gm, CPU_t i);
   virtual ~GPUSMProcessor();
 
-  LSQ* getLSQ() { return &lsq; }
-  void replay(Dinst* dinst);
+  LSQ* getLSQ() override { return &lsq; }
+  void replay(Dinst* dinst) override;
 
   bool is_nuking() override final { return false; }
 
-  bool isReplayRecovering() {
+  bool isReplayRecovering() override {
     I(0);
     return false;
   }
 
-  Time_t getReplayID() {
+  Time_t getReplayID() override {
     I(0);
     return false;
   }

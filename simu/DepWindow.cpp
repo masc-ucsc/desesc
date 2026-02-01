@@ -82,7 +82,10 @@ void DepWindow::select(Dinst* dinst) {
 
   I(src_cluster_id == dinst->getCluster()->get_id());
 
-  Resource::executingCB::scheduleAbs(schedTime, dinst->getClusterResource().get(), dinst);  // NASTY to avoid callback ptr
+  Resource::executingCB::scheduleAbs(schedTime,
+                                     dinst->getClusterResource().get(),
+                                     dinst,
+                                     dinst->getID());  // NASTY to avoid callback ptr
 }
 
 void DepWindow::executed_flushed(Dinst* dinst) {

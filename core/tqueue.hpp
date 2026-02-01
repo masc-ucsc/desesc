@@ -109,13 +109,40 @@ private:
     uint32_t pos = ((uint32_t)(minPos + time - minTime)) & AccessMask;
 
     if (access[pos] == nullptr) {
-      access[pos] = node;
+      access[pos]     = node;
+      accessTail[pos] = node;
+      node->setTQNext(nullptr);
     } else {
+#ifdef STRICT_PRIORITY
+      if (accessTail[pos]->getPriority() <= node->getPriority()) {
+        accessTail[pos]->setTQNext(node);
+        accessTail[pos] = node;
+        node->setTQNext(nullptr);
+      } else {
+        Data prev = nullptr;
+        Data cur  = access[pos];
+        while (cur && cur->getPriority() <= node->getPriority()) {
+          prev = cur;
+          cur  = cur->getTQNext();
+        }
+        if (prev == nullptr) {
+          node->setTQNext(access[pos]);
+          access[pos] = node;
+        } else {
+          prev->setTQNext(node);
+          node->setTQNext(cur);
+        }
+        if (cur == nullptr) {
+          accessTail[pos] = node;
+        }
+      }
+#else
       accessTail[pos]->setTQNext(node);
+      accessTail[pos] = node;
+      node->setTQNext(nullptr);
+#endif
     }
-    accessTail[pos] = node;
     node->setInFastQueue();
-    node->setTQNext(nullptr);
     nNodes++;
   };
 

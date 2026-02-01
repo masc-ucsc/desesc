@@ -34,11 +34,35 @@ private:
   static TimedCallbacksQueue cbQ;
 
 #ifndef NDEBUG
+  bool priority_set = false;
+#endif
+  Time_t priority = 0;
+
+#ifndef NDEBUG
   const char* fileName;
   int32_t     lineno;
 #endif
 protected:
+  void initPriority(Time_t p) {
+#ifndef NDEBUG
+    I(!priority_set);
+    priority_set = true;
+#endif
+    priority = p;
+  }
+
+  void resetPriority() {
+#ifndef NDEBUG
+    priority_set = false;
+#endif
+    priority = 0;
+  }
+
 public:
+  EventScheduler() = default;
+
+  [[nodiscard]] Time_t getPriority() const { return priority; }
+
   virtual void call() = 0;
   virtual ~EventScheduler() {
     // Nothing
@@ -163,30 +187,32 @@ protected:
   virtual ~CallbackFunction3() {}
 
 public:
-  static CallbackFunction3* create(Parameter1 a1, Parameter2 a2, Parameter3 a3) {
+  static CallbackFunction3* create(Parameter1 a1, Parameter2 a2, Parameter3 a3, Time_t priority = 0) {
     CallbackFunction3* cb = cbPool.out();
-    cb->p1                = a1;
-    cb->p2                = a2;
-    cb->p3                = a3;
+    cb->resetPriority();
+    cb->initPriority(priority);
+    cb->p1 = a1;
+    cb->p2 = a2;
+    cb->p3 = a3;
 
     return cb;
   }
 
-  static void schedule(TimeDelta_t delta, Parameter1 a1, Parameter2 a2, Parameter3 a3) {
+  static void schedule(TimeDelta_t delta, Parameter1 a1, Parameter2 a2, Parameter3 a3, Time_t priority = 0) {
     if (delta == 0) {
       (*funcPtr)(a1, a2, a3);
     } else {
-      CallbackFunction3* cb = create(a1, a2, a3);
+      CallbackFunction3* cb = create(a1, a2, a3, priority);
       EventScheduler::schedule(delta, cb);
     }
   }
 
-  static void scheduleAbs(Time_t tim, Parameter1 a1, Parameter2 a2, Parameter3 a3) {
+  static void scheduleAbs(Time_t tim, Parameter1 a1, Parameter2 a2, Parameter3 a3, Time_t priority = 0) {
     I(tim >= globalClock);
     if (tim == globalClock) {
       (*funcPtr)(a1, a2, a3);
     } else {
-      CallbackFunction3* cb = create(a1, a2, a3);
+      CallbackFunction3* cb = create(a1, a2, a3, priority);
       EventScheduler::scheduleAbs(tim, cb);
     }
   }
@@ -221,28 +247,30 @@ protected:
   virtual ~CallbackFunction2() {}
 
 public:
-  static CallbackFunction2* create(Parameter1 a1, Parameter2 a2) {
+  static CallbackFunction2* create(Parameter1 a1, Parameter2 a2, Time_t priority = 0) {
     CallbackFunction2* cb = cbPool.out();
-    cb->p1                = a1;
-    cb->p2                = a2;
+    cb->resetPriority();
+    cb->initPriority(priority);
+    cb->p1 = a1;
+    cb->p2 = a2;
 
     return cb;
   }
 
-  static void schedule(TimeDelta_t delta, Parameter1 a1, Parameter2 a2) {
+  static void schedule(TimeDelta_t delta, Parameter1 a1, Parameter2 a2, Time_t priority = 0) {
     if (delta == 0) {
       (*funcPtr)(a1, a2);
     } else {
-      CallbackFunction2* cb = create(a1, a2);
+      CallbackFunction2* cb = create(a1, a2, priority);
       EventScheduler::schedule(delta, cb);
     }
   }
 
-  static void scheduleAbs(Time_t tim, Parameter1 a1, Parameter2 a2) {
+  static void scheduleAbs(Time_t tim, Parameter1 a1, Parameter2 a2, Time_t priority = 0) {
     if (tim == globalClock) {
       (*funcPtr)(a1, a2);
     } else {
-      CallbackFunction2* cb = create(a1, a2);
+      CallbackFunction2* cb = create(a1, a2, priority);
       EventScheduler::scheduleAbs(tim, cb);
     }
   }
@@ -276,26 +304,28 @@ protected:
   virtual ~CallbackFunction1() {}
 
 public:
-  static CallbackFunction1* create(Parameter1 a1) {
+  static CallbackFunction1* create(Parameter1 a1, Time_t priority = 0) {
     CallbackFunction1* cb = cbPool.out();
-    cb->p1                = a1;
+    cb->resetPriority();
+    cb->initPriority(priority);
+    cb->p1 = a1;
     return cb;
   }
 
-  static void schedule(TimeDelta_t delta, Parameter1 a1) {
+  static void schedule(TimeDelta_t delta, Parameter1 a1, Time_t priority = 0) {
     if (delta == 0) {
       (*funcPtr)(a1);
     } else {
-      CallbackFunction1* cb = create(a1);
+      CallbackFunction1* cb = create(a1, priority);
       EventScheduler::schedule(delta, cb);
     }
   }
 
-  static void scheduleAbs(Time_t tim, Parameter1 a1) {
+  static void scheduleAbs(Time_t tim, Parameter1 a1, Time_t priority = 0) {
     if (tim == globalClock) {
       (*funcPtr)(a1);
     } else {
-      CallbackFunction1* cb = create(a1);
+      CallbackFunction1* cb = create(a1, priority);
       EventScheduler::scheduleAbs(tim, cb);
     }
   }
@@ -326,25 +356,27 @@ protected:
   virtual ~CallbackFunction0() {}
 
 public:
-  static CallbackFunction0* create() {
+  static CallbackFunction0* create(Time_t priority = 0) {
     CallbackFunction0* cb = cbPool.out();
+    cb->resetPriority();
+    cb->initPriority(priority);
     return cb;
   }
 
-  static void schedule(TimeDelta_t delta) {
+  static void schedule(TimeDelta_t delta, Time_t priority = 0) {
     if (delta == 0) {
       (*funcPtr)();
     } else {
-      CallbackFunction0* cb = create();
+      CallbackFunction0* cb = create(priority);
       EventScheduler::schedule(delta, cb);
     }
   }
 
-  static void scheduleAbs(Time_t tim) {
+  static void scheduleAbs(Time_t tim, Time_t priority = 0) {
     if (tim == globalClock) {
       (*funcPtr)();
     } else {
-      CallbackFunction0* cb = create();
+      CallbackFunction0* cb = create(priority);
       EventScheduler::scheduleAbs(tim, cb);
     }
   }
@@ -486,35 +518,37 @@ protected:
 
 public:
   static CallbackMember6* create(ClassType* i, Parameter1 a1, Parameter2 a2, Parameter3 a3, Parameter4 a4, Parameter5 a5,
-                                 Parameter6 a6) {
+                                 Parameter6 a6, Time_t priority = 0) {
     CallbackMember6* cb = cbPool.out();
-    cb->instance        = i;
-    cb->p1              = a1;
-    cb->p2              = a2;
-    cb->p3              = a3;
-    cb->p4              = a4;
-    cb->p5              = a5;
-    cb->p6              = a6;
+    cb->resetPriority();
+    cb->initPriority(priority);
+    cb->instance = i;
+    cb->p1       = a1;
+    cb->p2       = a2;
+    cb->p3       = a3;
+    cb->p4       = a4;
+    cb->p5       = a5;
+    cb->p6       = a6;
 
     return cb;
   }
 
   static void schedule(TimeDelta_t delta, ClassType* i, Parameter1 a1, Parameter2 a2, Parameter3 a3, Parameter4 a4, Parameter5 a5,
-                       Parameter6 a6) {
+                       Parameter6 a6, Time_t priority = 0) {
     if (delta == 0) {
       (i->*memberPtr)(a1, a2, a3, a4, a5, a6);
     } else {
-      CallbackMember6* cb = create(i, a1, a2, a3, a4, a5, a6);
+      CallbackMember6* cb = create(i, a1, a2, a3, a4, a5, a6, priority);
       EventScheduler::schedule(delta, cb);
     }
   }
 
   static void scheduleAbs(Time_t tim, ClassType* i, Parameter1 a1, Parameter2 a2, Parameter3 a3, Parameter4 a4, Parameter5 a5,
-                          Parameter6 a6) {
+                          Parameter6 a6, Time_t priority = 0) {
     if (tim == globalClock) {
       (i->*memberPtr)(a1, a2, a3, a4, a5, a6);
     } else {
-      CallbackMember6* cb = create(i, a1, a2, a3, a4, a5, a6);
+      CallbackMember6* cb = create(i, a1, a2, a3, a4, a5, a6, priority);
       EventScheduler::scheduleAbs(tim, cb);
     }
   }
@@ -561,32 +595,37 @@ protected:
   virtual ~CallbackMember5() {}
 
 public:
-  static CallbackMember5* create(ClassType* i, Parameter1 a1, Parameter2 a2, Parameter3 a3, Parameter4 a4, Parameter5 a5) {
+  static CallbackMember5* create(ClassType* i, Parameter1 a1, Parameter2 a2, Parameter3 a3, Parameter4 a4, Parameter5 a5,
+                                 Time_t priority = 0) {
     CallbackMember5* cb = cbPool.out();
-    cb->instance        = i;
-    cb->p1              = a1;
-    cb->p2              = a2;
-    cb->p3              = a3;
-    cb->p4              = a4;
-    cb->p5              = a5;
+    cb->resetPriority();
+    cb->initPriority(priority);
+    cb->instance = i;
+    cb->p1       = a1;
+    cb->p2       = a2;
+    cb->p3       = a3;
+    cb->p4       = a4;
+    cb->p5       = a5;
 
     return cb;
   }
 
-  static void schedule(TimeDelta_t delta, ClassType* i, Parameter1 a1, Parameter2 a2, Parameter3 a3, Parameter4 a4, Parameter5 a5) {
+  static void schedule(TimeDelta_t delta, ClassType* i, Parameter1 a1, Parameter2 a2, Parameter3 a3, Parameter4 a4, Parameter5 a5,
+                       Time_t priority = 0) {
     if (delta == 0) {
       (i->*memberPtr)(a1, a2, a3, a4, a5);
     } else {
-      CallbackMember5* cb = create(i, a1, a2, a3, a4, a5);
+      CallbackMember5* cb = create(i, a1, a2, a3, a4, a5, priority);
       EventScheduler::schedule(delta, cb);
     }
   }
 
-  static void scheduleAbs(Time_t tim, ClassType* i, Parameter1 a1, Parameter2 a2, Parameter3 a3, Parameter4 a4, Parameter5 a5) {
+  static void scheduleAbs(Time_t tim, ClassType* i, Parameter1 a1, Parameter2 a2, Parameter3 a3, Parameter4 a4, Parameter5 a5,
+                          Time_t priority = 0) {
     if (tim == globalClock) {
       (i->*memberPtr)(a1, a2, a3, a4, a5);
     } else {
-      CallbackMember5* cb = create(i, a1, a2, a3, a4, a5);
+      CallbackMember5* cb = create(i, a1, a2, a3, a4, a5, priority);
       EventScheduler::scheduleAbs(tim, cb);
     }
   }
@@ -629,31 +668,35 @@ protected:
   virtual ~CallbackMember4() {}
 
 public:
-  static CallbackMember4* create(ClassType* i, Parameter1 a1, Parameter2 a2, Parameter3 a3, Parameter4 a4) {
+  static CallbackMember4* create(ClassType* i, Parameter1 a1, Parameter2 a2, Parameter3 a3, Parameter4 a4, Time_t priority = 0) {
     CallbackMember4* cb = cbPool.out();
-    cb->instance        = i;
-    cb->p1              = a1;
-    cb->p2              = a2;
-    cb->p3              = a3;
-    cb->p4              = a4;
+    cb->resetPriority();
+    cb->initPriority(priority);
+    cb->instance = i;
+    cb->p1       = a1;
+    cb->p2       = a2;
+    cb->p3       = a3;
+    cb->p4       = a4;
 
     return cb;
   }
 
-  static void schedule(TimeDelta_t delta, ClassType* i, Parameter1 a1, Parameter2 a2, Parameter3 a3, Parameter4 a4) {
+  static void schedule(TimeDelta_t delta, ClassType* i, Parameter1 a1, Parameter2 a2, Parameter3 a3, Parameter4 a4,
+                       Time_t priority = 0) {
     if (delta == 0) {
       (i->*memberPtr)(a1, a2, a3, a4);
     } else {
-      CallbackMember4* cb = create(i, a1, a2, a3, a4);
+      CallbackMember4* cb = create(i, a1, a2, a3, a4, priority);
       EventScheduler::schedule(delta, cb);
     }
   }
 
-  static void scheduleAbs(Time_t tim, ClassType* i, Parameter1 a1, Parameter2 a2, Parameter3 a3, Parameter4 a4) {
+  static void scheduleAbs(Time_t tim, ClassType* i, Parameter1 a1, Parameter2 a2, Parameter3 a3, Parameter4 a4,
+                          Time_t priority = 0) {
     if (tim == globalClock) {
       (i->*memberPtr)(a1, a2, a3, a4);
     } else {
-      CallbackMember4* cb = create(i, a1, a2, a3, a4);
+      CallbackMember4* cb = create(i, a1, a2, a3, a4, priority);
       EventScheduler::scheduleAbs(tim, cb);
     }
   }
@@ -693,30 +736,32 @@ protected:
   virtual ~CallbackMember3() {}
 
 public:
-  static CallbackMember3* create(ClassType* i, Parameter1 a1, Parameter2 a2, Parameter3 a3) {
+  static CallbackMember3* create(ClassType* i, Parameter1 a1, Parameter2 a2, Parameter3 a3, Time_t priority = 0) {
     CallbackMember3* cb = cbPool.out();
-    cb->instance        = i;
-    cb->p1              = a1;
-    cb->p2              = a2;
-    cb->p3              = a3;
+    cb->resetPriority();
+    cb->initPriority(priority);
+    cb->instance = i;
+    cb->p1       = a1;
+    cb->p2       = a2;
+    cb->p3       = a3;
 
     return cb;
   }
 
-  static void schedule(TimeDelta_t delta, ClassType* i, Parameter1 a1, Parameter2 a2, Parameter3 a3) {
+  static void schedule(TimeDelta_t delta, ClassType* i, Parameter1 a1, Parameter2 a2, Parameter3 a3, Time_t priority = 0) {
     if (delta == 0) {
       (i->*memberPtr)(a1, a2, a3);
     } else {
-      CallbackMember3* cb = create(i, a1, a2, a3);
+      CallbackMember3* cb = create(i, a1, a2, a3, priority);
       EventScheduler::schedule(delta, cb);
     }
   }
 
-  static void scheduleAbs(Time_t tim, ClassType* i, Parameter1 a1, Parameter2 a2, Parameter3 a3) {
+  static void scheduleAbs(Time_t tim, ClassType* i, Parameter1 a1, Parameter2 a2, Parameter3 a3, Time_t priority = 0) {
     if (tim == globalClock) {
       (i->*memberPtr)(a1, a2, a3);
     } else {
-      CallbackMember3* cb = create(i, a1, a2, a3);
+      CallbackMember3* cb = create(i, a1, a2, a3, priority);
       EventScheduler::scheduleAbs(tim, cb);
     }
   }
@@ -754,29 +799,31 @@ protected:
   virtual ~CallbackMember2() {}
 
 public:
-  static CallbackMember2* create(ClassType* i, Parameter1 a1, Parameter2 a2) {
+  static CallbackMember2* create(ClassType* i, Parameter1 a1, Parameter2 a2, Time_t priority = 0) {
     CallbackMember2* cb = cbPool.out();
-    cb->instance        = i;
-    cb->p1              = a1;
-    cb->p2              = a2;
+    cb->resetPriority();
+    cb->initPriority(priority);
+    cb->instance = i;
+    cb->p1       = a1;
+    cb->p2       = a2;
 
     return cb;
   }
 
-  static void schedule(TimeDelta_t delta, ClassType* i, Parameter1 a1, Parameter2 a2) {
+  static void schedule(TimeDelta_t delta, ClassType* i, Parameter1 a1, Parameter2 a2, Time_t priority = 0) {
     if (delta == 0) {
       (i->*memberPtr)(a1, a2);
     } else {
-      CallbackMember2* cb = create(i, a1, a2);
+      CallbackMember2* cb = create(i, a1, a2, priority);
       EventScheduler::schedule(delta, cb);
     }
   }
 
-  static void scheduleAbs(Time_t tim, ClassType* i, Parameter1 a1, Parameter2 a2) {
+  static void scheduleAbs(Time_t tim, ClassType* i, Parameter1 a1, Parameter2 a2, Time_t priority = 0) {
     if (tim == globalClock) {
       (i->*memberPtr)(a1, a2);
     } else {
-      CallbackMember2* cb = create(i, a1, a2);
+      CallbackMember2* cb = create(i, a1, a2, priority);
       EventScheduler::scheduleAbs(tim, cb);
     }
   }
@@ -812,28 +859,30 @@ protected:
   virtual ~CallbackMember1() {}
 
 public:
-  static CallbackMember1* create(ClassType* i, Parameter1 a1) {
+  static CallbackMember1* create(ClassType* i, Parameter1 a1, Time_t priority = 0) {
     CallbackMember1* cb = cbPool.out();
-    cb->instance        = i;
-    cb->p1              = a1;
+    cb->resetPriority();
+    cb->initPriority(priority);
+    cb->instance = i;
+    cb->p1       = a1;
 
     return cb;
   }
 
-  static void schedule(TimeDelta_t delta, ClassType* i, Parameter1 a1) {
+  static void schedule(TimeDelta_t delta, ClassType* i, Parameter1 a1, Time_t priority = 0) {
     if (delta == 0) {
       (i->*memberPtr)(a1);
     } else {
-      CallbackMember1* cb = create(i, a1);
+      CallbackMember1* cb = create(i, a1, priority);
       EventScheduler::schedule(delta, cb);
     }
   }
 
-  static void scheduleAbs(Time_t tim, ClassType* i, Parameter1 a1) {
+  static void scheduleAbs(Time_t tim, ClassType* i, Parameter1 a1, Time_t priority = 0) {
     if (tim == globalClock) {
       (i->*memberPtr)(a1);
     } else {
-      CallbackMember1* cb = create(i, a1);
+      CallbackMember1* cb = create(i, a1, priority);
       EventScheduler::scheduleAbs(tim, cb);
     }
   }
@@ -867,27 +916,29 @@ protected:
   virtual ~CallbackMember0() {}
 
 public:
-  static CallbackMember0* create(ClassType* i) {
+  static CallbackMember0* create(ClassType* i, Time_t priority = 0) {
     CallbackMember0* cb = cbPool.out();
-    cb->instance        = i;
+    cb->resetPriority();
+    cb->initPriority(priority);
+    cb->instance = i;
 
     return cb;
   }
 
-  static void schedule(TimeDelta_t delta, ClassType* i) {
+  static void schedule(TimeDelta_t delta, ClassType* i, Time_t priority = 0) {
     if (delta == 0) {
       (i->*memberPtr)();
     } else {
-      CallbackMember0* cb = create(i);
+      CallbackMember0* cb = create(i, priority);
       EventScheduler::schedule(delta, cb);
     }
   }
 
-  static void scheduleAbs(Time_t tim, ClassType* i) {
+  static void scheduleAbs(Time_t tim, ClassType* i, Time_t priority = 0) {
     if (tim == globalClock) {
       (i->*memberPtr)();
     } else {
-      CallbackMember0* cb = create(i);
+      CallbackMember0* cb = create(i, priority);
       EventScheduler::scheduleAbs(tim, cb);
     }
   }
@@ -1113,8 +1164,32 @@ public:
       first = c;
       last  = c;
     } else {
+#ifdef STRICT_PRIORITY
+      if (last->getPriority() <= c->getPriority()) {
+        last->setNextCallbackBase(c);
+        last = c;
+      } else {
+        CallbackBase* prev = nullptr;
+        CallbackBase* cur  = first;
+        while (cur && cur->getPriority() <= c->getPriority()) {
+          prev = cur;
+          cur  = cur->getNextCallbackBase();
+        }
+        if (prev == nullptr) {
+          c->setNextCallbackBase(first);
+          first = c;
+        } else {
+          prev->setNextCallbackBase(c);
+          c->setNextCallbackBase(cur);
+        }
+        if (cur == nullptr) {
+          last = c;
+        }
+      }
+#else
       last->setNextCallbackBase(c);
       last = c;
+#endif
     }
     size++;
   }

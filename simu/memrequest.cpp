@@ -16,18 +16,8 @@ pool<MemRequest> MemRequest::actPool(2048, "MemRequest");
 bool forcemsgdump = true;
 
 MemRequest::MemRequest()
-    /* constructor  */
-    : redoReqCB(this)
-    , redoReqAckCB(this)
-    , redoSetStateCB(this)
-    , redoSetStateAckCB(this)
-    , redoDispCB(this)
-
-    , startReqCB(this)
-    , startReqAckCB(this)
-    , startSetStateCB(this)
-    , startSetStateAckCB(this)
-    , startDispCB(this) {}
+/* constructor  */
+{}
 /*  */
 
 MemRequest::~MemRequest()
@@ -104,9 +94,9 @@ void MemRequest::setStateAckDone(TimeDelta_t lat) {
   orig->pendingSetStateAck--;
   if (orig->pendingSetStateAck <= 0) {
     if (orig->mt == mt_req) {
-      orig->redoReqCB.schedule(lat);
+      redoReqCB::schedule(lat, orig, orig->getPriority());
     } else if (orig->mt == mt_reqAck) {
-      orig->redoReqAckCB.schedule(lat);
+      redoReqAckCB::schedule(lat, orig, orig->getPriority());
     } else if (orig->mt == mt_setState) {
       // I(orig->setStateAckOrig==0);
       // orig->ack();

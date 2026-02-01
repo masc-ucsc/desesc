@@ -716,7 +716,7 @@ void CCache::doReq(MemRequest* mreq) {
         dropPrefetch(mreq);
       } else {
         mreq->setRetrying();
-        mshr->addEntry(addr, &mreq->redoReqCB, mreq);
+        mshr->addEntry(addr, MemRequest::redoReqCB::create(mreq, mreq->getPriority()), mreq);
       }
       return;
     }

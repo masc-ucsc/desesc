@@ -7,8 +7,7 @@
 #include "config.hpp"
 #include "gprocessor.hpp"
 
-IBucket::IBucket(size_t size, Pipeline* p, bool clean)
-    : FastQueue<Dinst*>(size), cleanItem(clean), pipeLine(p), markFetchedCB(this) {}
+IBucket::IBucket(size_t size, Pipeline* p, bool clean) : FastQueue<Dinst*>(size), cleanItem(clean), pipeLine(p) {}
 
 void IBucket::markFetched() {
 #ifndef NDEBUG

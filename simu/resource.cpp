@@ -308,12 +308,12 @@ void FULoad::executing(Dinst* dinst) {
   if (dinst->isLoadForwarded() || !enableDcache || dinst->is_destroy_transient())
 #endif
   {
-    performedCB::scheduleAbs(when + LSDelay, this, dinst);
+    performedCB::scheduleAbs(when + LSDelay, this, dinst, dinst->getID());
     dinst->markDispatched();
 
     pref->exe(dinst);
   } else {
-    cacheDispatchedCB::scheduleAbs(when, this, dinst);
+    cacheDispatchedCB::scheduleAbs(when, this, dinst, dinst->getID());
   }
 }
 
@@ -333,14 +333,14 @@ void FULoad::cacheDispatched(Dinst* dinst) {
                                    dinst->getAddr(),
                                    dinst->getPC(),
                                    dinst,
-                                   performedCB::create(this, dinst));
+                                   performedCB::create(this, dinst, dinst->getID()));
   } else {
     MemRequest::sendSafeReqDL1Read(firstLevelMemObj,
                                    dinst->has_stats(),
                                    dinst->getAddr(),
                                    dinst->getPC(),
                                    dinst,
-                                   performedCB::create(this, dinst));
+                                   performedCB::create(this, dinst, dinst->getID()));
   }
 
   pref->exe(dinst);
@@ -594,7 +594,7 @@ bool FUStore::preretire(Dinst* dinst, bool flushing) {
                              dinst->has_stats(),
                              dinst->getAddr(),
                              dinst->getPC(),
-                             performedCB::create(this, dinst));
+                             performedCB::create(this, dinst, dinst->getID()));
   } else {
     performed(dinst);
   }
@@ -684,7 +684,7 @@ void FUGeneric::executing(Dinst* dinst) {
   }
 #endif
   cluster->executing(dinst);
-  executedCB::scheduleAbs(nlat, this, dinst);
+  executedCB::scheduleAbs(nlat, this, dinst, dinst->getID());
 }
 /* }}} */
 
@@ -767,7 +767,7 @@ StallCause FUBranch::canIssue(Dinst* dinst) {
 void FUBranch::executing(Dinst* dinst) {
   /* executing {{{1 */
   cluster->executing(dinst);
-  executedCB::scheduleAbs(gen->nextSlot(dinst->has_stats()) + lat + bpred_delay, this, dinst);
+  executedCB::scheduleAbs(gen->nextSlot(dinst->has_stats()) + lat + bpred_delay, this, dinst, dinst->getID());
 }
 /* }}} */
 
@@ -883,7 +883,7 @@ void FURALU::executing(Dinst* dinst)
   }
 
   cluster->executing(dinst);
-  executedCB::scheduleAbs(gen->nextSlot(dinst->has_stats()) + lat, this, dinst);
+  executedCB::scheduleAbs(gen->nextSlot(dinst->has_stats()) + lat, this, dinst, dinst->getID());
 
   // Recommended poweron the GPU threads and then poweroff the QEMU thread?
 }

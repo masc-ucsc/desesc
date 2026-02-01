@@ -42,53 +42,18 @@ enum class Opcode {
   //-----------------
   iMAX
 };
-inline auto format_as(Opcode f) {
-  if (f == Opcode::iOpInvalid) {
-    return "iOpInvalid";
-  } else if (f == Opcode::iRALU) {
-    return "iRALU";
-  } else if (f == Opcode::iAALU) {
-    return "iAALU";
-  } else if (f == Opcode::iBALU_LBRANCH) {
-    return "iBALU_LBRANCH";
-  } else if (f == Opcode::iBALU_RBRANCH) {
-    return "iBALU_RBRANCH";
-  } else if (f == Opcode::iBALU_LJUMP) {
-    return "iBALU_LJUMP";
-  } else if (f == Opcode::iBALU_RJUMP) {
-    return "iBALU_RJUMP";
-  } else if (f == Opcode::iBALU_LCALL) {
-    return "iBALU_LCALL";
-  } else if (f == Opcode::iBALU_RCALL) {
-    return "iBALU_RCALL";
-  } else if (f == Opcode::iBALU_RET) {
-    return "iBALU_RET";
-  } else if (f == Opcode::iLALU_LD) {
-    return "iLALU_LD";
-  } else if (f == Opcode::iSALU_ST) {
-    return "iSALU_ST";
-  } else if (f == Opcode::iSALU_LL) {
-    return "iSALU_LL";
-  } else if (f == Opcode::iSALU_SC) {
-    return "iSALU_SC";
-  } else if (f == Opcode::iSALU_ADDR) {
-    return "iSALU_ADDR";
-  } else if (f == Opcode::iCALU_FPMULT) {
-    return "iCALU_FPMULT";
-  } else if (f == Opcode::iCALU_FPDIV) {
-    return "iCALU_FPDIV";
-  } else if (f == Opcode::iCALU_FPALU) {
-    return "iCALU_FPALU";
-  } else if (f == Opcode::iCALU_MULT) {
-    return "iCALU_MULT";
-  } else if (f == Opcode::iCALU_DIV) {
-    return "iCALU_DIV";
-  } else if (f == Opcode::iMAX) {
-    return "iMAX";
-  } else {
-    return "invalid_OPCODE";
+inline constexpr auto format_as(Opcode f) {
+  constexpr std::array opcode_names = {
+      "iOpInvalid",  "iRALU",        "iAALU",       "iBALU_LBRANCH", "iBALU_RBRANCH", "iBALU_LJUMP", "iBALU_RJUMP",
+      "iBALU_LCALL", "iBALU_RCALL",  "iBALU_RET",   "iLALU_LD",      "iSALU_ST",      "iSALU_LL",    "iSALU_SC",
+      "iSALU_ADDR",  "iCALU_FPMULT", "iCALU_FPDIV", "iCALU_FPALU",   "iCALU_MULT",    "iCALU_DIV",   "iMAX",
+  };
+
+  auto idx = static_cast<std::size_t>(f);
+  if (idx < opcode_names.size()) {
+    return opcode_names[idx];
   }
-  // return fmt::underlying(f);
+  return "invalid_OPCODE";
 }
 
 template <typename T>

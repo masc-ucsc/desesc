@@ -279,7 +279,7 @@ int main(int argc, char** argv) {
   };
 
 #ifdef REGRESS_COSIM
-  dromajo_cosim_state_t* costate = 0;
+  dromajo_cosim_state_t* costate = nullptr;
   costate                        = dromajo_cosim_init(argc, argv);
 
   if (!costate) {

@@ -116,7 +116,7 @@ static void doread(MemObj* cache, Addr_t addr) {
     EventScheduler::advanceClock();
   }
 
-  rdDoneCB* cb = rdDoneCB::create(ldClone);
+  rdDoneCB* cb = rdDoneCB::create(ldClone, ldClone->getID());
   fmt::print("rd {:x} @{}\n", (unsigned int)addr, (long long)globalClock);
 
   if (nc) {
@@ -136,7 +136,7 @@ static void doprefetch(MemObj* cache, Addr_t addr) {
     EventScheduler::advanceClock();
   }
 
-  rdDoneCB* cb = rdDoneCB::create(ldClone);
+  rdDoneCB* cb = rdDoneCB::create(ldClone, ldClone->getID());
   fmt::print("rd {:x} @{}\n", (unsigned int)addr, (long long)globalClock);
 
   MemRequest::sendReqReadPrefetch(cache, ldClone->has_stats(), addr, cb);
@@ -152,7 +152,7 @@ static void dowrite(MemObj* cache, Addr_t addr) {
     EventScheduler::advanceClock();
   }
 
-  wrDoneCB* cb = wrDoneCB::create(stClone);
+  wrDoneCB* cb = wrDoneCB::create(stClone, stClone->getID());
   fmt::print("wr {:x} @{}\n", (unsigned int)addr, (long long)globalClock);
 
   if (nc) {
@@ -172,7 +172,7 @@ static void dodisp(MemObj* cache, Addr_t addr) {
     EventScheduler::advanceClock();
   }
 
-  wrDoneCB* cb = wrDoneCB::create(stClone);
+  wrDoneCB* cb = wrDoneCB::create(stClone, stClone->getID());
   fmt::print("disp {:x} @{}\n", (unsigned int)addr, (long long)globalClock);
 
   MRouter* router = cache->getRouter();

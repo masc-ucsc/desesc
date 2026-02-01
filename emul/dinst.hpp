@@ -31,35 +31,26 @@ private:
   Dinst* parentDinst{};
 #endif
 public:
-  DinstNext() { dinst = 0; }
+  DinstNext() { dinst = nullptr; }
 
   DinstNext* nextDep;
-  bool       isUsed;  // true while non-satisfied RAW dependence
-                      // fasle when no RAW dependence
-                      // true  when RAW dependence
-                      /*=======
-                        DinstNext() = default;
-                    
-                        DinstNext *nextDep{};
-                        bool       isUsed{};  // true while non-satisfied RAW dependence
-                      >>>>>>> upstream/main*/
+  bool       isUsed;
 
-  const DinstNext* getNext() const { return nextDep; }
-  DinstNext*       getNext() { return nextDep; }
+  [[nodiscard]] const DinstNext* getNext() const { return nextDep; }
+  [[nodiscard]] DinstNext*       getNext() { return nextDep; }
 
   void setNextDep(DinstNext* n) { nextDep = n; }
 
   void init(Dinst* d) {
-    I(dinst == 0);
+    I(dinst == nullptr);
     dinst = d;
   }
 
-  Dinst* getDinst() const { return dinst; }
-  // void  set_dinst(Dinst *d) {  dinst = d; }
+  [[nodiscard]] Dinst* getDinst() const { return dinst; }
 
 #ifdef DINST_PARENT
-  Dinst* getParentDinst() const { return parentDinst; }
-  void   setParentDinst(Dinst* d) {
+  [[nodiscard]] Dinst* getParentDinst() const { return parentDinst; }
+  void                 setParentDinst(Dinst* d) {
     GI(d, isUsed);
     parentDinst = d;
   }
@@ -279,100 +270,50 @@ private:
     destroy_transient   = false;
 
 #ifdef DINST_PARENT
-    pend[0].setParentDinst(0);
-    pend[1].setParentDinst(0);
-    pend[2].setParentDinst(0);
+    pend[0].setParentDinst(nullptr);
+    pend[1].setParentDinst(nullptr);
+    pend[2].setParentDinst(nullptr);
 #endif
 
     first          = nullptr;
-    last           = 0;
+    last           = nullptr;
     nDeps          = 0;
     pend[0].isUsed = false;  // false when no RAW dependence
     pend[1].isUsed = false;  // true when RAW dependence
     pend[2].isUsed = false;
 
-    pend[0].setNextDep(0);
-    pend[1].setNextDep(0);
-    pend[2].setNextDep(0);
-
-    // last->setNextDep(0);
-    // first->setNextDep(0);
-    // first->init(0);
-    // pend[1].init(0);
-    // pend[2].init(0);
+    pend[0].setNextDep(nullptr);
+    pend[1].setNextDep(nullptr);
+    pend[2].setNextDep(nullptr);
   }
 
 protected:
 public:
   Dinst();
-#if 0
-  bool   isSpec       = false;
-  bool   isSafe       = false;
-  bool   isLdCache    = false;
-  Time_t memReqTimeL1 = 0;
-#endif
 
-  bool is_safe() const { return !speculative; }
-  bool is_spec() const { return speculative; }
-  void mark_safe() { speculative = false; }
+  [[nodiscard]] bool is_safe() const { return !speculative; }
+  [[nodiscard]] bool is_spec() const { return speculative; }
+  void               mark_safe() { speculative = false; }
 
-  bool isTransient() const { return transient; }
-  void setTransient() {
-    transient = true;
-    // ID = currentID_trans++;
-  }
-  void mark_to_be_destroyed() {
-    to_be_destroyed = true;
-    // printf("Setting mark_to_be_destroyed_transient ::dinst %ld\n", this->ID);
-  }
+  [[nodiscard]] bool isTransient() const { return transient; }
+  void               setTransient() { transient = true; }
+  void               mark_to_be_destroyed() { to_be_destroyed = true; }
 
-  void clear_to_be_destroyed() {
-    to_be_destroyed = false;
-    // printf("Clearing is_to_be_destroyed_transient to false ::dinst %ld\n", ID);
-  }
+  void clear_to_be_destroyed() { to_be_destroyed = false; }
 
-  void mark_destroy_transient() {
-    destroy_transient = true;
-    // printf("Setting mark_to_be_destroyed_transient ::dinst %ld\n", this->ID);
-  }
+  void mark_destroy_transient() { destroy_transient = true; }
 
-  bool is_destroy_transient() {
-    return to_be_destroyed;
-    // printf("Clearing is_to_be_destroyed_transient to false ::dinst %ld\n", ID);
-  }
+  bool is_destroy_transient() { return to_be_destroyed; }
 
-  void mark_del_entry() {
-    del_entry = true;
-    // printf("Setting mark_del_entry  ::dinst %ld\n", ID);
-  }
+  void mark_del_entry() { del_entry = true; }
 
-  void unmark_del_entry() {
-    del_entry = false;
-    // printf("Setting mark_del_entry  ::dinst %ld\n", ID);
-  }
-  void mark_rrob() {
-    is_rrob = true;
-    // printf("Setting mark_rrob  ::dinst %ld\n", ID);
-  }
-  bool is_in_cluster() const {
-    // printf("checking transient Inst %B", transient);
-    return in_cluster;
-  }
-  void set_in_cluster() {
-    in_cluster = true;
-    // ID = currentID_trans++;
+  void unmark_del_entry() { del_entry = false; }
+  void mark_rrob() { is_rrob = true; }
+  bool is_in_cluster() const { return in_cluster; }
+  void set_in_cluster() { in_cluster = true; }
 
-    // printf("Setting  incluster true ::dinst %ld\n", ID);
-  }
-
-  //=======
   void mark_flush_transient() { flush_transient = true; }
   void mark_try_flush_transient() { try_flush_transient = true; }
-
-  // void mark_del_entry() { del_entry = true; }
-
-  // void unmark_del_entry() { del_entry = false; }
-  // void mark_rrob() { is_rrob = true; }
 
   bool is_present_in_rob() { return present_in_rob; }
   void set_present_in_rob() { present_in_rob = true; }
@@ -382,9 +323,8 @@ public:
   bool is_del_entry() { return del_entry; }
   bool is_present_rrob() { return is_rrob; }
   bool is_to_be_destroyed() { return to_be_destroyed; }
-  //=======
 
-  static Dinst* create(Instruction&& inst, Addr_t pc, Addr_t address, Hartid_t fid, bool keep_stats) {
+  [[nodiscard]] static Dinst* create(Instruction&& inst, Addr_t pc, Addr_t address, Hartid_t fid, bool keep_stats) {
     Dinst* i = dInstPool.out();
     I(inst.getOpcode() != Opcode::iOpInvalid);
 
@@ -449,25 +389,25 @@ public:
 
   void setBrPC(Addr_t _brpc) { brpc = _brpc; }
 
-  static DataSign calcDataSign(int64_t data);
+  [[nodiscard]] static DataSign calcDataSign(int64_t data);
 
-  int getDepDepth() const { return dep_depth; }
+  [[nodiscard]] int getDepDepth() const { return dep_depth; }
 
   void setDepDepth(int d) { dep_depth = d; }
 
-  int getLBType() const { return ld_br_type; }
+  [[nodiscard]] int getLBType() const { return ld_br_type; }
 
   void setLBType(int lb) { ld_br_type = lb; }
 
-  Data_t getBrData1() const { return br_data1; }
+  [[nodiscard]] Data_t getBrData1() const { return br_data1; }
 
-  Data_t getBrData2() const { return br_data2; }
+  [[nodiscard]] Data_t getBrData2() const { return br_data2; }
 
-  Data_t getData() const { return data; }
+  [[nodiscard]] Data_t getData() const { return data; }
 
-  Data_t getData2() const { return data2; }
+  [[nodiscard]] Data_t getData2() const { return data2; }
 
-  DataSign getDataSign() const { return (DataSign)(int(data_sign) & 0x1FF); }  // FIXME:}
+  [[nodiscard]] DataSign getDataSign() const { return (DataSign)(int(data_sign) & 0x1FF); }
 
   // DataSign getDataSign() const { return data_sign; }
   void setDataSign(int64_t _data, Addr_t ldpc);
@@ -481,15 +421,15 @@ public:
 
   void setData2(uint64_t _data) { data2 = _data; }
 
-  Addr_t getLDPC() const { return ldpc; }
-  void   setChain(FetchEngine* fe, int c) {
-    I(fetch == 0);
+  [[nodiscard]] Addr_t getLDPC() const { return ldpc; }
+  void                 setChain(FetchEngine* fe, int c) {
+    I(fetch == nullptr);
     I(c);
     I(fe);
     fetch   = fe;
     chained = c;
   }
-  int getChained() const { return chained; }
+  [[nodiscard]] int getChained() const { return chained; }
 #else
   static DataSign calcDataSign([[maybe_unused]] int64_t data) { return DS_NoData; }
   Data_t          getData() const { return 0; }
@@ -521,8 +461,8 @@ public:
     cluster  = cls;
     resource = res;
   }
-  std::shared_ptr<Cluster>  getCluster() const { return cluster; }
-  std::shared_ptr<Resource> getClusterResource() const { return resource; }
+  [[nodiscard]] std::shared_ptr<Cluster>  getCluster() const { return cluster; }
+  [[nodiscard]] std::shared_ptr<Resource> getClusterResource() const { return resource; }
 
   void clearRATEntry();
   void setRAT1Entry(Dinst** rentry) {
@@ -538,46 +478,40 @@ public:
     serializeEntry = rentry;
   }
 
-  void   setSSID(SSID_t ssid) { SSID = ssid; }
-  SSID_t getSSID() const { return SSID; }
+  void                 setSSID(SSID_t ssid) { SSID = ssid; }
+  [[nodiscard]] SSID_t getSSID() const { return SSID; }
 
   void setConflictStorePC(Addr_t storepc) {
     I(storepc);
     I(this->getInst()->isLoad());
     conflictStorePC = storepc;
   }
-  Addr_t getConflictStorePC() const { return conflictStorePC; }
+  [[nodiscard]] Addr_t getConflictStorePC() const { return conflictStorePC; }
 
 #ifdef DINST_PARENT
   Dinst* getParentSrc1() const {
-    if (pend[0].isUsed) {  // true when RAW dependence
-      // printf("Dinst::getparentsrc1:parent inst src1 is %ld and current Inst isTransient is %b\n",
-      //        pend[0].getParentDinst()->getID(),
-      //        isTransient());
-      // std::cout << "Dinst::getparentsrc1:: parentscr1 asm is " << pend[0].getParentDinst()->getInst()->get_asm() << std::endl;
+    if (pend[0].isUsed) {
       return pend[0].getParentDinst();
     }
-    return 0;
+    return nullptr;
   }
   Dinst* getParentSrc2() const {
-    if (pend[1].isUsed) {  // true when RAW dependence
-      // printf("Dinst::getparentsrc2:Inst is %ld and isTransient is %b\n", pend[1].getParentDinst()->getID(), isTransient());
-      // std::cout << "Dinst::getparentsrc2:: asm is " << pend[1].getParentDinst()->getInst()->get_asm() << std::endl;
+    if (pend[1].isUsed) {
       return pend[1].getParentDinst();
     }
-    return 0;
+    return nullptr;
   }
   Dinst* getParentSrc3() const {
     if (pend[2].isUsed) {  // true when RAW dependence
       return pend[2].getParentDinst();
     }
-    return 0;
+    return nullptr;
   }
 #endif
 
   void lockFetch(FetchEngine* fe) {
     I(!branchMiss);
-    I(fetch == 0);
+    I(fetch == nullptr);
     fetch      = fe;
     branchMiss = true;
     fetched    = globalClock;
@@ -585,57 +519,57 @@ public:
 
   void setFetchTime() {
 #ifdef ESESC_TRACE_DATA
-    I(fetch == 0 || chained);
+    I(fetch == nullptr || chained);
 #else
-    I(fetch == 0);
+    I(fetch == nullptr);
 #endif
     I(!branchMiss);
     fetched = globalClock;
   }
-  int16_t getBB() const { return bb; }
-  void    setBB(int16_t b) { bb = b; }
+  [[nodiscard]] int16_t getBB() const { return bb; }
+  void                  setBB(int16_t b) { bb = b; }
 
-  uint64_t getInflight() const { return inflight; }
+  [[nodiscard]] uint64_t getInflight() const { return inflight; }
 
   void setInflight(uint64_t _inf) { inflight = _inf; }
 
-  bool isUseLevel3() const { return use_level3; }
+  [[nodiscard]] bool isUseLevel3() const { return use_level3; }
 
   void setUseLevel3() { use_level3 = true; }
 
   void setBranch_hit2_miss3() { branch_hit2_miss3 = true; }
   void setBranch_hit3_miss2() { branch_hit3_miss2 = true; }
 
-  bool isBranch_hit2_miss3() const { return branch_hit2_miss3; }
-  bool isBranch_hit3_miss2() const { return branch_hit3_miss2; }
+  [[nodiscard]] bool isBranch_hit2_miss3() const { return branch_hit2_miss3; }
+  [[nodiscard]] bool isBranch_hit3_miss2() const { return branch_hit3_miss2; }
 
   void setBranchHit_level1() { branchHit_level1 = true; }
   void setBranchHit_level2() { branchHit_level2 = true; }
   void setBranchHit_level3() { branchHit_level3 = true; }
 
-  bool isBranchHit_level1() const { return branchHit_level1; }
-  bool isBranchHit_level2() const { return branchHit_level2; }
-  bool isBranchHit_level3() const { return branchHit_level3; }
+  [[nodiscard]] bool isBranchHit_level1() const { return branchHit_level1; }
+  [[nodiscard]] bool isBranchHit_level2() const { return branchHit_level2; }
+  [[nodiscard]] bool isBranchHit_level3() const { return branchHit_level3; }
 
   void setBranchMiss_level1() { branchMiss_level1 = true; }
   void setBranchMiss_level2() { branchMiss_level2 = true; }
   void setBranchMiss_level3() { branchMiss_level3 = true; }
 
-  bool isBranchMiss_level1() const { return branchMiss_level1; }
-  bool isBranchMiss_level2() const { return branchMiss_level2; }
-  bool isBranchMiss_level3() const { return branchMiss_level3; }
+  [[nodiscard]] bool isBranchMiss_level1() const { return branchMiss_level1; }
+  [[nodiscard]] bool isBranchMiss_level2() const { return branchMiss_level2; }
+  [[nodiscard]] bool isBranchMiss_level3() const { return branchMiss_level3; }
 
   void setLevel3_NoPrediction() { level3_NoPrediction = true; }
 
-  bool isLevel3_NoPrediction() const { return level3_NoPrediction; }
+  [[nodiscard]] bool isLevel3_NoPrediction() const { return level3_NoPrediction; }
 
-  bool         isBranchMiss() const { return branchMiss; }
-  FetchEngine* getFetchEngine() const { return fetch; }
+  [[nodiscard]] bool         isBranchMiss() const { return branchMiss; }
+  [[nodiscard]] FetchEngine* getFetchEngine() const { return fetch; }
 
   Time_t getFetchTime() const { return fetched; }
 
   void setGProc(GProcessor* _gproc) {
-    I(gproc == 0 || gproc == _gproc);
+    I(gproc == nullptr || gproc == _gproc);
     gproc = _gproc;
   }
 
@@ -647,32 +581,18 @@ public:
   Dinst* getNextPending() {
     I(first);
     Dinst* n = first->getDinst();
-
-    // printf("Dinst::getnextPending :: current inst is %ld and isTransient is %b\n", this->getID(), this->isTransient());
-    // std::cout << "Dinst::getNextPending:: current inst ::asm is " << this->getInst()->get_asm() << std::endl;
-    // printf("Dinst::getnextPending :: pending inst is %ld and isTransient is %b\n", n->getID(), n->isTransient());
-    // std::cout << "Dinst::getNextPending::first->getDinst():: pending inst ::asm is " << n->getInst()->get_asm() << std::endl;
     I(n);
 
-    // printf("Dinst::getNextPending:: Before ndeps is: first->getDinst()->ndeps is %d\n", (int)n->getnDeps());
     I(n->nDeps > 0);
     n->nDeps--;
-    // printf("Dinst::getNextPending::Now ndeps--:: ndeps is:first->getDinst()->ndeps-- is  %d\n", (int)n->getnDeps());
-    first->isUsed = false;           // isUsed==false : No RAW dependence
-    first->setParentDinst(nullptr);  // setParent =nullptr ::reset
+    first->isUsed = false;
+    first->setParentDinst(nullptr);
 
-    first = first->getNext();  // first <=
-    // I(first);
+    first = first->getNext();
 
     if (first) {
-      // printf("Dinst::getnextPending Setting new first as ::inst is %ld and isTransient is %b\n",
-      //        first->getDinst()->getID(),
-      //        first->getDinst()->isTransient());
     } else {
       first = nullptr;
-      // printf("Dinst::getnextPending Setting new first =0 as ::inst is %ld and isTransient is %b\n",
-      //        this->getID(),
-      //        this->isTransient());
     }
     return n;
   }
@@ -680,77 +600,48 @@ public:
   void addSrc1(Dinst* d) {
     I(d->nDeps < MAX_PENDING_SOURCES);
 
-    // printf("Entering Dinst::addSrc1::Current RAT Inst is %ld and isTransient is %b\n", getID(), isTransient());
-    // std::cout << "Dinst::addScr1::Current RAT dinst Inst asm is " << getInst()->get_asm() << std::endl;
-    // printf("Dinst::addSrc1::Addsrc_Inst is %ld and isTransient is %b\n", d->getID(), isTransient());
-    // std::cout << "Dinst::addScr1::addsrc_dinst Inst asm is " << d->getInst()->get_asm() << std::endl;
-    // printf("Dinst::addsrc1:: Before ndeps is: first->getDinst()->ndeps is %d\n", (int)d->getnDeps());
-
     d->nDeps++;
-    // printf("Dinst::addsrc1::ndeps++ is: first->getDinst()->ndeps is %d\n", (int)d->getnDeps());
 
     I(executed == 0);
     I(d->executed == 0);
     DinstNext* n = &d->pend[0];
-    // printf("Dinst::addSrc1:::&d->pend[0]::  is %ld and isTransient is %b\n", n->getDinst()->getID(),
-    // n->getDinst()->isTransient()); std::cout << "Dinst::addScr1::&d->pend[0]::  asm is " << n->getDinst()->getInst()->get_asm()
-    // << std::endl;
     I(!n->isUsed);
-    n->isUsed = true;  // isUsed ==true:: RAW dependence
+    n->isUsed = true;
     n->setParentDinst(this);
-    // printf("Dinst::Set parent  Inst is %ld and isTransient is %b for Inst %ld\n", getID(), isTransient(),
-    // n->getDinst()->getID());
 
     I(n->getDinst() == d);
-    if (first == 0) {
+    if (first == nullptr) {
       first = n;
-      // printf("Dinst::addscr1:: setting first is %ld \n", n->getDinst()->getID());
     } else {
       last->nextDep = n;
     }
-    n->nextDep = 0;
+    n->nextDep = nullptr;
     last       = n;
   }
 
   void addSrc2(Dinst* d) {
     I(d->nDeps < MAX_PENDING_SOURCES);
 
-    // printf("Entering Dinst::addSrc2::Current RAT Inst is %ld and isTransient is %b\n", getID(), isTransient());
-    // std::cout << "Dinst::addScr2::Current RAT  dinst Inst asm is " << getInst()->get_asm() << std::endl;
-    // printf("Dinst::addSrc2::Addsrc2 Inst inst is %ld and isTransient is %b\n", d->getID(), isTransient());
-    // std::cout << "Dinst::addScr2::addsrc2 inst asm is " << d->getInst()->get_asm() << std::endl;
-
     d->nDeps++;
     I(executed == 0);
     I(d->executed == 0);
 
-    // printf("Dinst::addsrc2::  ndeps++ is: first->getDinst()->ndeps is %d\n", (int)d->getnDeps());
     DinstNext* n = &d->pend[1];
-    // printf("Dinst::addSrc2::&d->pend[1] ::is %ld and isTransient is %b\n", n->getDinst()->getID(), n->getDinst()->isTransient());
-    // std::cout << "Dinst::addScr2::&d->pend[1]::  asm is " << n->getDinst()->getInst()->get_asm() << std::endl;
     I(!n->isUsed);
-    n->isUsed = true;  // isUsed ==true: RAW dependence
+    n->isUsed = true;
     n->setParentDinst(this);
-    // printf("Dinst::addscr2::Set parent  Inst is %ld and isTransient is %b for Inst %ld\n",
-    //        this->getID(),
-    //        this->isTransient(),
-    //        n->getDinst()->getID());
 
     I(n->getDinst() == d);
-    if (first == 0) {
+    if (first == nullptr) {
       first = n;
-      // printf("Dinst::first ==0::so setting first = is %ld \n", n->getDinst()->getID());
     } else {
       last->nextDep = n;
-      // printf("Dinst::addsrc2::first is %ld \n", first->getDinst()->getID());
     }
-    n->nextDep = 0;
+    n->nextDep = nullptr;
     last       = n;
   }
 
   void addSrc3(Dinst* d) {
-    // printf("Dinst::addSrc3::Inst is %ld and isTransient is %b\n", getID(), isTransient());
-    // std::cout << "Dinst::addScr3::dinst Inst asm is " << getInst()->get_asm() << std::endl;
     I(d->nDeps < MAX_PENDING_SOURCES);
     d->nDeps++;
     I(executed == 0);
@@ -758,19 +649,16 @@ public:
 
     DinstNext* n = &d->pend[2];
     I(!n->isUsed);
-    // printf("Dinst::addSrc3::dinstNextRAW is %ld and isTransient is %b\n", n->getDinst()->getID(), n->getDinst()->isTransient());
-    // std::cout << "Dinst::addScr3::dinstNextRAW n asm is " << n->getDinst()->getInst()->get_asm() << std::endl;
-    n->isUsed = true;  // isUsed ==true: RAW dependence
+    n->isUsed = true;
     n->setParentDinst(this);
 
     I(n->getDinst() == d);
-    if (first == 0) {
+    if (first == nullptr) {
       first = n;
-      // printf("Dinst::first is %ld \n", n->getDinst()->getID());
     } else {
       last->nextDep = n;
     }
-    n->nextDep = 0;
+    n->nextDep = nullptr;
     last       = n;
   }
 
@@ -780,50 +668,18 @@ public:
   Hartid_t getFlowId() const { return fid; }
 
   char getnDeps() const { return nDeps; }
-  void decrease_deps() {
-    // printf("Dinst::decrease_deps::Now ndeps:: ndeps is:first->ndeps is  %d\n", (int)nDeps);
-    nDeps--;
-    // printf("Dinst::decrease_deps::Now ndeps--:: ndeps is:first->ndeps-- is  %d\n", (int)nDeps);
-  }
+  void decrease_deps() { nDeps--; }
   bool isSrc1Ready() const { return !pend[0].isUsed; }  // isUsed ==true ::RAW dependence
   bool isSrc2Ready() const { return !pend[1].isUsed; }
   bool isSrc3Ready() const { return !pend[2].isUsed; }
   void flush_first() { first = nullptr; }
   bool hasPending() const {
-    // if (first) {
-    //   printf("Dinst::haspending:: Current Inst %ld has pending first ==%ld\n", ID, first->getDinst()->getID());
-    // } else {
-    //   printf("Dinst::haspending:: Current Inst %ld has pending first== 0 \n", ID);
-    // }
-
     GI(!pend[0].isUsed && !pend[1].isUsed && !pend[2].isUsed, nDeps == 0);
-    return first != 0;
-  }  // first !=0 means has pending Inst!!!
+    return first != nullptr;
+  }
 
   bool hasDeps() const {
-    //<<<<<<< HEAD
-    // if (first) {
-    //   printf("Dinst::hasDeps:: Current Inst %ld has pending first %ld\n", ID, first->getDinst()->getID());
-    // } else {
-    //   printf("Dinst::hasDeps:: Current Inst %ld has pending first== 0 \n", ID);
-    // }
-
-    // printf("Dinst::hasdeps current  Inst %ld\n", ID);
-    // printf("Dinst::hasdeps::ndeps is %d\n", (int)getnDeps());
-    // if (!pend[0].isUsed) {
-    //   printf("Dinst::hasdeps:: Pend[0]Inst %ld\n", pend[0].getDinst()->getID());
-    // }
-    // if (!pend[1].isUsed) {
-    //   printf("Dinst:: hasdeps::Pend[1] Inst %ld\n", pend[1].getDinst()->getID());
-    // }
-    // if (!pend[2].isUsed) {
-    //   printf("Dinst:: hasdeps::Pend[2] Inst %ld\n", pend[2].getDinst()->getID());
-    // }
-
-    //  if(!isTransient())
-    //=======
     if (!isTransient()) {
-      //>>>>>>> upstream/main
       GI(!pend[0].isUsed && !pend[1].isUsed && !pend[2].isUsed, nDeps == 0);
     }
     return nDeps != 0;
@@ -861,12 +717,7 @@ public:
     issued = globalClock;
   }
 
-  void markIssuedTransient() {
-    // I(issued == 0);
-    // I(executing == 0);
-    // I(executed == 0);
-    issued = globalClock;
-  }
+  void markIssuedTransient() { issued = globalClock; }
 
   bool isExecuted() const { return executed; }
   void markExecuted() {
@@ -874,11 +725,7 @@ public:
     I(executed == 0);
     executed = globalClock;
   }
-  void markExecutedTransient() {
-    // I(issued != 0);
-    // I(executed == 0);
-    executed = globalClock;
-  }
+  void markExecutedTransient() { executed = globalClock; }
 
   bool isExecuting() const { return executing; }
   void markExecuting() {
@@ -886,11 +733,7 @@ public:
     I(executing == 0);
     executing = globalClock;
   }
-  void markExecutingTransient() {
-    // I(issued != 0);
-    // I(executing == 0);
-    executing = globalClock;
-  }
+  void markExecutingTransient() { executing = globalClock; }
 
   bool isReplay() const { return replay; }
   void markReplay() { replay = true; }
@@ -913,14 +756,6 @@ public:
 
   bool isPerformed() const { return performed; }
   void markPerformed() {
-    //<<<<<<< HEAD
-    // Loads get performed first, and then executed
-    // printf("Dinst ::markPerformed Insit %ld and isTransient is %b\n", getID(), isTransient());
-
-    // printf("Dinst::markPerformed dinst is %ld and isTransient is %b\n", getID(), isTransient());
-    // std::cout << "Dinst::markperformed:: inst asm is " << getInst()->get_asm() << std::endl;
-    //=======
-    //>>>>>>> upstream/main
     if (!this->isTransient()) {
       GI(!inst.isLoad(), executed != 0);
     }

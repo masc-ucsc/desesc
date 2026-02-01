@@ -112,7 +112,7 @@ bool FetchEngine::processBranch(Dinst* dinst) {
   avgFetchTime.sample(n, dinst->has_stats());
 
   if (fastfix) {
-    unBlockFetchBPredDelayCB::schedule(delay, this, dinst, globalClock);
+    unBlockFetchBPredDelayCB::schedule(delay, this, dinst, globalClock, dinst->getID());
   } else {
     dinst->lockFetch(this);
   }
@@ -307,7 +307,7 @@ void FetchEngine::realfetch(IBucket* bucket, std::shared_ptr<Emul_base> eint, Ha
   bpred->fetchBoundaryEnd();
 
   if (bucket->empty()) {
-    bucket->markFetchedCB.schedule(il1_hit_delay);
+    IBucket::markFetchedCB::schedule(il1_hit_delay, bucket, bucket->getPriority());
     return;
   }
   avgBucketInst.sample(bucket->size(), bucket->top()->has_stats());
@@ -316,9 +316,9 @@ void FetchEngine::realfetch(IBucket* bucket, std::shared_ptr<Emul_base> eint, Ha
                             bucket->top()->has_stats(),
                             bucket->top()->getPC(),
                             bucket->top()->getPC(),
-                            &(bucket->markFetchedCB));  // 0xdeaddead as PC signature
+                            IBucket::markFetchedCB::create(bucket, bucket->getPriority()));  // 0xdeaddead as PC signature
   } else {
-    bucket->markFetchedCB.schedule(il1_hit_delay);
+    IBucket::markFetchedCB::schedule(il1_hit_delay, bucket, bucket->getPriority());
   }
 }
 

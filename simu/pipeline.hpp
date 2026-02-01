@@ -88,7 +88,15 @@ public:
   IBucket(size_t size, Pipeline* p, bool clean = false);
   virtual ~IBucket() = default;
 
-  StaticCallbackMember0<IBucket, &IBucket::markFetched> markFetchedCB;
+  [[nodiscard]] Time_t getPriority() const {
+    if (empty()) {
+      return 0;
+    }
+    Dinst* dinst = top();
+    return dinst ? dinst->getID() : 0;
+  }
+
+  using markFetchedCB = CallbackMember0<IBucket, &IBucket::markFetched>;
 };
 
 class PipeQueue {

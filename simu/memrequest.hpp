@@ -108,31 +108,31 @@ private:
   void memDisp();  // E.g: L1 -> L2
 
   friend class MRouter;  // only mrouter can call the req directly
-  void redoReq(TimeDelta_t lat) { redoReqCB.schedule(lat); }
-  void redoReqAck(TimeDelta_t lat) { redoReqAckCB.schedule(lat); }
-  void redoSetState(TimeDelta_t lat) { redoSetStateCB.schedule(lat); }
-  void redoSetStateAck(TimeDelta_t lat) { redoSetStateAckCB.schedule(lat); }
-  void redoDisp(TimeDelta_t lat) { redoDispCB.schedule(lat); }
+  void redoReq(TimeDelta_t lat) { redoReqCB::schedule(lat, this, getPriority()); }
+  void redoReqAck(TimeDelta_t lat) { redoReqAckCB::schedule(lat, this, getPriority()); }
+  void redoSetState(TimeDelta_t lat) { redoSetStateCB::schedule(lat, this, getPriority()); }
+  void redoSetStateAck(TimeDelta_t lat) { redoSetStateAckCB::schedule(lat, this, getPriority()); }
+  void redoDisp(TimeDelta_t lat) { redoDispCB::schedule(lat, this, getPriority()); }
 
   void startReq(MemObj* m, TimeDelta_t lat) {
     setNextHop(m);
-    startReqCB.schedule(lat);
+    startReqCB::schedule(lat, this, getPriority());
   }
   void startReqAck(MemObj* m, TimeDelta_t lat) {
     setNextHop(m);
-    startReqAckCB.schedule(lat);
+    startReqAckCB::schedule(lat, this, getPriority());
   }
   void startSetState(MemObj* m, TimeDelta_t lat) {
     setNextHop(m);
-    startSetStateCB.schedule(lat);
+    startSetStateCB::schedule(lat, this, getPriority());
   }
   void startSetStateAck(MemObj* m, TimeDelta_t lat) {
     setNextHop(m);
-    startSetStateAckCB.schedule(lat);
+    startSetStateAckCB::schedule(lat, this, getPriority());
   }
   void startDisp(MemObj* m, TimeDelta_t lat) {
     setNextHop(m);
-    startDispCB.schedule(lat);
+    startDispCB::schedule(lat, this, getPriority());
   }
 
   void setStateAckDone(TimeDelta_t lat);
@@ -162,49 +162,49 @@ public:
   void redoSetStateAck();
   void redoDisp();
 
-  StaticCallbackMember0<MemRequest, &MemRequest::redoReq>         redoReqCB;
-  StaticCallbackMember0<MemRequest, &MemRequest::redoReqAck>      redoReqAckCB;
-  StaticCallbackMember0<MemRequest, &MemRequest::redoSetState>    redoSetStateCB;
-  StaticCallbackMember0<MemRequest, &MemRequest::redoSetStateAck> redoSetStateAckCB;
-  StaticCallbackMember0<MemRequest, &MemRequest::redoDisp>        redoDispCB;
+  using redoReqCB         = CallbackMember0<MemRequest, &MemRequest::redoReq>;
+  using redoReqAckCB      = CallbackMember0<MemRequest, &MemRequest::redoReqAck>;
+  using redoSetStateCB    = CallbackMember0<MemRequest, &MemRequest::redoSetState>;
+  using redoSetStateAckCB = CallbackMember0<MemRequest, &MemRequest::redoSetStateAck>;
+  using redoDispCB        = CallbackMember0<MemRequest, &MemRequest::redoDisp>;
 
-  StaticCallbackMember0<MemRequest, &MemRequest::startReq>         startReqCB;
-  StaticCallbackMember0<MemRequest, &MemRequest::startReqAck>      startReqAckCB;
-  StaticCallbackMember0<MemRequest, &MemRequest::startSetState>    startSetStateCB;
-  StaticCallbackMember0<MemRequest, &MemRequest::startSetStateAck> startSetStateAckCB;
-  StaticCallbackMember0<MemRequest, &MemRequest::startDisp>        startDispCB;
+  using startReqCB         = CallbackMember0<MemRequest, &MemRequest::startReq>;
+  using startReqAckCB      = CallbackMember0<MemRequest, &MemRequest::startReqAck>;
+  using startSetStateCB    = CallbackMember0<MemRequest, &MemRequest::startSetState>;
+  using startSetStateAckCB = CallbackMember0<MemRequest, &MemRequest::startSetStateAck>;
+  using startDispCB        = CallbackMember0<MemRequest, &MemRequest::startDisp>;
 
-  void redoReqAbs(Time_t when) { redoReqCB.scheduleAbs(when); }
+  void redoReqAbs(Time_t when) { redoReqCB::scheduleAbs(when, this, getPriority()); }
   void startReqAbs(MemObj* m, Time_t when) {
     setNextHop(m);
-    startReqCB.scheduleAbs(when);
+    startReqCB::scheduleAbs(when, this, getPriority());
   }
   void restartReq() { startReq(); }
 
-  void redoReqAckAbs(Time_t when) { redoReqAckCB.scheduleAbs(when); }
+  void redoReqAckAbs(Time_t when) { redoReqAckCB::scheduleAbs(when, this, getPriority()); }
   void startReqAckAbs(MemObj* m, Time_t when) {
     setNextHop(m);
-    startReqAckCB.scheduleAbs(when);
+    startReqAckCB::scheduleAbs(when, this, getPriority());
   }
   void restartReqAck() { startReqAck(); }
-  void restartReqAckAbs(Time_t when) { startReqAckCB.scheduleAbs(when); }
+  void restartReqAckAbs(Time_t when) { startReqAckCB::scheduleAbs(when, this, getPriority()); }
 
-  void redoSetStateAbs(Time_t when) { redoSetStateCB.scheduleAbs(when); }
+  void redoSetStateAbs(Time_t when) { redoSetStateCB::scheduleAbs(when, this, getPriority()); }
   void startSetStateAbs(MemObj* m, Time_t when) {
     setNextHop(m);
-    startSetStateCB.scheduleAbs(when);
+    startSetStateCB::scheduleAbs(when, this, getPriority());
   }
 
-  void redoSetStateAckAbs(Time_t when) { redoSetStateAckCB.scheduleAbs(when); }
+  void redoSetStateAckAbs(Time_t when) { redoSetStateAckCB::scheduleAbs(when, this, getPriority()); }
   void startSetStateAckAbs(MemObj* m, Time_t when) {
     setNextHop(m);
-    startSetStateAckCB.scheduleAbs(when);
+    startSetStateAckCB::scheduleAbs(when, this, getPriority());
   }
 
-  void redoDispAbs(Time_t when) { redoDispCB.scheduleAbs(when); }
+  void redoDispAbs(Time_t when) { redoDispCB::scheduleAbs(when, this, getPriority()); }
   void startDispAbs(MemObj* m, Time_t when) {
     setNextHop(m);
-    startDispCB.scheduleAbs(when);
+    startDispCB::scheduleAbs(when, this, getPriority());
   }
 
   static void sendReqVPCWriteUpdate(MemObj* m, bool keep_stats, Addr_t addr) {
@@ -466,6 +466,7 @@ public:
 
   // WARNING: Only available on DL1 demand miss
   [[nodiscard]] Dinst* getDinst() const { return dinst; }
+  [[nodiscard]] Time_t getPriority() const { return dinst ? dinst->getID() : 0; }
 
   void setNeedsDisp() {
     I(mt == mt_setStateAck);

@@ -118,7 +118,7 @@ static void doread(MemObj* cache, Addr_t addr, bool spec = false) {
     EventScheduler::advanceClock();
   }
 
-  rdDoneCB* cb = rdDoneCB::create(ldClone);
+  rdDoneCB* cb = rdDoneCB::create(ldClone, ldClone->getID());
   // printf("rd %x @%lld\n", (unsigned int)addr, (long long)globalClock);
 
   if (spec) {
@@ -144,7 +144,7 @@ static void doprefetch(MemObj* cache, Addr_t addr) {
     EventScheduler::advanceClock();
   }
 
-  rdDoneCB* cb = rdDoneCB::create(ldClone);
+  rdDoneCB* cb = rdDoneCB::create(ldClone, ldClone->getID());
   // printf("rd %x @%lld\n", (unsigned int)addr, (long long)globalClock);
 
   cache->tryPrefetch(ldClone->has_stats(), ldClone->getAddr(), 1, 0xF00D, ldClone->getPC(), cb);
@@ -166,7 +166,7 @@ static void dowrite(MemObj* cache, Addr_t addr) {
     EventScheduler::advanceClock();
   }
 
-  wrDoneCB* cb = wrDoneCB::create(stClone);
+  wrDoneCB* cb = wrDoneCB::create(stClone, stClone->getID());
   // printf("wr %x @%lld\n", (unsigned int)addr, (long long)globalClock);
 
   MemRequest::sendReqWrite(cache, stClone->has_stats(), stClone->getAddr(), stClone->getPC(), cb);

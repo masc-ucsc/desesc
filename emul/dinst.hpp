@@ -124,9 +124,9 @@ private:
   Time_t executed;
 
   bool branchMiss;
-  bool use_level3;         // use level3 bpred or not?
-  bool branch_hit2_miss3;  // coorect pred by level 2 BP but misprediction by level 3 BP
-  bool branch_hit3_miss2;  // coorect pred by level 3 BP but misprediction by level 2 BP
+  bool use_level3;
+  bool branch_hit2_miss3;
+  bool branch_hit3_miss2;
   bool branchHit_level1;
   bool branchHit_level2;
   bool branchHit_level3;
@@ -148,7 +148,7 @@ private:
 
   bool prefetch;
   bool dispatched;
-  bool fullMiss;  // Only for DL1
+  bool fullMiss;
   bool speculative;
   bool transient;
   bool del_entry;
@@ -165,8 +165,8 @@ private:
   SSID_t      SSID;
   Addr_t      conflictStorePC;
   Instruction inst;
-  Addr_t      pc;    // PC for the dinst
-  Addr_t      addr;  // Either load/store address or jump/branch address
+  Addr_t      pc;
+  Addr_t      addr;
   uint64_t    inflight;
   int16_t     bb;
 
@@ -199,7 +199,7 @@ private:
   FetchEngine*              fetch;
   GProcessor*               gproc;
 
-  char nDeps;  // 0, 1 or 2 for RISC processors
+  char nDeps;
 
   static inline Time_t currentID       = 0;
   static inline Time_t currentID_trans = 1000000;
@@ -248,8 +248,7 @@ private:
     replay        = false;
     performed     = false;
 
-    interCluster = false;
-    // keep_stats - is an argument
+    interCluster     = false;
     biasBranch       = false;
     zero_delay_taken = false;
     imli_highconf    = false;
@@ -275,11 +274,11 @@ private:
     pend[2].setParentDinst(nullptr);
 #endif
 
-    first          = nullptr;
-    last           = nullptr;
-    nDeps          = 0;
-    pend[0].isUsed = false;  // false when no RAW dependence
-    pend[1].isUsed = false;  // true when RAW dependence
+    last  = nullptr;
+    nDeps = 0;
+
+    pend[0].isUsed = false;
+    pend[1].isUsed = false;
     pend[2].isUsed = false;
 
     pend[0].setNextDep(nullptr);
@@ -346,11 +345,10 @@ public:
     i->base_pref_addr = 0;
     i->data_sign      = DS_NoData;
     i->chained        = 0;
-    // BR stats
-    i->brpc        = 0;
-    i->delta       = 0;
-    i->br_ld_chain = false;
-    i->br_op_type  = -1;
+    i->brpc           = 0;
+    i->delta          = 0;
+    i->br_ld_chain    = false;
+    i->br_op_type     = -1;
 #endif
     i->fetched    = 0;
     i->keep_stats = keep_stats;

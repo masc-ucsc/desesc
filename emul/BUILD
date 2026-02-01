@@ -10,7 +10,7 @@ cc_library(
         exclude = ["*_test*.cpp", "*_bench*.cpp"],
     ),
     hdrs = glob(["*.hpp"]),
-    copts = COPTS + ["-Wno-unused-parameter"],
+    copts = COPTS,
     includes = ["."],
     visibility = ["//visibility:public"],
     deps = [

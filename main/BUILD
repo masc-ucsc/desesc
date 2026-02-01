@@ -8,7 +8,7 @@ cc_library(
     name = "bootloader",
     srcs = ["bootloader.cpp"],
     hdrs = glob(["*.hpp"]),
-    copts = COPTS + ["-Wno-unused-parameter"],
+    copts = COPTS,
     includes = ["."],
     visibility = ["//visibility:public"],
     deps = [

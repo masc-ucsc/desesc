@@ -21,6 +21,9 @@ private:
 
   std::shared_ptr<PortGeneric> schedPort;
 
+  // Helper to avoid code duplication in tryNextSlot immediate vs queued paths
+  void do_schedule(Time_t when, Dinst* dinst);
+
 protected:
   void preSelect(Dinst* dinst);
 

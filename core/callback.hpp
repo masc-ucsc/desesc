@@ -14,10 +14,8 @@
 #include "snippets.hpp"
 #include "tqueue.hpp"
 
-#ifdef PORT_STRICT_PRIORITY
 // Forward declaration for port registration
 class PortGeneric;
-#endif
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -77,11 +75,11 @@ public:
 
   void dump() const;
 
-#ifdef PORT_STRICT_PRIORITY
-  // Port registration for priority-based allocation
+  // Port registration for deferred allocation with contention handling
+  // With PORT_STRICT_PRIORITY: priority order (lowest dinst ID first)
+  // Without PORT_STRICT_PRIORITY: FIFO order (first inserted, first popped)
   static void registerPort(PortGeneric* port);
   static void processPendingPortRequests();
-#endif
 
   static void schedule(Time_t tim, EventScheduler* cb) {
     (void)tim;
@@ -127,11 +125,10 @@ public:
 #endif
     globalClock++;
 
-#ifdef PORT_STRICT_PRIORITY
     // Process pending port requests BEFORE regular callbacks
     // This allows priority-ordered allocation at cycle start
+    // (no-op without PORT_STRICT_PRIORITY)
     processPendingPortRequests();
-#endif
 
     uint32_t cb_per_clock = 0;
     while ((cb = cbQ.nextJob(globalClock))) {
@@ -152,20 +149,16 @@ public:
     I(empty());
     cbQ.reset();
     globalClock = 0;
-#ifdef PORT_STRICT_PRIORITY
     // Clear port registrations on reset
     getRegisteredPorts().clear();
-#endif
   }
 
-#ifdef PORT_STRICT_PRIORITY
 private:
   // Static storage for registered ports (accessor pattern for static initialization order)
   static std::vector<PortGeneric*>& getRegisteredPorts() {
     static std::vector<PortGeneric*> registered_ports;
     return registered_ports;
   }
-#endif
 };
 
 class CallbackBase : public EventScheduler {

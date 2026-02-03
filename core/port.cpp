@@ -18,14 +18,10 @@ std::shared_ptr<PortGeneric> PortGeneric::create(const std::string& unitName, Nu
   } else {
     if (nUnits == 1) {
       gen = std::make_shared<PortFullyPipe>(name);
-#ifdef PORT_STRICT_PRIORITY
       EventScheduler::registerPort(gen.get());
-#endif
     } else {
       gen = std::make_shared<PortFullyNPipe>(name, nUnits);
-#ifdef PORT_STRICT_PRIORITY
       EventScheduler::registerPort(gen.get());
-#endif
     }
   }
 
@@ -57,9 +53,8 @@ Time_t PortFullyPipe::nextSlot(bool en) {
 
 bool PortFullyPipe::is_busy_for(TimeDelta_t clk) const { return lTime - clk >= globalClock; }
 
-#ifdef PORT_STRICT_PRIORITY
 std::pair<Time_t, bool> PortFullyPipe::tryNextSlot(bool en, Time_t priority) {
-  (void)priority;  // Priority is used for queuing, not immediate allocation
+  (void)priority;  // Priority is used for queuing only with PORT_STRICT_PRIORITY
 
   if (lTime < globalClock) {
     lTime = globalClock;
@@ -83,7 +78,9 @@ void PortFullyPipe::queueRequest(bool en, Time_t priority, std::function<void(Ti
 }
 
 void PortFullyPipe::processPendingRequests() {
-  // Called at start of each cycle - process queued requests in priority order
+  // Called at start of each cycle - process queued requests
+  // With PORT_STRICT_PRIORITY: priority order (low ID first)
+  // Without PORT_STRICT_PRIORITY: FIFO order (insertion order)
   while (!pendingRequests.empty()) {
     if (lTime < globalClock) {
       lTime = globalClock;
@@ -95,7 +92,11 @@ void PortFullyPipe::processPendingRequests() {
       break;
     }
 
+#ifdef PORT_STRICT_PRIORITY
     auto req = pendingRequests.top();
+#else
+    auto req = pendingRequests.front();
+#endif
     pendingRequests.pop();
 
     Time_t when = lTime++;
@@ -103,7 +104,6 @@ void PortFullyPipe::processPendingRequests() {
     req.callback(when);
   }
 }
-#endif
 
 PortFullyNPipe::PortFullyNPipe(const std::string& name, NumUnits_t nFU) : PortGeneric(name), nUnitsMinusOne(nFU - 1) {
   I(nFU > 0);  // For unlimited resources use the FUUnlimited
@@ -130,9 +130,8 @@ Time_t PortFullyNPipe::nextSlot(bool en) {
 
 bool PortFullyNPipe::is_busy_for(TimeDelta_t clk) const { return lTime - clk >= globalClock; }
 
-#ifdef PORT_STRICT_PRIORITY
 std::pair<Time_t, bool> PortFullyNPipe::tryNextSlot(bool en, Time_t priority) {
-  (void)priority;  // Priority is used for queuing, not immediate allocation
+  (void)priority;  // Priority is used for queuing only with PORT_STRICT_PRIORITY
 
   if (lTime < globalClock) {
     lTime     = globalClock;
@@ -157,7 +156,9 @@ void PortFullyNPipe::queueRequest(bool en, Time_t priority, std::function<void(T
 }
 
 void PortFullyNPipe::processPendingRequests() {
-  // Called at start of each cycle - process queued requests in priority order
+  // Called at start of each cycle - process queued requests
+  // With PORT_STRICT_PRIORITY: priority order (low ID first)
+  // Without PORT_STRICT_PRIORITY: FIFO order (insertion order)
   while (!pendingRequests.empty()) {
     // Refresh available resources at start of cycle if needed
     if (lTime < globalClock) {
@@ -171,7 +172,11 @@ void PortFullyNPipe::processPendingRequests() {
       break;
     }
 
+#ifdef PORT_STRICT_PRIORITY
     auto req = pendingRequests.top();
+#else
+    auto req = pendingRequests.front();
+#endif
     pendingRequests.pop();
 
     Time_t when = lTime;
@@ -186,4 +191,3 @@ void PortFullyNPipe::processPendingRequests() {
     req.callback(when);
   }
 }
-#endif

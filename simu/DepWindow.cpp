@@ -73,39 +73,20 @@ void DepWindow::preSelect(Dinst* dinst) {
 }
 
 void DepWindow::select(Dinst* dinst) {
-#ifdef PORT_STRICT_PRIORITY
   auto [when, needs_retry] = schedPort->tryNextSlot(dinst->has_stats(), dinst->getID());
 
   if (!needs_retry) {
-    // Resource available - schedule immediately
-    Time_t schedTime = when;
-    if (dinst->hasInterCluster()) {
-      schedTime += inter_cluster_lat;
-    } else {
-      schedTime += sched_lat;
-    }
-
-    I(src_cluster_id == dinst->getCluster()->get_id());
-
-    Resource::executingCB::scheduleAbs(schedTime, dinst->getClusterResource().get(), dinst, dinst->getID());
+    do_schedule(when, dinst);
   } else {
     // Resource busy - queue for priority-based retry
     schedPort->queueRequest(dinst->has_stats(), dinst->getID(), [this, dinst](Time_t allocated_time) {
-      Time_t schedTime = allocated_time;
-      if (dinst->hasInterCluster()) {
-        schedTime += inter_cluster_lat;
-      } else {
-        schedTime += sched_lat;
-      }
-
-      I(src_cluster_id == dinst->getCluster()->get_id());
-
-      Resource::executingCB::scheduleAbs(schedTime, dinst->getClusterResource().get(), dinst, dinst->getID());
+      do_schedule(allocated_time, dinst);
     });
   }
-#else
-  // Original implementation - no priority ordering
-  Time_t schedTime = schedPort->nextSlot(dinst->has_stats());
+}
+
+void DepWindow::do_schedule(Time_t when, Dinst* dinst) {
+  Time_t schedTime = when;
   if (dinst->hasInterCluster()) {
     schedTime += inter_cluster_lat;
   } else {
@@ -114,11 +95,7 @@ void DepWindow::select(Dinst* dinst) {
 
   I(src_cluster_id == dinst->getCluster()->get_id());
 
-  Resource::executingCB::scheduleAbs(schedTime,
-                                     dinst->getClusterResource().get(),
-                                     dinst,
-                                     dinst->getID());  // NASTY to avoid callback ptr
-#endif
+  Resource::executingCB::scheduleAbs(schedTime, dinst->getClusterResource().get(), dinst, dinst->getID());
 }
 
 void DepWindow::executed_flushed(Dinst* dinst) {

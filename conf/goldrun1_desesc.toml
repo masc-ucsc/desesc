@@ -3,8 +3,8 @@
 # and field names
 
 [trace]
-range = [0,5000]
-#range = [0,313000]
+#range = [0,5000]
+range = [0,313000]
 #range = [3100000,3200000]
 #range = [0,0]
 
@@ -261,8 +261,8 @@ occ = 1
 
 [aunit]
 win_size   = 48
-sched_num  = 0
-sched_lat  = 0
+sched_num  = 3
+sched_lat  = 1
 recycle_at  = "executed"
 num_regs   = 256
 late_alloc = false
@@ -271,8 +271,8 @@ iRALU      = "alu0"
 
 [bunit]
 win_size   = 48
-sched_num  = 0
-sched_lat  = 0
+sched_num  = 2
+sched_lat  = 1
 recycle_at  = "executed"
 num_regs   = 256
 late_alloc = false
@@ -286,8 +286,8 @@ iBALU_RET     = "balu"
 
 [cunit]
 win_size   = 48
-sched_num  = 0
-sched_lat  = 0
+sched_num  = 1
+sched_lat  = 1
 recycle_at  = "executed"
 num_regs   = 256
 late_alloc = false
@@ -299,8 +299,8 @@ iCALU_DIV     = "calu2"
 
 [munit]
 win_size   = 48
-sched_num  = 0
-sched_lat  = 0
+sched_num  = 1
+sched_lat  = 1
 recycle_at  = "executed"
 num_regs   = 256
 late_alloc = false

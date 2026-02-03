@@ -288,6 +288,69 @@ void FULoad::executing(Dinst* dinst) {
   }
 
   cluster->executing(dinst);
+
+#ifdef PORT_STRICT_PRIORITY
+  auto [when, needs_retry] = gen->tryNextSlot(dinst->has_stats(), dinst->getID());
+
+  if (!needs_retry) {
+    // Resource available - schedule immediately
+    Time_t when_sched = when + lat;
+
+    Dinst* qdinst = lsq->executing(dinst);
+    I(qdinst == 0);
+    if (qdinst) {
+      I(qdinst->getInst()->isStore());
+      dinst->getGProc()->replay(dinst);
+      if (!dinst->getGProc()->is_nuking()) {
+        stldViolations.inc(dinst->has_stats());
+      }
+      storeset->stldViolation(qdinst, dinst);
+    }
+
+#ifdef ENABLE_SCB
+    if (dinst->isLoadForwarded() || scb->is_ld_forward(dinst->getAddr()) || !enableDcache || dinst->is_destroy_transient())
+#else
+    if (dinst->isLoadForwarded() || !enableDcache || dinst->is_destroy_transient())
+#endif
+    {
+      performedCB::scheduleAbs(when_sched + LSDelay, this, dinst, dinst->getID());
+      dinst->markDispatched();
+      pref->exe(dinst);
+    } else {
+      cacheDispatchedCB::scheduleAbs(when_sched, this, dinst, dinst->getID());
+    }
+  } else {
+    // Resource busy - queue for priority-based retry
+    gen->queueRequest(dinst->has_stats(), dinst->getID(), [this, dinst](Time_t allocated_time) {
+      Time_t when_sched = allocated_time + lat;
+
+      Dinst* qdinst = lsq->executing(dinst);
+      I(qdinst == 0);
+      if (qdinst) {
+        I(qdinst->getInst()->isStore());
+        dinst->getGProc()->replay(dinst);
+        if (!dinst->getGProc()->is_nuking()) {
+          stldViolations.inc(dinst->has_stats());
+        }
+        storeset->stldViolation(qdinst, dinst);
+      }
+
+#ifdef ENABLE_SCB
+      if (dinst->isLoadForwarded() || scb->is_ld_forward(dinst->getAddr()) || !enableDcache || dinst->is_destroy_transient())
+#else
+      if (dinst->isLoadForwarded() || !enableDcache || dinst->is_destroy_transient())
+#endif
+      {
+        performedCB::scheduleAbs(when_sched + LSDelay, this, dinst, dinst->getID());
+        dinst->markDispatched();
+        pref->exe(dinst);
+      } else {
+        cacheDispatchedCB::scheduleAbs(when_sched, this, dinst, dinst->getID());
+      }
+    });
+  }
+#else
+  // Original implementation - no priority ordering
   Time_t when = gen->nextSlot(dinst->has_stats()) + lat;
 
   Dinst* qdinst = lsq->executing(dinst);
@@ -315,6 +378,7 @@ void FULoad::executing(Dinst* dinst) {
   } else {
     cacheDispatchedCB::scheduleAbs(when, this, dinst, dinst->getID());
   }
+#endif
 }
 
 /* }}} */
@@ -533,6 +597,45 @@ void FUStore::executing(Dinst* dinst) {
   }
 
   cluster->executing(dinst);
+
+#ifdef PORT_STRICT_PRIORITY
+  auto [when, needs_retry] = gen->tryNextSlot(dinst->has_stats(), dinst->getID());
+  (void)when;  // Time not used - just consuming port slot
+
+  if (!needs_retry) {
+    // Resource available - proceed immediately
+    if (dinst->getInst()->isStoreAddress()) {
+#if 0
+      if (enableDcache && !firstLevelMemObj->isBusy(dinst->getAddr()) ){
+        MemRequest::sendReqWritePrefetch(firstLevelMemObj, dinst->has_stats(), dinst->getAddr(), 0);
+      }
+      executed(dinst);
+#else
+      executed(dinst);
+#endif
+    } else {
+      executed(dinst);
+    }
+  } else {
+    // Resource busy - queue for priority-based retry
+    gen->queueRequest(dinst->has_stats(), dinst->getID(), [this, dinst](Time_t allocated_time) {
+      (void)allocated_time;  // Time not used
+      if (dinst->getInst()->isStoreAddress()) {
+#if 0
+        if (enableDcache && !firstLevelMemObj->isBusy(dinst->getAddr()) ){
+          MemRequest::sendReqWritePrefetch(firstLevelMemObj, dinst->has_stats(), dinst->getAddr(), 0);
+        }
+        executed(dinst);
+#else
+        executed(dinst);
+#endif
+      } else {
+        executed(dinst);
+      }
+    });
+  }
+#else
+  // Original implementation - no priority ordering
   gen->nextSlot(dinst->has_stats());
 
   if (dinst->getInst()->isStoreAddress()) {
@@ -547,6 +650,7 @@ void FUStore::executing(Dinst* dinst) {
   } else {
     executed(dinst);
   }
+#endif
 }
 /* }}} */
 
@@ -672,6 +776,44 @@ StallCause FUGeneric::canIssue(Dinst* dinst) {
 
 void FUGeneric::executing(Dinst* dinst) {
   /* executing {{{1 */
+#ifdef PORT_STRICT_PRIORITY
+  auto [when, needs_retry] = gen->tryNextSlot(dinst->has_stats(), dinst->getID());
+
+  if (!needs_retry) {
+    // Resource available - schedule immediately
+    Time_t nlat = when + lat;
+#if 0
+    if (dinst->getPC() == 1073741832) {
+      MSG("@%lld Scheduling callback for FID[%d] PE[%d] Warp [%d] pc 1073741832 at @%lld"
+          , (long long int)globalClock
+          , dinst->getFlowId()
+          , dinst->getPE()
+          , dinst->getWarpID()
+          , (long long int) nlat);
+    }
+#endif
+    cluster->executing(dinst);
+    executedCB::scheduleAbs(nlat, this, dinst, dinst->getID());
+  } else {
+    // Resource busy - queue for priority-based retry
+    gen->queueRequest(dinst->has_stats(), dinst->getID(), [this, dinst](Time_t allocated_time) {
+      Time_t nlat = allocated_time + lat;
+#if 0
+      if (dinst->getPC() == 1073741832) {
+        MSG("@%lld Scheduling callback for FID[%d] PE[%d] Warp [%d] pc 1073741832 at @%lld"
+            , (long long int)globalClock
+            , dinst->getFlowId()
+            , dinst->getPE()
+            , dinst->getWarpID()
+            , (long long int) nlat);
+      }
+#endif
+      cluster->executing(dinst);
+      executedCB::scheduleAbs(nlat, this, dinst, dinst->getID());
+    });
+  }
+#else
+  // Original implementation - no priority ordering
   Time_t nlat = gen->nextSlot(dinst->has_stats()) + lat;
 #if 0
   if (dinst->getPC() == 1073741832) {
@@ -685,6 +827,7 @@ void FUGeneric::executing(Dinst* dinst) {
 #endif
   cluster->executing(dinst);
   executedCB::scheduleAbs(nlat, this, dinst, dinst->getID());
+#endif
 }
 /* }}} */
 
@@ -766,8 +909,25 @@ StallCause FUBranch::canIssue(Dinst* dinst) {
 
 void FUBranch::executing(Dinst* dinst) {
   /* executing {{{1 */
+#ifdef PORT_STRICT_PRIORITY
+  auto [when, needs_retry] = gen->tryNextSlot(dinst->has_stats(), dinst->getID());
+
+  if (!needs_retry) {
+    // Resource available - schedule immediately
+    cluster->executing(dinst);
+    executedCB::scheduleAbs(when + lat + bpred_delay, this, dinst, dinst->getID());
+  } else {
+    // Resource busy - queue for priority-based retry
+    gen->queueRequest(dinst->has_stats(), dinst->getID(), [this, dinst](Time_t allocated_time) {
+      cluster->executing(dinst);
+      executedCB::scheduleAbs(allocated_time + lat + bpred_delay, this, dinst, dinst->getID());
+    });
+  }
+#else
+  // Original implementation - no priority ordering
   cluster->executing(dinst);
   executedCB::scheduleAbs(gen->nextSlot(dinst->has_stats()) + lat + bpred_delay, this, dinst, dinst->getID());
+#endif
 }
 /* }}} */
 
@@ -882,8 +1042,25 @@ void FURALU::executing(Dinst* dinst)
   if (dinst->is_flush_transient()) {
   }
 
+#ifdef PORT_STRICT_PRIORITY
+  auto [when, needs_retry] = gen->tryNextSlot(dinst->has_stats(), dinst->getID());
+
+  if (!needs_retry) {
+    // Resource available - schedule immediately
+    cluster->executing(dinst);
+    executedCB::scheduleAbs(when + lat, this, dinst, dinst->getID());
+  } else {
+    // Resource busy - queue for priority-based retry
+    gen->queueRequest(dinst->has_stats(), dinst->getID(), [this, dinst](Time_t allocated_time) {
+      cluster->executing(dinst);
+      executedCB::scheduleAbs(allocated_time + lat, this, dinst, dinst->getID());
+    });
+  }
+#else
+  // Original implementation - no priority ordering
   cluster->executing(dinst);
   executedCB::scheduleAbs(gen->nextSlot(dinst->has_stats()) + lat, this, dinst, dinst->getID());
+#endif
 
   // Recommended poweron the GPU threads and then poweroff the QEMU thread?
 }

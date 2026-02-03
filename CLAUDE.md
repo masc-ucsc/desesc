@@ -26,12 +26,36 @@ bazel build -c dbg --config=asan //main:desesc   # Address sanitizer
 bazel build -c dbg --config=tsan //main:desesc   # Thread sanitizer
 bazel build -c dbg --config=ubsan //main:desesc  # Undefined behavior
 
+# Build with priority-aware port allocation (fixes priority inversion)
+bazel build -c dbg --copt=-DPORT_STRICT_PRIORITY //main:desesc
+bazel test -c dbg --copt=-DPORT_STRICT_PRIORITY //...
+
 # Run desesc
 ./bazel-bin/main/desesc -c ./conf/desesc.toml
 
 # Clean build (if compiler tools change)
 bazel clean --expunge
 ```
+
+### PORT_STRICT_PRIORITY
+
+DESESC can be built with priority-aware resource allocation to fix priority inversion issues:
+
+**Default behavior (without flag):**
+- Resource ports allocate on first-come-first-served basis
+- Faster simulation (~1-2% faster)
+- May exhibit priority inversion (newer instructions can delay older ones)
+
+**With PORT_STRICT_PRIORITY:**
+- Resource ports respect instruction age (older instructions have higher priority)
+- Slightly slower simulation (~1-2% overhead from priority queues)
+- Ensures correct temporal ordering of instruction execution
+
+**When to use:**
+- Use default for fast exploratory simulations
+- Use PORT_STRICT_PRIORITY for accurate timing analysis and published results
+
+**Note:** Simulation results WILL differ between modes - this is expected and correct.
 
 ## Regression Testing
 

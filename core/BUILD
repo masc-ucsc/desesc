@@ -38,6 +38,17 @@ cc_test(
 )
 
 cc_test(
+    name = "port_test",
+    srcs = [
+        "port_test.cpp",
+    ],
+    deps = [
+        ":core",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "callback_bench",
     srcs = [
         "callback_bench.cpp",

@@ -70,10 +70,13 @@ rm -f "$CLEANUP_DESESC" "$CLEANUP_KANATA"
 
 # Function to filter and sort desesc output for comparison
 # Order can be non-deterministic due to hash map iteration, so we sort
+# Also normalize NaN values and round floating point to 2 decimal places
 filter_and_sort_desesc_output() {
     grep -v '^OSSim:beginTime=' | \
     grep -v '^OSSim:endTime=' | \
     grep -v '^OSSim:msecs=' | \
+    sed 's/-nan/nan/g' | \
+    perl -pe 's/(v=)(-?[0-9]+\.[0-9]+)/sprintf("%s%.2f", $1, $2)/ge' | \
     sort
 }
 

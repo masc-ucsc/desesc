@@ -12,4 +12,5 @@ COPTS = [
     "-Wno-error=deprecated",
     "-Wunused",
     "-Wshadow",
+    "-Wno-deprecated-literal-operator",
 ]

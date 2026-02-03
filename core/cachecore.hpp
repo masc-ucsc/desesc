@@ -830,9 +830,9 @@ CacheGeneric<State, Addr_t>* CacheGeneric<State, Addr_t>::create(const std::stri
  *********************************************************/
 
 template <class State, class Addr_t>
-CacheAssoc<State, Addr_t>::CacheAssoc(int32_t size, int32_t assoc, int32_t blksize, int32_t addrUnit, const std::string& pStr,
+CacheAssoc<State, Addr_t>::CacheAssoc(int32_t size, int32_t associativity, int32_t blksize, int32_t addrUnit, const std::string& pStr,
                                       bool xr)
-    : CacheGeneric<State, Addr_t>(size, assoc, blksize, addrUnit, xr) {
+    : CacheGeneric<State, Addr_t>(size, associativity, blksize, addrUnit, xr) {
   I(numLines > 0);
 
   std::string pStr_lc{pStr};
@@ -1186,9 +1186,9 @@ typename CacheAssoc<State, Addr_t>::Line* CacheAssoc<State, Addr_t>::findLine2Re
  *********************************************************/
 
 template <class State, class Addr_t>
-HawkCache<State, Addr_t>::HawkCache(int32_t size, int32_t assoc, int32_t blksize, int32_t addrUnit, const std::string& pStr,
+HawkCache<State, Addr_t>::HawkCache(int32_t size, int32_t associativity, int32_t blksize, int32_t addrUnit, const std::string& pStr,
                                     bool xr)
-    : CacheGeneric<State, Addr_t>(size, assoc, blksize, addrUnit, xr) {
+    : CacheGeneric<State, Addr_t>(size, associativity, blksize, addrUnit, xr) {
   I(numLines > 0);
 
   std::string pStr_lc{pStr};
@@ -1682,9 +1682,9 @@ typename CacheDMSkew<State, Addr_t>::Line* CacheDMSkew<State, Addr_t>::findLine2
  *********************************************************/
 
 template <class State, class Addr_t>
-CacheSHIP<State, Addr_t>::CacheSHIP(int32_t size, int32_t assoc, int32_t blksize, int32_t addrUnit, const std::string& pStr,
+CacheSHIP<State, Addr_t>::CacheSHIP(int32_t size, int32_t associativity, int32_t blksize, int32_t addrUnit, const std::string& pStr,
                                     uint32_t shct_size)
-    : CacheGeneric<State, Addr_t>(size, assoc, blksize, addrUnit, false) {
+    : CacheGeneric<State, Addr_t>(size, associativity, blksize, addrUnit, false) {
   I(numLines > 0);
   log2shct = shct_size;
   I(shct_size < 31);

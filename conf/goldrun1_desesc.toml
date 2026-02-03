@@ -3,8 +3,8 @@
 # and field names
 
 [trace]
-#range = [0,5000]
-range = [0,313000]
+range = [0,5000]
+#range = [0,313000]
 #range = [3100000,3200000]
 #range = [0,0]
 

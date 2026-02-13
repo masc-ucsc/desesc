@@ -533,11 +533,11 @@ std::string Config::get_block2(const std::string& block, const std::string& name
 }
 
 void Config::add_used(const std::string& block, const std::string& name, size_t pos, const std::string& val) {
-  if (used[block].second.size() <= pos) {
-    used[block].second.resize(pos + 1);
-    used[block].first = name;
+  auto& fields = used[block][name];
+  if (fields.size() <= pos) {
+    fields.resize(pos + 1);
   }
-  used[block].second[pos] = val;
+  fields[pos] = val;
 }
 
 void Config::dump(int fd) {
@@ -546,22 +546,24 @@ void Config::dump(int fd) {
     auto sz  = ::write(fd, str.c_str(), str.size());
     (void)sz;
 
-    if (u.second.second.size() == 1) {
-      str = fmt::format("{} = {}\n", u.second.first, u.second.second[0]);
-    } else {
-      str        = fmt::format("{} = {{ ", u.second.first);
-      bool first = true;
-      for (const auto& e : u.second.second) {
-        if (first) {
-          str += fmt::format("{}", e);
-        } else {
-          str += fmt::format(", {}", e);
+    for (const auto& field : u.second) {
+      if (field.second.size() == 1) {
+        str = fmt::format("{} = {}\n", field.first, field.second[0]);
+      } else {
+        str        = fmt::format("{} = {{ ", field.first);
+        bool first = true;
+        for (const auto& e : field.second) {
+          if (first) {
+            str += fmt::format("{}", e);
+          } else {
+            str += fmt::format(", {}", e);
+          }
         }
+        str += fmt::format(" }}\n");
       }
-      str += fmt::format(" }}\n");
+      sz = ::write(fd, str.c_str(), str.size());
+      (void)sz;
     }
-    sz = ::write(fd, str.c_str(), str.size());
-    (void)sz;
   }
 }
 

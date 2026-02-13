@@ -71,7 +71,9 @@ rm -f "$CLEANUP_DESESC" "$CLEANUP_KANATA"
 # Function to filter and sort desesc output for comparison
 # Order can be non-deterministic due to hash map iteration, so we sort
 # Also normalize NaN values and round floating point to 2 decimal places
+# Skip config dump section (everything before #BEGIN Stats) as it's just config echo
 filter_and_sort_desesc_output() {
+    awk '/#BEGIN Stats/,0' | \
     grep -v '^OSSim:beginTime=' | \
     grep -v '^OSSim:endTime=' | \
     grep -v '^OSSim:msecs=' | \

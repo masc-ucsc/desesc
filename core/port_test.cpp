@@ -209,9 +209,7 @@ TEST_F(Port_test, priority_multi_cycle_processing) {
     if (!retry) {
       allocations.push_back({prio, when});
     } else {
-      port->queueRequest(true, prio, [&allocations, prio](Time_t when) {
-        allocations.push_back({prio, when});
-      });
+      port->queueRequest(true, prio, [&allocations, prio](Time_t when) { allocations.push_back({prio, when}); });
     }
   }
 

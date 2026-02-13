@@ -2,12 +2,12 @@
 
 #pragma once
 
+#include <functional>
+#include <queue>
+
 #include "callback.hpp"
 #include "iassert.hpp"
 #include "stats.hpp"
-
-#include <functional>
-#include <queue>
 
 #ifdef PORT_STRICT_PRIORITY
 #include <vector>

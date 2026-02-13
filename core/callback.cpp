@@ -11,9 +11,7 @@ Time_t deadClock   = 0;
 
 void EventScheduler::dump() const { I(0); }
 
-void EventScheduler::registerPort(PortGeneric* port) {
-  getRegisteredPorts().push_back(port);
-}
+void EventScheduler::registerPort(PortGeneric* port) { getRegisteredPorts().push_back(port); }
 
 void EventScheduler::processPendingPortRequests() {
   // Process all registered ports' pending requests at start of cycle

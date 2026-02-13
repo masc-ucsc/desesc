@@ -15,8 +15,8 @@ private:
   static inline std::string filename;
   static inline toml::value data;
 
-  static inline std::vector<std::string>                                                           errors;
-  static inline absl::flat_hash_map<std::string, std::pair<std::string, std::vector<std::string>>> used;
+  static inline std::vector<std::string>                                                                     errors;
+  static inline absl::flat_hash_map<std::string, absl::flat_hash_map<std::string, std::vector<std::string>>> used;
 
   static bool check(const std::string& block, const std::string& name);
 

@@ -313,7 +313,7 @@ CCache::Line* CCache::allocateLine(Addr_t addr, MemRequest* mreq) {
   I(mreq->getAddr() == addr);
 
   I(cacheBank->findLineDebug(addr) == 0);
-  Line* l = cacheBank->fillLine_replace(addr, rpl_addr, mreq->getPC(), mreq->isPrefetch());
+  Line* l = cacheBank->fillLine_replace(addr, addr, rpl_addr, mreq->getPC(), mreq->isPrefetch());
   lineFill.inc(mreq->has_stats());
 
   I(l);  // Ignore lock guarantees to find line
@@ -1280,7 +1280,7 @@ TimeDelta_t CCache::ffread(Addr_t addr) {
     return 1;  // done!
   }
 
-  l = cacheBank->fillLine_replace(addr, addr_r, 0xbeefbeef);
+  l = cacheBank->fillLine_replace(addr, addr, addr_r, 0xbeefbeef);
   l->setExclusive();  // WARNING, can create random inconsistencies (no inv others)
 
   return router->ffread(addr) + 1;
@@ -1291,7 +1291,7 @@ TimeDelta_t CCache::ffwrite(Addr_t addr) {
 
   Line* l = cacheBank->writeLine(addr);
   if (l == 0) {
-    l = cacheBank->fillLine_replace(addr, addr_r, 0xbeefbeef);
+    l = cacheBank->fillLine_replace(addr, addr, addr_r, 0xbeefbeef);
   }
   if (router->isTopLevel()) {
     l->setModified();  // WARNING, can create random inconsistencies (no inv others)

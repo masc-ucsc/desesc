@@ -63,6 +63,7 @@ type = "random"  # Generate random instructions (coverage testing?)
 [bp0]
 type = "tahead1"
 delay             = 1
+btb_fetch_predict = false
 
 # SuperBP parameters
 SBP_NUMG = 5
@@ -137,6 +138,7 @@ table_width = 3
 [bp1]
 type = "tahead"
 delay             = 3
+btb_fetch_predict = false
 #type = "superbp"
 #delay             = 2
 
@@ -197,7 +199,7 @@ do_random_transients = false
 fetch_align       = true
 trace_align       = false
 fetch_one_line    = false   # jumps within cacheline do not flush
-max_bb_cycle      = 4
+max_bb_cycle      = 2
 prefetcher        = "pref_opt"
 
 smt = 1 # Number of STM context

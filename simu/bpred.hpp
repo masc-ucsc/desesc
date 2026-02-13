@@ -36,7 +36,7 @@ class MemObj;
 
 class BPred {
 public:
-  Addr_t  boundaryPC;
+  Addr_t             boundaryPC;
   static std::string to_s(Outcome o) {
     if (o == Outcome::Correct) {
       return "Correct";
@@ -76,15 +76,15 @@ protected:
   Stats_cntr nHit;   // N.B. predictors should not update these counters directly
   Stats_cntr nMiss;  // in their predict() function.
 
-  uint8_t  last_taken_type;
+  uint8_t    last_taken_type;
   Stats_cntr first_br;
   Stats_cntr first_jump;
   Stats_cntr first_ret;
   Stats_cntr first_br_correct;
   Stats_cntr first_jump_correct;
   Stats_cntr first_ret_correct;
-  int32_t addrShift;
-  int32_t maxCores;
+  int32_t    addrShift;
+  int32_t    maxCores;
 
 public:
   BPred(int32_t i, const std::string& section, const std::string& sname, const std::string& name);
@@ -138,7 +138,7 @@ private:
   DOLC*      dolc;
   bool       btbicache;
   uint64_t   btbHistorySize;
-  const bool btbFetchPredict;
+  const bool btb_fetch_predict;
 
   class BTBState : public StateGeneric<Addr_t> {
   public:

@@ -142,7 +142,7 @@ BPBTB::BPBTB(int32_t i, const std::string& section, const std::string& sname, co
     : nHit(fmt::format("P({})_BPred{}_{}:nHit", i, sname, name))
     , nMiss(fmt::format("P({})_BPred{}_{}:nMiss", i, sname, name))
     , nHitLabel(fmt::format("P({})_BPred{}_{}:nHitLabel", i, sname, name))
-    , btbFetchPredict(Config::get_bool(section, "btbFetchPredict")) {
+    , btb_fetch_predict(Config::get_bool(section, "btb_fetch_predict")) {
   btbHistorySize = Config::get_integer(section, "btb_history_size");
 
   if (btbHistorySize) {
@@ -176,7 +176,7 @@ void BPBTB::updateOnly(Addr_t pc, Dinst* dinst) {
 
   uint32_t key = (pc >> 18) ^ (pc >> 1);
 
-  BTBCache::CacheLine* cl = data->fillLine(key, /* key,*/ 0xdeaddead);
+  BTBCache::CacheLine* cl = data->fillLine(key, key, 0xdeaddead);
 
   I(cl);
 
@@ -199,7 +199,7 @@ Outcome BPBTB::predict(Addr_t boundaryPC, Dinst* dinst, bool doUpdate, bool doSt
 
   uint32_t boundary_key = (boundaryPC >> 18) ^ (boundaryPC >> 1);
   uint32_t tag_key      = (dinst->getPC() >> 18) ^ (dinst->getPC() >> 1);
-  if (!btbFetchPredict) {  // FIXME: add a desesc.toml option for each bp0/1/2 entry BTBFetchPredict =true/false
+  if (!btb_fetch_predict) {
     boundary_key = !tag_key;
   }
 
@@ -890,8 +890,6 @@ void BPSuperbp::fetchBoundaryEnd() {
 #define TARGET2_FROM_GSHARE
 // uint64_t gshare_missed, gshare_correct, gshare_incorrect;
 Outcome BPSuperbp::predict(Dinst* dinst, bool doUpdate, bool doStats) {
-  // FIXME: check dinst->is_zero_delay_taken(); If TRUE, it is beyond the 1 taken branch
-
 #ifndef TARGET2_FROM_GSHARE
   if (dinst->getInst()->isJump() || dinst->getInst()->isFuncRet()) {
     dinst->setBiasBranch(true);
@@ -917,7 +915,6 @@ Outcome BPSuperbp::predict(Dinst* dinst, bool doUpdate, bool doStats) {
   bool     ptaken = false;
   uint64_t gshare_target;
   superbp_p->handle_insn_desesc(pc, branchTarget, insn_type, taken, &batage_pred, &batage_conf, &gshare_use, &gshare_target);
-  // TODO:Check if ptaken must get the value based on is_zero_delay_taken directly w/o checking gshare_use at all
   // xxxx - fmt::print("2.pc={:x} {} {} {} id:{} {} bb:{}\n", dinst->getPC(), gshare_use?"gs":"ng", taken? " T":"NT", batage_pred?"
   // pT":"pNT", dinst->getID(), full_name, dinst->getBB());
 
@@ -930,6 +927,8 @@ Outcome BPSuperbp::predict(Dinst* dinst, bool doUpdate, bool doStats) {
   }
 #endif
 
+  bool gshare_target_correct = (branchTarget == gshare_target);
+
   if (gshare_use) {  // GSHARE did a prediction (it should be taken, but may be a miss prediction)
     switch (last_taken_type) {
       case 1: first_jump.inc(dinst->has_stats()); break;
@@ -937,25 +936,14 @@ Outcome BPSuperbp::predict(Dinst* dinst, bool doUpdate, bool doStats) {
       case 3: first_jump.inc(dinst->has_stats()); break;
       case 4: first_ret.inc(dinst->has_stats()); break;
     }
-    ptaken                     = true;
-    bool gshare_target_correct = (branchTarget == gshare_target);
+    ptaken = true;
     if ((ptaken != taken)
 #ifdef TARGET2_FROM_GSHARE
         || (!gshare_target_correct)
 #endif
     ) {
-      if (dinst->is_zero_delay_taken()) {
-        // fmt::print("1.WHY IS {:x} gshare_use is set and still MISS predict??\n", dinst->getPC());
-      }
-      assert(!dinst->is_zero_delay_taken());  // UNSURE
       gshare_incorrect.inc(dinst->has_stats());
-      dinst->clear_zero_delay_taken();
     } else {
-      if (!dinst->is_zero_delay_taken()) {
-        // fmt::print("2.WHY cpuid:{} IS {:x} gshare IF NOT THE LAST BRANCH IS FETCH (one taken before)\n", id, dinst->getPC());
-        // fmt::print("2.WHY IS {:x} gshare IF NOT THE LAST BRANCH IS FETCH (one taken before)\n", dinst->getPC());
-      }
-      // assert(dinst->is_zero_delay_taken()); // In theory, gshare should be used only in the 2nd taken branch
       gshare_correct.inc(dinst->has_stats());
       // xxxx - fmt::print("gs_correct\n");
       switch (last_taken_type) {
@@ -969,13 +957,7 @@ Outcome BPSuperbp::predict(Dinst* dinst, bool doUpdate, bool doStats) {
     ptaken = batage_pred;
     if (taken) {
       last_taken_type = insn_type;
-    }
-    if (dinst->is_zero_delay_taken()) {
-      // Stats saying that I wish I had gshare, but I did not so stall fetch (fall back to 1 taken)
       gshare_missed.inc(dinst->has_stats());
-
-      dinst->clear_zero_delay_taken();
-      // the succeeding fetch boundary begin must/ will update the history in superbp
     }
   }
 
@@ -2054,9 +2036,6 @@ TimeDelta_t BPredictor::predict(Dinst* dinst, bool* fastfix) {
   if (dinst->isTaken()) {
     // xxxx - fmt::print("3.pc={:x} l0:{} l1:{} l2:{} BB:{} @{} :", dinst->getPC(), BPred::to_s(outcome1), BPred::to_s(outcome2),
     // BPred::to_s(outcome3), dinst->getBB(), globalClock);
-    //  bool last_bb = dinst->is_zero_delay_taken();
-
-    //    if (last_bb) {
     if (outcome1 == Outcome::Correct && outcome2 == Outcome::Correct && outcome3 == Outcome::Correct) {
       nFixes1.inc(dinst->has_stats());  // Can get lucky and BB=1 predict too but weird
       // xxxx - fmt::print(" a 1\n");

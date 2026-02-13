@@ -143,7 +143,6 @@ private:
   bool interCluster;
   bool keep_stats;
   bool biasBranch;
-  bool zero_delay_taken;
   bool imli_highconf;
 
   bool prefetch;
@@ -248,10 +247,9 @@ private:
     replay        = false;
     performed     = false;
 
-    interCluster     = false;
-    biasBranch       = false;
-    zero_delay_taken = false;
-    imli_highconf    = false;
+    interCluster  = false;
+    biasBranch    = false;
+    imli_highconf = false;
 
     prefetch       = false;
     dispatched     = false;
@@ -738,10 +736,6 @@ public:
 
   void setBiasBranch(bool b) { biasBranch = b; }
   bool isBiasBranch() const { return biasBranch; }
-
-  void set_zero_delay_taken() { zero_delay_taken = true; }
-  void clear_zero_delay_taken() { zero_delay_taken = false; }
-  bool is_zero_delay_taken() const { return zero_delay_taken; }
 
   void setImliHighConf() { imli_highconf = true; }
 

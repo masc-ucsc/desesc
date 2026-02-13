@@ -163,6 +163,11 @@ bool FetchEngine::processBranch(Dinst* dinst) {
 
   I(!missInst);
 
+  if (maxDelayPending) {
+    maxDelayPending      = 0;
+    maxDelayPendingDinst = nullptr;
+  }
+
   missInst = true;
 #ifndef NDEBUG
   missDinst = dinst;
@@ -309,14 +314,9 @@ void FetchEngine::realfetch(IBucket* bucket, std::shared_ptr<Emul_base> eint, Ha
         // (n2Fetch-last_taken), dinst->getID());
         last_taken = n2Fetch;
         maxBB--;
-        // WARNING: Code zero_delay_taken only works with max_bb_cycle==2 for last TAKEN branch in bucket
 #ifdef IDEAL_FETCHBOUNDARY
         bpred->fetchBoundaryEnd();
         lastpc = 0;
-#else
-        if (maxBB == 0 && max_bb_cycle == 2) {
-          dinst->set_zero_delay_taken();  // To indicate that gshare could predict this
-        }
 #endif
       }
       bool stall_fetch = processBranch(dinst);

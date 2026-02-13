@@ -32,11 +32,11 @@ BPred::BPred(int32_t i, const std::string& sec, const std::string& sname, const 
     , full_name(fmt::format("P({})_BPred{}_{}", i, sname, name))
     , nHit(fmt::format("P({})_BPred{}_{}:nHit", i, sname, name))
     , nMiss(fmt::format("P({})_BPred{}_{}:nMiss", i, sname, name))
-    , first_br(fmt::format("P({})_BPred{}_{}:first_br", i, sname, name)) 
-    , first_jump(fmt::format("P({})_BPred{}_{}:first_jump", i, sname, name)) 
-    , first_ret(fmt::format("P({})_BPred{}_{}:first_ret", i, sname, name)) 
-    , first_br_correct(fmt::format("P({})_BPred{}_{}:first_br_correct", i, sname, name)) 
-    , first_jump_correct(fmt::format("P({})_BPred{}_{}:first_jump_correct", i, sname, name)) 
+    , first_br(fmt::format("P({})_BPred{}_{}:first_br", i, sname, name))
+    , first_jump(fmt::format("P({})_BPred{}_{}:first_jump", i, sname, name))
+    , first_ret(fmt::format("P({})_BPred{}_{}:first_ret", i, sname, name))
+    , first_br_correct(fmt::format("P({})_BPred{}_{}:first_br_correct", i, sname, name))
+    , first_jump_correct(fmt::format("P({})_BPred{}_{}:first_jump_correct", i, sname, name))
     , first_ret_correct(fmt::format("P({})_BPred{}_{}:first_ret_correct", i, sname, name)) {
   addrShift = Config::get_integer(sec, "bp_addr_shift");
 
@@ -139,10 +139,10 @@ Outcome BPRas::predict(Dinst* dinst, bool doUpdate, bool doStats) {
  * BTB
  */
 BPBTB::BPBTB(int32_t i, const std::string& section, const std::string& sname, const std::string& name)
-    : nHit(fmt::format("P({})_BPred{}_{}:nHit", i, sname, name)),
-      nMiss(fmt::format("P({})_BPred{}_{}:nMiss", i, sname, name)),
-      nHitLabel(fmt::format("P({})_BPred{}_{}:nHitLabel", i, sname, name)),
-      btbFetchPredict(Config::get_bool(section, "btbFetchPredict"))  {
+    : nHit(fmt::format("P({})_BPred{}_{}:nHit", i, sname, name))
+    , nMiss(fmt::format("P({})_BPred{}_{}:nMiss", i, sname, name))
+    , nHitLabel(fmt::format("P({})_BPred{}_{}:nHitLabel", i, sname, name))
+    , btbFetchPredict(Config::get_bool(section, "btbFetchPredict")) {
   btbHistorySize = Config::get_integer(section, "btb_history_size");
 
   if (btbHistorySize) {
@@ -176,14 +176,14 @@ void BPBTB::updateOnly(Addr_t pc, Dinst* dinst) {
 
   uint32_t key = (pc >> 18) ^ (pc >> 1);
 
-  BTBCache::CacheLine *cl = data->fillLine(key,/* key,*/ 0xdeaddead);
+  BTBCache::CacheLine* cl = data->fillLine(key, /* key,*/ 0xdeaddead);
 
   I(cl);
 
   cl->inst = dinst->getAddr();
 }
 
-Outcome BPBTB::predict(Addr_t boundaryPC, Dinst *dinst, bool doUpdate, bool doStats) {
+Outcome BPBTB::predict(Addr_t boundaryPC, Dinst* dinst, bool doUpdate, bool doStats) {
   // I(dinst->isTaken());  // BTB should be called only when the branch is taken (predict taken & taken -> call BTB)
 
   if (data == 0) {
@@ -197,9 +197,9 @@ Outcome BPBTB::predict(Addr_t boundaryPC, Dinst *dinst, bool doUpdate, bool doSt
     return Outcome::Correct;
   }
 
-  uint32_t boundary_key = (boundaryPC>>18)^(boundaryPC>>1);
-  uint32_t tag_key      = (dinst->getPC()>>18)^(dinst->getPC()>>1);
-  if (!btbFetchPredict) { // FIXME: add a desesc.toml option for each bp0/1/2 entry BTBFetchPredict =true/false
+  uint32_t boundary_key = (boundaryPC >> 18) ^ (boundaryPC >> 1);
+  uint32_t tag_key      = (dinst->getPC() >> 18) ^ (dinst->getPC() >> 1);
+  if (!btbFetchPredict) {  // FIXME: add a desesc.toml option for each bp0/1/2 entry BTBFetchPredict =true/false
     boundary_key = !tag_key;
   }
 
@@ -221,7 +221,7 @@ Outcome BPBTB::predict(Addr_t boundaryPC, Dinst *dinst, bool doUpdate, bool doSt
     return Outcome::Correct;
   }
 
-  BTBCache::CacheLine *cl = data->fillLine(boundary_key, tag_key, 0xdeaddead);
+  BTBCache::CacheLine* cl = data->fillLine(boundary_key, tag_key, 0xdeaddead);
   I(cl);
 
   Addr_t predictID = cl->inst;
@@ -765,7 +765,6 @@ Outcome BPIMLI::predict(Dinst* dinst, bool doUpdate, bool doStats) {
 
   bool taken = dinst->isTaken();
 
-
   bool bias;
   // bool     bias = false;
   Addr_t   pc     = dinst->getPC();
@@ -898,7 +897,7 @@ Outcome BPSuperbp::predict(Dinst* dinst, bool doUpdate, bool doStats) {
     dinst->setBiasBranch(true);
     return btb.predict(dinst->getPC(), dinst, doUpdate, doStats);
   }
-  #endif
+#endif
 
   // return btb.predict(dinst->getPC(), dinst, doUpdate, doStats);
   uint64_t pc        = dinst->getPC();
@@ -914,38 +913,36 @@ Outcome BPSuperbp::predict(Dinst* dinst, bool doUpdate, bool doStats) {
   if (!FetchPredict) {
     superbp_p->fetchBoundaryBegin(dinst->getPC());
   }
-  bool gshare_use = false, batage_pred = false, batage_conf = false;
-  bool ptaken = false;
+  bool     gshare_use = false, batage_pred = false, batage_conf = false;
+  bool     ptaken = false;
   uint64_t gshare_target;
   superbp_p->handle_insn_desesc(pc, branchTarget, insn_type, taken, &batage_pred, &batage_conf, &gshare_use, &gshare_target);
   // TODO:Check if ptaken must get the value based on is_zero_delay_taken directly w/o checking gshare_use at all
   // xxxx - fmt::print("2.pc={:x} {} {} {} id:{} {} bb:{}\n", dinst->getPC(), gshare_use?"gs":"ng", taken? " T":"NT", batage_pred?"
   // pT":"pNT", dinst->getID(), full_name, dinst->getBB());
-  
-  #ifdef TARGET2_FROM_GSHARE
+
+#ifdef TARGET2_FROM_GSHARE
   if (!gshare_use) {
-  if (dinst->getInst()->isJump() || dinst->getInst()->isFuncRet()) {
-    dinst->setBiasBranch(true);
-    return btb.predict(dinst->getPC(), dinst, doUpdate, doStats);
-  }
-  }
-  #endif
-  
-  
-  if (gshare_use) {  // GSHARE did a prediction (it should be taken, but may be a miss prediction)
-    switch (last_taken_type)
-    {
-        case 1 : first_jump.inc(dinst->has_stats()); break;
-        case 2 : first_br.inc(dinst->has_stats()); break;
-        case 3 : first_jump.inc(dinst->has_stats()); break;
-        case 4 : first_ret.inc(dinst->has_stats()); break;
+    if (dinst->getInst()->isJump() || dinst->getInst()->isFuncRet()) {
+      dinst->setBiasBranch(true);
+      return btb.predict(dinst->getPC(), dinst, doUpdate, doStats);
     }
-    ptaken = true;
+  }
+#endif
+
+  if (gshare_use) {  // GSHARE did a prediction (it should be taken, but may be a miss prediction)
+    switch (last_taken_type) {
+      case 1: first_jump.inc(dinst->has_stats()); break;
+      case 2: first_br.inc(dinst->has_stats()); break;
+      case 3: first_jump.inc(dinst->has_stats()); break;
+      case 4: first_ret.inc(dinst->has_stats()); break;
+    }
+    ptaken                     = true;
     bool gshare_target_correct = (branchTarget == gshare_target);
-    if ( (ptaken != taken) 
-      #ifdef TARGET2_FROM_GSHARE
-    || (!gshare_target_correct) 
-    #endif
+    if ((ptaken != taken)
+#ifdef TARGET2_FROM_GSHARE
+        || (!gshare_target_correct)
+#endif
     ) {
       if (dinst->is_zero_delay_taken()) {
         // fmt::print("1.WHY IS {:x} gshare_use is set and still MISS predict??\n", dinst->getPC());
@@ -961,19 +958,17 @@ Outcome BPSuperbp::predict(Dinst* dinst, bool doUpdate, bool doStats) {
       // assert(dinst->is_zero_delay_taken()); // In theory, gshare should be used only in the 2nd taken branch
       gshare_correct.inc(dinst->has_stats());
       // xxxx - fmt::print("gs_correct\n");
-        switch (last_taken_type)
-        {
-            case 1 : first_jump_correct.inc(dinst->has_stats()); break;
-            case 2 : first_br_correct.inc(dinst->has_stats()); break;
-            case 3 : first_jump_correct.inc(dinst->has_stats()); break;
-            case 4 : first_ret_correct.inc(dinst->has_stats()); break;
-        }
+      switch (last_taken_type) {
+        case 1: first_jump_correct.inc(dinst->has_stats()); break;
+        case 2: first_br_correct.inc(dinst->has_stats()); break;
+        case 3: first_jump_correct.inc(dinst->has_stats()); break;
+        case 4: first_ret_correct.inc(dinst->has_stats()); break;
+      }
     }
   } else {
     ptaken = batage_pred;
-    if (taken)
-    {
-        last_taken_type = insn_type;
+    if (taken) {
+      last_taken_type = insn_type;
     }
     if (dinst->is_zero_delay_taken()) {
       // Stats saying that I wish I had gshare, but I did not so stall fetch (fall back to 1 taken)
@@ -1003,14 +998,6 @@ Outcome BPSuperbp::predict(Dinst* dinst, bool doUpdate, bool doStats) {
     superbp_p->fetchBoundaryEnd();
   }
 
-#if 0
-  if (pc == 6212110) {
-    // printf ("***************************************************\n");
-    // fmt::print("pc:{} taken:{} ptaken:{}\n", pc, taken, ptaken);
-    // printf ("***************************************************\n");
-  }
-#endif
-
   if (taken != ptaken) {
     if (doUpdate) {
       btb.updateOnly(dinst->getPC(), dinst);
@@ -1018,12 +1005,16 @@ Outcome BPSuperbp::predict(Dinst* dinst, bool doUpdate, bool doStats) {
     return Outcome::Miss;
   }
 
-// TODO - Update to take target from gshare
-#ifndef TARGET2_FROM_GSHARE
-  return ptaken ? btb.predict(dinst->getPC(), dinst, doUpdate, doStats) : Outcome::Correct;
-#else
-return ptaken ? ( gshare_use ? ( gshare_target_correct ? Outcome::Correct : Outcome::Miss) :  (btb.predict(dinst->getPC(), dinst, doUpdate, doStats)) ): Outcome::Correct;
+  if (!taken) {
+    return Outcome::Correct;
+  }
+
+#ifdef TARGET2_FROM_GSHARE
+  if (gshare_use) {
+    return (gshare_target_correct ? Outcome::Correct : Outcome::Miss);
+  }
 #endif
+  return btb.predict(dinst->getPC(), dinst, doUpdate, doStats);
 }
 
 /*****************************************

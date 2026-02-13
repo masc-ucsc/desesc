@@ -44,9 +44,21 @@ FetchEngine::FetchEngine(Hartid_t id, std::shared_ptr<Gmemory_system> gms_, std:
     , avgFetchStallInst(fmt::format("P({})_FetchEngine:avgFetchStallInst", id))                // Not enough BB/LVIDs per cycle)
     , avgBB(fmt::format("P({})_FetchEngine:avgBB", id))
     , avgFB(fmt::format("P({})_FetchEngine:avgFB", id))
-//  ,szFS("FetchEngine(%d):szFS", id)
-//,unBlockFetchCB(this)
-//,unBlockFetchBPredDelayCB(this)
+    , nLastBranch1(fmt::format("P({})_FetchEngine:nLastBranch1", id))
+    , nLastRet1(fmt::format("P({})_FetchEngine:nLastRet1", id))
+    , nLastJump1(fmt::format("P({})_FetchEngine:nLastJump1", id))
+
+    , nLastBranch2(fmt::format("P({})_FetchEngine:nLastBranch2", id))
+    , nLastRet2(fmt::format("P({})_FetchEngine:nLastRet2", id))
+    , nLastJump2(fmt::format("P({})_FetchEngine:nLastJump2", id))
+
+    , nFirstBranch(fmt::format("P({})_FetchEngine:nFirstBranch", id))
+    , nFirstRet(fmt::format("P({})_FetchEngine:nFirstRet", id))
+    , nFirstJump(fmt::format("P({})_FetchEngine:nFirstJump", id))
+
+    , nBothBranch(fmt::format("P({})_FetchEngine:nBothBranch", id)) 
+    , nBothRet(fmt::format("P({})_FetchEngine:nBothRet", id)) 
+    , nBothJump(fmt::format("P({})_FetchEngine:nBothJump", id)) 
 {
   fetch_width = Config::get_power2("soc", "core", id, "fetch_width", 1, 1024);
 
@@ -87,6 +99,8 @@ FetchEngine::FetchEngine(Hartid_t id, std::shared_ptr<Gmemory_system> gms_, std:
   il1_hit_delay = Config::get_integer(isection, "delay");
 
   lastFetchBubbleTime = 0;
+  maxDelayPending = 0;
+  maxDelayPendingDinst = nullptr;
 }
 
 FetchEngine::~FetchEngine() {}
@@ -97,6 +111,53 @@ bool FetchEngine::processBranch(Dinst* dinst) {
   bool        fastfix;
   TimeDelta_t delay = bpred->predict(dinst, &fastfix);
   if (delay == 0) {
+    if (dinst->has_stats() && maxBB==0 && max_bb_cycle>1 && dinst->isTaken()) { // Last CTRL is taken
+      const Instruction *inst = dinst->getInst();
+      if (inst->isBranch()) {
+        nLastBranch1.inc(true);
+      } else if (inst->isFuncRet())  {
+        nLastRet1.inc(true);
+      } else{
+        nLastJump1.inc(true);
+      }
+    }
+    return false;
+  }
+
+  if (fastfix) {
+    if (dinst->has_stats() && maxBB==0 && max_bb_cycle>1 && dinst->isTaken()) { // Last CTRL is taken
+      const Instruction *inst = dinst->getInst();
+      if (inst->isBranch()) {
+        nLastBranch2.inc(true);
+      } else if (inst->isFuncRet())  {
+        nLastRet2.inc(true);
+      } else{
+        nLastJump2.inc(true);
+      }
+      if (maxDelayPendingDinst) {
+        const Instruction *inst2 = maxDelayPendingDinst->getInst();
+        if (inst2->isBranch()) {
+          nFirstBranch.inc(true);
+          if (inst->isBranch())  {
+            nBothBranch.inc(true);
+          }
+        } else if (inst2->isFuncRet())  {
+          nFirstRet.inc(true);
+          if (inst->isFuncRet())  {
+            nBothRet.inc(true);
+          }
+        } else{
+          nFirstJump.inc(true);
+          if (!inst->isFuncRet() && !inst->isBranch())  {
+            nBothJump.inc(true);
+          }
+        }
+      }
+    }
+    if (delay > maxDelayPending) {
+      maxDelayPending      = delay;
+      maxDelayPendingDinst = dinst;
+    }
     return false;
   }
 
@@ -303,6 +364,23 @@ void FetchEngine::realfetch(IBucket* bucket, std::shared_ptr<Emul_base> eint, Ha
 
     // Fetch uses getHead, ROB retires getTail
   } while (n2Fetch > 0);  // NOTE: n2Fetch can get negative if bad fetch entry point
+  if (maxDelayPending) {
+    I(!missInst);
+
+    missInst = true;
+#ifndef NDEBUG
+    missDinst = maxDelayPendingDinst;
+#endif
+    transientDinst = maxDelayPendingDinst;
+
+    Time_t n = (globalClock - lastFetchBubbleTime);  // This includes taken bubbles and misspredicts
+    avgFetchTime.sample(n, maxDelayPendingDinst->has_stats());
+
+    unBlockFetchBPredDelayCB::schedule(maxDelayPending, this, maxDelayPendingDinst, globalClock);
+
+    maxDelayPending      = 0;
+    maxDelayPendingDinst = nullptr;
+  }
 
   bpred->fetchBoundaryEnd();
 

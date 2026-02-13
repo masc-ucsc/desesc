@@ -36,6 +36,8 @@ private:
   bool missInst;  // branch missprediction. Stop fetching until solved
                   // #ifndef NDEBUG
   Dinst* missDinst;
+  uint16_t maxDelayPending;
+  Dinst *  maxDelayPendingDinst;
   // #endif
 
   // Dinst *transientDinst;
@@ -61,6 +63,18 @@ private:
   Stats_avg  avgFetchStallInst;
   Stats_avg  avgBB;
   Stats_avg  avgFB;
+  Stats_cntr nLastBranch1;
+  Stats_cntr nLastRet1;
+  Stats_cntr nLastJump1;
+  Stats_cntr nLastBranch2;
+  Stats_cntr nLastRet2;
+  Stats_cntr nLastJump2;
+  Stats_cntr nFirstBranch;
+  Stats_cntr nFirstRet;
+  Stats_cntr nFirstJump;
+  Stats_cntr nBothBranch; 
+  Stats_cntr nBothRet; 
+  Stats_cntr nBothJump; 
   // *******************
 
 public:

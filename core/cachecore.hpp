@@ -118,7 +118,10 @@ public:
   static CacheGeneric<State, Addr_t>* create(const std::string& section, const std::string& append, const std::string& format);
   void                                destroy() { delete this; }
 
-  virtual CacheLine* findLine2Replace(Addr_t addr, Addr_t pc, bool prefetch) = 0;
+  //virtual CacheLine* findLine2Replace(Addr_t addr, Addr_t pc, bool prefetch) = 0;
+
+    virtual CacheLine *findLine2Replace(Addr_t addr, Addr_t tag_addr, Addr_t pc, bool prefetch) = 0;
+
 
   // TO DELETE if flush from Cache.cpp is cleared.  At least it should have a
   // cleaner interface so that Cache.cpp does not touch the internals.
@@ -183,8 +186,22 @@ public:
     return line;
   }
 
-  CacheLine* fillLine(Addr_t addr, Addr_t pc = 0) {
+/*  
+CacheLine* fillLine(Addr_t addr, Addr_t pc = 0) {
     CacheLine* l = findLine2Replace(addr, pc, false);
+    */
+
+      CacheLine *fillLine(Addr_t addr, Addr_t tag_addr, Addr_t pc = 0) {
+    CacheLine *l = findLine2Replace(addr, tag_addr, pc, false);
+    I(l);
+
+    l->setTag(calcTag(tag_addr));
+
+    return l;
+  }
+
+  CacheLine *fillLine(Addr_t addr, Addr_t pc = 0) {
+    CacheLine *l = findLine2Replace(addr, addr, pc, false);
     I(l);
 
     l->setTag(calcTag(addr));
@@ -192,8 +209,13 @@ public:
     return l;
   }
 
-  CacheLine* fillLine_replace(Addr_t addr, Addr_t& rplcAddr, Addr_t pc) {
+/*  
+CacheLine* fillLine_replace(Addr_t addr, Addr_t& rplcAddr, Addr_t pc) {
     CacheLine* l = findLine2Replace(addr, pc, false);
+    */
+  CacheLine *fillLine_replace(Addr_t addr, Addr_t &rplcAddr, Addr_t pc) {
+    CacheLine *l = findLine2Replace(addr, /*addr,*/ pc, false);
+
     I(l);
     rplcAddr = 0;
 
@@ -210,8 +232,13 @@ public:
     return l;
   }
 
-  CacheLine* fillLine_replace(Addr_t addr, Addr_t& rplcAddr, Addr_t pc, bool prefetch) {
+/*
+CacheLine* fillLine_replace(Addr_t addr, Addr_t& rplcAddr, Addr_t pc, bool prefetch) {
     CacheLine* l = findLine2Replace(addr, pc, prefetch);
+    */
+  CacheLine *fillLine_replace(Addr_t addr, Addr_t &rplcAddr, Addr_t pc, bool prefetch) {
+    CacheLine *l = findLine2Replace(addr, /*addr,*/ pc, prefetch);
+   
     I(l);
     rplcAddr = 0;
 
@@ -321,7 +348,10 @@ public:
     return content[l];
   }
 
-  Line* findLine2Replace(Addr_t addr, Addr_t pc, bool prefetch);
+//  Line* findLine2Replace(Addr_t addr, Addr_t pc, bool prefetch);
+
+Line *findLine2Replace(Addr_t addr, Addr_t tag_addr, Addr_t pc, bool prefetch);
+
 };
 
 template <class State, class Addr_t>
@@ -426,7 +456,10 @@ public:
     return content[l];
   }
 
-  Line* findLine2Replace(Addr_t addr, Addr_t pc, bool prefetch);
+//  Line* findLine2Replace(Addr_t addr, Addr_t pc, bool prefetch);
+
+Line *findLine2Replace(Addr_t addr, Addr_t tag_addr, Addr_t pc, bool prefetch);
+
 };
 
 template <class State, class Addr_t>
@@ -458,7 +491,10 @@ public:
     return content[l];
   }
 
-  Line* findLine2Replace(Addr_t addr, Addr_t pc, bool prefetch);
+//  Line* findLine2Replace(Addr_t addr, Addr_t pc, bool prefetch);
+
+Line *findLine2Replace(Addr_t addr, Addr_t tag_addr, Addr_t pc, bool prefetch);
+
 };
 
 template <class State, class Addr_t>
@@ -490,7 +526,10 @@ public:
     return content[l];
   }
 
-  Line* findLine2Replace(Addr_t addr, Addr_t pc, bool prefetch);
+//  Line* findLine2Replace(Addr_t addr, Addr_t pc, bool prefetch);
+
+  Line *findLine2Replace(Addr_t addr, Addr_t tag_addr, Addr_t pc, bool prefetch);
+
 };
 
 template <class State, class Addr_t>
@@ -535,7 +574,10 @@ public:
     return content[l];
   }
 
-  Line* findLine2Replace(Addr_t addr, Addr_t pc, bool prefetch);
+//  Line* findLine2Replace(Addr_t addr, Addr_t pc, bool prefetch);
+
+  Line *findLine2Replace(Addr_t addr, Addr_t tag_addr, Addr_t pc, bool prefetch);
+
 };
 
 template <class Addr_t>
@@ -1005,11 +1047,20 @@ typename CacheAssoc<State, Addr_t>::Line* CacheAssoc<State, Addr_t>::findLinePri
 }
 
 template <class State, class Addr_t>
+/*
 typename CacheAssoc<State, Addr_t>::Line* CacheAssoc<State, Addr_t>::findLine2Replace(Addr_t addr, Addr_t pc, bool prefetch) {
   Addr_t tag = this->calcTag(addr);
   I(tag);
   Line** theSet = &content[this->calcIndex4Tag(tag)];
   Line** setEnd = theSet + assoc;
+  */
+
+  typename CacheAssoc<State, Addr_t>::Line *CacheAssoc<State, Addr_t>::findLine2Replace(Addr_t addr, Addr_t tag_addr, Addr_t pc, bool prefetch) {
+  Addr_t tag = this->calcTag(tag_addr);
+  I(tag);
+  Line **theSet = &content[this->calcIndex4Tag(this->calcTag(addr))];
+  Line **setEnd = theSet + assoc;
+
 
 #if 0
   // OK for cache, not BTB
@@ -1411,8 +1462,11 @@ typename HawkCache<State, Addr_t>::Line* HawkCache<State, Addr_t>::findLinePriva
 }
 
 template <class State, class Addr_t>
-typename HawkCache<State, Addr_t>::Line* HawkCache<State, Addr_t>::findLine2Replace(Addr_t addr, Addr_t pc,
-                                                                                    [[maybe_unused]] bool prefetch) {
+//typename HawkCache<State, Addr_t>::Line* HawkCache<State, Addr_t>::findLine2Replace(Addr_t addr, Addr_t pc, [[maybe_unused]] bool prefetch) {
+
+typename HawkCache<State, Addr_t>::Line *HawkCache<State, Addr_t>::findLine2Replace(Addr_t addr, Addr_t tag_addr, Addr_t pc, bool prefetch) {
+  I(addr==tag_addr); // Not implemented otherwise
+
   Addr_t tag = this->calcTag(addr);
   I(tag);
   Line** theSet = &content[this->calcIndex4Tag(tag)];
@@ -1516,10 +1570,16 @@ typename CacheDM<State, Addr_t>::Line* CacheDM<State, Addr_t>::findLinePrivate(A
 }
 
 template <class State, class Addr_t>
-typename CacheDM<State, Addr_t>::Line* CacheDM<State, Addr_t>::findLine2Replace(Addr_t addr, [[maybe_unused]] Addr_t pc,
-                                                                                [[maybe_unused]] bool prefetch) {
+/*
+typename CacheDM<State, Addr_t>::Line* CacheDM<State, Addr_t>::findLine2Replace(Addr_t addr, [[maybe_unused]] Addr_t pc, [[maybe_unused]] bool prefetch) {
   Addr_t tag  = this->calcTag(addr);
   Line*  line = content[this->calcIndex4Tag(tag)];
+  */
+
+typename CacheDM<State, Addr_t>::Line *CacheDM<State, Addr_t>::findLine2Replace(Addr_t addr, Addr_t tag_addr, Addr_t pc, bool prefetch) {
+  Addr_t tag  = this->calcTag(tag_addr);
+  Line  *line = content[this->calcIndex4Tag(this->calcTag(addr))];
+
 
   return line;
 }
@@ -1601,8 +1661,11 @@ typename CacheDMSkew<State, Addr_t>::Line* CacheDMSkew<State, Addr_t>::findLineP
 }
 
 template <class State, class Addr_t>
-typename CacheDMSkew<State, Addr_t>::Line* CacheDMSkew<State, Addr_t>::findLine2Replace(Addr_t addr, [[maybe_unused]] Addr_t pc,
-                                                                                        [[maybe_unused]] bool prefetch) {
+//typename CacheDMSkew<State, Addr_t>::Line* CacheDMSkew<State, Addr_t>::findLine2Replace(Addr_t addr, [[maybe_unused]] Addr_t pc, [[maybe_unused]] bool prefetch) {
+
+typename CacheDMSkew<State, Addr_t>::Line *CacheDMSkew<State, Addr_t>::findLine2Replace(Addr_t addr, Addr_t tag_addr, Addr_t pc, bool prefetch) {
+  I(addr==tag_addr); // Not implemented otherwise
+
   Addr_t tag1  = this->calcTag(addr);
   Line*  line1 = content[this->calcIndex4Tag(tag1)];
 
@@ -1798,8 +1861,9 @@ typename CacheSHIP<State, Addr_t>::Line* CacheSHIP<State, Addr_t>::findLinePriva
 }
 
 template <class State, class Addr_t>
-typename CacheSHIP<State, Addr_t>::Line* CacheSHIP<State, Addr_t>::findLine2Replace(Addr_t addr, Addr_t pc,
-                                                                                    [[maybe_unused]] bool prefetch) {
+// typename CacheSHIP<State, Addr_t>::Line* CacheSHIP<State, Addr_t>::findLine2Replace(Addr_t addr, Addr_t pc, [[maybe_unused]] bool prefetch) {
+typename CacheSHIP<State, Addr_t>::Line *CacheSHIP<State, Addr_t>::findLine2Replace(Addr_t addr, Addr_t tag_addr, Addr_t pc, bool prefetch) {
+  I(addr==tag_addr); // Not implemented otherwise
   Addr_t tag = this->calcTag(addr);
   I(tag);
 

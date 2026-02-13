@@ -22,57 +22,57 @@ TEST_F(Port_test, unlimited_always_available) {
   auto port = PortGeneric::create("test_unlimited", 0);
 
   // PortUnlimited should always return current cycle
-  EXPECT_EQ(port->nextSlot(true), 0);
-  EXPECT_EQ(port->nextSlot(true), 0);
-  EXPECT_EQ(port->nextSlot(true), 0);
+  EXPECT_EQ(port->nextSlot(true), 0ULL);
+  EXPECT_EQ(port->nextSlot(true), 0ULL);
+  EXPECT_EQ(port->nextSlot(true), 0ULL);
 
   globalClock = 10;
-  EXPECT_EQ(port->nextSlot(true), 10);
-  EXPECT_EQ(port->nextSlot(true), 10);
+  EXPECT_EQ(port->nextSlot(true), 10ULL);
+  EXPECT_EQ(port->nextSlot(true), 10ULL);
 }
 
 TEST_F(Port_test, fully_pipe_basic) {
   auto port = PortGeneric::create("test_pipe", 1);
 
   // First allocation at cycle 0
-  EXPECT_EQ(port->nextSlot(true), 0);
+  EXPECT_EQ(port->nextSlot(true), 0ULL);
 
   // Second allocation at cycle 1 (port busy)
-  EXPECT_EQ(port->nextSlot(true), 1);
+  EXPECT_EQ(port->nextSlot(true), 1ULL);
 
   // Third allocation at cycle 2
-  EXPECT_EQ(port->nextSlot(true), 2);
+  EXPECT_EQ(port->nextSlot(true), 2ULL);
 
   // Advance clock
   globalClock = 5;
 
   // Should allocate at cycle 5 (catches up)
-  EXPECT_EQ(port->nextSlot(true), 5);
-  EXPECT_EQ(port->nextSlot(true), 6);
+  EXPECT_EQ(port->nextSlot(true), 5ULL);
+  EXPECT_EQ(port->nextSlot(true), 6ULL);
 }
 
 TEST_F(Port_test, fully_npipe_basic) {
   auto port = PortGeneric::create("test_npipe", 3);
 
   // First 3 allocations at cycle 0 (3 units available)
-  EXPECT_EQ(port->nextSlot(true), 0);
-  EXPECT_EQ(port->nextSlot(true), 0);
-  EXPECT_EQ(port->nextSlot(true), 0);
+  EXPECT_EQ(port->nextSlot(true), 0ULL);
+  EXPECT_EQ(port->nextSlot(true), 0ULL);
+  EXPECT_EQ(port->nextSlot(true), 0ULL);
 
   // Fourth allocation at cycle 1 (all units busy)
-  EXPECT_EQ(port->nextSlot(true), 1);
+  EXPECT_EQ(port->nextSlot(true), 1ULL);
 
   // Fifth allocation at cycle 1
-  EXPECT_EQ(port->nextSlot(true), 1);
+  EXPECT_EQ(port->nextSlot(true), 1ULL);
 
   // Advance clock
   globalClock = 10;
 
   // Should allocate 3 at cycle 10, then roll to 11
-  EXPECT_EQ(port->nextSlot(true), 10);
-  EXPECT_EQ(port->nextSlot(true), 10);
-  EXPECT_EQ(port->nextSlot(true), 10);
-  EXPECT_EQ(port->nextSlot(true), 11);
+  EXPECT_EQ(port->nextSlot(true), 10ULL);
+  EXPECT_EQ(port->nextSlot(true), 10ULL);
+  EXPECT_EQ(port->nextSlot(true), 10ULL);
+  EXPECT_EQ(port->nextSlot(true), 11ULL);
 }
 
 #ifdef PORT_STRICT_PRIORITY
@@ -82,7 +82,7 @@ TEST_F(Port_test, priority_immediate_allocation) {
 
   // First request should succeed immediately
   auto [when1, retry1] = port->tryNextSlot(true, 100);
-  EXPECT_EQ(when1, 0);
+  EXPECT_EQ(when1, 0ULL);
   EXPECT_FALSE(retry1);  // No retry needed
 }
 
@@ -91,12 +91,12 @@ TEST_F(Port_test, priority_deferred_allocation) {
 
   // First request succeeds
   auto [when1, retry1] = port->tryNextSlot(true, 100);
-  EXPECT_EQ(when1, 0);
+  EXPECT_EQ(when1, 0ULL);
   EXPECT_FALSE(retry1);
 
   // Second request should need retry (port busy)
   auto [when2, retry2] = port->tryNextSlot(true, 101);
-  EXPECT_EQ(when2, 1);  // Would be allocated at cycle 1
+  EXPECT_EQ(when2, 1ULL);  // Would be allocated at cycle 1
   EXPECT_TRUE(retry2);  // Retry needed
 }
 
@@ -142,11 +142,11 @@ TEST_F(Port_test, priority_ordering_single_unit) {
   }
 
   // Verify priority ordering: 50 < 75 < 200 (lower ID first)
-  ASSERT_EQ(execution_order.size(), 4);
-  EXPECT_EQ(execution_order[0], 100);  // Immediate at cycle 0
-  EXPECT_EQ(execution_order[1], 50);   // Highest priority at cycle 1
-  EXPECT_EQ(execution_order[2], 75);   // Medium priority at cycle 2
-  EXPECT_EQ(execution_order[3], 200);  // Lowest priority at cycle 3
+  ASSERT_EQ(execution_order.size(), 4ULL);
+  EXPECT_EQ(execution_order[0], 100ULL);  // Immediate at cycle 0
+  EXPECT_EQ(execution_order[1], 50ULL);   // Highest priority at cycle 1
+  EXPECT_EQ(execution_order[2], 75ULL);   // Medium priority at cycle 2
+  EXPECT_EQ(execution_order[3], 200ULL);  // Lowest priority at cycle 3
 }
 
 TEST_F(Port_test, priority_ordering_multi_unit) {
@@ -184,18 +184,18 @@ TEST_F(Port_test, priority_ordering_multi_unit) {
   EventScheduler::advanceClock();
 
   // Should process 2 highest priority requests (50, 75)
-  ASSERT_GE(execution_order.size(), 4);
-  EXPECT_EQ(execution_order[0], 100);  // Immediate
-  EXPECT_EQ(execution_order[1], 101);  // Immediate
-  EXPECT_EQ(execution_order[2], 50);   // Highest priority
-  EXPECT_EQ(execution_order[3], 75);   // Second priority
+  ASSERT_GE(execution_order.size(), 4ULL);
+  EXPECT_EQ(execution_order[0], 100ULL);  // Immediate
+  EXPECT_EQ(execution_order[1], 101ULL);  // Immediate
+  EXPECT_EQ(execution_order[2], 50ULL);   // Highest priority
+  EXPECT_EQ(execution_order[3], 75ULL);   // Second priority
 
   // Advance again to process remaining request
   globalClock = 2;
   EventScheduler::advanceClock();
 
-  ASSERT_EQ(execution_order.size(), 5);
-  EXPECT_EQ(execution_order[4], 150);  // Lowest priority
+  ASSERT_EQ(execution_order.size(), 5ULL);
+  EXPECT_EQ(execution_order[4], 150ULL);  // Lowest priority
 }
 
 TEST_F(Port_test, priority_multi_cycle_processing) {
@@ -220,16 +220,16 @@ TEST_F(Port_test, priority_multi_cycle_processing) {
   }
 
   // Verify all requests processed
-  ASSERT_EQ(allocations.size(), 5);
+  ASSERT_EQ(allocations.size(), 5ULL);
 
   // Verify priority ordering (lower ID = higher priority = earlier allocation)
   // Request order: 100 (immediate), then queued: 50, 200, 25, 150
   // Processing order should be: 100 (immediate), 25, 50, 150, 200 (by priority)
-  EXPECT_EQ(allocations[0].first, 100);  // Immediate at cycle 0
-  EXPECT_EQ(allocations[1].first, 25);   // Highest priority (cycle 1)
-  EXPECT_EQ(allocations[2].first, 50);   // Second priority (cycle 2)
-  EXPECT_EQ(allocations[3].first, 150);  // Third priority (cycle 3)
-  EXPECT_EQ(allocations[4].first, 200);  // Lowest priority (cycle 4)
+  EXPECT_EQ(allocations[0].first, 100ULL);  // Immediate at cycle 0
+  EXPECT_EQ(allocations[1].first, 25ULL);   // Highest priority (cycle 1)
+  EXPECT_EQ(allocations[2].first, 50ULL);   // Second priority (cycle 2)
+  EXPECT_EQ(allocations[3].first, 150ULL);  // Third priority (cycle 3)
+  EXPECT_EQ(allocations[4].first, 200ULL);  // Lowest priority (cycle 4)
 }
 
 #else

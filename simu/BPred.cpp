@@ -888,14 +888,17 @@ void BPSuperbp::fetchBoundaryEnd() {
   }
 }
 
+#define TARGET2_FROM_GSHARE
 // uint64_t gshare_missed, gshare_correct, gshare_incorrect;
 Outcome BPSuperbp::predict(Dinst* dinst, bool doUpdate, bool doStats) {
   // FIXME: check dinst->is_zero_delay_taken(); If TRUE, it is beyond the 1 taken branch
 
+#ifndef TARGET2_FROM_GSHARE
   if (dinst->getInst()->isJump() || dinst->getInst()->isFuncRet()) {
     dinst->setBiasBranch(true);
     return btb.predict(dinst->getPC(), dinst, doUpdate, doStats);
   }
+  #endif
 
   // return btb.predict(dinst->getPC(), dinst, doUpdate, doStats);
   uint64_t pc        = dinst->getPC();
@@ -913,10 +916,22 @@ Outcome BPSuperbp::predict(Dinst* dinst, bool doUpdate, bool doStats) {
   }
   bool gshare_use = false, batage_pred = false, batage_conf = false;
   bool ptaken = false;
-  superbp_p->handle_insn_desesc(pc, branchTarget, insn_type, taken, &batage_pred, &batage_conf, &gshare_use);
+  uint64_t gshare_target;
+  superbp_p->handle_insn_desesc(pc, branchTarget, insn_type, taken, &batage_pred, &batage_conf, &gshare_use, &gshare_target);
   // TODO:Check if ptaken must get the value based on is_zero_delay_taken directly w/o checking gshare_use at all
   // xxxx - fmt::print("2.pc={:x} {} {} {} id:{} {} bb:{}\n", dinst->getPC(), gshare_use?"gs":"ng", taken? " T":"NT", batage_pred?"
   // pT":"pNT", dinst->getID(), full_name, dinst->getBB());
+  
+  #ifdef TARGET2_FROM_GSHARE
+  if (!gshare_use) {
+  if (dinst->getInst()->isJump() || dinst->getInst()->isFuncRet()) {
+    dinst->setBiasBranch(true);
+    return btb.predict(dinst->getPC(), dinst, doUpdate, doStats);
+  }
+  }
+  #endif
+  
+  
   if (gshare_use) {  // GSHARE did a prediction (it should be taken, but may be a miss prediction)
     switch (last_taken_type)
     {
@@ -926,7 +941,12 @@ Outcome BPSuperbp::predict(Dinst* dinst, bool doUpdate, bool doStats) {
         case 4 : first_ret.inc(dinst->has_stats()); break;
     }
     ptaken = true;
-    if (ptaken != taken) {
+    bool gshare_target_correct = (branchTarget == gshare_target);
+    if ( (ptaken != taken) 
+      #ifdef TARGET2_FROM_GSHARE
+    || (!gshare_target_correct) 
+    #endif
+    ) {
       if (dinst->is_zero_delay_taken()) {
         // fmt::print("1.WHY IS {:x} gshare_use is set and still MISS predict??\n", dinst->getPC());
       }
@@ -998,7 +1018,12 @@ Outcome BPSuperbp::predict(Dinst* dinst, bool doUpdate, bool doStats) {
     return Outcome::Miss;
   }
 
+// TODO - Update to take target from gshare
+#ifndef TARGET2_FROM_GSHARE
   return ptaken ? btb.predict(dinst->getPC(), dinst, doUpdate, doStats) : Outcome::Correct;
+#else
+return ptaken ? ( gshare_use ? ( gshare_target_correct ? Outcome::Correct : Outcome::Miss) :  (btb.predict(dinst->getPC(), dinst, doUpdate, doStats)) ): Outcome::Correct;
+#endif
 }
 
 /*****************************************

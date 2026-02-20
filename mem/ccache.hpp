@@ -266,7 +266,7 @@ public:
   bool isJustDirectory() const { return justDirectory; }
 
   bool Modified(Addr_t addr) const {
-    Line* cl = cacheBank->findLineNoEffect(addr);
+    Line* cl = cacheBank->findLineNoEffect(addr, addr, 0xbaadbaad);
     if (cl != 0) {
       return cl->isModified();
     }
@@ -275,7 +275,7 @@ public:
   }
 
   bool Exclusive(Addr_t addr) const {
-    Line* cl = cacheBank->findLineNoEffect(addr);
+    Line* cl = cacheBank->findLineNoEffect(addr, addr, 0xbaadbaad);
     if (cl != 0) {
       return cl->isExclusive();
     }
@@ -284,7 +284,7 @@ public:
   }
 
   bool Shared(Addr_t addr) const {
-    Line* cl = cacheBank->findLineNoEffect(addr);
+    Line* cl = cacheBank->findLineNoEffect(addr, addr, 0xbaadbaad);
     if (cl != 0) {
       return cl->isShared();
     }
@@ -292,7 +292,7 @@ public:
   }
 
   bool Invalid(Addr_t addr) const {
-    Line* cl = cacheBank->findLineNoEffect(addr);
+    Line* cl = cacheBank->findLineNoEffect(addr, addr, 0xbaadbaad);
     if (cl == 0) {
       return true;
     }

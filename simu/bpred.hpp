@@ -155,14 +155,17 @@ private:
   typedef CacheGeneric<BTBState, Addr_t> BTBCache;
 
   BTBCache* data;
+  Addr_t    boundaryPC;
 
 protected:
 public:
   BPBTB(int32_t i, const std::string& section, const std::string& sname, const std::string& name = "btb");
   ~BPBTB();
 
-  Outcome predict(Addr_t pc, Dinst* dinst, bool doUpdate, bool doStats);
-  void    updateOnly(Addr_t pc, Dinst* dinst);
+  void    fetchBoundaryBegin(Dinst* dinst);
+  void    fetchBoundaryEnd();
+  Outcome predict(Dinst* dinst, bool doUpdate, bool doStats);
+  void    updateOnly(Dinst* dinst);
 };
 
 class BPOracle : public BPred {

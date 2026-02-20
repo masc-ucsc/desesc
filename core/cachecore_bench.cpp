@@ -51,7 +51,7 @@ void benchMatrix(const char* str) {
       // A[i][j]=0;
 
       // A[i][j]=...
-      line = cache->writeLine((long)&A[i][j]);
+      line = cache->writeLine((long)&A[i][j], (long)&A[i][j], 0xbaadbaad);
       nAccess++;
       if (line == 0) {
         cache->fillLine((long)&A[i][j]);
@@ -63,7 +63,7 @@ void benchMatrix(const char* str) {
         // A[i][j] += B[i][j]*C[j][k];
 
         // = ... A[i][j]
-        line = cache->readLine((long)&A[i][j]);
+        line = cache->readLine((long)&A[i][j], (long)&A[i][j], 0xbaadbaad);
         nAccess++;
         if (line == 0) {
           cache->fillLine((long)&A[i][j]);
@@ -72,7 +72,7 @@ void benchMatrix(const char* str) {
         }
 
         // = ... B[i][j]
-        line = cache->readLine((long)&B[i][j]);
+        line = cache->readLine((long)&B[i][j], (long)&B[i][j], 0xbaadbaad);
         nAccess++;
         if (line == 0) {
           cache->fillLine((long)&B[i][j]);
@@ -81,7 +81,7 @@ void benchMatrix(const char* str) {
         }
 
         // = ... C[i][j]
-        line = cache->readLine((long)&C[i][j]);
+        line = cache->readLine((long)&C[i][j], (long)&C[i][j], 0xbaadbaad);
         nAccess++;
         if (line == 0) {
           cache->fillLine((long)&C[i][j]);
@@ -90,7 +90,7 @@ void benchMatrix(const char* str) {
         }
 
         // A[i][j]=...;
-        line = cache->writeLine((long)&A[i][j]);
+        line = cache->writeLine((long)&A[i][j], (long)&A[i][j], 0xbaadbaad);
         nAccess++;
         if (line == 0) {
           cache->fillLine((long)&A[i][j]);
@@ -132,7 +132,7 @@ static void BM_cachecore(benchmark::State& state) {
   for (int32_t i = 0; i < assoc; i++) {
     uint64_t addr = (i << 8) + 0xfa;
 
-    MyCacheType::CacheLine* line = cache->findLine(addr);
+    MyCacheType::CacheLine* line = cache->findLine(addr, addr, 0xbaadbaad);
     if (line) {
       fmt::print("ERROR: Line {:x} ({:x}) found\n", cache->calcAddr4Tag(line->getTag()), addr);
       exit(-1);
@@ -144,7 +144,7 @@ static void BM_cachecore(benchmark::State& state) {
   for (int32_t i = 0; i < assoc; i++) {
     uint64_t addr = (i << 8) + 0xFa;
 
-    MyCacheType::CacheLine* line = cache->findLine(addr);
+    MyCacheType::CacheLine* line = cache->findLine(addr, addr, 0xbaadbaad);
     if (line == 0) {
       fmt::print("ERROR: Line ({:x}) NOT found\n", addr);
       exit(-1);

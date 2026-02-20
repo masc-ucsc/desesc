@@ -312,7 +312,7 @@ CCache::Line* CCache::allocateLine(Addr_t addr, MemRequest* mreq) {
   Addr_t rpl_addr = 0;
   I(mreq->getAddr() == addr);
 
-  I(cacheBank->findLineDebug(addr) == 0);
+  I(cacheBank->findLineDebug(addr, addr, mreq->getPC()) == 0);
   Line* l = cacheBank->fillLine_replace(addr, addr, rpl_addr, mreq->getPC(), mreq->isPrefetch());
   lineFill.inc(mreq->has_stats());
 
@@ -346,9 +346,10 @@ CCache::Line* CCache::allocateLine(Addr_t addr, MemRequest* mreq) {
       int    nMiss     = 0;
 
       for (int i = 0; i < (1024 >> lineSizeBits); i++) {
+        Addr_t final_addr = page_addr + lineSize * i * nlp_stride;
         if (!mshr->canIssue(page_addr + lineSize * i * nlp_stride)) {
           nHit++;  // Pending request == hit, line already requested
-        } else if (cacheBank->findLineNoEffect(page_addr + lineSize * i * nlp_stride)) {
+        } else if (cacheBank->findLineNoEffect(final_addr, final_addr, 0xbaadbaad)) {
           nHit++;
         } else {
           if (pendAddr_counter < 32) {
@@ -730,9 +731,9 @@ void CCache::doReq(MemRequest* mreq) {
 
   Line* l = nullptr;
   if (mreq->isPrefetch() || (victim && mreq->is_spec())) {
-    l = cacheBank->findLineNoEffect(addr, mreq->getPC());
+    l = cacheBank->findLineNoEffect(addr, addr, mreq->getPC());
   } else {
-    l = cacheBank->readLine(addr, mreq->getPC());
+    l = cacheBank->readLine(addr, addr, mreq->getPC());
   }
 
   if (!allocateMiss && l == 0) {
@@ -900,9 +901,9 @@ void CCache::doDisp(MemRequest* mreq) {
 
   Line* l = nullptr;
   if (mreq->is_spec()) {
-    l = cacheBank->findLineNoEffect(addr, mreq->getPC());
+    l = cacheBank->findLineNoEffect(addr, addr, mreq->getPC());
   } else {
-    l = cacheBank->writeLine(addr, mreq->getPC());
+    l = cacheBank->writeLine(addr, addr, mreq->getPC());
   }
 
   if (l == nullptr && !mreq->isPrefetch()) {
@@ -946,9 +947,9 @@ void CCache::doReqAck(MemRequest* mreq) {
       if (mreq->isPrefetch() || (victim && mreq->is_spec())) {
         // for exclusive spectre-safe cache,
         // if spec, look up with no effect
-        l = cacheBank->findLineNoEffect(addr, mreq->getPC());
+        l = cacheBank->findLineNoEffect(addr, addr, mreq->getPC());
       } else {
-        l = cacheBank->readLine(addr, mreq->getPC());
+        l = cacheBank->readLine(addr, addr, mreq->getPC());
 
 #ifdef ENABLE_PTRCHASE
         if (mreq->getAddr() < 0x4000000000ULL) {  // filter stack addresses
@@ -1072,7 +1073,7 @@ void CCache::doSetState(MemRequest* mreq) {
     return;
   }
 
-  Line* l = cacheBank->findLineNoEffect(mreq->getAddr());
+  Line* l = cacheBank->findLineNoEffect(mreq->getAddr(), mreq->getAddr(), mreq->getPC());
   if (victim) {
     I(needsCoherence);
     invAll.inc(mreq->has_stats());
@@ -1134,7 +1135,7 @@ void CCache::doSetState(MemRequest* mreq) {
 void CCache::doSetStateAck(MemRequest* mreq) {
   trackAddress(mreq);
 
-  Line* l = cacheBank->findLineNoEffect(mreq->getAddr());
+  Line* l = cacheBank->findLineNoEffect(mreq->getAddr(), mreq->getAddr(), mreq->getPC());
   if (l) {
     bool    needsDisp = l->needsDisp();
     int16_t portid    = router->getCreatorPort(mreq);
@@ -1218,7 +1219,7 @@ void CCache::tryPrefetch(Addr_t paddr, bool doStats, int degree, Addr_t pref_sig
 
   nTryPrefetch.inc(doStats);
 
-  if (cacheBank->findLineNoEffect(paddr)) {
+  if (cacheBank->findLineNoEffect(paddr, paddr, 0xbaadbaad)) {
     nPrefetchHitLine.inc(doStats);
     if (cb) {
       // static_cast<IndirectAddressPredictor::performedCB *>(cb)->setParam1(this);
@@ -1275,7 +1276,7 @@ void CCache::dump() const { mshr->dump(); }
 TimeDelta_t CCache::ffread(Addr_t addr) {
   Addr_t addr_r = 0;
 
-  Line* l = cacheBank->readLine(addr);
+  Line* l = cacheBank->readLine(addr, addr, 0xbeefbeef);
   if (l) {
     return 1;  // done!
   }
@@ -1289,7 +1290,7 @@ TimeDelta_t CCache::ffread(Addr_t addr) {
 TimeDelta_t CCache::ffwrite(Addr_t addr) {
   Addr_t addr_r = 0;
 
-  Line* l = cacheBank->writeLine(addr);
+  Line* l = cacheBank->writeLine(addr, addr, 0xbeefbeef);
   if (l == 0) {
     l = cacheBank->fillLine_replace(addr, addr, addr_r, 0xbeefbeef);
   }

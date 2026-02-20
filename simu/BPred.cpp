@@ -212,7 +212,6 @@ Outcome BPBTB::predict(Addr_t boundaryPC, Dinst* dinst, bool doUpdate, bool doSt
     tag_key ^= dolc->getSign(btbHistorySize, btbHistorySize);
   }
 
-  I(doUpdate);
 
   // The branch is taken. Update the cache
 
@@ -221,15 +220,21 @@ Outcome BPBTB::predict(Addr_t boundaryPC, Dinst* dinst, bool doUpdate, bool doSt
     return Outcome::Correct;
   }
 
-  BTBCache::CacheLine* cl = data->fillLine(boundary_key, tag_key, 0xdeaddead);
-  I(cl);
+  BTBCache::CacheLine* cl = nullptr;
+  if (doUpdate) {
+    cl = data->fillLine(boundary_key, tag_key, 0xdeaddead);
+  }else{
+    cl = data->findLineNoEffect(boundary_key, tag_key, 0xdeaddead);
+  }
 
-  Addr_t predictID = cl->inst;
-  cl->inst         = dinst->getAddr();
+  if (cl) {
+    Addr_t predictID = cl->inst;
+    cl->inst         = dinst->getAddr();
 
-  if (predictID == dinst->getAddr()) {
-    nHit.inc(doStats && doUpdate && dinst->has_stats());
-    return Outcome::Correct;
+    if (predictID == dinst->getAddr()) {
+      nHit.inc(doStats && doUpdate && dinst->has_stats());
+      return Outcome::Correct;
+    }
   }
 
   nMiss.inc(doStats && doUpdate && dinst->has_stats());
@@ -345,7 +350,7 @@ Outcome BP2bitL0::predict(Dinst* dinst, bool doUpdate, bool doStats) {
 
   Outcome btb_outcome = Outcome::NoBTB;
   if (ptaken) {
-    btb_outcome = btb.predict(use_pc, dinst, doUpdate ? (ptaken && taken) : false, doStats);
+    btb_outcome = btb.predict(use_pc, dinst, doUpdate ? taken : false, doStats);
   }
 
   if (btb_outcome == Outcome::NoBTB) {

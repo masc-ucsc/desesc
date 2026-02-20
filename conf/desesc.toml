@@ -3,10 +3,10 @@
 # and field names
 
 [trace]
-range = [0,5000]
+#range = [0,5000]
 #range = [0,313000]
 #range = [3100000,3200000]
-#range = [0,0]
+range = [100000,900000]
 
 
 [soc]
@@ -49,34 +49,23 @@ type      = "dromajo"
 #load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/perlbench_splitmail/perlbench_splitmail"
 
 # Load a Binary
-bench      = "conf/dhrystone.riscv"
-#bench      = "k1"
+#bench      = "conf/dhrystone.riscv"
+bench      = "k2"
 
 start_roi = false
-rabbit    = 1000
-detail    = 10000
-time      = 20000
+rabbit    = 100000
+detail    = 2500000
+time      = 2500000
 
 [rand_emu]
 type = "random"  # Generate random instructions (coverage testing?)
 
 [bp0]
-type = "tahead1"
+type = "2bitl0"
+size = 64
+bits = 3
 delay             = 1
-btb_fetch_predict = false
 
-# SuperBP parameters
-SBP_NUMG = 5
-LOG2FETCHWIDTH = 4
-NUM_TAKEN_BRANCHES = 1
-ORIG_ENTRIES_PER_TABLE = [512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512]
-INFO_PER_ENTRY = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-
-# TODO - Check
-NUM_GSHARE_ENTRIES_SHIFT = 5
-NUM_PAGES_PER_GROUP = 2
-PAGE_OFFSET_SIZE = 6
-PAGE_TABLE_INDEX_SIZE = 3
 bp_addr_shift = 0      # bits shifted by branch predictor PC
 ras_size      = 32
 ras_prefetch  = false
@@ -85,7 +74,37 @@ fetch_predict     = true   # Not a prediction per instruction
 
 btb_history_size  = 0
 btb_split_il1     = false  # do not cache entries that can be computed by IL1
-btb_size          = 32
+btb_size          = 4
+btb_line_size     = 1
+btb_assoc         = 4
+btb_repl_policy   = "LRU"
+
+
+[bp1]
+type = "superbp"
+delay             = 2
+
+# SuperBP parameters
+SBP_NUMG = 6
+LOG2FETCHWIDTH = 3
+NUM_TAKEN_BRANCHES = 1
+ORIG_ENTRIES_PER_TABLE = [512, 512, 512, 512, 512, 512]
+INFO_PER_ENTRY = [1, 1, 1, 1, 1, 1]
+
+# TODO - Check
+NUM_GSHARE_ENTRIES_SHIFT = 5
+NUM_PAGES_PER_GROUP = 2
+PAGE_OFFSET_SIZE = 6
+PAGE_TABLE_INDEX_SIZE = 4
+bp_addr_shift = 0      # bits shifted by branch predictor PC
+ras_size      = 32
+ras_prefetch  = false
+
+fetch_predict     = true   # Not a prediction per instruction
+
+btb_history_size  = 0
+btb_split_il1     = false  # do not cache entries that can be computed by IL1
+btb_size          = 8192
 btb_line_size     = 1
 btb_assoc         = 4
 btb_repl_policy   = "LRU"
@@ -135,10 +154,9 @@ table_width = 3
 
 
 
-[bp1]
-type = "tahead"
+[bp2]
+type = "superbp"
 delay             = 3
-btb_fetch_predict = false
 #type = "superbp"
 #delay             = 2
 
@@ -163,7 +181,7 @@ bimodal_width = 8
 
 # SuperBP parameters
 SBP_NUMG = 12
-LOG2FETCHWIDTH = 5
+LOG2FETCHWIDTH = 3
 NUM_TAKEN_BRANCHES = 1
 
 NUM_GSHARE_ENTRIES_SHIFT = 10
@@ -172,15 +190,15 @@ PAGE_OFFSET_SIZE = 6
 PAGE_TABLE_INDEX_SIZE = 6
 
 #BOOM
-ORIG_ENTRIES_PER_TABLE = [1168, 1168, 1168, 1168, 1168, 1168, 1168, 1168, 1168, 1168, 1168, 1168]
+#ORIG_ENTRIES_PER_TABLE = [1168, 1168, 1168, 1168, 1168, 1168, 1168, 1168, 1168, 1168, 1168, 1168]
 #TODO - How to get this from FETCHWIDTH
-INFO_PER_ENTRY = [16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16]
+#INFO_PER_ENTRY = [16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16]
 #XIANGSHAN
 #ORIG_ENTRIES_PER_TABLE = [1168, 1168, 1168, 1168, 1168, 1168, 1168, 1168, 1168, 1168, 1168, 1168]
 #INFO_PER_ENTRY = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
 #SUPERBP
-#ORIG_ENTRIES_PER_TABLE = [784, 208, 400, 1168, 976, 592, 784, 1744, 2895, 1936, 1360, 976]
-#INFO_PER_ENTRY = [2, 1, 1, 4, 1, 1, 2, 2, 2, 1, 1, 1]
+ORIG_ENTRIES_PER_TABLE = [784, 208, 400, 1168, 976, 592, 784, 1744, 2895, 1936, 1360, 976]
+INFO_PER_ENTRY = [2, 1, 1, 4, 1, 1, 2, 2, 2, 1, 1, 1]
 
 [accel_entry]
 caches        = true  # set true to enable caches...
@@ -190,8 +208,8 @@ frequency_mhz = 200
 [c0]
 type  = "ooo"  # ooo or inorder or accel
 frequency_mhz = 1000
-bpred         = ["bp0","bp1"]
-#bpred         = ["bp1"]
+bpred         = ["bp0", "bp1", "bp2"]
+#bpred         = ["bp2"]
 #do_random_transients = false
 do_random_transients = false
 
@@ -199,7 +217,7 @@ do_random_transients = false
 fetch_align       = true
 trace_align       = false
 fetch_one_line    = false   # jumps within cacheline do not flush
-max_bb_cycle      = 4
+max_bb_cycle      = 1
 prefetcher        = "pref_opt"
 
 smt = 1 # Number of STM context
@@ -225,58 +243,58 @@ ftq_size     = 12
 decode_bucket_size   = 128
 rename_instq_size   = 128
 
-fetch_width  = 16
+fetch_width  = 8
 issue_width  = 8
-retire_width = 8
-rob_size     = 512
+retire_width = 12
+rob_size     = 1024
 
 # Exe Parameters
 cluster = ["aunit", "bunit", "cunit", "munit"]
-num_regs   = 512
+num_regs   = 1024
 inter_cluster_lat    = 0
 cluster_scheduler    = "RoundRobin"
 max_branches         = 512
 drain_on_miss        = false
-commit_delay         = 2
-replay_serialize_for = 32
+commit_delay         = 1
+replay_serialize_for = 0 # 32
 scoore_serialze      = true
 
 [alu0]
-num = 4
+num = 8
 lat = 1
 occ = 1
 
 [balu]
-num = 2
+num = 4
 lat = 1
 occ = 1
 
 [calu2]
-num = 2
+num = 4
 lat = 2
 occ = 1
 
 [lsu]
-num = 2
+num = 4
 lat = 1
 occ = 1
 
 [aunit]
-win_size   = 48
+win_size   = 128
 sched_num  = 0
 sched_lat  = 0
 recycle_at  = "executed"
-num_regs   = 256
+num_regs   = 512
 late_alloc = false
 iAALU      = "alu0"
 iRALU      = "alu0"
 
 [bunit]
-win_size   = 48
+win_size   = 96
 sched_num  = 0
 sched_lat  = 0
 recycle_at  = "executed"
-num_regs   = 256
+num_regs   = 512
 late_alloc = false
 iBALU_LBRANCH = "balu"
 iBALU_LJUMP   = "balu"
@@ -287,11 +305,11 @@ iBALU_RCALL   = "balu"
 iBALU_RET     = "balu"
 
 [cunit]
-win_size   = 48
+win_size   = 96
 sched_num  = 0
 sched_lat  = 0
 recycle_at  = "executed"
-num_regs   = 256
+num_regs   = 512
 late_alloc = false
 iCALU_FPMULT  = "calu2"
 iCALU_FPDIV   = "calu2"
@@ -300,11 +318,11 @@ iCALU_MULT    = "calu2"
 iCALU_DIV     = "calu2"
 
 [munit]
-win_size   = 48
+win_size   = 128
 sched_num  = 0
 sched_lat  = 0
 recycle_at  = "executed"
-num_regs   = 256
+num_regs   = 512
 late_alloc = false
 iLALU_LD      = "lsu"
 iSALU_ST      = "lsu"
@@ -318,14 +336,14 @@ cold_misses = true
 size       = 65536
 line_size  = 64
 delay      = 3         # hit delay
-miss_delay = 2
+miss_delay = 3
 assoc      = 8
 repl_policy = "lru"
 
-port_num   = 1
+port_num   = 0
 port_banks = 32
 
-send_port_num = 1
+send_port_num = 0
 
 max_requests  = 32
 
@@ -346,12 +364,12 @@ mega_lines1K    = 8    # 8 lines touched, triggers mega/carped prefetch
 lower_level = "privl2 L2 sharedby 2"
 
 [il1_cache]
-type       = "nice"   # or nice
+type       = "cache"   # or nice
 cold_misses = true
 size       = 32768
 line_size  = 64
 delay      = 2         # hit delay
-miss_delay = 8
+miss_delay = 2
 assoc      = 4
 repl_policy = "lru"
 
@@ -378,12 +396,12 @@ mega_lines1K    = 8    # 8 lines touched, triggers mega/carped prefetch
 lower_level = "privl2 L2 sharedby 2"
 
 [privl2]
-type       = "nice"   # or nice
+type       = "cache"   # or nice
 cold_misses = true
 size       = 2097152  # 2MB
 line_size  = 64
-delay      = 6         # hit delay
-miss_delay = 6
+delay      = 10         # hit delay
+miss_delay = 10
 assoc      = 16
 repl_policy = "lru"
 

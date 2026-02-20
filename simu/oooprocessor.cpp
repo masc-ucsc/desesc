@@ -144,15 +144,7 @@ bool OoOProcessor::advance_clock() {
 
   Tracer::advance_clock();
 
-  //<<<<<<< HEAD
-  // printf("\nOOOProc::advance_clock() Leaving with pipeQ.InstQ.bucket size %ld\n", pipeQ.instQueue.size());
-  // printf("OOOProc::advance_clock ::fetch()::dump_rat is called\n");
   fetch();
-  // dump_rat();
-  // printf("OOOProc::advance_clock ::fetch() is called\n");
-  /*=======
-    fetch();
-  >>>>>>> upstream/main*/
 
   return advance_clock_drain();
 }

@@ -128,6 +128,8 @@ void TaskHandler::boot() {
     }
   }
 
+  EventScheduler::advanceClock();
+
   while (!running.empty()) {
     // advance cores & check for deactivate
     for (auto hid : running) {

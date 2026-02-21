@@ -72,6 +72,8 @@ ras_prefetch  = false
 
 fetch_predict     = true   # Not a prediction per instruction
 
+btb_fetch_predict = true
+btb_tag_offset    = true
 btb_history_size  = 0
 btb_split_il1     = false  # do not cache entries that can be computed by IL1
 btb_size          = 4
@@ -102,6 +104,8 @@ ras_prefetch  = false
 
 fetch_predict     = true   # Not a prediction per instruction
 
+btb_fetch_predict = true
+btb_tag_offset    = true
 btb_history_size  = 0
 btb_split_il1     = false  # do not cache entries that can be computed by IL1
 btb_size          = 8192
@@ -167,6 +171,8 @@ ras_prefetch  = false
 # IMLI fetch ideal 2 taken branch, set fetch_predict false
 fetch_predict     = true   # Not a prediction per instruction
 
+btb_fetch_predict = true
+btb_tag_offset    = true
 btb_history_size  = 0
 btb_split_il1     = false  # do not cache entries that can be computed by IL1
 btb_size          = 8192

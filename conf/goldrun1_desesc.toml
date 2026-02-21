@@ -63,7 +63,6 @@ type = "random"  # Generate random instructions (coverage testing?)
 [bp0]
 type = "tahead1"
 delay             = 1
-btb_fetch_predict = false
 
 # SuperBP parameters
 SBP_NUMG = 5
@@ -83,9 +82,11 @@ ras_prefetch  = false
 
 fetch_predict     = true   # Not a prediction per instruction
 
+btb_fetch_predict = false
+btb_tag_offset    = false
 btb_history_size  = 0
 btb_split_il1     = false  # do not cache entries that can be computed by IL1
-btb_size          = 32
+btb_size          = 0
 btb_line_size     = 1
 btb_assoc         = 4
 btb_repl_policy   = "LRU"
@@ -138,7 +139,8 @@ table_width = 3
 [bp1]
 type = "tahead"
 delay             = 3
-btb_fetch_predict = false
+btb_fetch_predict = true
+btb_tag_offset    = true
 #type = "superbp"
 #delay             = 2
 

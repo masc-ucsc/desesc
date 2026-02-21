@@ -17,12 +17,14 @@ private:
 
   static inline std::vector<std::string>                                                                     errors;
   static inline absl::flat_hash_map<std::string, absl::flat_hash_map<std::string, std::vector<std::string>>> used;
+  static inline absl::flat_hash_map<std::string, absl::flat_hash_map<std::string, bool>>                     used_is_array;
 
   static bool check(const std::string& block, const std::string& name);
 
   static int check_power2(const std::string& block, const std::string& name, int power2);
 
-  static void add_used(const std::string& block, const std::string& name, size_t pos, const std::string& val);
+  static void add_used(const std::string& block, const std::string& name, size_t pos, const std::string& val,
+                       bool is_array = false);
 
   static std::string get_block2(const std::string& block, const std::string& name, size_t pos);
 

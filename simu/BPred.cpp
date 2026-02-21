@@ -801,7 +801,10 @@ Outcome BPTahead1::predict(Dinst* dinst, bool doUpdate, bool doStats) {
  */
 
 BPIMLI::BPIMLI(int32_t i, const std::string& section, const std::string& sname)
-    : BPred(i, section, sname, "imli"), btb(i, section, sname), FetchPredict(Config::get_bool(section, "fetch_predict")) {
+    : BPred(i, section, sname, "imli")
+    , btb(i, section, sname)
+    , FetchPredict(Config::get_bool(section, "fetch_predict"))
+    , use_tag_offset(Config::get_bool(section, "use_tag_offset")) {
   int FetchWidth = Config::get_power2("soc", "core", i, "fetch_width", 1);
 
   int bimodalSize = Config::get_power2(section, "bimodal_size", 4);
@@ -851,7 +854,7 @@ Outcome BPIMLI::predict(Dinst* dinst, bool doUpdate, bool doStats) {
   // bool     bias = false;
   Addr_t   pc     = dinst->getPC();
   uint32_t sign   = 0;
-  bool     ptaken = imli->getPrediction(pc, bias, sign);  // pass taken for statistics
+  bool     ptaken = imli->getPrediction(pc, bias, sign, use_tag_offset);  // pass taken for statistics
   dinst->setBiasBranch(bias);
 
   bool no_alloc = true;
@@ -860,7 +863,7 @@ Outcome BPIMLI::predict(Dinst* dinst, bool doUpdate, bool doStats) {
   }
 
   if (doUpdate) {
-    imli->updatePredictor(pc, taken, ptaken, dinst->getAddr(), no_alloc);
+    imli->updatePredictor(pc, taken, ptaken, dinst->getAddr(), no_alloc, use_tag_offset);
   }
 
   if (!FetchPredict) {

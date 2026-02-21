@@ -137,8 +137,12 @@ table_width = 3
 
 
 [bp1]
-type = "tahead"
+type = "imli"
 delay             = 3
+
+fetch_predict     = true
+use_tag_offset    = true
+
 btb_fetch_predict = true
 btb_tag_offset    = true
 #type = "superbp"
@@ -148,8 +152,6 @@ bp_addr_shift = 0      # bits shifted by branch predictor PC
 ras_size      = 32
 ras_prefetch  = false
 
-# IMLI fetch ideal 2 taken branch, set fetch_predict false
-fetch_predict     = true   # Not a prediction per instruction
 
 btb_history_size  = 0
 btb_split_il1     = false  # do not cache entries that can be computed by IL1

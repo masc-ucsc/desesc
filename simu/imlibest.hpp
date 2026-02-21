@@ -35,6 +35,33 @@
 #include <math.h>
 
 #include <vector>
+// Rotate/XOR cascade mixer (no multiplies). Produces 64-bit mixed value.
+[[nodiscard]] constexpr std::uint64_t imli_bpred_hash(Addr_t x) noexcept {
+  // Rotate-heavy avalanche; all ops are shifts/xors/ors.
+  x ^= std::rotl(x, 5);
+  x ^= std::rotl(x, 13);
+  x ^= (x >> 32);
+  x ^= std::rotl(x, 7);
+  x ^= (x >> 23);
+  x ^= std::rotl(x, 17);
+  x ^= (x >> 29);
+  x ^= std::rotl(x, 41);
+  return x;
+}
+
+[[nodiscard]] constexpr std::uint64_t imli_bpred_hash(Addr_t addr, Addr_t offset) noexcept {
+  // Pre-mix both inputs so the later combines aren't "linear-ish".
+  std::uint64_t a = imli_bpred_hash(addr);
+  std::uint64_t c = imli_bpred_hash(offset ^ std::rotl(offset, 19) ^ (offset << 1));
+
+  a ^= std::rotl(c, 9);
+  a ^= std::rotl(c, 27);
+  a ^= (c >> 17);
+
+  a ^= std::rotl(a ^ c, 33);
+
+  return imli_bpred_hash(a);
+}
 
 #include "dinst.hpp"  // Addr_t and Opcode
 #include "dolc.hpp"
@@ -785,9 +812,10 @@ public:
   bool              alttaken;    // alternate  TAGEprediction
   bool              tage_pred;   // TAGE prediction
   bool              LongestMatchPred;
-  int               HitBank;           // longest matching bank
-  int               AltBank;           // alternate matching bank
-  uint64_t          lastBoundaryPC;    // last PC that fetchBoundary was called
+  int               HitBank;         // longest matching bank
+  int               AltBank;         // alternate matching bank
+  uint64_t          lastBoundaryPC;  // last PC that fetchBoundary was called
+  uint64_t          imli_tag_offset;
   uint64_t          lastBoundarySign;  // lastBoundaryPC ^ PCs in not-taken in the branch bundle
   bool              lastBoundaryCtrl;
   int               Seed;  // for the pseudo-random number generator
@@ -840,8 +868,8 @@ public:
       STORAGESIZE += x;
     }
 
-    STORAGESIZE += 2 * (SIZEUSEALT) * 4;
-    fprintf(stderr, " altna size=%d log2entries=%d\n", 2 * (SIZEUSEALT) * 4, LOGSIZEUSEALT);
+    STORAGESIZE += 2 * (SIZEUSEALT)*4;
+    fprintf(stderr, " altna size=%d log2entries=%d\n", 2 * (SIZEUSEALT)*4, LOGSIZEUSEALT);
 
     inter = bwidth * (1 << (log2fetchwidth + blogb));
     fprintf(stderr, " bimodal table size=%d log2entries=%d\n", inter, blogb);
@@ -864,7 +892,7 @@ public:
 
       inter += 16;                   // global histories for SC
       inter = 8 * (1 << LOGSIZEUP);  // the update threshold counters
-      inter += (PERCWIDTH) * 4 * (1 << (LOGBIAS));
+      inter += (PERCWIDTH)*4 * (1 << (LOGBIAS));
       inter += (GNB - 2) * (1 << (LOGGNB)) * (PERCWIDTH - 1) + (1 << (LOGGNB - 1)) * (2 * PERCWIDTH - 1);
 
       inter += (PNB - 2) * (1 << (LOGPNB)) * (PERCWIDTH - 1) + (1 << (LOGPNB - 1)) * (2 * PERCWIDTH - 1);
@@ -1099,12 +1127,6 @@ public:
     return (index & ((1 << (logg[bank])) - 1));
   }
 
-  //  tag computation
-  uint16_t gtag(unsigned int PC, int bank, folded_history* ch0, folded_history* ch1) {
-    int tag = PC ^ ch0[bank].comp ^ (ch1[bank].comp << 1);
-    return (tag & ((1 << TB[bank]) - 1));
-  }
-
   // up-down saturating counter
   void ctrupdate(int8_t& ctr, bool taken, int nbits) {
     if (taken) {
@@ -1140,8 +1162,7 @@ public:
       if (ltable[index].TAG == LTAG) {
         LHIT   = i;
         LVALID = ((ltable[index].confid == CONFLOOP) || (ltable[index].confid * ltable[index].NbIter > 128));
-        {
-        }
+        {}
         if (ltable[index].CurrentIter + 1 == ltable[index].NbIter) {
           return (!(ltable[index].dir));
         } else {
@@ -1361,7 +1382,8 @@ public:
   // compute the prediction
 
   void fetchBoundaryBegin(Addr_t PC) {
-    lastBoundaryPC = PC;
+    lastBoundaryPC  = PC;
+    imli_tag_offset = 0;
 #ifdef SIMPLER_DOLC_PATH
     lastBoundarySign = pcSign(PC);
 #else
@@ -1410,8 +1432,13 @@ public:
     }
   }
 
-  bool getPrediction(Addr_t PC, bool& bias, uint32_t& sign) {
+  bool getPrediction(Addr_t PC, bool& bias, uint32_t& sign, bool use_tag_offset) {
     fetchBoundaryOffsetBranch(PC);
+
+    if (use_tag_offset) {
+      PC = imli_bpred_hash(lastBoundaryPC, imli_tag_offset);
+    }
+
     setTAGEPred();
 
     pred_taken = tage_pred;
@@ -1532,6 +1559,8 @@ public:
 
   void HistoryUpdate(Addr_t PC, Opcode brtype, bool taken, Addr_t target, long long& X, int& Y, std::vector<folded_history>& H,
                      std::vector<folded_history>& G, std::vector<folded_history>& J, long long& LH, long long& GBRHIST) {
+    imli_tag_offset++;
+
     // special treatment for unconditional branchs;
     int maxt;
     if (brtype == Opcode::iBALU_LBRANCH) {
@@ -1584,8 +1613,8 @@ public:
       J[i].set(sign2);  // Not used in DOLC
     }
 #else
-    int T    = ((PC) << 1) + taken;
-    int PATH = PC;
+    int T            = ((PC) << 1) + taken;
+    int PATH         = PC;
 #endif
 
     for (int t = 0; t < maxt; t++) {
@@ -1615,8 +1644,13 @@ public:
 
   // PREDICTOR UPDATE
 
-  void updatePredictor(Addr_t PC, bool resolveDir, bool predDir, Addr_t branchTarget, bool no_alloc) {
+  void updatePredictor(Addr_t PC, bool resolveDir, bool predDir, Addr_t branchTarget, bool no_alloc, bool use_tag_offset) {
     (void)predDir;
+    // Addr_t orig_PC = PC;
+    if (use_tag_offset) {
+      PC = imli_bpred_hash(lastBoundaryPC, imli_tag_offset);
+    }
+    // fmt::print("updatePredict orig_PC:{:x} offset:{} PC:{:x} use_tag_offset:{}\n", orig_PC, imli_tag_offset, PC, use_tag_offset);
 
 #ifdef LOOPPREDICTOR
     if (LVALID) {

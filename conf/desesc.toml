@@ -83,7 +83,9 @@ btb_repl_policy   = "LRU"
 
 
 [bp1]
-type = "superbp"
+type = "imli"
+use_tag_offset    = false
+
 delay             = 2
 
 # SuperBP parameters
@@ -159,7 +161,9 @@ table_width = 3
 
 
 [bp2]
-type = "superbp"
+type = "imli"
+use_tag_offset = false
+
 delay             = 3
 #type = "superbp"
 #delay             = 2

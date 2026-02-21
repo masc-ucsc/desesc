@@ -311,6 +311,7 @@ private:
   std::unique_ptr<IMLIBest> imli;
 
   const bool FetchPredict;
+  const bool use_tag_offset;
 
 protected:
 public:

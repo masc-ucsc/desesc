@@ -168,6 +168,7 @@ private:
   uint64_t    btbHistorySize;
   const bool  btb_fetch_predict;
   const bool  btb_tag_offset;
+  const bool  btb_tag_hybrid;
   std::string btb_name;
 
   class BTBState : public StateGeneric<Addr_t> {
@@ -187,8 +188,9 @@ private:
   BTBCache* data;
   Addr_t    boundaryPC;
   uint32_t  tag_offset;
+  uint32_t  ntaken;
 
-  std::tuple<Addr_t, Addr_t> compute_index_tag(Dinst* dinst, bool doUpdate);
+  std::tuple<Addr_t, Addr_t> compute_index_tag(Dinst* dinst, bool do_tag_offset, bool doUpdate);
 
 protected:
 public:

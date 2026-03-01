@@ -22,6 +22,7 @@
 #include "tahead1.hpp"
 
 // #define CLOSE_TARGET_OPTIMIZATION 1
+//#define BTB_TRACE 1
 
 /*****************************************
  * BPred
@@ -144,8 +145,13 @@ BPBTB::BPBTB(int32_t i, const std::string& section, const std::string& sname, co
     , nHitLabel(fmt::format("P({})_BPred{}_{}:nHitLabel", i, sname, name))
     , btb_fetch_predict(Config::get_bool(section, "btb_fetch_predict"))
     , btb_tag_offset(Config::get_bool(section, "btb_tag_offset"))
+    , btb_tag_hybrid(Config::get_bool(section, "btb_tag_hybrid"))
     , btb_name(fmt::format("{}{}", name, sname)) {
   btbHistorySize = Config::get_integer(section, "btb_history_size");
+
+  if (btb_tag_offset && btb_tag_hybrid) {
+    Config::add_error(fmt::format("Section {} has both btb_tag_offset and btb_tag_hybrid, choose one", sname));
+  }
 
   if (btbHistorySize) {
     dolc = new DOLC(btbHistorySize + 1, 5, 2, 2);
@@ -163,6 +169,7 @@ BPBTB::BPBTB(int32_t i, const std::string& section, const std::string& sname, co
 
   boundaryPC = 0;
   tag_offset = 0;
+  ntaken = 0;
 
   data = BTBCache::create(section, "btb", fmt::format("P({})_BPred{}_BTB:", i, sname));
   I(data);
@@ -179,6 +186,7 @@ void BPBTB::fetchBoundaryBegin(Dinst* dinst) {
     boundaryPC = dinst->getPC();
   }
   tag_offset = 0;
+  ntaken = 0;
 }
 
 void BPBTB::fetchBoundaryEnd() { boundaryPC = 0; }
@@ -188,24 +196,30 @@ void BPBTB::updateOnly(Dinst* dinst) {
     return;
   }
 
-  auto [boundary_key, tag_key] = compute_index_tag(dinst, true);
+  ntaken++;
+
+  bool force_offset = ntaken>1 && btb_tag_hybrid;
+
+  auto [boundary_key, tag_key] = compute_index_tag(dinst, btb_tag_offset || force_offset, true);
 
   BTBCache::CacheLine* cl = data->fillLine(boundary_key, tag_key, 0xdeaddead);
   I(cl);
 
   cl->inst = dinst->getAddr();
 
-  // fmt::print("update  {} ID={} pc={:x} offset={} tag_key={} target={:x} cl:{}\n",
-  //            btb_name,
-  //            dinst->getID(),
-  //            dinst->getPC(),
-  //            tag_offset,
-  //            tag_key,
-  //            dinst->getAddr(),
-  //            (uint64_t)cl);
+#ifdef BTB_TRACE
+  fmt::print("update  {} ID={} pc={:x} offset={} tag_key={} target={:x} cl:{}\n",
+             btb_name,
+             dinst->getID(),
+             dinst->getPC(),
+             tag_offset,
+             tag_key,
+             dinst->getAddr(),
+             (uint64_t)cl);
+#endif
 }
 
-std::tuple<Addr_t, Addr_t> BPBTB::compute_index_tag(Dinst* dinst, bool doUpdate) {
+std::tuple<Addr_t, Addr_t> BPBTB::compute_index_tag(Dinst* dinst, bool do_tag_offset, bool doUpdate) {
   uint32_t tag_pc_key = bpred_hash(dinst->getPC());
   uint32_t boundary_key;
   if (btb_fetch_predict) {
@@ -215,7 +229,7 @@ std::tuple<Addr_t, Addr_t> BPBTB::compute_index_tag(Dinst* dinst, bool doUpdate)
   }
 
   uint32_t tag_key;
-  if (btb_tag_offset) {
+  if (do_tag_offset) {
     tag_key = bpred_hash(boundary_key, tag_offset);
   } else {
     tag_key = tag_pc_key;
@@ -230,7 +244,10 @@ std::tuple<Addr_t, Addr_t> BPBTB::compute_index_tag(Dinst* dinst, bool doUpdate)
     tag_key ^= dolc->getSign(btbHistorySize, btbHistorySize);
   }
 
-  return {boundary_key, tag_key};
+  // FIXME: tag_key should have a number of bits (now it is a full 64 bit tag)
+  // FIXME: add tag_mask 
+  // FIXME: btb_tag_size = 12 # in config file
+  return {boundary_key, tag_key}; // & tag_mask};
 }
 
 void BPBTB::add_control_offset() { tag_offset++; }
@@ -249,12 +266,16 @@ Outcome BPBTB::predict(Dinst* dinst, bool doUpdate, bool doStats) {
     return Outcome::Correct;
   }
 
+  if (dinst->isTaken()) {
+    ntaken++;
+  }
+
   if (dinst->getInst()->doesCtrl2Label() && btbicache) {
     nHitLabel.inc(doStats && doUpdate && dinst->has_stats());
     return Outcome::Correct;
   }
 
-  auto [boundary_key, tag_key] = compute_index_tag(dinst, doUpdate);
+  auto [boundary_key, tag_key] = compute_index_tag(dinst, btb_tag_offset, doUpdate);
 
   BTBCache::CacheLine* cl = nullptr;
   if (doUpdate && dinst->getAddr()) {
@@ -270,31 +291,88 @@ Outcome BPBTB::predict(Dinst* dinst, bool doUpdate, bool doStats) {
       return Outcome::Correct;
     }
 
-    cl->inst = dinst->getAddr();
+    if (doUpdate) {
+      cl->inst = dinst->getAddr();
+    }
     if (predictID) {
-      // fmt::print("BTBMiss {} ID={} pc={:x} offset={} tag_key={} boundaryPC={:x} update={} predict={:x} target={:x} cl:{}\n",
-      //            btb_name,
-      //            dinst->getID(),
-      //            dinst->getPC(),
-      //            tag_offset,
-      //            tag_key,
-      //            boundaryPC,
-      //            doUpdate,
-      //            predictID,
-      //            dinst->getAddr(),
-      //            (uint64_t)cl);
+#ifdef BTB_TRACE
+      fmt::print("BTBMiss1 {} ID={} pc={:x} offset={} tag_key={} boundaryPC={:x} update={} predict={:x} target={:x} cl:{}\n",
+                 btb_name,
+                 dinst->getID(),
+                 dinst->getPC(),
+                 tag_offset,
+                 tag_key,
+                 boundaryPC,
+                 doUpdate,
+                 predictID,
+                 dinst->getAddr(),
+                 (uint64_t)cl);
+#endif
       return Outcome::Miss;
     } else {
-      // fmt::print("Allocat {} ID={} pc={:x} offset={} tag_key={} update={} predict={:x} target={:x} cl:{}\n",
-      //            btb_name,
-      //            dinst->getID(),
-      //            dinst->getPC(),
-      //            tag_offset,
-      //            tag_key,
-      //            doUpdate,
-      //            predictID,
-      //            dinst->getAddr(),
-      //            (uint64_t)cl);
+#ifdef BTB_TRACE
+      fmt::print("Allocat1 {} ID={} pc={:x} offset={} tag_key={} update={} predict={:x} target={:x} cl:{}\n",
+                 btb_name,
+                 dinst->getID(),
+                 dinst->getPC(),
+                 tag_offset,
+                 tag_key,
+                 doUpdate,
+                 predictID,
+                 dinst->getAddr(),
+                 (uint64_t)cl);
+#endif
+    }
+  }
+  if (!cl && btb_tag_hybrid) { // Also try with offset
+    std::tie(boundary_key, tag_key) = compute_index_tag(dinst, true, doUpdate && ntaken>1);
+
+    if (doUpdate && ntaken>1 && dinst->getAddr()) {
+      cl = data->fillLine(boundary_key, tag_key, 0xdeaddead);
+    } else {
+      cl = data->findLineNoEffect(boundary_key, tag_key, 0xdeaddead);
+    }
+
+    if (cl) {
+      Addr_t predictID = cl->inst;
+      if (predictID == dinst->getAddr()) {
+        nHit.inc(doStats && doUpdate && dinst->has_stats());
+        return Outcome::Correct;
+      }
+
+      if (doUpdate && ntaken>1) {
+        cl->inst = dinst->getAddr();
+      }
+
+      if (predictID) {
+#ifdef BTB_TRACE
+        fmt::print("BTBMiss2 {} ID={} pc={:x} offset={} tag_key={} boundaryPC={:x} update={} predict={:x} target={:x} cl:{}\n",
+                   btb_name,
+                   dinst->getID(),
+                   dinst->getPC(),
+                   tag_offset,
+                   tag_key,
+                   boundaryPC,
+                   doUpdate,
+                   predictID,
+                   dinst->getAddr(),
+                   (uint64_t)cl);
+#endif
+        return Outcome::Miss;
+      } else {
+#ifdef BTB_TRACE
+        fmt::print("Allocat2 {} ID={} pc={:x} offset={} tag_key={} update={} predict={:x} target={:x} cl:{}\n",
+                   btb_name,
+                   dinst->getID(),
+                   dinst->getPC(),
+                   tag_offset,
+                   tag_key,
+                   doUpdate,
+                   predictID,
+                   dinst->getAddr(),
+                   (uint64_t)cl);
+#endif
+      }
     }
   }
 
@@ -1014,7 +1092,9 @@ Outcome BPSuperbp::predict(Dinst* dinst, bool doUpdate, bool doStats) {
   }
 #endif
 
+#ifdef TARGET2_FROM_GSHARE
   bool gshare_target_correct = (branchTarget == gshare_target);
+#endif
 
   if (gshare_use) {  // GSHARE did a prediction (it should be taken, but may be a miss prediction)
     switch (last_taken_type) {

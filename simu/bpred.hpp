@@ -169,6 +169,8 @@ private:
   const bool  btb_fetch_predict;
   const bool  btb_tag_offset;
   const bool  btb_tag_hybrid;
+  uint32_t btb_tag_size;
+  uint32_t btb_tag_mask;
   std::string btb_name;
 
   class BTBState : public StateGeneric<Addr_t> {

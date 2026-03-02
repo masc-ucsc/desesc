@@ -146,6 +146,7 @@ BPBTB::BPBTB(int32_t i, const std::string& section, const std::string& sname, co
     , btb_fetch_predict(Config::get_bool(section, "btb_fetch_predict"))
     , btb_tag_offset(Config::get_bool(section, "btb_tag_offset"))
     , btb_tag_hybrid(Config::get_bool(section, "btb_tag_hybrid"))
+    , btb_tag_size(Config::get_integer(section, "btb_tag_size"))
     , btb_name(fmt::format("{}{}", name, sname)) {
   btbHistorySize = Config::get_integer(section, "btb_history_size");
 
@@ -170,6 +171,9 @@ BPBTB::BPBTB(int32_t i, const std::string& section, const std::string& sname, co
   boundaryPC = 0;
   tag_offset = 0;
   ntaken = 0;
+  
+  uint32_t shift_amt = (sizeof(uint32_t) << 3) - btb_tag_size;
+  btb_tag_mask = ((uint32_t)(-1 << shift_amt)) >> shift_amt;
 
   data = BTBCache::create(section, "btb", fmt::format("P({})_BPred{}_BTB:", i, sname));
   I(data);
@@ -234,7 +238,8 @@ std::tuple<Addr_t, Addr_t> BPBTB::compute_index_tag(Dinst* dinst, bool do_tag_of
   } else {
     tag_key = tag_pc_key;
   }
-
+   tag_key &= btb_tag_mask;
+   
   if (dolc) {
     if (doUpdate) {
       dolc->update(boundaryPC);

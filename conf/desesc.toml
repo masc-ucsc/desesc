@@ -49,13 +49,13 @@ type      = "dromajo"
 #load      = "/mada/software/benchmarks/dromajo/spec2017/ck_5b/perlbench_splitmail/perlbench_splitmail"
 
 # Load a Binary
-#bench      = "conf/dhrystone.riscv"
-bench      = "k2"
+bench      = "conf/dhrystone.riscv"
+#bench      = "k2"
 
 start_roi = false
 rabbit    = 100000
-detail    = 2500000
-time      = 2500000
+detail    = 150000
+time      = 200000
 
 [rand_emu]
 type = "random"  # Generate random instructions (coverage testing?)
@@ -73,7 +73,9 @@ ras_prefetch  = false
 fetch_predict     = true   # Not a prediction per instruction
 
 btb_fetch_predict = true
-btb_tag_offset    = true
+btb_tag_offset    = false
+btb_tag_hybrid    = false
+btb_tag_size      = 14
 btb_history_size  = 0
 btb_split_il1     = false  # do not cache entries that can be computed by IL1
 btb_size          = 4
@@ -107,7 +109,9 @@ ras_prefetch  = false
 fetch_predict     = true   # Not a prediction per instruction
 
 btb_fetch_predict = true
-btb_tag_offset    = true
+btb_tag_offset    = false
+btb_tag_hybrid    = false
+btb_tag_size      = 14
 btb_history_size  = 0
 btb_split_il1     = false  # do not cache entries that can be computed by IL1
 btb_size          = 8192
@@ -176,7 +180,9 @@ ras_prefetch  = false
 fetch_predict     = true   # Not a prediction per instruction
 
 btb_fetch_predict = true
-btb_tag_offset    = true
+btb_tag_offset    = false
+btb_tag_hybrid    = false
+btb_tag_size      = 14
 btb_history_size  = 0
 btb_split_il1     = false  # do not cache entries that can be computed by IL1
 btb_size          = 8192

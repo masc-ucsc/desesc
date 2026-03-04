@@ -27,10 +27,11 @@ void Config::exit_on_error() {
     return;
   }
 
-  fmt::print("\n");
-  for (const auto& e : errors) {
-    fmt::print("ERROR:{}\n", e);
+  fmt::print("\n{} configuration error(s) in '{}':\n", errors.size(), filename);
+  for (size_t i = 0; i < errors.size(); ++i) {
+    fmt::print("  [{}] {}\n", i + 1, errors[i]);
   }
+  fmt::print("\nFix the above error(s) in '{}' and retry.\n\n", filename);
 
   abort();  // Abort no exit to avoid the likely seg-faults of a bad configuration
 }
@@ -42,13 +43,13 @@ bool Config::check(const std::string& block, const std::string& name) {
   }
 
   if (!data.contains(block)) {
-    errors.emplace_back(fmt::format("section:{} does not exist in configuration:{}\n", block, filename));
+    errors.emplace_back(fmt::format("section [{}] not found -- add a [{}] section to '{}'", block, block, filename));
     return false;
   }
 
   auto sec = toml::find(data, block);
   if (!sec.contains(name)) {
-    errors.emplace_back(fmt::format("section:{} does not have field named {} in configuration:{}\n", block, name, filename));
+    errors.emplace_back(fmt::format("section [{}] is missing field '{}' -- add '{} = <value>' to [{}] in '{}'", block, name, name, block, filename));
     return false;
   }
 

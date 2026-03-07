@@ -64,7 +64,8 @@ class MemObj;
 
 class BPred {
 public:
-  Addr_t             boundaryPC;
+  Addr_t   boundaryPC;
+  int32_t  taken_counter;
   static std::string to_s(Outcome o) {
     if (o == Outcome::Correct) {
       return "Correct";
@@ -118,11 +119,25 @@ public:
   BPred(int32_t i, const std::string& section, const std::string& sname, const std::string& name);
   virtual ~BPred();
 
-  virtual Outcome predict(Dinst* dinst, bool doUpdate, bool doStats) = 0;
+  virtual Outcome predict(Dinst* dinst, bool doUpdate, bool doStats) {
+    // This is a safety fallback
+    // Tell the compiler these are intentionally unused in the base class
+    (void)dinst;
+    (void)doUpdate;
+    (void)doStats;
+    return Outcome::None;
+  }
+
   virtual void    fetchBoundaryBegin(Dinst* dinst);  // If the branch predictor support fetch boundary model, do it
   virtual void    fetchBoundaryEnd();                // If the branch predictor support fetch boundary model, do it
 
   Outcome doPredict(Dinst* dinst, bool doStats = true) {
+    I(taken_counter>=0);
+
+    if (dinst->isTaken()) {
+      taken_counter++;
+    }
+
     Outcome pred = predict(dinst, true, doStats);
     if (pred == Outcome::None) {
       return pred;
@@ -173,6 +188,8 @@ private:
   uint32_t btb_tag_mask;
   std::string btb_name;
 
+  int32_t     btb_taken_counter;
+
   class BTBState : public StateGeneric<Addr_t> {
   public:
     BTBState(int32_t lineSize) {
@@ -190,7 +207,6 @@ private:
   BTBCache* data;
   Addr_t    boundaryPC;
   uint32_t  tag_offset;
-  uint32_t  ntaken;
 
   std::tuple<Addr_t, Addr_t> compute_index_tag(Dinst* dinst, bool do_tag_offset, bool doUpdate);
 
@@ -316,6 +332,7 @@ private:
 
   const bool FetchPredict;
   const bool use_tag_offset;
+  const bool use_tag_hybrid;
 
 protected:
 public:

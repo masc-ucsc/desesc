@@ -264,7 +264,7 @@ const int Tm[TNB] = {22, 17, 14};
 #define PNB 4
 const int Pm[PNB] = {16, 11, 6, 3};
 #else
-// in this case we don´t use the call stack
+// in this case we don\B4t use the call stack
 #define PNB    2
 #define LOGPNB 11
 const int Pm[PNB] = {16, 11};
@@ -1029,21 +1029,21 @@ public:
     for (int i = 0; i < GNB; i++) {
       for (int j = 0; j < ((1 << LOGGNB) - 1); j++) {
         if (!(j & 1)) {
-          GGEHL[i][j] = -1;
+          GGEHL[j][i] = -1;
         }
       }
     }
     for (int i = 0; i < LNB; i++) {
       for (int j = 0; j < ((1 << LOGLNB) - 1); j++) {
         if (!(j & 1)) {
-          LGEHL[i][j] = -1;
+          LGEHL[j][i] = -1;
         }
       }
     }
     for (int i = 0; i < PNB; i++) {
       for (int j = 0; j < ((1 << LOGPNB) - 1); j++) {
         if (!(j & 1)) {
-          PGEHL[i][j] = -1;
+          PGEHL[j][i] = -1;
         }
       }
     }
@@ -1053,7 +1053,7 @@ public:
     for (int i = 0; i < FNB; i++) {
       for (int j = 0; j < ((1 << LOGFNB) - 1); j++) {
         if (!(j & 1)) {
-          FGEHL[i][j] = -1;
+          FGEHL[j][i] = -1;
         }
       }
     }
@@ -1062,7 +1062,7 @@ public:
     for (int i = 0; i < INB; i++) {
       for (int j = 0; j < ((1 << LOGINB) - 1); j++) {
         if (!(j & 1)) {
-          IGEHL[i][j] = -1;
+          IGEHL[j][i] = -1;
         }
       }
     }
@@ -1432,10 +1432,12 @@ public:
     }
   }
 
-  bool getPrediction(Addr_t PC, bool& bias, uint32_t& sign, bool use_tag_offset) {
+  bool getPrediction(Addr_t PC, bool& bias, uint32_t& sign, bool use_tag_offset, bool use_tag_hybrid, uint32_t taken_counter) {
     fetchBoundaryOffsetBranch(PC);
 
-    if (use_tag_offset) {
+    bool force_offset = (taken_counter>1 && use_tag_hybrid);
+
+    if (use_tag_offset || force_offset) {
       PC = imli_bpred_hash(lastBoundaryPC, imli_tag_offset);
     }
 
@@ -1644,10 +1646,11 @@ public:
 
   // PREDICTOR UPDATE
 
-  void updatePredictor(Addr_t PC, bool resolveDir, bool predDir, Addr_t branchTarget, bool no_alloc, bool use_tag_offset) {
+  void updatePredictor(Addr_t PC, bool resolveDir, bool predDir, Addr_t branchTarget, bool no_alloc, bool use_tag_offset, bool use_tag_hybrid, uint32_t taken_counter) {
     (void)predDir;
     // Addr_t orig_PC = PC;
-    if (use_tag_offset) {
+    bool force_offset = (taken_counter>1 && use_tag_hybrid);
+    if (use_tag_offset || force_offset) {
       PC = imli_bpred_hash(lastBoundaryPC, imli_tag_offset);
     }
     // fmt::print("updatePredict orig_PC:{:x} offset:{} PC:{:x} use_tag_offset:{}\n", orig_PC, imli_tag_offset, PC, use_tag_offset);

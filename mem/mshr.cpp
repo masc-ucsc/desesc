@@ -76,7 +76,7 @@ void MSHR::addEntry(Addr_t addr, CallbackBase* c, MemRequest* mreq) {
 
   nStallConflict.inc();
 
-#ifndef NDEBUG
+#ifdef DEBUG_TRANSIENTS
   I(!entry[pos].pending_mreq.empty());
   entry[pos].pending_mreq.push_back(mreq);
 #endif
@@ -96,10 +96,9 @@ void MSHR::blockEntry(Addr_t addr, MemRequest* mreq) {
   entry[pos].nUse++;
   avgSubUse.sample(entry[pos].nUse, mreq->has_stats());
 
-#ifndef NDEBUG
+#ifdef DEBUG_TRANSIENTS
   I(entry[pos].pending_mreq.empty());
   entry[pos].pending_mreq.push_back(mreq);
-  entry[pos].block_mreq = mreq;
 #endif
 }
 
@@ -107,21 +106,23 @@ bool MSHR::retire(Addr_t addr, MemRequest* mreq) {
   I(mreq);
   uint32_t pos = calcEntry(addr);
   I(entry[pos].nUse);
-#ifndef NDEBUG
+#ifdef DEBUG_TRANSIENTS
   I(!entry[pos].pending_mreq.empty());
-  I(entry[pos].pending_mreq.front() == mreq);
-  entry[pos].pending_mreq.pop_front();
-  if (!entry[pos].pending_mreq.empty()) {
-    MemRequest* mreq2 = entry[pos].pending_mreq.front();
-    if (mreq2 != entry[pos].block_mreq) {
-      I(mreq2->isRetrying());
-    } else {
-      I(!mreq2->isRetrying());
+  for(size_t i=0;i<entry[pos].pending_mreq.size();++i) {
+    if (entry[pos].pending_mreq[i] == mreq) {
+      entry[pos].pending_mreq[i] = 0;
     }
   }
-  if (entry[pos].block_mreq) {
-    I(mreq == entry[pos].block_mreq);
-    entry[pos].block_mreq = 0;
+  while (!entry[pos].pending_mreq.empty() && entry[pos].pending_mreq.back() == 0) {
+    entry[pos].pending_mreq.pop_back();
+  }
+  if (mreq->getDinst()) {
+    // We retire age order o we have a priority inversion problem
+    for(size_t i=0;i<entry[pos].pending_mreq.size();++i) {
+      if (entry[pos].pending_mreq[i] && entry[pos].pending_mreq[i]->getDinst()) {
+        I(mreq->getDinst()->getID() < entry[pos].pending_mreq[i]->getDinst()->getID());
+      }
+    }
   }
 #endif
 

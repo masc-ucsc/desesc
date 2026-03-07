@@ -42,16 +42,20 @@ BPred::BPred(int32_t i, const std::string& sec, const std::string& sname, const 
   addrShift = Config::get_integer(sec, "bp_addr_shift");
 
   maxCores = Config::get_array_size("soc", "core");
+  taken_counter = -1;
 }
 
 BPred::~BPred() {}
 
+// No fetch boundary implemented (must be specialized per predictor if supported)
 void BPred::fetchBoundaryBegin(Dinst* dinst) {
   (void)dinst;
-  // No fetch boundary implemented (must be specialized per predictor if supported)
+  taken_counter = 0;
 }
 
-void BPred::fetchBoundaryEnd() {}
+void BPred::fetchBoundaryEnd() {
+  taken_counter = -1;
+}
 
 /*****************************************
  * RAS
@@ -170,8 +174,8 @@ BPBTB::BPBTB(int32_t i, const std::string& section, const std::string& sname, co
 
   boundaryPC = 0;
   tag_offset = 0;
-  ntaken = 0;
-  
+  btb_taken_counter = -1;
+
   uint32_t shift_amt = (sizeof(uint32_t) << 3) - btb_tag_size;
   btb_tag_mask = ((uint32_t)(-1 << shift_amt)) >> shift_amt;
 
@@ -190,19 +194,20 @@ void BPBTB::fetchBoundaryBegin(Dinst* dinst) {
     boundaryPC = dinst->getPC();
   }
   tag_offset = 0;
-  ntaken = 0;
+  btb_taken_counter =0;
 }
 
-void BPBTB::fetchBoundaryEnd() { boundaryPC = 0; }
+void BPBTB::fetchBoundaryEnd() { btb_taken_counter = -1; boundaryPC = 0; }
 
 void BPBTB::updateOnly(Dinst* dinst) {
   if (data == 0 || !dinst->isTaken()) {
     return;
   }
 
-  ntaken++;
+  I(btb_taken_counter>=0);
+  btb_taken_counter++;
 
-  bool force_offset = ntaken>1 && btb_tag_hybrid;
+  bool force_offset = btb_taken_counter>1 && btb_tag_hybrid;
 
   auto [boundary_key, tag_key] = compute_index_tag(dinst, btb_tag_offset || force_offset, true);
 
@@ -238,8 +243,11 @@ std::tuple<Addr_t, Addr_t> BPBTB::compute_index_tag(Dinst* dinst, bool do_tag_of
   } else {
     tag_key = tag_pc_key;
   }
-   tag_key &= btb_tag_mask;
-   
+  tag_key &= btb_tag_mask;
+  if (tag_key==0) { // tag zero, means invalid in cache, so avoid this
+    tag_key = 1;
+  }
+
   if (dolc) {
     if (doUpdate) {
       dolc->update(boundaryPC);
@@ -249,9 +257,6 @@ std::tuple<Addr_t, Addr_t> BPBTB::compute_index_tag(Dinst* dinst, bool do_tag_of
     tag_key ^= dolc->getSign(btbHistorySize, btbHistorySize);
   }
 
-  // FIXME: tag_key should have a number of bits (now it is a full 64 bit tag)
-  // FIXME: add tag_mask 
-  // FIXME: btb_tag_size = 12 # in config file
   return {boundary_key, tag_key}; // & tag_mask};
 }
 
@@ -271,8 +276,9 @@ Outcome BPBTB::predict(Dinst* dinst, bool doUpdate, bool doStats) {
     return Outcome::Correct;
   }
 
+  I(btb_taken_counter>=0);
   if (dinst->isTaken()) {
-    ntaken++;
+    btb_taken_counter++;
   }
 
   if (dinst->getInst()->doesCtrl2Label() && btbicache) {
@@ -330,9 +336,9 @@ Outcome BPBTB::predict(Dinst* dinst, bool doUpdate, bool doStats) {
     }
   }
   if (!cl && btb_tag_hybrid) { // Also try with offset
-    std::tie(boundary_key, tag_key) = compute_index_tag(dinst, true, doUpdate && ntaken>1);
+    std::tie(boundary_key, tag_key) = compute_index_tag(dinst, true, doUpdate && btb_taken_counter>1);
 
-    if (doUpdate && ntaken>1 && dinst->getAddr()) {
+    if (doUpdate && btb_taken_counter>1 && dinst->getAddr()) {
       cl = data->fillLine(boundary_key, tag_key, 0xdeaddead);
     } else {
       cl = data->findLineNoEffect(boundary_key, tag_key, 0xdeaddead);
@@ -345,7 +351,7 @@ Outcome BPBTB::predict(Dinst* dinst, bool doUpdate, bool doStats) {
         return Outcome::Correct;
       }
 
-      if (doUpdate && ntaken>1) {
+      if (doUpdate && btb_taken_counter>1) {
         cl->inst = dinst->getAddr();
       }
 
@@ -887,7 +893,13 @@ BPIMLI::BPIMLI(int32_t i, const std::string& section, const std::string& sname)
     : BPred(i, section, sname, "imli")
     , btb(i, section, sname)
     , FetchPredict(Config::get_bool(section, "fetch_predict"))
-    , use_tag_offset(Config::get_bool(section, "use_tag_offset")) {
+    , use_tag_offset(Config::get_bool(section, "use_tag_offset"))
+    , use_tag_hybrid(Config::get_bool(section, "use_tag_hybrid")) {
+
+      if (use_tag_offset && use_tag_hybrid) {
+    Config::add_error(fmt::format("Section {} has both use_tag_offset and use_tag_hybrid, choose one", sname));
+  }
+
   int FetchWidth = Config::get_power2("soc", "core", i, "fetch_width", 1);
 
   int bimodalSize = Config::get_power2(section, "bimodal_size", 4);
@@ -909,6 +921,7 @@ void BPIMLI::fetchBoundaryBegin(Dinst* dinst) {
     boundaryPC = dinst->getPC();
   }
   btb.fetchBoundaryBegin(dinst);
+  taken_counter=0;
 }
 
 void BPIMLI::fetchBoundaryEnd() {
@@ -916,6 +929,7 @@ void BPIMLI::fetchBoundaryEnd() {
     imli->fetchBoundaryEnd();
   }
   btb.fetchBoundaryEnd();
+  taken_counter = -1;
 }
 
 Outcome BPIMLI::predict(Dinst* dinst, bool doUpdate, bool doStats) {
@@ -924,6 +938,7 @@ Outcome BPIMLI::predict(Dinst* dinst, bool doUpdate, bool doStats) {
     boundaryPC = dinst->getPC();
     imli->fetchBoundaryBegin(boundaryPC);
   }
+  I(taken_counter>=0 && taken_counter < 1024); // Who does over 1024 taken fetch???
 
   if (dinst->getInst()->isJump() || dinst->getInst()->isFuncRet()) {
     imli->TrackOtherInst(dinst->getPC(), dinst->getInst()->getOpcode(), dinst->getAddr());
@@ -937,7 +952,7 @@ Outcome BPIMLI::predict(Dinst* dinst, bool doUpdate, bool doStats) {
   // bool     bias = false;
   Addr_t   pc     = dinst->getPC();
   uint32_t sign   = 0;
-  bool     ptaken = imli->getPrediction(pc, bias, sign, use_tag_offset);  // pass taken for statistics
+  bool     ptaken = imli->getPrediction(pc, bias, sign, use_tag_offset, use_tag_hybrid, taken_counter);  // pass taken for statistics
   dinst->setBiasBranch(bias);
 
   bool no_alloc = true;
@@ -946,7 +961,7 @@ Outcome BPIMLI::predict(Dinst* dinst, bool doUpdate, bool doStats) {
   }
 
   if (doUpdate) {
-    imli->updatePredictor(pc, taken, ptaken, dinst->getAddr(), no_alloc, use_tag_offset);
+    imli->updatePredictor(pc, taken, ptaken, dinst->getAddr(), no_alloc, use_tag_offset, use_tag_hybrid, taken_counter);
   }
 
   if (!FetchPredict) {
@@ -2040,6 +2055,7 @@ BPredictor::BPredictor(int32_t i, MemObj* iobj, MemObj* dobj, std::shared_ptr<BP
 }
 
 void BPredictor::fetchBoundaryBegin(Dinst* dinst) {
+  ras->fetchBoundaryBegin(dinst);
   pred1->fetchBoundaryBegin(dinst);
   if (pred2) {
     pred2->fetchBoundaryBegin(dinst);
@@ -2050,6 +2066,7 @@ void BPredictor::fetchBoundaryBegin(Dinst* dinst) {
 }
 
 void BPredictor::fetchBoundaryEnd() {
+  ras->fetchBoundaryEnd();
   pred1->fetchBoundaryEnd();
   if (pred2) {
     pred2->fetchBoundaryEnd();

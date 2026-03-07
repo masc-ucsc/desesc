@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <queue>
+#include <vector>
 
 #include "callback.hpp"
 #include "dinst.hpp"
@@ -49,8 +49,8 @@ protected:
   public:
     CallbackContainer cc;
     int32_t           nUse;
-#ifndef NDEBUG
-    std::deque<MemRequest*> pending_mreq;
+#ifdef DEBUG_TRANSIENTS
+    std::vector<MemRequest*> pending_mreq;
     MemRequest*             block_mreq;
 #endif
   };

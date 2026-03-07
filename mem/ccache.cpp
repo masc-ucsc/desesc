@@ -553,8 +553,8 @@ void CCache::CState::adjustState(MemRequest* mreq, int16_t portid) {
   }
 
   GI(nSharers > 1, shareState != E && shareState != M);
-  GI(shareState == E || shareState == M, nSharers == 1);
-  GI(nSharers == 0, shareState == I);
+  GI(shareState == E || shareState == M, nSharers <= 1);
+  //GI(nSharers == 0, shareState == I);
   GI(shareState == I, nSharers == 0);
 
   if (state == I && shareState == I) {

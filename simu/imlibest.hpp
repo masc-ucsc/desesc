@@ -33,6 +33,7 @@
 
 #include <inttypes.h>
 #include <math.h>
+#include <print>
 
 #include <vector>
 // Rotate/XOR cascade mixer (no multiplies). Produces 64-bit mixed value.
@@ -223,7 +224,7 @@ const int Gm[GNB] = {17, 14};
 // large local history
 #define LOGLOCAL 8
 #define NLOCAL   (1 << LOGLOCAL)
-#define INDLOCAL (PC & (NLOCAL - 1))
+#define INDLOCAL (orig_PC & (NLOCAL - 1))
 #ifdef LARGE_SC
 // three different local histories (just completely crazy :-)
 
@@ -289,7 +290,7 @@ const int Pm[PNB] = {16, 11};
 // #define LOGSIZEUSEALT 0
 #define LOGSIZEUSEALT 2
 #define SIZEUSEALT    (1 << (LOGSIZEUSEALT))
-#define INDUSEALT     ((pcSign(lastBoundaryPC)) & (SIZEUSEALT - 1))
+#define INDUSEALT     ((lastBoundaryPC) & (SIZEUSEALT - 1))
 
 // utility class for index computation
 // this is the cyclic shift register for folding
@@ -435,9 +436,9 @@ public:
   }
 
   void dump() {
-    fprintf(stderr, "nsub=%d tag=%x hit=%d thit=%d u=%d loff=%d", nsub, tag, hit, thit, u[0], last_boff);
+    printf("nsub=%d tag=%x hit=%d thit=%d u=%d loff=%d", nsub, tag, hit, thit, u[0], last_boff);
     for (int i = 0; i < nsub; i++) {
-      fprintf(stderr, ": off=%d ctr=%d", boff[i], ctr[i]);
+      printf(": off=%d ctr=%d", boff[i], ctr[i]);
     }
   }
 
@@ -782,11 +783,11 @@ public:
 
   const int Lm[LNB] = {11, 6, 3};
 
-  std::array<std::array<int8_t, FNB>, (1 << LOGFNB)> FGEHL;
-  std::array<std::array<int8_t, GNB>, (1 << LOGGNB)> GGEHL;
-  std::array<std::array<int8_t, LNB>, (1 << LOGLNB)> LGEHL;
-  std::array<std::array<int8_t, INB>, (1 << LOGINB)> IGEHL;
-  std::array<std::array<int8_t, PNB>, (1 << LOGPNB)> PGEHL;
+  std::array<std::array<int8_t, (1 << LOGFNB)>, FNB> FGEHL;
+  std::array<std::array<int8_t, (1 << LOGGNB)>, GNB> GGEHL;
+  std::array<std::array<int8_t, (1 << LOGLNB)>, LNB> LGEHL;
+  std::array<std::array<int8_t, (1 << LOGINB)>, INB> IGEHL;
+  std::array<std::array<int8_t, (1 << LOGPNB)>, PNB> PGEHL;
   // int8_t  GGEHL[GNB][(1 << LOGGNB)];
   // int8_t  LGEHL[LNB][(1 << LOGLNB)];
   // int8_t  IGEHL[INB][(1 << LOGINB)];
@@ -816,6 +817,8 @@ public:
   int               AltBank;         // alternate matching bank
   uint64_t          lastBoundaryPC;  // last PC that fetchBoundary was called
   uint64_t          imli_tag_offset;
+  uint64_t          bim_tag_offset;
+  uint64_t          lastBoundaryID;    // dinst ID for boundary to compute offset for all instruction types
   uint64_t          lastBoundarySign;  // lastBoundaryPC ^ PCs in not-taken in the branch bundle
   bool              lastBoundaryCtrl;
   int               Seed;  // for the pseudo-random number generator
@@ -1029,21 +1032,21 @@ public:
     for (int i = 0; i < GNB; i++) {
       for (int j = 0; j < ((1 << LOGGNB) - 1); j++) {
         if (!(j & 1)) {
-          GGEHL[j][i] = -1;
+          GGEHL[i][j] = -1;
         }
       }
     }
     for (int i = 0; i < LNB; i++) {
       for (int j = 0; j < ((1 << LOGLNB) - 1); j++) {
         if (!(j & 1)) {
-          LGEHL[j][i] = -1;
+          LGEHL[i][j] = -1;
         }
       }
     }
     for (int i = 0; i < PNB; i++) {
       for (int j = 0; j < ((1 << LOGPNB) - 1); j++) {
         if (!(j & 1)) {
-          PGEHL[j][i] = -1;
+          PGEHL[i][j] = -1;
         }
       }
     }
@@ -1053,7 +1056,7 @@ public:
     for (int i = 0; i < FNB; i++) {
       for (int j = 0; j < ((1 << LOGFNB) - 1); j++) {
         if (!(j & 1)) {
-          FGEHL[j][i] = -1;
+          FGEHL[i][j] = -1;
         }
       }
     }
@@ -1062,7 +1065,7 @@ public:
     for (int i = 0; i < INB; i++) {
       for (int j = 0; j < ((1 << LOGINB) - 1); j++) {
         if (!(j & 1)) {
-          IGEHL[j][i] = -1;
+          IGEHL[i][j] = -1;
         }
       }
     }
@@ -1276,15 +1279,18 @@ public:
 
     GI[0] = lastBoundaryPC >> 2;  // Remove 2 lower useless bits
     for (int i = 1; i <= nhist; i++) {
-      GI[i]   = gindex(pcSign(lastBoundaryPC, i), i, phist);
-      GTAG[i] = ((GI[i - 1] << (logg[i] / 2)) ^ GI[i - 1]) & ((1 << TB[i]) - 1);
+      GI[i]   = gindex(lastBoundaryPC, i, phist);
     }
   }
 
-  uint64_t pcSign(uint64_t pc, int deg = 0) const {
-    uint64_t cid = pc >> 1;
-    cid          = (cid >> (7 + deg)) ^ (cid);
-    return cid;
+  void setTAGETag(Addr_t PC) {
+    HitBank = 0;
+    AltBank = 0;
+
+    for (int i = 1; i <= nhist; i++) {
+      auto tag   = imli_bpred_hash(gindex(PC, i-1, phist), PC);
+      GTAG[i] = tag & ((1 << TB[i]) - 1);
+    }
   }
 
   void setTAGEPred() {
@@ -1381,15 +1387,18 @@ public:
   }
   // compute the prediction
 
-  void fetchBoundaryBegin(Addr_t PC) {
-    lastBoundaryPC  = PC;
+  void fetchBoundaryBegin(Addr_t PC, uint64_t ID) {
+    lastBoundaryPC  = imli_bpred_hash(PC);
     imli_tag_offset = 0;
+    bim_tag_offset = 0;
 #ifdef SIMPLER_DOLC_PATH
-    lastBoundarySign = pcSign(PC);
+    lastBoundarySign = PC;
 #else
     lastBoundarySign = 0;
 #endif
     lastBoundaryCtrl = false;
+
+    lastBoundaryID = ID;
 
     setTAGEIndex();
   }
@@ -1408,42 +1417,58 @@ public:
     return sign;
   }
 
-  // TODO: WHy fetch predict is not zero?
-  //         TODO: update 2 entries with different data abd same boff
-  int fetchBoundaryOffsetOthers(Addr_t PC) {
-    int boff = (PC >> 1) & ((1 << (log2fetchwidth - 1)) - 1);
-#ifndef SIMPLER_DOLC_PATH
-    lastBoundarySign = dohash(lastBoundarySign, pcSign(PC));
+  void fetchBoundaryOffsetBranch(Addr_t orig_PC, uint64_t orig_ID) {
+    (void)orig_PC;
+    (void)orig_ID;
+
+#ifdef IDEAL_BOUNDARY_ONLY_FOR_CTRL
+    bimodal.select(GI[0],bim_tag_offset);
+#elifdef IDEAL_REHASH_BIM_BOUNDARY
+    bimodal.select(imli_bpred_hash(orig_PC));
+#else
+    bimodal.select(GI[0],orig_ID-lastBoundaryID);
 #endif
 
-    lastBoundaryCtrl = true;
-
-    return boff;
-  }
-
-  void fetchBoundaryOffsetBranch(Addr_t PC) {
-    int boff = fetchBoundaryOffsetOthers(PC);
-
-    // bimodal.select(GI[0],boff);
-    bimodal.select(PC);
-
     for (int i = 1; i <= nhist; i++) {
-      gtable[i][GI[i]].select(GTAG[i], boff);
+      gtable[i][GI[i]].select(GTAG[i], 0);
     }
   }
 
-  bool getPrediction(Addr_t PC, bool& bias, uint32_t& sign, bool use_tag_offset, bool use_tag_hybrid, uint32_t taken_counter) {
-    fetchBoundaryOffsetBranch(PC);
+  bool getPrediction(Addr_t orig_PC, uint64_t orig_ID, bool& bias, uint32_t& sign, bool use_tag_offset, bool use_tag_hybrid, uint32_t taken_counter) {
+    bool force_offset = (taken_counter>=1 && use_tag_hybrid);
 
-    bool force_offset = (taken_counter>1 && use_tag_hybrid);
-
+    Addr_t PC;
     if (use_tag_offset || force_offset) {
+#ifdef IDEAL_BOUNDARY_ONLY_FOR_CTRL
       PC = imli_bpred_hash(lastBoundaryPC, imli_tag_offset);
+#else
+      PC = imli_bpred_hash(lastBoundaryPC, orig_ID-lastBoundaryID);
+#endif
+    }else{
+      PC = imli_bpred_hash(orig_PC);
     }
+
+    setTAGETag(PC);
+
+    fetchBoundaryOffsetBranch(orig_PC, orig_ID);
 
     setTAGEPred();
 
     pred_taken = tage_pred;
+
+#if 0
+    if (orig_PC == 0x13fbb8) {
+      std::print("HERE: ");
+      for(auto e:GTAG) {
+        std::print(" {}", e);
+      }
+      if (HitBank) {
+        std::print(" bank:{} GI:{}", HitBank, GI[HitBank]);
+        gtable[HitBank][GI[HitBank]].dump();
+      }
+      std::print(" pred:{}\n", pred_taken);
+    }
+#endif
 
 #if 0
     bias = !WeakConf;
@@ -1502,12 +1527,12 @@ public:
     }
 
     if (IMLIcount >= 2) {
-      LSUM += 2 * Gpredict<FNB, LOGFNB>((PC << 2), localoh, Fm, FGEHL);
+      LSUM += 2 * Gpredict<LOGFNB, FNB>(FGEHL);
     }
 #endif
 
 #ifdef IMLISIC
-    LSUM += 2 * Gpredict<INB, LOGINB>(PC, IMLIcount, Im, IGEHL);
+    LSUM += 2 * Gpredict<LOGINB, INB>(IGEHL);
 #else
     long long interIMLIcount = IMLIcount;
     /* just a trick to disable IMLIcount*/
@@ -1519,10 +1544,10 @@ public:
     IMLIcount = 0;
 #endif
 
-    LSUM += Gpredict<GNB, LOGGNB>((PC << 1) + pred_inter /*PC*/, (GHIST << 11) + IMLIcount, Gm, GGEHL);
+    LSUM += Gpredict<LOGGNB, GNB>(GGEHL);
 
 #ifdef LOCALH
-    LSUM += Gpredict<LNB, LOGLNB>(PC, L_shist[INDLOCAL], Lm, LGEHL);
+    LSUM += Gpredict<LOGLNB, LNB>(LGEHL);
 #endif
 #ifdef IMLI
 #ifndef IMLISIC
@@ -1530,7 +1555,7 @@ public:
 #endif
 #endif
 
-    LSUM += Gpredict<PNB, LOGPNB>(PC, GHIST, Pm, PGEHL);
+    LSUM += Gpredict<LOGPNB, PNB>(PGEHL);
 
     bool SCPRED = (LSUM >= 0);
 
@@ -1561,7 +1586,6 @@ public:
 
   void HistoryUpdate(Addr_t PC, Opcode brtype, bool taken, Addr_t target, long long& X, int& Y, std::vector<folded_history>& H,
                      std::vector<folded_history>& G, std::vector<folded_history>& J, long long& LH, long long& GBRHIST) {
-    imli_tag_offset++;
 
     // special treatment for unconditional branchs;
     int maxt;
@@ -1646,14 +1670,38 @@ public:
 
   // PREDICTOR UPDATE
 
-  void updatePredictor(Addr_t PC, bool resolveDir, bool predDir, Addr_t branchTarget, bool no_alloc, bool use_tag_offset, bool use_tag_hybrid, uint32_t taken_counter) {
+  void updatePredictor(Addr_t PC, uint64_t ID, bool resolveDir, bool predDir, Addr_t branchTarget, bool no_alloc, bool use_tag_offset, bool use_tag_hybrid, uint32_t taken_counter) {
     (void)predDir;
-    // Addr_t orig_PC = PC;
-    bool force_offset = (taken_counter>1 && use_tag_hybrid);
+    (void)ID;
+    Addr_t orig_PC = PC;
+    bool force_offset = (taken_counter>=1 && use_tag_hybrid);
     if (use_tag_offset || force_offset) {
+#ifdef IDEAL_BOUNDARY_ONLY_FOR_CTRL
       PC = imli_bpred_hash(lastBoundaryPC, imli_tag_offset);
+#else
+      PC = imli_bpred_hash(lastBoundaryPC, ID-lastBoundaryID);
+#endif
+    }else{
+      PC = imli_bpred_hash(PC);
     }
-    // fmt::print("updatePredict orig_PC:{:x} offset:{} PC:{:x} use_tag_offset:{}\n", orig_PC, imli_tag_offset, PC, use_tag_offset);
+
+#if 0
+    if (GTAG[1] == 17442) {
+      std::print("upd orig_PC:{:x} resolveDir:{} bank:{}\n", orig_PC, resolveDir, HitBank);
+      std::print(" bank:{} ", HitBank);
+      gtable[1][GI[1]].dump();
+      std::print("\n");
+    }
+
+    if (orig_PC == 0x13fbb8 && HitBank && predDir != resolveDir) {
+      std::print("miss orig_PC:{:x} offset:{} PC:{:x} use_tag_offset:{} pred:{} reslv:{} "
+                , orig_PC, imli_tag_offset, PC, use_tag_offset, pred_taken, resolveDir);
+
+      std::print(" bank:{} ", HitBank);
+      gtable[HitBank][GI[HitBank]].dump();
+      std::print("\n");
+    }
+#endif
 
 #ifdef LOOPPREDICTOR
     if (LVALID) {
@@ -1705,21 +1753,21 @@ public:
         IMLIcount = 0;
 #endif
 #endif
-        Gupdate<GNB, LOGGNB>((PC << 1) + pred_inter /*PC*/, resolveDir, (GHIST << 11) + IMLIcount, Gm, GGEHL);
-        Gupdate<LNB, LOGLNB>(PC, resolveDir, L_shist[INDLOCAL], Lm, LGEHL);
+        Gupdate<LOGGNB, GNB>(resolveDir, GGEHL);
+        Gupdate<LOGLNB, LNB>(resolveDir, LGEHL);
 
-        Gupdate<PNB, LOGPNB>(PC, resolveDir, GHIST, Pm, PGEHL);
+        Gupdate<LOGPNB, PNB>(resolveDir, PGEHL);
 
 #ifdef IMLI
 #ifdef IMLISIC
-        Gupdate<INB, LOGINB>(PC, resolveDir, IMLIcount, Im, IGEHL);
+        Gupdate<LOGINB, INB>(resolveDir, IGEHL);
 #else
         IMLIcount = interIMLIcount;
 #endif
 
 #ifdef IMLIOH
         if (IMLIcount >= 2) {
-          Gupdate<FNB, LOGFNB>((PC << 2), resolveDir, localoh, Fm, FGEHL);
+          Gupdate<LOGFNB, FNB>(resolveDir, FGEHL);
         }
 #endif
 
@@ -1908,7 +1956,13 @@ public:
 #endif
     // END TAGE UPDATE
 
-    HistoryUpdate(PC,
+
+    bim_tag_offset++;
+    if (use_tag_offset || force_offset) {
+      imli_tag_offset++;
+    }
+
+    HistoryUpdate(orig_PC,
                   Opcode::iBALU_LBRANCH,
                   resolveDir,
                   branchTarget,
@@ -1922,19 +1976,14 @@ public:
     // END PREDICTOR UPDATE
   }
 
-#define GINDEX                                                                                                                \
-  (((long long)PC) ^ bhist ^ (bhist >> (8 - i)) ^ (bhist >> (16 - 2 * i)) ^ (bhist >> (24 - 3 * i)) ^ (bhist >> (32 - 3 * i)) \
-   ^ (bhist >> (40 - 4 * i)))                                                                                                 \
-      & ((1 << (logs - (i >= (NBR - 2)))) - 1)
-
   template <std::size_t S1, std::size_t S2>
-  int Gpredict(Addr_t PC, long long BHIST, const int* length, const std::array<std::array<int8_t, S1>, (1 << S2)>& tab) {
+  int Gpredict(const std::array<std::array<int8_t, 1<<S1>, S2>& tab) {
     int       PERCSUM = 0;
     const int NBR     = tab.size();
-    const int logs    = tab[0].size();
+    //const int logs    = tab[0].size();
     for (int i = 0; i < NBR; i++) {
-      long long bhist = BHIST & ((long long)((1 << length[i]) - 1));
-      int16_t   ctr   = tab[i][GINDEX];
+      //long long bhist = BHIST & ((long long)((1 << length[i]) - 1));
+      int16_t   ctr   = tab[i][GI[i]];
       PERCSUM += (2 * ctr + 1);
     }
 
@@ -1942,20 +1991,20 @@ public:
   }
 
   template <std::size_t S1, std::size_t S2>
-  void Gupdate(Addr_t PC, bool taken, long long BHIST, const int* length, std::array<std::array<int8_t, S1>, (1 << S2)>& tab) {
+  void Gupdate(bool taken, std::array<std::array<int8_t, (1<<S1)>, S2>& tab) {
     const int NBR  = tab.size();
-    const int logs = tab[0].size();
+    //const int logs = tab[0].size();
     for (int i = 0; i < NBR; i++) {
-      long long bhist = BHIST & ((long long)((1 << length[i]) - 1));
-      ctrupdate(tab[i][GINDEX], taken, PERCWIDTH - (i < (NBR - 1)));
+      //long long bhist = BHIST & ((long long)((1 << length[i]) - 1));
+      ctrupdate(tab[i][GI[i]], taken, PERCWIDTH - (i < (NBR - 1)));
     }
   }
 
-  void TrackOtherInst(Addr_t PC, Opcode opType, Addr_t branchTarget) {
-    fetchBoundaryOffsetOthers(PC);
-
+  void TrackOtherInst(Addr_t orig_PC, Opcode opType, Addr_t branchTarget) {
     bool taken = true;
 
-    HistoryUpdate(PC, opType, taken, branchTarget, phist, ptghist, ch_i, ch_t[0], ch_t[1], L_shist[INDLOCAL], GHIST);
+    //bim_tag_offset++;
+    //imli_tag_offset++;
+    HistoryUpdate(orig_PC, opType, taken, branchTarget, phist, ptghist, ch_i, ch_t[0], ch_t[1], L_shist[INDLOCAL], GHIST);
   }
 };

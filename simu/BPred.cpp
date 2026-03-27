@@ -173,7 +173,6 @@ BPBTB::BPBTB(int32_t i, const std::string& section, const std::string& sname, co
   }
 
   boundaryPC = 0;
-  tag_offset = 0;
   btb_taken_counter = -1;
 
   uint32_t shift_amt = (sizeof(uint32_t) << 3) - btb_tag_size;
@@ -190,10 +189,8 @@ BPBTB::~BPBTB() {
 }
 
 void BPBTB::fetchBoundaryBegin(Dinst* dinst) {
-  if (btb_fetch_predict) {
-    boundaryPC = dinst->getPC();
-  }
-  tag_offset = 0;
+  boundaryPC = dinst->getPC();
+  boundaryID = dinst->getID();
   btb_taken_counter =0;
 }
 
@@ -217,11 +214,10 @@ void BPBTB::updateOnly(Dinst* dinst) {
   cl->inst = dinst->getAddr();
 
 #ifdef BTB_TRACE
-  fmt::print("update  {} ID={} pc={:x} offset={} tag_key={} target={:x} cl:{}\n",
+  fmt::print("update  {} ID={} pc={:x} tag_key={} target={:x} cl:{}\n",
              btb_name,
              dinst->getID(),
              dinst->getPC(),
-             tag_offset,
              tag_key,
              dinst->getAddr(),
              (uint64_t)cl);
@@ -238,10 +234,10 @@ std::tuple<Addr_t, Addr_t> BPBTB::compute_index_tag(Dinst* dinst, bool do_tag_of
   }
 
   uint32_t tag_key;
-  if (do_tag_offset) {
-    tag_key = bpred_hash(boundary_key, tag_offset);
+  if (do_tag_offset && btb_fetch_predict) { // either btb_tag_offset or force_offset
+    tag_key = bpred_hash(boundaryPC, dinst->getID()-boundaryID);
   } else {
-    tag_key = tag_pc_key;
+    tag_key = bpred_hash(dinst->getPC(), 33); //
   }
   tag_key &= btb_tag_mask;
   if (tag_key==0) { // tag zero, means invalid in cache, so avoid this
@@ -259,8 +255,6 @@ std::tuple<Addr_t, Addr_t> BPBTB::compute_index_tag(Dinst* dinst, bool do_tag_of
 
   return {boundary_key, tag_key}; // & tag_mask};
 }
-
-void BPBTB::add_control_offset() { tag_offset++; }
 
 Outcome BPBTB::predict(Dinst* dinst, bool doUpdate, bool doStats) {
   // I(dinst->isTaken());  // BTB should be called only when the branch is taken (predict taken & taken -> call BTB)
@@ -307,11 +301,10 @@ Outcome BPBTB::predict(Dinst* dinst, bool doUpdate, bool doStats) {
     }
     if (predictID) {
 #ifdef BTB_TRACE
-      fmt::print("BTBMiss1 {} ID={} pc={:x} offset={} tag_key={} boundaryPC={:x} update={} predict={:x} target={:x} cl:{}\n",
+      fmt::print("BTBMiss1 {} ID={} pc={:x} tag_key={} boundaryPC={:x} update={} predict={:x} target={:x} cl:{}\n",
                  btb_name,
                  dinst->getID(),
                  dinst->getPC(),
-                 tag_offset,
                  tag_key,
                  boundaryPC,
                  doUpdate,
@@ -322,11 +315,10 @@ Outcome BPBTB::predict(Dinst* dinst, bool doUpdate, bool doStats) {
       return Outcome::Miss;
     } else {
 #ifdef BTB_TRACE
-      fmt::print("Allocat1 {} ID={} pc={:x} offset={} tag_key={} update={} predict={:x} target={:x} cl:{}\n",
+      fmt::print("Allocat1 {} ID={} pc={:x} tag_key={} update={} predict={:x} target={:x} cl:{}\n",
                  btb_name,
                  dinst->getID(),
                  dinst->getPC(),
-                 tag_offset,
                  tag_key,
                  doUpdate,
                  predictID,
@@ -357,11 +349,10 @@ Outcome BPBTB::predict(Dinst* dinst, bool doUpdate, bool doStats) {
 
       if (predictID) {
 #ifdef BTB_TRACE
-        fmt::print("BTBMiss2 {} ID={} pc={:x} offset={} tag_key={} boundaryPC={:x} update={} predict={:x} target={:x} cl:{}\n",
+        fmt::print("BTBMiss2 {} ID={} pc={:x} tag_key={} boundaryPC={:x} update={} predict={:x} target={:x} cl:{}\n",
                    btb_name,
                    dinst->getID(),
                    dinst->getPC(),
-                   tag_offset,
                    tag_key,
                    boundaryPC,
                    doUpdate,
@@ -372,11 +363,10 @@ Outcome BPBTB::predict(Dinst* dinst, bool doUpdate, bool doStats) {
         return Outcome::Miss;
       } else {
 #ifdef BTB_TRACE
-        fmt::print("Allocat2 {} ID={} pc={:x} offset={} tag_key={} update={} predict={:x} target={:x} cl:{}\n",
+        fmt::print("Allocat2 {} ID={} pc={:x} tag_key={} update={} predict={:x} target={:x} cl:{}\n",
                    btb_name,
                    dinst->getID(),
                    dinst->getPC(),
-                   tag_offset,
                    tag_key,
                    doUpdate,
                    predictID,
@@ -396,7 +386,6 @@ Outcome BPBTB::predict(Dinst* dinst, bool doUpdate, bool doStats) {
  */
 
 Outcome BPOracle::predict(Dinst* dinst, bool doUpdate, bool doStats) {
-  btb.add_control_offset();
   if (!dinst->isTaken()) {
     return Outcome::Correct;  // NT
   }
@@ -409,7 +398,6 @@ Outcome BPOracle::predict(Dinst* dinst, bool doUpdate, bool doStats) {
  */
 
 Outcome BPTaken::predict(Dinst* dinst, bool doUpdate, bool doStats) {
-  btb.add_control_offset();
   if (dinst->getInst()->isJump() || dinst->isTaken()) {
     return btb.predict(dinst, doUpdate, doStats);
   }
@@ -428,7 +416,6 @@ Outcome BPTaken::predict(Dinst* dinst, bool doUpdate, bool doStats) {
  */
 
 Outcome BPNotTaken::predict(Dinst* dinst, bool doUpdate, bool doStats) {
-  btb.add_control_offset();
   if (dinst->getInst()->isJump()) {
     return btb.predict(dinst, doUpdate, doStats);
   }
@@ -452,7 +439,6 @@ Outcome BPMiss::predict(Dinst* dinst, bool doUpdate, bool doStats) {
  */
 
 Outcome BPNotTakenEnhanced::predict(Dinst* dinst, bool doUpdate, bool doStats) {
-  btb.add_control_offset();
   if (dinst->getInst()->isJump()) {
     return btb.predict(dinst, doUpdate, doStats);  // backward branches predicted as taken (loops)
   }
@@ -489,7 +475,6 @@ void BP2bitL0::fetchBoundaryBegin(Dinst* dinst) {
 void BP2bitL0::fetchBoundaryEnd() { pc = 0; }
 
 Outcome BP2bitL0::predict(Dinst* dinst, bool doUpdate, bool doStats) {
-  btb.add_control_offset();
   // NOTE: 2 bit is simple, no predecode of instruction type (isJump() special code)
 
   if (one_prediction_done) {
@@ -538,7 +523,6 @@ void BP2bit::fetchBoundaryBegin(Dinst* dinst) { pc = dinst->getPC(); }
 void BP2bit::fetchBoundaryEnd() { pc = 0; }
 
 Outcome BP2bit::predict(Dinst* dinst, bool doUpdate, bool doStats) {
-  btb.add_control_offset();
   // NOTE: 2 bit is simple, no predecode of instruction type (isJump() special code)
 
   bool   taken = dinst->isTaken();
@@ -571,7 +555,6 @@ BPLdbp::BPLdbp(int32_t i, const std::string& section, const std::string& sname, 
 }
 
 Outcome BPLdbp::predict(Dinst* dinst, bool doUpdate, bool doStats) {
-  btb.add_control_offset();
 #if 1
   if (dinst->getInst()->getOpcode() != Opcode::iBALU_LBRANCH) {  // don't bother about jumps and calls
     return Outcome::None;
@@ -672,7 +655,6 @@ BPTData::BPTData(int32_t i, const std::string& section, const std::string& sname
     , tDataTable(section, Config::get_power2(section, "size", 1), Config::get_integer(section, "bits", 1, 7)) {}
 
 Outcome BPTData::predict(Dinst* dinst, bool doUpdate, bool doStats) {
-  btb.add_control_offset();
   if (dinst->getInst()->isJump()) {
     return btb.predict(dinst, doUpdate, doStats);
   }
@@ -705,7 +687,8 @@ Outcome BPTData::predict(Dinst* dinst, bool doUpdate, bool doStats) {
 }
 
 BPTahead::BPTahead(int32_t i, const std::string& section, const std::string& sname)
-    : BPred(i, section, sname, "tahead"), btb(i, section, sname), FetchPredict(Config::get_bool(section, "fetch_predict")) {
+    : BPred(i, section, sname, "tahead"), btb(i, section, sname), FetchPredict(Config::get_bool(section, "fetch_predict"))
+    , btb_fetch_predict(Config::get_bool(section, "btb_fetch_predict")) {
   // int FetchWidth = Config::get_power2("soc", "core", i, "fetch_width", 1);
   // FIXME: I(FetchWidth == TAHEAD_MAXBR);
 
@@ -755,7 +738,6 @@ void BPTahead::fetchBoundaryEnd() {
 }
 
 Outcome BPTahead::predict(Dinst* dinst, bool doUpdate, bool doStats) {
-  btb.add_control_offset();
   if (dinst->getInst()->isJump() || dinst->getInst()->isFuncRet()) {
 #ifdef TAHEAD_DELAY_UPDATE
     pending.emplace_back(true, dinst->getPC(), dinst->getInst()->getOpcode(), dinst->isTaken(), true, dinst->getAddr());
@@ -790,7 +772,8 @@ Outcome BPTahead::predict(Dinst* dinst, bool doUpdate, bool doStats) {
 }
 
 BPTahead1::BPTahead1(int32_t i, const std::string& section, const std::string& sname)
-    : BPred(i, section, sname, "tahead1"), btb(i, section, sname), FetchPredict(Config::get_bool(section, "fetch_predict")) {
+    : BPred(i, section, sname, "tahead1"), btb(i, section, sname), FetchPredict(Config::get_bool(section, "fetch_predict"))
+    , btb_fetch_predict(Config::get_bool(section, "btb_fetch_predict")) {
   // int FetchWidth = Config::get_power2("soc", "core", i, "fetch_width", 1);
   // FIXME: I(FetchWidth == TAHEAD1_MAXBR);
 
@@ -842,7 +825,6 @@ void BPTahead1::fetchBoundaryEnd() {
 }
 
 Outcome BPTahead1::predict(Dinst* dinst, bool doUpdate, bool doStats) {
-  btb.add_control_offset();
   if (dinst->getInst()->isJump() || dinst->getInst()->isFuncRet()) {
 #ifdef TAHEAD1_DELAY_UPDATE
     pending.emplace_back(true, dinst->getPC(), dinst->getInst()->getOpcode(), dinst->isTaken(), true, dinst->getAddr());
@@ -893,6 +875,7 @@ BPIMLI::BPIMLI(int32_t i, const std::string& section, const std::string& sname)
     : BPred(i, section, sname, "imli")
     , btb(i, section, sname)
     , FetchPredict(Config::get_bool(section, "fetch_predict"))
+    , btb_fetch_predict(Config::get_bool(section, "btb_fetch_predict"))
     , use_tag_offset(Config::get_bool(section, "use_tag_offset"))
     , use_tag_hybrid(Config::get_bool(section, "use_tag_hybrid")) {
 
@@ -917,10 +900,12 @@ BPIMLI::BPIMLI(int32_t i, const std::string& section, const std::string& sname)
 
 void BPIMLI::fetchBoundaryBegin(Dinst* dinst) {
   if (FetchPredict) {
-    imli->fetchBoundaryBegin(dinst->getPC());
+    imli->fetchBoundaryBegin(dinst->getPC(), dinst->getID());
     boundaryPC = dinst->getPC();
   }
-  btb.fetchBoundaryBegin(dinst);
+  if (btb_fetch_predict) {
+    btb.fetchBoundaryBegin(dinst);
+  }
   taken_counter=0;
 }
 
@@ -928,16 +913,21 @@ void BPIMLI::fetchBoundaryEnd() {
   if (FetchPredict) {
     imli->fetchBoundaryEnd();
   }
-  btb.fetchBoundaryEnd();
+  if (btb_fetch_predict) {
+    btb.fetchBoundaryEnd();
+  }
   taken_counter = -1;
 }
 
 Outcome BPIMLI::predict(Dinst* dinst, bool doUpdate, bool doStats) {
-  btb.add_control_offset();
   if (!FetchPredict) {
     boundaryPC = dinst->getPC();
-    imli->fetchBoundaryBegin(boundaryPC);
+    imli->fetchBoundaryBegin(boundaryPC, dinst->getID());
   }
+  if (!btb_fetch_predict) {
+    btb.fetchBoundaryBegin(dinst);
+  }
+
   I(taken_counter>=0 && taken_counter < 1024); // Who does over 1024 taken fetch???
 
   if (dinst->getInst()->isJump() || dinst->getInst()->isFuncRet()) {
@@ -952,7 +942,7 @@ Outcome BPIMLI::predict(Dinst* dinst, bool doUpdate, bool doStats) {
   // bool     bias = false;
   Addr_t   pc     = dinst->getPC();
   uint32_t sign   = 0;
-  bool     ptaken = imli->getPrediction(pc, bias, sign, use_tag_offset, use_tag_hybrid, taken_counter);  // pass taken for statistics
+  bool     ptaken = imli->getPrediction(pc, dinst->getID(), bias, sign, use_tag_offset, use_tag_hybrid, taken_counter);  // pass taken for statistics
   dinst->setBiasBranch(bias);
 
   bool no_alloc = true;
@@ -961,11 +951,14 @@ Outcome BPIMLI::predict(Dinst* dinst, bool doUpdate, bool doStats) {
   }
 
   if (doUpdate) {
-    imli->updatePredictor(pc, taken, ptaken, dinst->getAddr(), no_alloc, use_tag_offset, use_tag_hybrid, taken_counter);
+    imli->updatePredictor(pc, dinst->getID(), taken, ptaken, dinst->getAddr(), no_alloc, use_tag_offset, use_tag_hybrid, taken_counter);
   }
 
   if (!FetchPredict) {
     imli->fetchBoundaryEnd();
+  }
+  if (!btb_fetch_predict) {
+    btb.fetchBoundaryEnd();
   }
 
   if (taken != ptaken) {
@@ -985,6 +978,7 @@ BPSuperbp::BPSuperbp(int32_t i, const std::string& section, const std::string& s
     : BPred(i, section, sname, "superbp")
     , btb(i, section, sname)
     , FetchPredict(Config::get_bool(section, "fetch_predict"))
+    , btb_fetch_predict(Config::get_bool(section, "btb_fetch_predict"))
     , gshare_missed(fmt::format("P({})_{}_BPred:gshare_missed", i, sname))
     , gshare_correct(fmt::format("P({})_{}_BPred:gshare_correct", i, sname))
     , gshare_incorrect(fmt::format("P({})_{}_BPred:gshare_incorrect", i, sname)) {
@@ -1062,20 +1056,23 @@ void BPSuperbp::fetchBoundaryBegin(Dinst* dinst) {
   if (FetchPredict) {
     superbp_p->fetchBoundaryBegin(dinst->getPC());
   }
-  btb.fetchBoundaryBegin(dinst);
+  if (btb_fetch_predict) {
+    btb.fetchBoundaryBegin(dinst);
+  }
 }
 
 void BPSuperbp::fetchBoundaryEnd() {
   if (FetchPredict) {
     superbp_p->fetchBoundaryEnd();
   }
-  btb.fetchBoundaryEnd();
+  if (btb_fetch_predict) {
+    btb.fetchBoundaryEnd();
+  }
 }
 
-#define TARGET2_FROM_GSHARE
+//#define TARGET2_FROM_GSHARE
 // uint64_t gshare_missed, gshare_correct, gshare_incorrect;
 Outcome BPSuperbp::predict(Dinst* dinst, bool doUpdate, bool doStats) {
-  btb.add_control_offset();
 #ifndef TARGET2_FROM_GSHARE
   if (dinst->getInst()->isJump() || dinst->getInst()->isFuncRet()) {
     dinst->setBiasBranch(true);
@@ -1095,6 +1092,9 @@ Outcome BPSuperbp::predict(Dinst* dinst, bool doUpdate, bool doStats) {
 
   if (!FetchPredict) {
     superbp_p->fetchBoundaryBegin(dinst->getPC());
+  }
+  if (!btb_fetch_predict) {
+    btb.fetchBoundaryBegin(dinst);
   }
   bool     gshare_use = false, batage_pred = false, batage_conf = false;
   bool     ptaken = false;
@@ -1166,6 +1166,9 @@ Outcome BPSuperbp::predict(Dinst* dinst, bool doUpdate, bool doStats) {
   if (!FetchPredict) {
     superbp_p->fetchBoundaryEnd();
   }
+  if (!btb_fetch_predict) {
+    btb.fetchBoundaryBegin(dinst);
+  }
 
   if (taken != ptaken) {
     if (doUpdate) {
@@ -1210,7 +1213,6 @@ BP2level::BP2level(int32_t i, const std::string& section, const std::string& sna
 BP2level::~BP2level() { delete historyTable; }
 
 Outcome BP2level::predict(Dinst* dinst, bool doUpdate, bool doStats) {
-  btb.add_control_offset();
   if (dinst->getInst()->isJump()) {
     if (useDolc) {
       dolc.update(dinst->getPC());
@@ -1284,7 +1286,6 @@ BPHybrid::BPHybrid(int32_t i, const std::string& section, const std::string& sna
 BPHybrid::~BPHybrid() {}
 
 Outcome BPHybrid::predict(Dinst* dinst, bool doUpdate, bool doStats) {
-  btb.add_control_offset();
   if (dinst->getInst()->isJump()) {
     return btb.predict(dinst, doUpdate, doStats);
   }
@@ -1368,7 +1369,6 @@ BP2BcgSkew::~BP2BcgSkew() {
 }
 
 Outcome BP2BcgSkew::predict(Dinst* dinst, bool doUpdate, bool doStats) {
-  btb.add_control_offset();
   if (dinst->getInst()->isJump()) {
     return btb.predict(dinst, doUpdate, doStats);
   }
@@ -1494,7 +1494,6 @@ BPyags::BPyags(int32_t i, const std::string& section, const std::string& sname)
 BPyags::~BPyags() {}
 
 Outcome BPyags::predict(Dinst* dinst, bool doUpdate, bool doStats) {
-  btb.add_control_offset();
   if (dinst->getInst()->isJump()) {
     return btb.predict(dinst, doUpdate, doStats);
   }
@@ -1628,7 +1627,6 @@ BPOgehl::BPOgehl(int32_t i, const std::string& section, const std::string& sname
 BPOgehl::~BPOgehl() {}
 
 Outcome BPOgehl::predict(Dinst* dinst, bool doUpdate, bool doStats) {
-  btb.add_control_offset();
   if (dinst->getInst()->isJump()) {
     return btb.predict(dinst, doUpdate, doStats);
   }

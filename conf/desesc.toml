@@ -6,7 +6,7 @@
 #range = [0,5000]
 #range = [0,313000]
 #range = [3100000,3200000]
-range = [100000,900000]
+range = [1000000,2000000]
 
 
 [soc]
@@ -70,6 +70,7 @@ bp_addr_shift = 0      # bits shifted by branch predictor PC
 ras_size      = 32
 ras_prefetch  = false
 
+btb_fetch_predict = true
 fetch_predict     = true   # Not a prediction per instruction
 
 btb_fetch_predict = true
@@ -94,7 +95,8 @@ delay             = 2
 SBP_NUMG = 6
 LOG2FETCHWIDTH = 3
 NUM_TAKEN_BRANCHES = 1
-ORIG_ENTRIES_PER_TABLE = [512, 512, 512, 512, 512, 512]
+#SUPERBP
+ORIG_ENTRIES_PER_TABLE = [832, 448, 448, 832, 832, 832]
 INFO_PER_ENTRY = [1, 1, 1, 1, 1, 1]
 
 # TODO - Check
@@ -106,6 +108,7 @@ bp_addr_shift = 0      # bits shifted by branch predictor PC
 ras_size      = 32
 ras_prefetch  = false
 
+btb_fetch_predict = true
 fetch_predict     = true   # Not a prediction per instruction
 
 btb_fetch_predict = true
@@ -177,6 +180,7 @@ ras_size      = 32
 ras_prefetch  = false
 
 # IMLI fetch ideal 2 taken branch, set fetch_predict false
+btb_fetch_predict = true
 fetch_predict     = true   # Not a prediction per instruction
 
 btb_fetch_predict = true
@@ -205,6 +209,9 @@ NUM_PAGES_PER_GROUP = 8
 PAGE_OFFSET_SIZE = 6
 PAGE_TABLE_INDEX_SIZE = 6
 
+#SUPERBP
+ORIG_ENTRIES_PER_TABLE = [1884, 3040, 1116, 924, 1884, 1308, 3808, 924, 2656, 4192, 732, 732]
+INFO_PER_ENTRY = [2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 1, 1]
 #BOOM
 #ORIG_ENTRIES_PER_TABLE = [1168, 1168, 1168, 1168, 1168, 1168, 1168, 1168, 1168, 1168, 1168, 1168]
 #TODO - How to get this from FETCHWIDTH
@@ -212,9 +219,6 @@ PAGE_TABLE_INDEX_SIZE = 6
 #XIANGSHAN
 #ORIG_ENTRIES_PER_TABLE = [1168, 1168, 1168, 1168, 1168, 1168, 1168, 1168, 1168, 1168, 1168, 1168]
 #INFO_PER_ENTRY = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
-#SUPERBP
-ORIG_ENTRIES_PER_TABLE = [784, 208, 400, 1168, 976, 592, 784, 1744, 2895, 1936, 1360, 976]
-INFO_PER_ENTRY = [2, 1, 1, 4, 1, 1, 2, 2, 2, 1, 1, 1]
 
 [accel_entry]
 caches        = true  # set true to enable caches...

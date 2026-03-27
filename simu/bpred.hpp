@@ -134,11 +134,11 @@ public:
   Outcome doPredict(Dinst* dinst, bool doStats = true) {
     I(taken_counter>=0);
 
-    if (dinst->isTaken()) {
-      taken_counter++;
-    }
-
     Outcome pred = predict(dinst, true, doStats);
+
+    if (dinst->isTaken()) {
+      taken_counter++; // increase after predict
+    }
     if (pred == Outcome::None) {
       return pred;
     }
@@ -206,7 +206,7 @@ private:
 
   BTBCache* data;
   Addr_t    boundaryPC;
-  uint32_t  tag_offset;
+  uint64_t  boundaryID;
 
   std::tuple<Addr_t, Addr_t> compute_index_tag(Dinst* dinst, bool do_tag_offset, bool doUpdate);
 
@@ -331,6 +331,7 @@ private:
   std::unique_ptr<IMLIBest> imli;
 
   const bool FetchPredict;
+  const bool btb_fetch_predict;
   const bool use_tag_offset;
   const bool use_tag_hybrid;
 
@@ -361,6 +362,7 @@ private:
   std::unique_ptr<Tahead> tahead;
 
   const bool FetchPredict;
+  const bool btb_fetch_predict;
 
 protected:
 public:
@@ -389,6 +391,7 @@ private:
   std::unique_ptr<Tahead1> tahead1;
 
   const bool FetchPredict;
+  const bool btb_fetch_predict;
 
 protected:
 public:
@@ -407,6 +410,7 @@ private:
 
   std::unique_ptr<PREDICTOR> superbp_p;
   const bool                 FetchPredict;
+  const bool btb_fetch_predict;
   Stats_cntr                 gshare_missed;
   Stats_cntr                 gshare_correct;
   Stats_cntr                 gshare_incorrect;

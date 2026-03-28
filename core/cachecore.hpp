@@ -97,11 +97,11 @@ protected:
       , assoc(a)
       , log2Assoc(log2i(a))
       , log2AddrLs(log2i(b / u))
-      , maskAssoc(a - 1)
-      , sets((s / b) / a)
+      , maskAssoc(roundUpPower2(a) - 1)
+      , sets(roundUpPower2(s / b) / roundUpPower2(a))
       , maskSets(sets - 1)
       , log2Sets(log2i(sets))
-      , numLines(s / b)
+      , numLines(roundUpPower2(roundUpPower2(a)/a) * s / b)
       , xorIndex(xr) {
     // TODO : assoc and sets must be a power of 2
   }
@@ -809,7 +809,7 @@ CacheGeneric<State, Addr_t>* CacheGeneric<State, Addr_t>::create(const std::stri
   auto ship_sec        = fmt::format("{}ship_sign_bits", fmt_append);
 
   int32_t s  = Config::get_power2(section, size_sec);
-  int32_t a  = Config::get_power2(section, assoc_sec);
+  int32_t a  = Config::get_integer(section, assoc_sec);
   int32_t b  = Config::get_power2(section, line_size_sec, 1, 1024);
   bool    xr = false;
   if (Config::has_entry(section, xor_sec)) {

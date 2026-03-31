@@ -122,12 +122,16 @@ Outcome BPRas::predict(Dinst* dinst, bool doUpdate, bool doStats) {
 #endif
 
     if (stack[index] == dinst->getAddr() || (stack[index] + 4) == dinst->getAddr() || (stack[index] + 2) == dinst->getAddr()) {
+      // std::print("RET: hit  top:{:x} target:{:x}\n", stack[index],dinst->getAddr());
       return Outcome::Correct;
     }
+
+    // std::print("RET: miss top:{:x} target:{:x}\n", stack[index], dinst->getAddr());
 
     return Outcome::Miss;
   } else if (dinst->getInst()->isFuncCall() && RasSize) {
     if (doUpdate) {
+      // std::print("CALL push:{:x}\n", dinst->getPC());
       stack[index] = dinst->getPC();
       index++;
 
@@ -211,7 +215,7 @@ void BPBTB::updateOnly(Dinst* dinst) {
   BTBCache::CacheLine* cl = data->fillLine(boundary_key, tag_key, 0xdeaddead);
   I(cl);
 
-  cl->inst = dinst->getAddr();
+  cl->targetPC = dinst->getAddr();
 
 #ifdef BTB_TRACE
   fmt::print("update  {} ID={} pc={:x} tag_key={} target={:x} cl:{}\n",
@@ -290,14 +294,14 @@ Outcome BPBTB::predict(Dinst* dinst, bool doUpdate, bool doStats) {
   }
 
   if (cl) {
-    Addr_t predictID = cl->inst;
+    Addr_t predictID = cl->targetPC;
     if (predictID == dinst->getAddr()) {
       nHit.inc(doStats && doUpdate && dinst->has_stats());
       return Outcome::Correct;
     }
 
     if (doUpdate) {
-      cl->inst = dinst->getAddr();
+      cl->targetPC = dinst->getAddr();
     }
     if (predictID) {
 #ifdef BTB_TRACE
@@ -312,20 +316,20 @@ Outcome BPBTB::predict(Dinst* dinst, bool doUpdate, bool doStats) {
                  dinst->getAddr(),
                  (uint64_t)cl);
 #endif
+      nMiss.inc(doStats && doUpdate && dinst->has_stats());
       return Outcome::Miss;
-    } else {
-#ifdef BTB_TRACE
-      fmt::print("Allocat1 {} ID={} pc={:x} tag_key={} update={} predict={:x} target={:x} cl:{}\n",
-                 btb_name,
-                 dinst->getID(),
-                 dinst->getPC(),
-                 tag_key,
-                 doUpdate,
-                 predictID,
-                 dinst->getAddr(),
-                 (uint64_t)cl);
-#endif
     }
+#ifdef BTB_TRACE
+    fmt::print("Allocat1 {} ID={} pc={:x} tag_key={} update={} predict={:x} target={:x} cl:{}\n",
+               btb_name,
+               dinst->getID(),
+               dinst->getPC(),
+               tag_key,
+               doUpdate,
+               predictID,
+               dinst->getAddr(),
+               (uint64_t)cl);
+#endif
   }
   if (!cl && btb_tag_hybrid) { // Also try with offset
     std::tie(boundary_key, tag_key) = compute_index_tag(dinst, true, doUpdate && btb_taken_counter>1);
@@ -337,14 +341,14 @@ Outcome BPBTB::predict(Dinst* dinst, bool doUpdate, bool doStats) {
     }
 
     if (cl) {
-      Addr_t predictID = cl->inst;
+      Addr_t predictID = cl->targetPC;
       if (predictID == dinst->getAddr()) {
         nHit.inc(doStats && doUpdate && dinst->has_stats());
         return Outcome::Correct;
       }
 
       if (doUpdate && btb_taken_counter>1) {
-        cl->inst = dinst->getAddr();
+        cl->targetPC = dinst->getAddr();
       }
 
       if (predictID) {
@@ -360,8 +364,9 @@ Outcome BPBTB::predict(Dinst* dinst, bool doUpdate, bool doStats) {
                    dinst->getAddr(),
                    (uint64_t)cl);
 #endif
+        nMiss.inc(doStats && doUpdate && dinst->has_stats());
         return Outcome::Miss;
-      } else {
+      }
 #ifdef BTB_TRACE
         fmt::print("Allocat2 {} ID={} pc={:x} tag_key={} update={} predict={:x} target={:x} cl:{}\n",
                    btb_name,
@@ -373,7 +378,6 @@ Outcome BPBTB::predict(Dinst* dinst, bool doUpdate, bool doStats) {
                    dinst->getAddr(),
                    (uint64_t)cl);
 #endif
-      }
     }
   }
 
@@ -900,8 +904,8 @@ BPIMLI::BPIMLI(int32_t i, const std::string& section, const std::string& sname)
 
 void BPIMLI::fetchBoundaryBegin(Dinst* dinst) {
   if (FetchPredict) {
-    imli->fetchBoundaryBegin(dinst->getPC(), dinst->getID());
     boundaryPC = dinst->getPC();
+    imli->fetchBoundaryBegin(boundaryPC, dinst->getID());
   }
   if (btb_fetch_predict) {
     btb.fetchBoundaryBegin(dinst);

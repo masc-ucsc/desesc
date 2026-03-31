@@ -194,12 +194,12 @@ private:
   public:
     BTBState(int32_t lineSize) {
       (void)lineSize;
-      inst = 0;
+      targetPC = 0;
     }
 
-    Addr_t inst;
+    Addr_t targetPC;
 
-    bool operator==(BTBState s) const { return inst == s.inst; }
+    //bool operator==(BTBState s) const { return targetPC == s.targetPC; }
   };
 
   typedef CacheGeneric<BTBState, Addr_t> BTBCache;

@@ -3,6 +3,7 @@
 #include "emul_dromajo.hpp"
 
 #include <filesystem>
+#include <print>
 
 #include "absl/strings/str_split.h"
 
@@ -182,7 +183,7 @@ Dinst* Emul_dromajo::peek(Hartid_t fid) {
         } else if (funct7 == 1 && rs2 == 0) {  // C.JALR
           src2   = LREG_NoDependence;
           dst1   = static_cast<RegType>(1);
-          opcode = Opcode::iBALU_RJUMP;
+          opcode = Opcode::iBALU_RCALL;
         } else {
           if (funct7 == 0) {
             src1 = static_cast<RegType>(0);
@@ -372,6 +373,7 @@ Dinst* Emul_dromajo::peek(Hartid_t fid) {
       }
   }
 
+
   I(src1 != RegType::LREG_INVALID);
   I(src2 != RegType::LREG_INVALID);
   I(dst1 != RegType::LREG_INVALID);
@@ -389,6 +391,18 @@ Dinst* Emul_dromajo::peek(Hartid_t fid) {
              || opcode == Opcode::iBALU_RCALL || opcode == Opcode::iBALU_RET) {
     paddr = last[fid].next_pc;
   }
+
+#ifdef TRACE_CALL_RET
+  if (opcode == Opcode::iBALU_RET) {
+    std::print("opcode ret   pc:{:x} next:{:x} insn_raw:{:x}\n", last[fid].pc, paddr, insn_raw);
+  }else if (opcode == Opcode::iBALU_LCALL ) {
+    std::print("opcode lcall pc:{:x} insn_raw:{:x}\n", last[fid].pc, insn_raw);
+  }else if (opcode == Opcode::iBALU_RCALL) {
+    std::print("opcode rcall pc:{:x} insn_raw:{:x}\n", last[fid].pc, insn_raw);
+  }else if (paddr) {
+    std::print("opcode {}    pc:{:x} target:{:x} insn_raw:{:x}\n", (int)opcode, last[fid].pc, paddr, insn_raw);
+  }
+#endif
 
   if (detail > 0) {
     --detail;

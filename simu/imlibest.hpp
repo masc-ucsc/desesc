@@ -33,8 +33,8 @@
 
 #include <inttypes.h>
 #include <math.h>
-#include <print>
 
+#include <print>
 #include <vector>
 // Rotate/XOR cascade mixer (no multiplies). Produces 64-bit mixed value.
 [[nodiscard]] constexpr std::uint64_t imli_bpred_hash(Addr_t x) noexcept {
@@ -302,7 +302,12 @@ public:
   int      OLENGTH;
   int      OUTPOINT;
 
-  folded_history() {}
+  folded_history() {
+    comp     = 0;
+    CLENGTH  = 0;
+    OLENGTH  = 0;
+    OUTPOINT = 0;
+  }
 
   void init(int original_length, int compressed_length) {
     comp     = 0;
@@ -422,14 +427,14 @@ public:
   bool     thit;
   bool     hit;
 
-  gentry() {}
+  gentry() { allocate(1); }
 
   void allocate(int n) {
 #ifndef SUBENTRIES
     n = 1;
 #endif
     nsub = n;
-    ctr.resize(n + 1, 0);  // +1, last means unused
+    ctr.resize(n + 1, 1);  // +1, last means unused
     u.resize(n + 1, 0);
     boff.resize(n + 1, 0xFFFF);
     tag = 0;
@@ -1279,7 +1284,7 @@ public:
 
     GI[0] = lastBoundaryPC >> 2;  // Remove 2 lower useless bits
     for (int i = 1; i <= nhist; i++) {
-      GI[i]   = gindex(lastBoundaryPC, i, phist);
+      GI[i] = gindex(lastBoundaryPC, i, phist);
     }
   }
 
@@ -1288,8 +1293,8 @@ public:
     AltBank = 0;
 
     for (int i = 1; i <= nhist; i++) {
-      auto tag   = imli_bpred_hash(gindex(PC, i-1, phist), PC);
-      GTAG[i] = tag & ((1 << TB[i]) - 1);
+      auto tag = imli_bpred_hash(gindex(PC, i - 1, phist), PC);
+      GTAG[i]  = tag & ((1 << TB[i]) - 1);
     }
   }
 
@@ -1390,7 +1395,7 @@ public:
   void fetchBoundaryBegin(Addr_t PC, uint64_t ID) {
     lastBoundaryPC  = imli_bpred_hash(PC);
     imli_tag_offset = 0;
-    bim_tag_offset = 0;
+    bim_tag_offset  = 0;
 #ifdef SIMPLER_DOLC_PATH
     lastBoundarySign = PC;
 #else
@@ -1422,11 +1427,11 @@ public:
     (void)orig_ID;
 
 #ifdef IDEAL_BOUNDARY_ONLY_FOR_CTRL
-    bimodal.select(GI[0],bim_tag_offset);
+    bimodal.select(GI[0], bim_tag_offset);
 #elifdef IDEAL_REHASH_BIM_BOUNDARY
     bimodal.select(imli_bpred_hash(orig_PC));
 #else
-    bimodal.select(GI[0],orig_ID-lastBoundaryID);
+    bimodal.select(GI[0], orig_ID - lastBoundaryID);
 #endif
 
     for (int i = 1; i <= nhist; i++) {
@@ -1434,17 +1439,18 @@ public:
     }
   }
 
-  bool getPrediction(Addr_t orig_PC, uint64_t orig_ID, bool& bias, uint32_t& sign, bool use_tag_offset, bool use_tag_hybrid, uint32_t taken_counter) {
-    bool force_offset = (taken_counter>=1 && use_tag_hybrid);
+  bool getPrediction(Addr_t orig_PC, uint64_t orig_ID, bool& bias, uint32_t& sign, bool use_tag_offset, bool use_tag_hybrid,
+                     uint32_t taken_counter) {
+    bool force_offset = (taken_counter >= 1 && use_tag_hybrid);
 
     Addr_t PC;
     if (use_tag_offset || force_offset) {
 #ifdef IDEAL_BOUNDARY_ONLY_FOR_CTRL
       PC = imli_bpred_hash(lastBoundaryPC, imli_tag_offset);
 #else
-      PC = imli_bpred_hash(lastBoundaryPC, orig_ID-lastBoundaryID);
+      PC = imli_bpred_hash(lastBoundaryPC, orig_ID - lastBoundaryID);
 #endif
-    }else{
+    } else {
       PC = imli_bpred_hash(orig_PC);
     }
 
@@ -1586,7 +1592,6 @@ public:
 
   void HistoryUpdate(Addr_t PC, Opcode brtype, bool taken, Addr_t target, long long& X, int& Y, std::vector<folded_history>& H,
                      std::vector<folded_history>& G, std::vector<folded_history>& J, long long& LH, long long& GBRHIST) {
-
     // special treatment for unconditional branchs;
     int maxt;
     if (brtype == Opcode::iBALU_LBRANCH) {
@@ -1639,8 +1644,8 @@ public:
       J[i].set(sign2);  // Not used in DOLC
     }
 #else
-    int T            = ((PC) << 1) + taken;
-    int PATH         = PC;
+    int T    = ((PC) << 1) + taken;
+    int PATH = PC;
 #endif
 
     for (int t = 0; t < maxt; t++) {
@@ -1670,18 +1675,19 @@ public:
 
   // PREDICTOR UPDATE
 
-  void updatePredictor(Addr_t PC, uint64_t ID, bool resolveDir, bool predDir, Addr_t branchTarget, bool no_alloc, bool use_tag_offset, bool use_tag_hybrid, uint32_t taken_counter) {
+  void updatePredictor(Addr_t PC, uint64_t ID, bool resolveDir, bool predDir, Addr_t branchTarget, bool no_alloc,
+                       bool use_tag_offset, bool use_tag_hybrid, uint32_t taken_counter) {
     (void)predDir;
     (void)ID;
-    Addr_t orig_PC = PC;
-    bool force_offset = (taken_counter>=1 && use_tag_hybrid);
+    Addr_t orig_PC      = PC;
+    bool   force_offset = (taken_counter >= 1 && use_tag_hybrid);
     if (use_tag_offset || force_offset) {
 #ifdef IDEAL_BOUNDARY_ONLY_FOR_CTRL
       PC = imli_bpred_hash(lastBoundaryPC, imli_tag_offset);
 #else
-      PC = imli_bpred_hash(lastBoundaryPC, ID-lastBoundaryID);
+      PC = imli_bpred_hash(lastBoundaryPC, ID - lastBoundaryID);
 #endif
-    }else{
+    } else {
       PC = imli_bpred_hash(PC);
     }
 
@@ -1956,7 +1962,6 @@ public:
 #endif
     // END TAGE UPDATE
 
-
     bim_tag_offset++;
     if (use_tag_offset || force_offset) {
       imli_tag_offset++;
@@ -1977,13 +1982,13 @@ public:
   }
 
   template <std::size_t S1, std::size_t S2>
-  int Gpredict(const std::array<std::array<int8_t, 1<<S1>, S2>& tab) {
+  int Gpredict(const std::array<std::array<int8_t, 1 << S1>, S2>& tab) {
     int       PERCSUM = 0;
     const int NBR     = tab.size();
-    //const int logs    = tab[0].size();
+    // const int logs    = tab[0].size();
     for (int i = 0; i < NBR; i++) {
-      //long long bhist = BHIST & ((long long)((1 << length[i]) - 1));
-      int16_t   ctr   = tab[i][GI[i]];
+      // long long bhist = BHIST & ((long long)((1 << length[i]) - 1));
+      int16_t ctr = tab[i][GI[i]];
       PERCSUM += (2 * ctr + 1);
     }
 
@@ -1991,11 +1996,11 @@ public:
   }
 
   template <std::size_t S1, std::size_t S2>
-  void Gupdate(bool taken, std::array<std::array<int8_t, (1<<S1)>, S2>& tab) {
-    const int NBR  = tab.size();
-    //const int logs = tab[0].size();
+  void Gupdate(bool taken, std::array<std::array<int8_t, (1 << S1)>, S2>& tab) {
+    const int NBR = tab.size();
+    // const int logs = tab[0].size();
     for (int i = 0; i < NBR; i++) {
-      //long long bhist = BHIST & ((long long)((1 << length[i]) - 1));
+      // long long bhist = BHIST & ((long long)((1 << length[i]) - 1));
       ctrupdate(tab[i][GI[i]], taken, PERCWIDTH - (i < (NBR - 1)));
     }
   }
@@ -2003,8 +2008,8 @@ public:
   void TrackOtherInst(Addr_t orig_PC, Opcode opType, Addr_t branchTarget) {
     bool taken = true;
 
-    //bim_tag_offset++;
-    //imli_tag_offset++;
+    // bim_tag_offset++;
+    // imli_tag_offset++;
     HistoryUpdate(orig_PC, opType, taken, branchTarget, phist, ptghist, ch_i, ch_t[0], ch_t[1], L_shist[INDLOCAL], GHIST);
   }
 };

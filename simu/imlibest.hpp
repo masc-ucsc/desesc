@@ -968,6 +968,13 @@ public:
 #endif
 
 #ifdef IMLIOH
+    localoh = 0;
+    for (int i = 0; i < PASTSIZE; i++) {
+      PIPE[i] = 0;
+    }
+    for (int i = 0; i < OHHISTTABLESIZE; i++) {
+      ohhisttable[i] = 0;
+    }
     for (int i = 0; i < FNB; i++) {
       Fm[i] = 2;
     }
@@ -1026,7 +1033,7 @@ public:
     Seed  = 0;
 
     for (int i = 0; i < HISTBUFFERLENGTH; i++) {
-      ghist[0] = 0;
+      ghist[i] = 0;
     }
     ptghist = 0;
 
@@ -1090,8 +1097,14 @@ public:
 
     for (int i = 0; i < NSECLOCAL; i++) {
       S_slhist[i] = 0;
+      T_slhist[i] = 0;
     }
-    GHIST = 0;
+    GHIST      = 0;
+    IMLIcount  = 0;
+    pthstack   = 0;
+    FirstH     = 0;
+    SecondH    = 0;
+    ThirdH     = 0;
 
 #ifndef POSTPREDICT
     for (int i = 0; i < SIZEUSEALT; i++) {

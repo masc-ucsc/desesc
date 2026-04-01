@@ -67,9 +67,9 @@
 #include "dinst.hpp"  // Addr_t and Opcode
 #include "dolc.hpp"
 
-// #define MEDIUM_TAGE 1
+#define MEDIUM_TAGE 1
 // #define IMLI_150K 1
-#define IMLI_256K 1
+// #define IMLI_256K 1
 // #define MEGA_IMLI 1
 
 #if defined(MEGA_IMLI) && defined(MEDIUM_TAGE)
@@ -84,8 +84,11 @@
 // #define IMLI			// using IMLI component
 // #define IMLISIC            //use IMLI-SIC
 // #define IMLIOH		//use IMLI-OH
+#define IMLI           // using IMLI component
 #define LOGG  10 /* logsize of the  tagged TAGE tables*/
 #define TBITS 13 /* minimum tag width*/
+#define MAXHIST 300
+#define MINHIST 5
 // #define USE_DOLC 1
 
 #elif MEGA_IMLI        // 1M IMLI
@@ -784,15 +787,19 @@ public:
 
   std::vector<std::vector<gentry>> gtable;  // [NHIST + 1];	// tagged TAGE tables
 
+#ifdef IMLISIC
   int Im[INB];
+#endif
 
   const int Lm[LNB] = {11, 6, 3};
 
+#ifdef IMLIOH
   std::array<std::array<int8_t, (1 << LOGFNB)>, FNB> FGEHL;
-  std::array<std::array<int8_t, (1 << LOGGNB)>, GNB> GGEHL;
-  std::array<std::array<int8_t, (1 << LOGLNB)>, LNB> LGEHL;
   std::array<std::array<int8_t, (1 << LOGINB)>, INB> IGEHL;
+#endif
   std::array<std::array<int8_t, (1 << LOGPNB)>, PNB> PGEHL;
+  std::array<std::array<int8_t, (1 << LOGLNB)>, LNB> LGEHL;
+  std::array<std::array<int8_t, (1 << LOGGNB)>, GNB> GGEHL;
   // int8_t  GGEHL[GNB][(1 << LOGGNB)];
   // int8_t  LGEHL[LNB][(1 << LOGLNB)];
   // int8_t  IGEHL[INB][(1 << LOGINB)];
@@ -1295,7 +1302,7 @@ public:
     HitBank = 0;
     AltBank = 0;
 
-    GI[0] = lastBoundaryPC >> 2;  // Remove 2 lower useless bits
+    GI[0] = lastBoundaryPC; // already a hash >> 2;  // Remove 2 lower useless bits
     for (int i = 1; i <= nhist; i++) {
       GI[i] = gindex(lastBoundaryPC, i, phist);
     }
@@ -1434,6 +1441,7 @@ public:
 
     return sign;
   }
+// #define IDEAL_REHASH_BIM_BOUNDARY 1
 
   void fetchBoundaryOffsetBranch(Addr_t orig_PC, uint64_t orig_ID) {
     (void)orig_PC;
@@ -1467,6 +1475,7 @@ public:
       PC = imli_bpred_hash(orig_PC);
     }
 
+    // fetchBoundaryBegin(orig_PC, orig_ID);
     setTAGETag(PC);
 
     fetchBoundaryOffsetBranch(orig_PC, orig_ID);
@@ -1703,6 +1712,9 @@ public:
     } else {
       PC = imli_bpred_hash(PC);
     }
+
+    // fetchBoundaryBegin(orig_PC, ID);
+    setTAGETag(PC);
 
 #if 0
     if (GTAG[1] == 17442) {

@@ -206,7 +206,7 @@ void BPBTB::fetchBoundaryEnd() {
 
 void BPBTB::updateOnly(Dinst* dinst) {
   ++btb_tag_counter;
-  if (data == 0 || !dinst->isTaken()) {
+  if (data == 0 || !dinst->isTaken() || dinst->getInst()->isFuncRet()) {
     return;
   }
 
@@ -279,6 +279,10 @@ Outcome BPBTB::predict(Dinst* dinst, bool doUpdate, bool doStats) {
     }
 
     return Outcome::Correct;
+  }
+
+  if (dinst->getInst()->isFuncRet()) {
+    return Outcome::NoBTB;
   }
 
   I(btb_taken_counter >= 0);
@@ -410,7 +414,7 @@ Outcome BPOracle::predict(Dinst* dinst, bool doUpdate, bool doStats) {
  */
 
 Outcome BPTaken::predict(Dinst* dinst, bool doUpdate, bool doStats) {
-  if (dinst->getInst()->isJump() || dinst->isTaken()) {
+  if (!dinst->getInst()->isBranch() || dinst->isTaken()) {
     return btb.predict(dinst, doUpdate, doStats);
   }
 
@@ -428,7 +432,7 @@ Outcome BPTaken::predict(Dinst* dinst, bool doUpdate, bool doStats) {
  */
 
 Outcome BPNotTaken::predict(Dinst* dinst, bool doUpdate, bool doStats) {
-  if (dinst->getInst()->isJump()) {
+  if (!dinst->getInst()->isBranch()) {
     return btb.predict(dinst, doUpdate, doStats);
   }
 
@@ -451,7 +455,7 @@ Outcome BPMiss::predict(Dinst* dinst, bool doUpdate, bool doStats) {
  */
 
 Outcome BPNotTakenEnhanced::predict(Dinst* dinst, bool doUpdate, bool doStats) {
-  if (dinst->getInst()->isJump()) {
+  if (!dinst->getInst()->isBranch()) {
     return btb.predict(dinst, doUpdate, doStats);  // backward branches predicted as taken (loops)
   }
 
@@ -667,7 +671,7 @@ BPTData::BPTData(int32_t i, const std::string& section, const std::string& sname
     , tDataTable(section, Config::get_power2(section, "size", 1), Config::get_integer(section, "bits", 1, 7)) {}
 
 Outcome BPTData::predict(Dinst* dinst, bool doUpdate, bool doStats) {
-  if (dinst->getInst()->isJump()) {
+  if (!dinst->getInst()->isBranch()) {
     return btb.predict(dinst, doUpdate, doStats);
   }
 
@@ -752,7 +756,7 @@ void BPTahead::fetchBoundaryEnd() {
 }
 
 Outcome BPTahead::predict(Dinst* dinst, bool doUpdate, bool doStats) {
-  if (dinst->getInst()->isJump() || dinst->getInst()->isFuncRet()) {
+  if (!dinst->getInst()->isBranch()) {
 #ifdef TAHEAD_DELAY_UPDATE
     pending.emplace_back(true, dinst->getPC(), dinst->getInst()->getOpcode(), dinst->isTaken(), true, dinst->getAddr());
 #endif
@@ -841,7 +845,7 @@ void BPTahead1::fetchBoundaryEnd() {
 }
 
 Outcome BPTahead1::predict(Dinst* dinst, bool doUpdate, bool doStats) {
-  if (dinst->getInst()->isJump() || dinst->getInst()->isFuncRet()) {
+  if (!dinst->getInst()->isBranch()) {
 #ifdef TAHEAD1_DELAY_UPDATE
     pending.emplace_back(true, dinst->getPC(), dinst->getInst()->getOpcode(), dinst->isTaken(), true, dinst->getAddr());
 #endif
@@ -945,7 +949,7 @@ Outcome BPIMLI::predict(Dinst* dinst, bool doUpdate, bool doStats) {
 
   I(taken_counter >= 0 && taken_counter < 1024);  // Who does over 1024 taken fetch???
 
-  if (dinst->getInst()->isJump() || dinst->getInst()->isFuncRet()) {
+  if (!dinst->getInst()->isBranch()) {
     imli->TrackOtherInst(dinst->getPC(), dinst->getInst()->getOpcode(), dinst->getAddr());
     dinst->setBiasBranch(true);
     if (!FetchPredict) {
@@ -1110,7 +1114,7 @@ void BPSuperbp::fetchBoundaryEnd() {
 //  uint64_t gshare_missed, gshare_correct, gshare_incorrect;
 Outcome BPSuperbp::predict(Dinst* dinst, bool doUpdate, bool doStats) {
 #ifndef TARGET2_FROM_GSHARE
-  if (dinst->getInst()->isJump() || dinst->getInst()->isFuncRet()) {
+  if (!dinst->getInst()->isBranch()) {
     dinst->setBiasBranch(true);
     return btb.predict(dinst, doUpdate, doStats);
   }
@@ -1141,7 +1145,7 @@ Outcome BPSuperbp::predict(Dinst* dinst, bool doUpdate, bool doStats) {
 
 #ifdef TARGET2_FROM_GSHARE
   if (!gshare_use) {
-    if (dinst->getInst()->isJump() || dinst->getInst()->isFuncRet()) {
+    if (!dinst->getInst()->isBranch()) {
       dinst->setBiasBranch(true);
       return btb.predict(dinst, doUpdate, doStats);
     }
@@ -1249,7 +1253,7 @@ BP2level::BP2level(int32_t i, const std::string& section, const std::string& sna
 BP2level::~BP2level() { delete historyTable; }
 
 Outcome BP2level::predict(Dinst* dinst, bool doUpdate, bool doStats) {
-  if (dinst->getInst()->isJump()) {
+  if (!dinst->getInst()->isBranch()) {
     if (useDolc) {
       dolc.update(dinst->getPC());
     }
@@ -1322,7 +1326,7 @@ BPHybrid::BPHybrid(int32_t i, const std::string& section, const std::string& sna
 BPHybrid::~BPHybrid() {}
 
 Outcome BPHybrid::predict(Dinst* dinst, bool doUpdate, bool doStats) {
-  if (dinst->getInst()->isJump()) {
+  if (!dinst->getInst()->isBranch()) {
     return btb.predict(dinst, doUpdate, doStats);
   }
 
@@ -1405,7 +1409,7 @@ BP2BcgSkew::~BP2BcgSkew() {
 }
 
 Outcome BP2BcgSkew::predict(Dinst* dinst, bool doUpdate, bool doStats) {
-  if (dinst->getInst()->isJump()) {
+  if (!dinst->getInst()->isBranch()) {
     return btb.predict(dinst, doUpdate, doStats);
   }
 
@@ -1530,7 +1534,7 @@ BPyags::BPyags(int32_t i, const std::string& section, const std::string& sname)
 BPyags::~BPyags() {}
 
 Outcome BPyags::predict(Dinst* dinst, bool doUpdate, bool doStats) {
-  if (dinst->getInst()->isJump()) {
+  if (!dinst->getInst()->isBranch()) {
     return btb.predict(dinst, doUpdate, doStats);
   }
 
@@ -1663,7 +1667,7 @@ BPOgehl::BPOgehl(int32_t i, const std::string& section, const std::string& sname
 BPOgehl::~BPOgehl() {}
 
 Outcome BPOgehl::predict(Dinst* dinst, bool doUpdate, bool doStats) {
-  if (dinst->getInst()->isJump()) {
+  if (!dinst->getInst()->isBranch()) {
     return btb.predict(dinst, doUpdate, doStats);
   }
 

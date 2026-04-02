@@ -84,9 +84,9 @@
 // #define IMLI			// using IMLI component
 // #define IMLISIC            //use IMLI-SIC
 // #define IMLIOH		//use IMLI-OH
-#define IMLI           // using IMLI component
-#define LOGG  10 /* logsize of the  tagged TAGE tables*/
-#define TBITS 13 /* minimum tag width*/
+#define IMLI       // using IMLI component
+#define LOGG    10 /* logsize of the  tagged TAGE tables*/
+#define TBITS   13 /* minimum tag width*/
 #define MAXHIST 300
 #define MINHIST 5
 // #define USE_DOLC 1
@@ -1114,12 +1114,12 @@ public:
       S_slhist[i] = 0;
       T_slhist[i] = 0;
     }
-    GHIST      = 0;
-    IMLIcount  = 0;
-    pthstack   = 0;
-    FirstH     = 0;
-    SecondH    = 0;
-    ThirdH     = 0;
+    GHIST     = 0;
+    IMLIcount = 0;
+    pthstack  = 0;
+    FirstH    = 0;
+    SecondH   = 0;
+    ThirdH    = 0;
 
 #ifndef POSTPREDICT
     for (int i = 0; i < SIZEUSEALT; i++) {
@@ -1310,7 +1310,7 @@ public:
     HitBank = 0;
     AltBank = 0;
 
-    GI[0] = lastBoundaryPC; // already a hash >> 2;  // Remove 2 lower useless bits
+    GI[0] = lastBoundaryPC;  // already a hash >> 2;  // Remove 2 lower useless bits
     for (int i = 1; i <= nhist; i++) {
       GI[i] = gindex(lastBoundaryPC, i, phist);
     }
@@ -1455,7 +1455,7 @@ public:
 
     return sign;
   }
-// #define IDEAL_REHASH_BIM_BOUNDARY 1
+  // #define IDEAL_REHASH_BIM_BOUNDARY 1
 
   void fetchBoundaryOffsetBranch(Addr_t orig_PC, uint64_t orig_ID) {
     (void)orig_PC;
@@ -1466,7 +1466,7 @@ public:
 #elifdef IDEAL_REHASH_BIM_BOUNDARY
     bimodal.select(imli_bpred_hash(orig_PC));
 #else
-    bimodal.select(GI[0], orig_ID - lastBoundaryID);
+    bimodal.select(GI[0], imli_bpred_hash(lastBoundaryPC, orig_ID - lastBoundaryID));
 #endif
 
     for (int i = 1; i <= nhist; i++) {

@@ -622,6 +622,7 @@ public:
   BPTData(int32_t i, const std::string& section, const std::string& sname);
   ~BPTData() {}
 
+  void    fetchBoundaryEnd() { btb.fetchBoundaryEnd(); }
   Outcome predict(Dinst* dinst, bool doUpdate, bool doStats);
 };
 
@@ -651,6 +652,7 @@ public:
   BPLdbp(int32_t i, const std::string& section, const std::string& sname, MemObj* dl1 = 0);
   ~BPLdbp() {}
 
+  void     fetchBoundaryEnd() { btb.fetchBoundaryEnd(); }
   Outcome  predict(Dinst* dinst, bool doUpdate, bool doStats);
   bool     outcome_calculator(BrOpType br_op, Data_t br_data1, Data_t br_data2);
   BrOpType branch_type(Addr_t brpc);

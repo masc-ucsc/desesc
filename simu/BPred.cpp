@@ -488,7 +488,9 @@ void BP2bitL0::fetchBoundaryBegin(Dinst* dinst) {
   one_prediction_done = false;
 }
 
-void BP2bitL0::fetchBoundaryEnd() { pc = 0; }
+void BP2bitL0::fetchBoundaryEnd() {
+  pc = 0;
+}
 
 Outcome BP2bitL0::predict(Dinst* dinst, bool doUpdate, bool doStats) {
   // NOTE: 2 bit is simple, no predecode of instruction type (isJump() special code)
@@ -536,7 +538,9 @@ BP2bit::BP2bit(int32_t i, const std::string& section, const std::string& sname)
 
 void BP2bit::fetchBoundaryBegin(Dinst* dinst) { pc = dinst->getPC(); }
 
-void BP2bit::fetchBoundaryEnd() { pc = 0; }
+void BP2bit::fetchBoundaryEnd() {
+  pc = 0;
+}
 
 Outcome BP2bit::predict(Dinst* dinst, bool doUpdate, bool doStats) {
   // NOTE: 2 bit is simple, no predecode of instruction type (isJump() special code)
@@ -979,15 +983,15 @@ Outcome BPIMLI::predict(Dinst* dinst, bool doUpdate, bool doStats) {
   }
 
   if (doUpdate) {
-    imli->updatePredictor(pc,
-                          dinst->getID(),
-                          taken,
-                          ptaken,
-                          dinst->getAddr(),
-                          no_alloc,
-                          use_tag_offset,
-                          use_tag_hybrid,
-                          taken_counter);
+    imli->deferPredictorUpdate(pc,
+                               dinst->getID(),
+                               taken,
+                               ptaken,
+                               dinst->getAddr(),
+                               no_alloc,
+                               use_tag_offset,
+                               use_tag_hybrid,
+                               taken_counter);
   }
 
   if (!FetchPredict) {

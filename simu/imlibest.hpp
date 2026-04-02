@@ -835,13 +835,43 @@ public:
   bool              lastBoundaryCtrl;
   int               Seed;  // for the pseudo-random number generator
 
-  struct DeferredHistUpd {
-    Addr_t pc;
-    Opcode brtype;
-    bool   taken;
-    Addr_t target;
+  struct DeferredPredictionState {
+    Addr_t            pc;
+    std::vector<int>  gi;
+    std::vector<uint> gtag;
+    bool              advance_imli_tag_offset;
+    bool              pred_taken;
+    bool              alttaken;
+    bool              tage_pred;
+    bool              LongestMatchPred;
+    int               HitBank;
+    int               AltBank;
+    bool              HighConf;
+    int               LSUM;
+    bool              pred_inter;
+#ifdef LOOPPREDICTOR
+    bool predloop;
+    int  LIB;
+    int  LI;
+    int  LHIT;
+    int  LTAG;
+    bool LVALID;
+#endif
+#ifdef POSTPREDICT
+    uint32_t ppi;
+#endif
   };
-  std::vector<DeferredHistUpd> deferred_hist;
+
+  struct DeferredBoundaryOp {
+    bool                    has_predictor_update;
+    Addr_t                  orig_pc;
+    Opcode                  brtype;
+    bool                    taken;
+    Addr_t                  target;
+    bool                    no_alloc;
+    DeferredPredictionState state;
+  };
+  std::vector<DeferredBoundaryOp> deferred_ops;
 
   bool pred_inter;
 
@@ -1433,7 +1463,7 @@ public:
 
     lastBoundaryID = ID;
 
-    I(deferred_hist.empty());
+    I(deferred_ops.empty());
     setTAGEIndex();
   }
 
@@ -1443,11 +1473,16 @@ public:
       idolc.update(lastBoundarySign);
     }
 #endif
-    for (auto& e : deferred_hist) {
-      Addr_t orig_PC = e.pc;  // needed by INDLOCAL macro
+    for (auto& e : deferred_ops) {
+      if (e.has_predictor_update) {
+        applyDeferredPredictorUpdate(e);
+      }
+
+      Addr_t orig_PC = e.orig_pc;  // needed by INDLOCAL macro
       HistoryUpdate(orig_PC, e.brtype, e.taken, e.target, phist, ptghist, ch_i, ch_t[0], ch_t[1], L_shist[INDLOCAL], GHIST);
+      setTAGEIndex();
     }
-    deferred_hist.clear();
+    deferred_ops.clear();
   }
 
   uint32_t dohash(uint32_t addr, uint16_t offset) {
@@ -1466,7 +1501,7 @@ public:
 #elifdef IDEAL_REHASH_BIM_BOUNDARY
     bimodal.select(imli_bpred_hash(orig_PC));
 #else
-    bimodal.select(GI[0], imli_bpred_hash(lastBoundaryPC, orig_ID - lastBoundaryID));
+    bimodal.select(GI[0], imli_bpred_hash(lastBoundaryPC, 100 + orig_ID - lastBoundaryID));
 #endif
 
     for (int i = 1; i <= nhist; i++) {
@@ -1481,9 +1516,9 @@ public:
     Addr_t PC;
     if (use_tag_offset || force_offset) {
 #ifdef IDEAL_BOUNDARY_ONLY_FOR_CTRL
-      PC = imli_bpred_hash(lastBoundaryPC, imli_tag_offset);
+      PC = imli_bpred_hash(lastBoundaryPC, 100 + imli_tag_offset);
 #else
-      PC = imli_bpred_hash(lastBoundaryPC, orig_ID - lastBoundaryID);
+      PC = imli_bpred_hash(lastBoundaryPC, 100 + orig_ID - lastBoundaryID);
 #endif
     } else {
       PC = imli_bpred_hash(orig_PC);
@@ -1711,10 +1746,40 @@ public:
 
   // PREDICTOR UPDATE
 
-  void updatePredictor(Addr_t PC, uint64_t ID, bool resolveDir, bool predDir, Addr_t branchTarget, bool no_alloc,
-                       bool use_tag_offset, bool use_tag_hybrid, uint32_t taken_counter) {
+  DeferredPredictionState captureDeferredPredictionState(Addr_t PC) const {
+    DeferredPredictionState state{
+        .pc                      = PC,
+        .gi                      = GI,
+        .gtag                    = GTAG,
+        .advance_imli_tag_offset = false,
+        .pred_taken              = pred_taken,
+        .alttaken                = alttaken,
+        .tage_pred               = tage_pred,
+        .LongestMatchPred        = LongestMatchPred,
+        .HitBank                 = HitBank,
+        .AltBank                 = AltBank,
+        .HighConf                = HighConf,
+        .LSUM                    = LSUM,
+        .pred_inter              = pred_inter,
+#ifdef LOOPPREDICTOR
+        .predloop = predloop,
+        .LIB      = LIB,
+        .LI       = LI,
+        .LHIT     = LHIT,
+        .LTAG     = LTAG,
+        .LVALID   = LVALID,
+#endif
+#ifdef POSTPREDICT
+        .ppi = ppi,
+#endif
+    };
+
+    return state;
+  }
+
+  void deferPredictorUpdate(Addr_t PC, uint64_t ID, bool resolveDir, bool predDir, Addr_t branchTarget, bool no_alloc,
+                            bool use_tag_offset, bool use_tag_hybrid, uint32_t taken_counter) {
     (void)predDir;
-    (void)ID;
     Addr_t orig_PC      = PC;
     bool   force_offset = (taken_counter >= 1 && use_tag_hybrid);
     if (use_tag_offset || force_offset) {
@@ -1727,20 +1792,58 @@ public:
       PC = imli_bpred_hash(PC);
     }
 
-    // fetchBoundaryBegin(orig_PC, ID);
-    setTAGETag(PC);
+    auto state                    = captureDeferredPredictionState(PC);
+    state.advance_imli_tag_offset = use_tag_offset || force_offset;
+
+    deferred_ops.push_back({
+        .has_predictor_update = true,
+        .orig_pc              = orig_PC,
+        .brtype               = Opcode::iBALU_LBRANCH,
+        .taken                = resolveDir,
+        .target               = branchTarget,
+        .no_alloc             = no_alloc,
+        .state                = std::move(state),
+    });
+  }
+
+  void applyDeferredPredictorUpdate(const DeferredBoundaryOp& e) {
+    const auto& state = e.state;
+    Addr_t      PC    = state.pc;
+
+    GI               = state.gi;
+    GTAG             = state.gtag;
+    pred_taken       = state.pred_taken;
+    alttaken         = state.alttaken;
+    tage_pred        = state.tage_pred;
+    LongestMatchPred = state.LongestMatchPred;
+    HitBank          = state.HitBank;
+    AltBank          = state.AltBank;
+    HighConf         = state.HighConf;
+    LSUM             = state.LSUM;
+    pred_inter       = state.pred_inter;
+#ifdef LOOPPREDICTOR
+    predloop = state.predloop;
+    LIB      = state.LIB;
+    LI       = state.LI;
+    LHIT     = state.LHIT;
+    LTAG     = state.LTAG;
+    LVALID   = state.LVALID;
+#endif
+#ifdef POSTPREDICT
+    ppi = state.ppi;
+#endif
 
 #if 0
     if (GTAG[1] == 17442) {
-      std::print("upd orig_PC:{:x} resolveDir:{} bank:{}\n", orig_PC, resolveDir, HitBank);
+      std::print("upd orig_PC:{:x} resolveDir:{} bank:{}\n", e.orig_pc, e.taken, HitBank);
       std::print(" bank:{} ", HitBank);
       gtable[1][GI[1]].dump();
       std::print("\n");
     }
 
-    if (orig_PC == 0x13fbb8 && HitBank && predDir != resolveDir) {
+    if (e.orig_pc == 0x13fbb8 && HitBank && pred_taken != e.taken) {
       std::print("miss orig_PC:{:x} offset:{} PC:{:x} use_tag_offset:{} pred:{} reslv:{} "
-                , orig_PC, imli_tag_offset, PC, use_tag_offset, pred_taken, resolveDir);
+                , e.orig_pc, imli_tag_offset, PC, false, pred_taken, e.taken);
 
       std::print(" bank:{} ", HitBank);
       gtable[HitBank][GI[HitBank]].dump();
@@ -1751,11 +1854,11 @@ public:
 #ifdef LOOPPREDICTOR
     if (LVALID) {
       if (pred_taken != predloop) {
-        ctrupdate(WITHLOOP, (predloop == resolveDir), 7);
+        ctrupdate(WITHLOOP, (predloop == e.taken), 7);
       }
     }
 
-    loopupdate(resolveDir, (pred_taken != resolveDir));
+    loopupdate(e.taken, (pred_taken != e.taken));
 #endif
 
     if (sc) {
@@ -1764,18 +1867,18 @@ public:
         if (pred_inter != SCPRED) {
           if ((abs(LSUM) < Pupdatethreshold[INDUPD])) {
             if ((abs(LSUM) < Pupdatethreshold[INDUPD] / 3)) {
-              ctrupdate(FirstH, (pred_inter == resolveDir), CONFWIDTH);
+              ctrupdate(FirstH, (pred_inter == e.taken), CONFWIDTH);
             } else if ((abs(LSUM) < 2 * Pupdatethreshold[INDUPD] / 3)) {
-              ctrupdate(SecondH, (pred_inter == resolveDir), CONFWIDTH);
+              ctrupdate(SecondH, (pred_inter == e.taken), CONFWIDTH);
             } else if ((abs(LSUM) < Pupdatethreshold[INDUPD])) {
-              ctrupdate(ThirdH, (pred_inter == resolveDir), CONFWIDTH);
+              ctrupdate(ThirdH, (pred_inter == e.taken), CONFWIDTH);
             }
           }
         }
       }
 
-      if ((SCPRED != resolveDir) || ((abs(LSUM) < Pupdatethreshold[INDUPD]))) {
-        if (SCPRED != resolveDir) {
+      if ((SCPRED != e.taken) || ((abs(LSUM) < Pupdatethreshold[INDUPD]))) {
+        if (SCPRED != e.taken) {
           Pupdatethreshold[INDUPD] += 1;
         } else {
           Pupdatethreshold[INDUPD] -= 1;
@@ -1789,8 +1892,8 @@ public:
           Pupdatethreshold[INDUPD] = 0;
         }
 
-        ctrupdate(Bias[INDBIAS], resolveDir, PERCWIDTH);
-        ctrupdate(BiasSK[INDBIASSK], resolveDir, PERCWIDTH);
+        ctrupdate(Bias[INDBIAS], e.taken, PERCWIDTH);
+        ctrupdate(BiasSK[INDBIASSK], e.taken, PERCWIDTH);
 #ifdef IMLI
 #ifndef IMLISIC
         long long interIMLIcount = IMLIcount;
@@ -1798,21 +1901,21 @@ public:
         IMLIcount = 0;
 #endif
 #endif
-        Gupdate<LOGGNB, GNB>(resolveDir, GGEHL);
-        Gupdate<LOGLNB, LNB>(resolveDir, LGEHL);
+        Gupdate<LOGGNB, GNB>(e.taken, GGEHL);
+        Gupdate<LOGLNB, LNB>(e.taken, LGEHL);
 
-        Gupdate<LOGPNB, PNB>(resolveDir, PGEHL);
+        Gupdate<LOGPNB, PNB>(e.taken, PGEHL);
 
 #ifdef IMLI
 #ifdef IMLISIC
-        Gupdate<LOGINB, INB>(resolveDir, IGEHL);
+        Gupdate<LOGINB, INB>(e.taken, IGEHL);
 #else
         IMLIcount = interIMLIcount;
 #endif
 
 #ifdef IMLIOH
         if (IMLIcount >= 2) {
-          Gupdate<LOGFNB, FNB>(resolveDir, FGEHL);
+          Gupdate<LOGFNB, FNB>(e.taken, FGEHL);
         }
 #endif
 
@@ -1823,8 +1926,8 @@ public:
 
     // TAGE UPDATE
     if (true) {
-      bool ALLOC = ((tage_pred != resolveDir) & (HitBank < nhist));
-      if (pred_taken == resolveDir) {
+      bool ALLOC = ((tage_pred != e.taken) & (HitBank < nhist));
+      if (pred_taken == e.taken) {
         if ((MYRANDOM() & 31) != 0) {
           ALLOC = false;
         }
@@ -1836,7 +1939,7 @@ public:
         bool PseudoNewAlloc = gtable[HitBank][GI[HitBank]].ctr_weak();
         // an entry is considered as newly allocated if its prediction counter is weak
         if (PseudoNewAlloc) {
-          if (LongestMatchPred == resolveDir) {
+          if (LongestMatchPred == e.taken) {
             ALLOC = false;
           }
 
@@ -1846,13 +1949,13 @@ public:
           // FIXME: Have a PC (or T1 history) based use_alt table
           if (LongestMatchPred != alttaken) {
             int index = (INDUSEALT) ^ LongestMatchPred;
-            ctrupdate(use_alt_on_na[index][HitBank > (nhist / 3)], (alttaken == resolveDir), 4);
+            ctrupdate(use_alt_on_na[index][HitBank > (nhist / 3)], (alttaken == e.taken), 4);
           }
 #endif
         }
       }
 
-      bool noAlloc = no_alloc;
+      bool noAlloc = e.no_alloc;
       ALLOC        = ALLOC & noAlloc;  // flag to alloc and noAlloc
 
       if (ALLOC) {
@@ -1875,7 +1978,7 @@ public:
           if (gtable[i][GI[i]].isTagHit()) {
             weakBank = i;
 
-            if (!gtable[i][GI[i]].ctr_steal(resolveDir)) {
+            if (!gtable[i][GI[i]].ctr_steal(e.taken)) {
               continue;
             }
 
@@ -1905,14 +2008,14 @@ public:
 #ifdef SUBENTRIES
               // FIXME: If tag hit, no need to nuke. Just remove any of them (weaker counter better). force_steal
               if (gtable[i][GI[i]].isTagHit()) {
-                gtable[i][GI[i]].ctr_force_steal(resolveDir);
+                gtable[i][GI[i]].ctr_force_steal(e.taken);
                 // gtable[i][GI[i]].dump(); printf(" alloc2 pc=%x\n",PC);
               } else {
-                gtable[i][GI[i]].reset(GTAG[i], resolveDir);
+                gtable[i][GI[i]].reset(GTAG[i], e.taken);
                 // gtable[i][GI[i]].dump(); printf(" alloc3 pc=%x\n",PC);
               }
 #else
-              gtable[i][GI[i]].reset(GTAG[i], resolveDir);
+              gtable[i][GI[i]].reset(GTAG[i], e.taken);
 #endif
 
               NA++;
@@ -1970,7 +2073,7 @@ public:
       // TODO: recheck that this is better
       if (HitBank) {
         if (gtable[HitBank][GI[HitBank]].isHit()) {
-          if (LongestMatchPred != resolveDir) {
+          if (LongestMatchPred != e.taken) {
             gtable[HitBank][GI[HitBank]].u_dec();
           }
         }
@@ -1978,36 +2081,33 @@ public:
 #endif
 
       if (HitBank > 0) {
-        gtable[HitBank][GI[HitBank]].ctr_update(resolveDir);
+        gtable[HitBank][GI[HitBank]].ctr_update(e.taken);
         if (gtable[HitBank][GI[HitBank]].u_get() == 0 && AltBank > 0) {
-          gtable[AltBank][GI[AltBank]].ctr_update(resolveDir);
+          gtable[AltBank][GI[AltBank]].ctr_update(e.taken);
         } else {
-          bimodal.update(resolveDir);
+          bimodal.update(e.taken);
         }
-        if (LongestMatchPred != alttaken) {      // HitBank and AltBank dissagree
-          if (LongestMatchPred == resolveDir) {  // LongestMatchPred == resolveDir && !noAlloc
+        if (LongestMatchPred != alttaken) {   // HitBank and AltBank dissagree
+          if (LongestMatchPred == e.taken) {  // LongestMatchPred == resolveDir && !noAlloc
             gtable[HitBank][GI[HitBank]].u_inc();
           } else {
             gtable[HitBank][GI[HitBank]].u_dec();
           }
         }
       } else {
-        bimodal.update(resolveDir);
+        bimodal.update(e.taken);
       }
     }
 #ifdef POSTPREDICT
     I(ppi < postpsize);
-    ctrupdate(postp[ppi], resolveDir, POSTPBITS);
+    ctrupdate(postp[ppi], e.taken, POSTPBITS);
 #endif
     // END TAGE UPDATE
 
     bim_tag_offset++;
-    if (use_tag_offset || force_offset) {
+    if (state.advance_imli_tag_offset) {
       imli_tag_offset++;
     }
-
-    deferred_hist.push_back({orig_PC, Opcode::iBALU_LBRANCH, resolveDir, branchTarget});
-    // END PREDICTOR UPDATE
   }
 
   template <std::size_t S1, std::size_t S2>
@@ -2039,6 +2139,14 @@ public:
 
     // bim_tag_offset++;
     // imli_tag_offset++;
-    deferred_hist.push_back({orig_PC, opType, taken, branchTarget});
+    deferred_ops.push_back({
+        .has_predictor_update = false,
+        .orig_pc              = orig_PC,
+        .brtype               = opType,
+        .taken                = taken,
+        .target               = branchTarget,
+        .no_alloc             = false,
+        .state                = {},
+    });
   }
 };

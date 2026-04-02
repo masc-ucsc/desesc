@@ -64,8 +64,8 @@ class MemObj;
 
 class BPred {
 public:
-  Addr_t   boundaryPC;
-  int32_t  taken_counter;
+  Addr_t             boundaryPC;
+  int32_t            taken_counter;
   static std::string to_s(Outcome o) {
     if (o == Outcome::Correct) {
       return "Correct";
@@ -128,16 +128,16 @@ public:
     return Outcome::None;
   }
 
-  virtual void    fetchBoundaryBegin(Dinst* dinst);  // If the branch predictor support fetch boundary model, do it
-  virtual void    fetchBoundaryEnd();                // If the branch predictor support fetch boundary model, do it
+  virtual void fetchBoundaryBegin(Dinst* dinst);  // If the branch predictor support fetch boundary model, do it
+  virtual void fetchBoundaryEnd();                // If the branch predictor support fetch boundary model, do it
 
   Outcome doPredict(Dinst* dinst, bool doStats = true) {
-    I(taken_counter>=0);
+    I(taken_counter >= 0);
 
     Outcome pred = predict(dinst, true, doStats);
 
     if (dinst->isTaken()) {
-      taken_counter++; // increase after predict
+      taken_counter++;  // increase after predict
     }
     if (pred == Outcome::None) {
       return pred;
@@ -184,11 +184,12 @@ private:
   const bool  btb_fetch_predict;
   const bool  btb_tag_offset;
   const bool  btb_tag_hybrid;
-  uint32_t btb_tag_size;
-  uint32_t btb_tag_mask;
+  uint32_t    btb_tag_size;
+  uint32_t    btb_tag_mask;
   std::string btb_name;
 
-  int32_t     btb_taken_counter;
+  int32_t btb_taken_counter;
+  int32_t btb_tag_counter;
 
   class BTBState : public StateGeneric<Addr_t> {
   public:
@@ -199,7 +200,7 @@ private:
 
     Addr_t targetPC;
 
-    //bool operator==(BTBState s) const { return targetPC == s.targetPC; }
+    // bool operator==(BTBState s) const { return targetPC == s.targetPC; }
   };
 
   typedef CacheGeneric<BTBState, Addr_t> BTBCache;
@@ -410,7 +411,7 @@ private:
 
   std::unique_ptr<PREDICTOR> superbp_p;
   const bool                 FetchPredict;
-  const bool btb_fetch_predict;
+  const bool                 btb_fetch_predict;
   Stats_cntr                 gshare_missed;
   Stats_cntr                 gshare_correct;
   Stats_cntr                 gshare_incorrect;

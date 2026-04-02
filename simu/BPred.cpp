@@ -937,6 +937,9 @@ Outcome BPIMLI::predict(Dinst* dinst, bool doUpdate, bool doStats) {
   if (dinst->getInst()->isJump() || dinst->getInst()->isFuncRet()) {
     imli->TrackOtherInst(dinst->getPC(), dinst->getInst()->getOpcode(), dinst->getAddr());
     dinst->setBiasBranch(true);
+    if (!FetchPredict) {
+      imli->fetchBoundaryEnd();
+    }
     return btb.predict(dinst, doUpdate, doStats);
   }
 
@@ -961,18 +964,22 @@ Outcome BPIMLI::predict(Dinst* dinst, bool doUpdate, bool doStats) {
   if (!FetchPredict) {
     imli->fetchBoundaryEnd();
   }
-  if (!btb_fetch_predict) {
-    btb.fetchBoundaryEnd();
-  }
 
+  Outcome result;
   if (taken != ptaken) {
     if (doUpdate) {
       btb.updateOnly(dinst);
     }
-    return Outcome::Miss;
+    result = Outcome::Miss;
+  } else {
+    result = ptaken ? btb.predict(dinst, doUpdate, doStats) : Outcome::Correct;
   }
 
-  return ptaken ? btb.predict(dinst, doUpdate, doStats) : Outcome::Correct;
+  if (!btb_fetch_predict) {
+    btb.fetchBoundaryEnd();
+  }
+
+  return result;
 }
 
 // class PREDICTOR;

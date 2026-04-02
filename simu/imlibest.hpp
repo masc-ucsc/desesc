@@ -835,6 +835,14 @@ public:
   bool              lastBoundaryCtrl;
   int               Seed;  // for the pseudo-random number generator
 
+  struct DeferredHistUpd {
+    Addr_t pc;
+    Opcode brtype;
+    bool   taken;
+    Addr_t target;
+  };
+  std::vector<DeferredHistUpd> deferred_hist;
+
   bool pred_inter;
 
 #ifdef LOOPPREDICTOR
@@ -1425,6 +1433,7 @@ public:
 
     lastBoundaryID = ID;
 
+    I(deferred_hist.empty());
     setTAGEIndex();
   }
 
@@ -1434,6 +1443,11 @@ public:
       idolc.update(lastBoundarySign);
     }
 #endif
+    for (auto& e : deferred_hist) {
+      Addr_t orig_PC = e.pc;  // needed by INDLOCAL macro
+      HistoryUpdate(orig_PC, e.brtype, e.taken, e.target, phist, ptghist, ch_i, ch_t[0], ch_t[1], L_shist[INDLOCAL], GHIST);
+    }
+    deferred_hist.clear();
   }
 
   uint32_t dohash(uint32_t addr, uint16_t offset) {
@@ -1992,17 +2006,7 @@ public:
       imli_tag_offset++;
     }
 
-    HistoryUpdate(orig_PC,
-                  Opcode::iBALU_LBRANCH,
-                  resolveDir,
-                  branchTarget,
-                  phist,
-                  ptghist,
-                  ch_i,
-                  ch_t[0],
-                  ch_t[1],
-                  L_shist[INDLOCAL],
-                  GHIST);
+    deferred_hist.push_back({orig_PC, Opcode::iBALU_LBRANCH, resolveDir, branchTarget});
     // END PREDICTOR UPDATE
   }
 
@@ -2035,6 +2039,6 @@ public:
 
     // bim_tag_offset++;
     // imli_tag_offset++;
-    HistoryUpdate(orig_PC, opType, taken, branchTarget, phist, ptghist, ch_i, ch_t[0], ch_t[1], L_shist[INDLOCAL], GHIST);
+    deferred_hist.push_back({orig_PC, opType, taken, branchTarget});
   }
 };

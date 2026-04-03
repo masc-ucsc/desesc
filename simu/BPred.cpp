@@ -908,17 +908,21 @@ BPIMLI::BPIMLI(int32_t i, const std::string& section, const std::string& sname)
 
   int FetchWidth = Config::get_power2("soc", "core", i, "fetch_width", 1);
 
+  int bimodal_nsub = Config::has_entry(section, "bimodal_nsub") ? Config::get_power2(section, "bimodal_nsub") : FetchWidth;
+  int tage_nsub    = Config::has_entry(section, "tage_nsub") ? Config::get_power2(section, "tage_nsub") : 1;
+
   int bimodalSize = Config::get_power2(section, "bimodal_size", 4);
   int bwidth      = Config::get_integer(section, "bimodal_width");
 
-  int log2fetchwidth = log2(FetchWidth);
-  int blogb          = log2(bimodalSize) - log2(FetchWidth);
+  int log2_bimodal_nsub = log2(bimodal_nsub);
+  int blogb             = log2(bimodalSize) - log2_bimodal_nsub;
+  int log2_tage_nsub    = log2(tage_nsub);
 
   int nhist = Config::get_integer(section, "nhist", 1);
 
   bool statcorrector = Config::get_bool(section, "statcorrector");
 
-  imli = std::make_unique<IMLIBest>(log2fetchwidth, blogb, bwidth, nhist, statcorrector);
+  imli = std::make_unique<IMLIBest>(log2_bimodal_nsub, blogb, bwidth, nhist, statcorrector, log2_tage_nsub);
 }
 
 void BPIMLI::fetchBoundaryBegin(Dinst* dinst) {

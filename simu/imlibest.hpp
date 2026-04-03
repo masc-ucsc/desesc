@@ -166,8 +166,6 @@
 */
 // To get the predictor storage budget on stderr  uncomment the next line
 
-#define SUBENTRIES 1
-
 #define UWIDTH 1
 #define CWIDTH 3
 
@@ -383,7 +381,7 @@ public:
   void select(uint32_t fetchPC_) { pos_p = getIndex(fetchPC_); }
 
   void select(uint32_t fetchPC_, uint8_t boff_) {
-    pos_p = getIndex((fetchPC_ << Log2FetchWidth) + (boff_ & ((1 << Log2FetchWidth) - 1)));
+    pos_p = getIndex(getIndex((fetchPC_ << Log2FetchWidth)) + (boff_ & ((1 << Log2FetchWidth) - 1)));
   }
 
   void update(bool taken) {
@@ -418,264 +416,99 @@ public:
 // TODO: Convert this class to GTable class that includes subtables inside
 class gentry {
 private:
-  int                   nsub;
-  std::vector<int8_t>   ctr;
-  std::vector<int8_t>   u;
-  std::vector<uint16_t> boff;  // Signature per branch in the entry
+  int8_t ctr_;
+  int8_t u_;
 
 public:
   uint32_t tag;
-  int      pos;  // for branch offset select
-  int      last_boff;
-  bool     thit;
   bool     hit;
 
-  gentry() { allocate(1); }
+  gentry() : ctr_(0), u_(0), tag(0), hit(false) {}
 
-  void allocate(int n) {
-#ifndef SUBENTRIES
-    n = 1;
-#endif
-    nsub = n;
-    ctr.resize(n + 1, 1);  // +1, last means unused
-    u.resize(n + 1, 0);
-    boff.resize(n + 1, 0xFFFF);
-    tag = 0;
+  void allocate(int) {
+    ctr_ = 0;
+    u_   = 0;
+    tag  = 0;
+    hit  = false;
   }
 
-  void dump() {
-    printf("nsub=%d tag=%x hit=%d thit=%d u=%d loff=%d", nsub, tag, hit, thit, u[0], last_boff);
-    for (int i = 0; i < nsub; i++) {
-      printf(": off=%d ctr=%d", boff[i], ctr[i]);
-    }
-  }
+  void dump() { printf("tag=%x hit=%d u=%d ctr=%d", tag, hit, u_, ctr_); }
 
   bool isHit() const { return hit; }
-  bool isTagHit() const { return thit; }
+  bool isTagHit() const { return hit; }
 
-  void select(Addr_t t, int b) {
-    b = b >> 1;  // Drop lower bit
-
-    last_boff = b;
-    if (t != tag) {
-      hit  = false;
-      thit = false;
-      return;
-    }
-
-    thit = true;
-    hit  = false;
-
-    pos = nsub;
-    for (int i = 0; i < nsub; i++) {
-      if (boff[i] == b) {
-        pos = i;
-        hit = true;
-        break;
-      }
-    }
-
-    if (pos == nsub) {
-      hit = false;
-      pos = nsub - 1;
-    }
-  }
+  void select(Addr_t t) { hit = (t == tag); }
 
   void reset(uint32_t t, bool taken) {
-    tag = t;
-
-    for (int i = 1; i < nsub; i++) {
-      boff[i] = 0xFFFF;
-      ctr[i]  = taken ? 0 : -1;
-      u[i]    = 0;
-    }
-    pos     = last_boff;
-    boff[0] = pos;
-    ctr[0]  = taken ? 0 : -1;
-
+    tag  = t;
+    ctr_ = taken ? 0 : -1;
     hit  = true;
-    thit = true;
   }
 
   void ctr_force_steal(bool taken) {
-    if (!thit) {
+    if (!hit) {
       return;
     }
-
-    int p = nsub - 1;
-
-    for (int i = p; i >= 0; i--) {
-      if (boff[i] == 0xFFFF) {
-        p = i;
-        break;
-      }
-      if (boff[i] == last_boff) {
-        p = i;
-        break;
-      }
-      int ioff = 0;
-      if (ctr[i] < 0) {
-        ioff = 1;
-      }
-      int poff = 0;
-      if (ctr[p] < 0) {
-        poff = 1;
-      }
-
-      if (abs(ctr[i] + ioff) < abs(ctr[p] + poff)) {
-        p = i;
-      } else if (abs(ctr[i] + ioff) == abs(ctr[p] + poff)) {
-        p = i;
-      }
-    }
-
-    boff[p] = last_boff;
-    ctr[p]  = taken ? 0 : -1;
-
-    hit = thit;
-
+    ctr_ = taken ? 0 : -1;
     u_dec();
   }
 
-  bool ctr_steal(bool taken) {
-    // Look for the ctr not highconf longest boff
-
-    int p = nsub - 1;
-
-    if (hit) {
-      return true;
-    }
-
-    if (!thit) {
-      return false;
-    }
-
-#if 1
-    // Better to steal even if u is not zero if we have a tag hit
-    if (p == 0) {
-      return false;
-    }
-#endif
-
-    bool weak = false;
-    for (int i = p; i >= 0; i--) {
-      // Allocates in increasing i possition. Re-use in decreasing i possition (older entries still weak are candidates for being
-      // removed)
-      if (boff[i] == 0xFFFF) {
-        p    = i;
-        weak = true;
-        break;
-      }
-#if 1
-      if (ctr[i] == -1 || ctr[i] == 0) {
-        p    = i;
-        weak = true;
-      }
-#endif
-    }
-    if (!weak) {
-      return false;
-    }
-
-    boff[p] = last_boff;
-    ctr[p]  = taken ? 0 : -1;
-    hit     = thit;
-
-    return true;
-  }
+  bool ctr_steal([[maybe_unused]] bool taken) { return hit; }
 
   void ctr_update(bool taken) {
-    if (!thit) {
-      return;
-    }
     if (!hit) {
-      int freepos = nsub;
-
-      for (int i = 0; i < nsub; i++) {
-        if (boff[i] == 0xFFFF) {
-          freepos = i;
-          break;
-        }
-      }
-      if (freepos != nsub) {
-        boff[freepos] = last_boff;
-        pos           = freepos;
-      } else {
-        bool s = ctr_steal(taken);
-        if (!s) {
-          return;
-        }
-      }
-      hit = true;
+      return;
     }
 
 #if CWIDTH > 4
-    if (taken && ctr[pos] < -1) {
-      ctr[pos] = ctr[pos] / 2;
-    } else if (!taken && ctr[pos] > 0) {
-      ctr[pos] = ctr[pos] / 2;
+    if (taken && ctr_ < -1) {
+      ctr_ = ctr_ / 2;
+    } else if (!taken && ctr_ > 0) {
+      ctr_ = ctr_ / 2;
     } else if (taken) {
-      if (ctr[pos] < ((1 << (CWIDTH - 1)) - 1)) {
-        ctr[pos]++;
+      if (ctr_ < ((1 << (CWIDTH - 1)) - 1)) {
+        ctr_++;
       }
     } else {
-      if (ctr[pos] > -(1 << (CWIDTH - 1))) {
-        ctr[pos]--;
+      if (ctr_ > -(1 << (CWIDTH - 1))) {
+        ctr_--;
       }
     }
 #else
     if (taken) {
-      if (ctr[pos] < ((1 << (CWIDTH - 1)) - 1)) {
-        ctr[pos]++;
+      if (ctr_ < ((1 << (CWIDTH - 1)) - 1)) {
+        ctr_++;
       }
     } else {
-      if (ctr[pos] > -(1 << (CWIDTH - 1))) {
-        ctr[pos]--;
+      if (ctr_ > -(1 << (CWIDTH - 1))) {
+        ctr_--;
       }
     }
 #endif
   }
 
-  bool ctr_weak() const {
-    if (!hit) {
-      return true;
-    }
+  bool ctr_weak() const { return !hit || ctr_ == 0 || ctr_ == -1; }
 
-    return ctr[pos] == 0 || ctr[pos] == -1;
-  }
+  bool ctr_highconf() const { return hit && (abs(2 * ctr_ + 1) >= (1 << CWIDTH) - 1); }
 
-  bool ctr_highconf() const {
-    if (!hit) {
-      return false;
-    }
-
-    return (abs(2 * ctr[pos] + 1) >= (1 << CWIDTH) - 1);
-  }
-
-  int ctr_get() const {
-    if (!hit) {
-      return 0;  // bias to taken if nothing is known
-    }
-
-    return ctr[pos];
-  }
+  int ctr_get() const { return hit ? ctr_ : 0; }
 
   bool ctr_isTaken() const { return ctr_get() >= 0; }
 
-  int u_get() const { return u[0]; }
+  int u_get() const { return u_; }
 
   void u_inc() {
-    if (u[0] < (1 << UWIDTH) - 1) {
-      u[0]++;
+    if (u_ < (1 << UWIDTH) - 1) {
+      u_++;
     }
   }
 
   void u_dec() {
-    if (u[0]) {
-      u[0]--;
+    if (u_) {
+      u_--;
     }
   }
-  void u_clear() { u[0] = 0; }
+  void u_clear() { u_ = 0; }
 };
 
 class IMLIBest {
@@ -686,6 +519,8 @@ public:
   const int  bwidth;
   const int  nhist;
   const bool sc;
+  const int  log2_tage_nsub;
+  const int  tage_nsub_mask;  // (1 << log2_tage_nsub) - 1
 
 #ifdef POSTPREDICT
 #define POSTPEXTRA 2
@@ -887,13 +722,15 @@ public:
   int8_t WITHLOOP;  // counter to monitor whether or not loop prediction is beneficial
 #endif
 
-  IMLIBest(int _blogb, int _log2fetchwidth, int _bwidth, int _nhist, bool _sc)
+  IMLIBest(int _blogb, int _log2fetchwidth, int _bwidth, int _nhist, bool _sc, int _log2_tage_nsub = 0)
       : bimodal(_blogb, _log2fetchwidth, _bwidth)
       , blogb(_blogb)
       , log2fetchwidth(_log2fetchwidth)
       , bwidth(_bwidth)
       , nhist(_nhist >= MAXHIST ? MAXHIST : _nhist)
-      , sc(_sc) {
+      , sc(_sc)
+      , log2_tage_nsub(_log2_tage_nsub)
+      , tage_nsub_mask((1 << _log2_tage_nsub) - 1) {
     ch_i.resize(nhist + 1);
     ch_t[0].resize(nhist + 1);
     ch_t[1].resize(nhist + 1);
@@ -1163,8 +1000,6 @@ public:
     phist   = 0;
   }
   // index function for the bimodal table
-
-  int bindex(Addr_t PC) { return ((PC) & ((1 << (blogb)) - 1)); }
 
   // the index functions for the tagged tables uses path history as in the OGEHL predictor
   // F serves to mix path history: not very important impact
@@ -1490,11 +1325,11 @@ public:
 
     return sign;
   }
-  // #define IDEAL_REHASH_BIM_BOUNDARY 1
+#define IDEAL_REHASH_BIM_BOUNDARY 1
 
   void fetchBoundaryOffsetBranch(Addr_t orig_PC, uint64_t orig_ID) {
-    (void)orig_PC;
     (void)orig_ID;
+    (void)orig_PC;
 
 #ifdef IDEAL_BOUNDARY_ONLY_FOR_CTRL
     bimodal.select(GI[0], bim_tag_offset);
@@ -1504,8 +1339,15 @@ public:
     bimodal.select(GI[0], imli_bpred_hash(lastBoundaryPC, 100 + orig_ID - lastBoundaryID));
 #endif
 
+    if (log2_tage_nsub > 0) {
+      for (int i = 1; i <= nhist; i++) {
+        uint32_t pc_offset = GTAG[i] & tage_nsub_mask;
+        GI[i]              = GI[i] ^ pc_offset;
+      }
+    }
+
     for (int i = 1; i <= nhist; i++) {
-      gtable[i][GI[i]].select(GTAG[i], 0);
+      gtable[i][GI[i]].select(GTAG[i]);
     }
   }
 
@@ -1970,53 +1812,15 @@ public:
         int NA      = 0;
 
         int weakBank = HitBank + A;
-#ifdef SUBENTRIES
-        std::vector<bool> skip(nhist + 1, false);
 
-        // First try tag (but not offset hit)
-        for (int i = weakBank; i <= nhist; i += 1) {
-          if (gtable[i][GI[i]].isTagHit()) {
-            weakBank = i;
-
-            if (!gtable[i][GI[i]].ctr_steal(e.taken)) {
-              continue;
-            }
-
-            skip[i] = true;
-            // gtable[i][GI[i]].dump(); printf(" alloc pc=%x\n",PC);
-
-            NA++;
-            T--;
-            if (T <= 0) {
-              break;
-            }
-          }
-        }
-#endif
-
-        // Then allocate a new tag if still not good enough
+        // Allocate a new entry in a longer-history bank
         if (T > 0) {
           weakBank = HitBank + A;
           for (int i = weakBank; i <= nhist; i += 1) {
-            if (skip[i]) {
-              continue;
-            }
-
             if (gtable[i][GI[i]].u_get() == 0) {
               weakBank = i;
 
-#ifdef SUBENTRIES
-              // FIXME: If tag hit, no need to nuke. Just remove any of them (weaker counter better). force_steal
-              if (gtable[i][GI[i]].isTagHit()) {
-                gtable[i][GI[i]].ctr_force_steal(e.taken);
-                // gtable[i][GI[i]].dump(); printf(" alloc2 pc=%x\n",PC);
-              } else {
-                gtable[i][GI[i]].reset(GTAG[i], e.taken);
-                // gtable[i][GI[i]].dump(); printf(" alloc3 pc=%x\n",PC);
-              }
-#else
               gtable[i][GI[i]].reset(GTAG[i], e.taken);
-#endif
 
               NA++;
 

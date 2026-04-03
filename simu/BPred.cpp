@@ -153,6 +153,8 @@ BPBTB::BPBTB(int32_t i, const std::string& section, const std::string& sname, co
     , btb_tag_offset(Config::get_bool(section, "btb_tag_offset"))
     , btb_tag_hybrid(Config::get_bool(section, "btb_tag_hybrid"))
     , btb_tag_size(Config::get_integer(section, "btb_tag_size"))
+    , log2_btb_nsub(Config::has_entry(section, "btb_nsub") ? log2(Config::get_power2(section, "btb_nsub")) : 0)
+    , btb_nsub_mask((1 << log2_btb_nsub) - 1)
     , btb_name(fmt::format("{}{}", name, sname)) {
   btbHistorySize = Config::get_integer(section, "btb_history_size");
 
@@ -170,7 +172,7 @@ BPBTB::BPBTB(int32_t i, const std::string& section, const std::string& sname, co
 
   if (Config::get_integer(section, "btb_size") == 0) {
     // Oracle
-    data = 0;
+    data.clear();
     return;
   }
 
@@ -181,13 +183,36 @@ BPBTB::BPBTB(int32_t i, const std::string& section, const std::string& sname, co
   uint32_t shift_amt = (sizeof(uint32_t) << 3) - btb_tag_size;
   btb_tag_mask       = ((uint32_t)(-1 << shift_amt)) >> shift_amt;
 
-  data = BTBCache::create(section, "btb", fmt::format("P({})_BPred{}_BTB:", i, sname));
-  I(data);
+  int btb_nsub = 1 << log2_btb_nsub;
+  int btb_size = Config::get_power2(section, "btb_size");
+  int btb_assoc = Config::get_integer(section, "btb_assoc");
+  int btb_line_size = Config::get_power2(section, "btb_line_size", 1, 1024);
+  bool btb_xor = Config::has_entry(section, "btb_xor") ? Config::get_bool(section, "btb_xor") : false;
+  bool btb_skew = Config::has_entry(section, "btb_skew") ? Config::get_bool(section, "btb_skew") : false;
+  int btb_addr_unit = Config::has_entry(section, "btb_addrUnit") ? Config::get_power2(section, "btb_addrUnit", 0, btb_line_size) : 1;
+  auto repl_policy = Config::get_string(section, "btb_repl_policy");
+
+  int btb_bank_size = btb_size >> log2_btb_nsub;
+  if (btb_bank_size < btb_assoc * btb_line_size) {
+    Config::add_error(fmt::format("Section {} has btb_size {} too small for btb_nsub {} and btb_assoc {}",
+                                  sname,
+                                  btb_size,
+                                  btb_nsub,
+                                  btb_assoc));
+  }
+
+  data.resize(btb_nsub, nullptr);
+  for (int bank = 0; bank < btb_nsub; ++bank) {
+    data[bank] = BTBCache::create(btb_bank_size, btb_assoc, btb_line_size, btb_addr_unit, repl_policy, btb_skew, btb_xor);
+    I(data[bank]);
+  }
 }
 
 BPBTB::~BPBTB() {
-  if (data) {
-    data->destroy();
+  for (auto* bank : data) {
+    if (bank) {
+      bank->destroy();
+    }
   }
 }
 
@@ -206,7 +231,7 @@ void BPBTB::fetchBoundaryEnd() {
 
 void BPBTB::updateOnly(Dinst* dinst) {
   ++btb_tag_counter;
-  if (data == 0 || !dinst->isTaken() || dinst->getInst()->isFuncRet()) {
+  if (data.empty() || !dinst->isTaken() || dinst->getInst()->isFuncRet()) {
     return;
   }
 
@@ -216,8 +241,10 @@ void BPBTB::updateOnly(Dinst* dinst) {
   bool force_offset = btb_taken_counter > 1 && btb_tag_hybrid;
 
   auto [boundary_key, tag_key] = compute_index_tag(dinst, btb_tag_offset || force_offset, true);
+  auto [banked_tag_key, unused_tag_bits, bank_id] = split_tag_bank(tag_key);
+  (void)unused_tag_bits;
 
-  BTBCache::CacheLine* cl = data->fillLine(boundary_key, tag_key, 0xdeaddead);
+  BTBCache::CacheLine* cl = data[bank_id]->fillLine(boundary_key, banked_tag_key, 0xdeaddead);
   I(cl);
 
   cl->targetPC = dinst->getAddr();
@@ -231,6 +258,20 @@ void BPBTB::updateOnly(Dinst* dinst) {
              dinst->getAddr(),
              (uint64_t)cl);
 #endif
+}
+
+std::tuple<Addr_t, Addr_t, size_t> BPBTB::split_tag_bank(Addr_t tag_key) const {
+  size_t bank_id = 0;
+  if (log2_btb_nsub > 0) {
+    bank_id = static_cast<size_t>(tag_key & btb_nsub_mask);
+    tag_key = tag_key >> log2_btb_nsub;
+  }
+
+  if (tag_key == 0) {
+    tag_key = bank_id + 1;
+  }
+
+  return {tag_key, tag_key, bank_id};
 }
 
 std::tuple<Addr_t, Addr_t> BPBTB::compute_index_tag(Dinst* dinst, bool do_tag_offset, bool doUpdate) {
@@ -270,7 +311,7 @@ Outcome BPBTB::predict(Dinst* dinst, bool doUpdate, bool doStats) {
   // I(dinst->isTaken());  // BTB should be called only when the branch is taken (predict taken & taken -> call BTB)
   ++btb_tag_counter;
 
-  if (data == 0) {
+  if (data.empty()) {
     // required when BPOracle
     if (dinst->getInst()->doesCtrl2Label()) {
       nHitLabel.inc(doUpdate && dinst->has_stats() && doStats);
@@ -297,12 +338,14 @@ Outcome BPBTB::predict(Dinst* dinst, bool doUpdate, bool doStats) {
 
   bool force_offset            = btb_taken_counter > 1 && btb_tag_hybrid;
   auto [boundary_key, tag_key] = compute_index_tag(dinst, btb_tag_offset || force_offset, doUpdate);
+  auto [banked_tag_key, unused_tag_bits, bank_id] = split_tag_bank(tag_key);
+  (void)unused_tag_bits;
 
   BTBCache::CacheLine* cl = nullptr;
   if (doUpdate && dinst->getAddr()) {
-    cl = data->fillLine(boundary_key, tag_key, 0xdeaddead);
+    cl = data[bank_id]->fillLine(boundary_key, banked_tag_key, 0xdeaddead);
   } else {
-    cl = data->findLineNoEffect(boundary_key, tag_key, 0xdeaddead);
+    cl = data[bank_id]->findLineNoEffect(boundary_key, banked_tag_key, 0xdeaddead);
   }
 
   if (cl) {
@@ -345,11 +388,12 @@ Outcome BPBTB::predict(Dinst* dinst, bool doUpdate, bool doStats) {
   }
   if (!cl && btb_tag_hybrid) {  // Also try with offset
     std::tie(boundary_key, tag_key) = compute_index_tag(dinst, true, doUpdate && btb_taken_counter > 1);
+    std::tie(banked_tag_key, unused_tag_bits, bank_id) = split_tag_bank(tag_key);
 
     if (doUpdate && btb_taken_counter > 1 && dinst->getAddr()) {
-      cl = data->fillLine(boundary_key, tag_key, 0xdeaddead);
+      cl = data[bank_id]->fillLine(boundary_key, banked_tag_key, 0xdeaddead);
     } else {
-      cl = data->findLineNoEffect(boundary_key, tag_key, 0xdeaddead);
+      cl = data[bank_id]->findLineNoEffect(boundary_key, banked_tag_key, 0xdeaddead);
     }
 
     if (cl) {

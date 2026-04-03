@@ -84,70 +84,70 @@
 // #define IMLI			// using IMLI component
 // #define IMLISIC            //use IMLI-SIC
 // #define IMLIOH		//use IMLI-OH
-#define IMLI       // using IMLI component
+#define IMLI                         // using IMLI component
 #define DEFAULT_LOG2_TAGE_ENTRIES 7  /* logsize of the tagged TAGE tables*/
-#define TBITS   13 /* minimum tag width*/
-#define MAXHIST 300
-#define MINHIST 5
+#define TBITS                     13 /* minimum tag width*/
+#define MAXHIST                   300
+#define MINHIST                   5
 // #define USE_DOLC 1
 
-#elif MEGA_IMLI        // 1M IMLI
+#elif MEGA_IMLI                       // 1M IMLI
 // nhist = 9
-#define LOOPPREDICTOR  //  use loop  predictor
-#define LOCALH         // use local histories
-#define IMLI           // using IMLI component
-#define IMLISIC        // use IMLI-SIC
-#define IMLIOH         // use IMLI-OH
-#define DEFAULT_LOG2_TAGE_ENTRIES 12     // logsize of the tagged TAGE tables
-#define TBITS   22     // minimum tag width
-#define MAXHIST 400
-#define MINHIST 5
+#define LOOPPREDICTOR                 //  use loop  predictor
+#define LOCALH                        // use local histories
+#define IMLI                          // using IMLI component
+#define IMLISIC                       // use IMLI-SIC
+#define IMLIOH                        // use IMLI-OH
+#define DEFAULT_LOG2_TAGE_ENTRIES 12  // logsize of the tagged TAGE tables
+#define TBITS                     22  // minimum tag width
+#define MAXHIST                   400
+#define MINHIST                   5
 
 #elif IMLI_256K
 // nhist = 6
-#define LOOPPREDICTOR  //  use loop  predictor
-#define LOCALH         // use local histories
-#define IMLI           // using IMLI component
-#define IMLISIC        // use IMLI-SIC
-#define IMLIOH         // use IMLI-OH
-#define DEFAULT_LOG2_TAGE_ENTRIES 11     // logsize of the tagged TAGE tables
-#define TBITS   16     // minimum tag width
-#define MAXHIST 200
-#define MINHIST 5
+#define LOOPPREDICTOR                 //  use loop  predictor
+#define LOCALH                        // use local histories
+#define IMLI                          // using IMLI component
+#define IMLISIC                       // use IMLI-SIC
+#define IMLIOH                        // use IMLI-OH
+#define DEFAULT_LOG2_TAGE_ENTRIES 11  // logsize of the tagged TAGE tables
+#define TBITS                     16  // minimum tag width
+#define MAXHIST                   200
+#define MINHIST                   5
 
 #elif IMLI_256K_SBP
 // nhist = 6
-#define LOOPPREDICTOR  //  use loop  predictor
-#define LOCALH         // use local histories
-#define IMLI           // using IMLI component
-#define IMLISIC        // use IMLI-SIC
-#define IMLIOH         // use IMLI-OH
-#define DEFAULT_LOG2_TAGE_ENTRIES 10     // logsize of the tagged TAGE tables
-#define TBITS   12     // minimum tag width
-#define MAXHIST 700
-#define MINHIST 4
+#define LOOPPREDICTOR                 //  use loop  predictor
+#define LOCALH                        // use local histories
+#define IMLI                          // using IMLI component
+#define IMLISIC                       // use IMLI-SIC
+#define IMLIOH                        // use IMLI-OH
+#define DEFAULT_LOG2_TAGE_ENTRIES 10  // logsize of the tagged TAGE tables
+#define TBITS                     12  // minimum tag width
+#define MAXHIST                   700
+#define MINHIST                   4
 #elif IMLI_150K
 // nhist = 4
-#define LOOPPREDICTOR  //  use loop  predictor
-#define LOCALH         // use local histories
-#define IMLI           // using IMLI component
-#define IMLISIC        // use IMLI-SIC
-#define IMLIOH         // use IMLI-OH
-#define DEFAULT_LOG2_TAGE_ENTRIES 11     // 11       // logsize of the tagged TAGE tables
-#define TBITS   13     // 16      // minimum tag width
-#define MAXHIST 160
-#define MINHIST 5
+#define LOOPPREDICTOR                 //  use loop  predictor
+#define LOCALH                        // use local histories
+#define IMLI                          // using IMLI component
+#define IMLISIC                       // use IMLI-SIC
+#define IMLIOH                        // use IMLI-OH
+#define DEFAULT_LOG2_TAGE_ENTRIES 11  // 11       // logsize of the tagged TAGE tables
+#define TBITS                     13  // 16      // minimum tag width
+#define MAXHIST                   160
+#define MINHIST                   5
 #else
 // nhist = 7, glength
-#define LOOPPREDICTOR  //  use loop  predictor
-#define LOCALH         // use local histories
-#define IMLI           // using IMLI component
-#define IMLISIC        // use IMLI-SIC
-#define IMLIOH         // use IMLI-OH
-#define DEFAULT_LOG2_TAGE_ENTRIES 12     /* logsize of the tagged TAGE tables*/
-#define TBITS   13     /* minimum tag width*/
-#define MAXHIST 200    // 200
-#define MINHIST 5
+#define LOOPPREDICTOR                  //  use loop  predictor
+#define LOCALH                         // use local histories
+#define IMLI                           // using IMLI component
+#define IMLISIC                        // use IMLI-SIC
+#define IMLIOH                         // use IMLI-OH
+#define DEFAULT_LOG2_TAGE_ENTRIES 12   /* logsize of the tagged TAGE tables*/
+#define TBITS                     13   /* minimum tag width*/
+#define MAXHIST                   200  // 200
+#define MINHIST                   5
 #endif
 
 /*
@@ -791,7 +791,7 @@ public:
     fprintf(stderr, " altna size=%d log2entries=%d\n", 2 * (SIZEUSEALT)*4, LOGSIZEUSEALT);
 
     inter = bwidth * (1 << (log2_bimodal_nsub + log2_bimodal_entries));
-    fprintf(stderr, " bimodal table size=%d log2entries=%d log2nsub=%d\n", inter, log2_bimodal_entries, log2_bimodal_nsub);
+    fprintf(stderr, " bimodal table bit_size=%d log2entries=%d log2nsub=%d\n", inter, log2_bimodal_entries, log2_bimodal_nsub);
 
     STORAGESIZE += inter;
     STORAGESIZE += m[nhist];
@@ -1356,7 +1356,7 @@ public:
   }
 #define IDEAL_REHASH_BIM_BOUNDARY 1
 
-  void fetchBoundaryOffsetBranch(Addr_t orig_PC, uint64_t orig_ID) {
+  void select_tage_entries(Addr_t orig_PC, uint64_t orig_ID) {
     (void)orig_ID;
     (void)orig_PC;
 
@@ -1391,7 +1391,7 @@ public:
     // fetchBoundaryBegin(orig_PC, orig_ID);
     setTAGETag(PC);
 
-    fetchBoundaryOffsetBranch(orig_PC, orig_ID);
+    select_tage_entries(orig_PC, orig_ID);
 
     setTAGEPred();
 

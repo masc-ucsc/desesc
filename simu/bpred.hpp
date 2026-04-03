@@ -14,9 +14,11 @@
  */
 
 #include <algorithm>
+#include <array>
 #include <deque>
 #include <iostream>
 #include <map>
+#include <tuple>
 #include <vector>
 
 #include "cachecore.hpp"
@@ -186,6 +188,8 @@ private:
   const bool  btb_tag_hybrid;
   uint32_t    btb_tag_size;
   uint32_t    btb_tag_mask;
+  uint32_t    log2_btb_nsub;
+  uint32_t    btb_nsub_mask;
   std::string btb_name;
 
   int32_t btb_taken_counter;
@@ -205,10 +209,11 @@ private:
 
   typedef CacheGeneric<BTBState, Addr_t> BTBCache;
 
-  BTBCache* data;
+  std::vector<BTBCache*> data;
   Addr_t    boundaryPC;
   uint64_t  boundaryID;
 
+  std::tuple<Addr_t, Addr_t, size_t> split_tag_bank(Addr_t tag_key) const;
   std::tuple<Addr_t, Addr_t> compute_index_tag(Dinst* dinst, bool do_tag_offset, bool doUpdate);
 
 protected:

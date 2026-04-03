@@ -85,7 +85,7 @@
 // #define IMLISIC            //use IMLI-SIC
 // #define IMLIOH		//use IMLI-OH
 #define IMLI       // using IMLI component
-#define LOGG    10 /* logsize of the  tagged TAGE tables*/
+#define DEFAULT_LOG2_TAGE_ENTRIES 7  /* logsize of the tagged TAGE tables*/
 #define TBITS   13 /* minimum tag width*/
 #define MAXHIST 300
 #define MINHIST 5
@@ -98,7 +98,7 @@
 #define IMLI           // using IMLI component
 #define IMLISIC        // use IMLI-SIC
 #define IMLIOH         // use IMLI-OH
-#define LOGG    12     // logsize of the  tagged TAGE tables
+#define DEFAULT_LOG2_TAGE_ENTRIES 12     // logsize of the tagged TAGE tables
 #define TBITS   22     // minimum tag width
 #define MAXHIST 400
 #define MINHIST 5
@@ -110,7 +110,7 @@
 #define IMLI           // using IMLI component
 #define IMLISIC        // use IMLI-SIC
 #define IMLIOH         // use IMLI-OH
-#define LOGG    11     // logsize of the  tagged TAGE tables
+#define DEFAULT_LOG2_TAGE_ENTRIES 11     // logsize of the tagged TAGE tables
 #define TBITS   16     // minimum tag width
 #define MAXHIST 200
 #define MINHIST 5
@@ -122,7 +122,7 @@
 #define IMLI           // using IMLI component
 #define IMLISIC        // use IMLI-SIC
 #define IMLIOH         // use IMLI-OH
-#define LOGG    10     // logsize of the  tagged TAGE tables
+#define DEFAULT_LOG2_TAGE_ENTRIES 10     // logsize of the tagged TAGE tables
 #define TBITS   12     // minimum tag width
 #define MAXHIST 700
 #define MINHIST 4
@@ -133,7 +133,7 @@
 #define IMLI           // using IMLI component
 #define IMLISIC        // use IMLI-SIC
 #define IMLIOH         // use IMLI-OH
-#define LOGG    11     // 11       // logsize of the  tagged TAGE tables
+#define DEFAULT_LOG2_TAGE_ENTRIES 11     // 11       // logsize of the tagged TAGE tables
 #define TBITS   13     // 16      // minimum tag width
 #define MAXHIST 160
 #define MINHIST 5
@@ -144,7 +144,7 @@
 #define IMLI           // using IMLI component
 #define IMLISIC        // use IMLI-SIC
 #define IMLIOH         // use IMLI-OH
-#define LOGG    12     /* logsize of the  tagged TAGE tables*/
+#define DEFAULT_LOG2_TAGE_ENTRIES 12     /* logsize of the tagged TAGE tables*/
 #define TBITS   13     /* minimum tag width*/
 #define MAXHIST 200    // 200
 #define MINHIST 5
@@ -158,7 +158,7 @@
 #define IMLI          // using IMLI component
 #define IMLISIC       // use IMLI-SIC
 #define IMLIOH        // use IMLI-OH
-#define LOGG 13       // logsize of the  tagged TAGE tables
+#define DEFAULT_LOG2_TAGE_ENTRIES 13       // logsize of the tagged TAGE tables
 #define TBITS 14      // minimum tag width
 #define MAXHIST 400
 #define MINHIST 5
@@ -354,8 +354,8 @@ public:
 class Bimodal {
 private:
   const uint32_t bwidth;
-  const uint32_t Log2Size;
-  const uint32_t Log2FetchWidth;
+  const uint32_t log2_size;
+  const uint32_t log2_bimodal_nsub;
   const uint32_t indexMask;
 
   int pos_p;
@@ -365,13 +365,13 @@ private:
   uint32_t getIndex(uint32_t pc) const { return (pc & indexMask); }
 
 public:
-  Bimodal(int ls, int lfw, int bw) : bwidth(bw), Log2Size(ls), Log2FetchWidth(lfw), indexMask((1 << (Log2Size + lfw)) - 1) {
-    pred.resize(1 << (Log2Size + Log2FetchWidth), 0);
+  Bimodal(int ls, int lbn, int bw) : bwidth(bw), log2_size(ls), log2_bimodal_nsub(lbn), indexMask((1 << (log2_size + lbn)) - 1) {
+    pred.resize(1 << (log2_size + log2_bimodal_nsub), 0);
 
     pos_p = 0;
   }
 
-  int getsize() const { return (1 << (Log2Size + Log2FetchWidth)) * bwidth; }
+  int getsize() const { return (1 << (log2_size + log2_bimodal_nsub)) * bwidth; }
 
   void dump() { printf(" loff=%d ctr=%d", pos_p, pred[pos_p]); }
 
@@ -381,7 +381,7 @@ public:
   void select(uint32_t fetchPC_) { pos_p = getIndex(fetchPC_); }
 
   void select(uint32_t fetchPC_, uint8_t boff_) {
-    pos_p = getIndex(getIndex((fetchPC_ << Log2FetchWidth)) + (boff_ & ((1 << Log2FetchWidth) - 1)));
+    pos_p = getIndex(getIndex((fetchPC_ << log2_bimodal_nsub)) + (boff_ & ((1 << log2_bimodal_nsub) - 1)));
   }
 
   void update(bool taken) {
@@ -513,14 +513,34 @@ public:
 
 class IMLIBest {
 public:
-  Bimodal    bimodal;  // (BLOGB,LOG2FETCHWIDTH,BWIDTH);
-  const int  blogb;
-  const int  log2fetchwidth;
+  Bimodal    bimodal;  // (log2_bimodal_entries,log2_bimodal_nsub,BWIDTH);
+  const int  log2_bimodal_entries;
+  const int  log2_bimodal_nsub;
   const int  bwidth;
   const int  nhist;
   const bool sc;
+  const int  log2_tage_entries;
   const int  log2_tage_nsub;
   const int  tage_nsub_mask;  // (1 << log2_tage_nsub) - 1
+
+  int get_tage_subentry(uint32_t tag) const {
+    if (log2_tage_nsub == 0) {
+      return 0;
+    }
+
+    return tag & tage_nsub_mask;
+  }
+
+  int get_tage_pos(int bank) const {
+    int pos = GI[bank];
+    if (log2_tage_nsub > 0) {
+      pos = (pos << log2_tage_nsub) + get_tage_subentry(GTAG[bank]);
+    }
+    return pos;
+  }
+
+  gentry&       get_gentry(int bank) { return gtable[bank][get_tage_pos(bank)]; }
+  const gentry& get_gentry(int bank) const { return gtable[bank][get_tage_pos(bank)]; }
 
 #ifdef POSTPREDICT
 #define POSTPEXTRA 2
@@ -534,17 +554,17 @@ public:
   uint32_t postp_index(uint32_t a, uint32_t b, uint32_t c) {
     int ctr[POSTPEXTRA + 1];
     if (a) {
-      ctr[0] = gtable[a][GI[a]].ctr_get();
+      ctr[0] = get_gentry(a).ctr_get();
     } else {
       ctr[0] = bimodal.predict();
     }
     if (b) {
-      ctr[1] = gtable[b][GI[b]].ctr_get();
+      ctr[1] = get_gentry(b).ctr_get();
     } else {
       ctr[1] = bimodal.predict();
     }
     if (c) {
-      ctr[2] = gtable[c][GI[c]].ctr_get();
+      ctr[2] = get_gentry(c).ctr_get();
     } else {
       ctr[2] = bimodal.predict();
     }
@@ -561,7 +581,7 @@ public:
     for (int i = POSTPEXTRA; i >= 0; i--) {
       v = (v << CTRBITS) | (ctr[i] & (((1 << CTRBITS) - 1)));
     }
-    int u0 = (a > 0) ? gtable[a][GI[a]].u_get() : 1;
+    int u0 = (a > 0) ? get_gentry(a).u_get() : 1;
     v      = (v << 1) | u0;
     v &= postpsize - 1;
     return v;
@@ -722,13 +742,15 @@ public:
   int8_t WITHLOOP;  // counter to monitor whether or not loop prediction is beneficial
 #endif
 
-  IMLIBest(int _blogb, int _log2fetchwidth, int _bwidth, int _nhist, bool _sc, int _log2_tage_nsub = 0)
-      : bimodal(_blogb, _log2fetchwidth, _bwidth)
-      , blogb(_blogb)
-      , log2fetchwidth(_log2fetchwidth)
+  IMLIBest(int _log2_bimodal_nsub, int _log2_bimodal_entries, int _bwidth, int _nhist, bool _sc, int _log2_tage_entries,
+           int _log2_tage_nsub = 0)
+      : bimodal(_log2_bimodal_entries, _log2_bimodal_nsub, _bwidth)
+      , log2_bimodal_entries(_log2_bimodal_entries)
+      , log2_bimodal_nsub(_log2_bimodal_nsub)
       , bwidth(_bwidth)
       , nhist(_nhist >= MAXHIST ? MAXHIST : _nhist)
       , sc(_sc)
+      , log2_tage_entries(_log2_tage_entries)
       , log2_tage_nsub(_log2_tage_nsub)
       , tage_nsub_mask((1 << _log2_tage_nsub) - 1) {
     ch_i.resize(nhist + 1);
@@ -752,8 +774,15 @@ public:
 
     for (int i = 1; i <= nhist; i += 1) {
       int s = logg[i];
-      int x = (1 << s) * (CWIDTH + UWIDTH + TB[i]);
-      fprintf(stderr, "table[%d] size=%d log2entries=%d histlength=%d taglength=%d\n", i, x, s, m[i], TB[i]);
+      int x = (1 << (s + log2_tage_nsub)) * (CWIDTH + UWIDTH + TB[i]);
+      fprintf(stderr,
+              "table[%d] size=%d log2entries=%d log2nsub=%d histlength=%d taglength=%d\n",
+              i,
+              x,
+              s,
+              log2_tage_nsub,
+              m[i],
+              TB[i]);
 
       STORAGESIZE += x;
     }
@@ -761,8 +790,8 @@ public:
     STORAGESIZE += 2 * (SIZEUSEALT)*4;
     fprintf(stderr, " altna size=%d log2entries=%d\n", 2 * (SIZEUSEALT)*4, LOGSIZEUSEALT);
 
-    inter = bwidth * (1 << (log2fetchwidth + blogb));
-    fprintf(stderr, " bimodal table size=%d log2entries=%d\n", inter, blogb);
+    inter = bwidth * (1 << (log2_bimodal_nsub + log2_bimodal_entries));
+    fprintf(stderr, " bimodal table size=%d log2entries=%d log2nsub=%d\n", inter, log2_bimodal_entries, log2_bimodal_nsub);
 
     STORAGESIZE += inter;
     STORAGESIZE += m[nhist];
@@ -874,7 +903,7 @@ public:
 
     for (int i = 1; i <= nhist; i++) {
       TB[i]   = TBITS + (i / 2);
-      logg[i] = LOGG;
+      logg[i] = log2_tage_entries;
     }
 
 #ifdef LOOPPREDICTOR
@@ -887,8 +916,8 @@ public:
     int ngalloc  = 3;
 
     for (int i = 1; i <= nhist; i++) {
-      gtable[i].resize(1 << (logg[i]));
-      for (int j = 0; j < (1 << logg[i]); j++) {
+      gtable[i].resize(1 << (logg[i] + log2_tage_nsub));
+      for (int j = 0; j < (1 << (logg[i] + log2_tage_nsub)); j++) {
         int s;
         if (i >= ngalloc) {
           s = galloc[ngalloc];
@@ -1195,14 +1224,14 @@ public:
     HitBank = 0;
     AltBank = 0;
     for (int i = 1; i <= nhist; i++) {
-      if (gtable[i][GI[i]].isHit()) {
-        LongestMatchPred = (gtable[i][GI[i]].ctr_isTaken());
+      if (get_gentry(i).isHit()) {
+        LongestMatchPred = get_gentry(i).ctr_isTaken();
         HitBank          = i;
       }
     }
 
     for (int i = HitBank - 1; i > 0; i--) {
-      if (gtable[i][GI[i]].isHit()) {
+      if (get_gentry(i).isHit()) {
         AltBank = i;
         break;
       }
@@ -1211,7 +1240,7 @@ public:
 #ifdef POSTPREDICT
     int WeakBank = 0;
     for (int i = AltBank - 1; i > 0; i--) {
-      if (gtable[i][GI[i]].isHit()) {
+      if (get_gentry(i).isHit()) {
         WeakBank = i;
         break;
       }
@@ -1219,7 +1248,7 @@ public:
 
     if (HitBank > 0) {
       if (AltBank > 0) {
-        alttaken = (gtable[AltBank][GI[AltBank]].ctr_isTaken());
+        alttaken = get_gentry(AltBank).ctr_isTaken();
       } else {
         alttaken = bimodal.predict();
       }
@@ -1231,7 +1260,7 @@ public:
     // computes the prediction and the alternate prediction
     if (HitBank > 0) {
       if (AltBank > 0) {
-        alttaken = (gtable[AltBank][GI[AltBank]].ctr_isTaken());
+        alttaken = get_gentry(AltBank).ctr_isTaken();
       } else {
         alttaken = bimodal.predict();
       }
@@ -1241,15 +1270,15 @@ public:
       int  index          = INDUSEALT ^ LongestMatchPred;
       bool Huse_alt_on_na = (use_alt_on_na[index][HitBank > (nhist / 3)] >= 0);
 
-      if (!Huse_alt_on_na || !gtable[HitBank][GI[HitBank]].ctr_weak()) {
+      if (!Huse_alt_on_na || !get_gentry(HitBank).ctr_weak()) {
         tage_pred = LongestMatchPred;
-        HighConf  = gtable[HitBank][GI[HitBank]].ctr_highconf();
-        WeakConf  = gtable[HitBank][GI[HitBank]].ctr_weak();
+        HighConf  = get_gentry(HitBank).ctr_highconf();
+        WeakConf  = get_gentry(HitBank).ctr_weak();
       } else {
         tage_pred = alttaken;
         if (AltBank) {
-          HighConf = gtable[AltBank][GI[AltBank]].ctr_highconf();
-          WeakConf = gtable[AltBank][GI[AltBank]].ctr_weak();
+          HighConf = get_gentry(AltBank).ctr_highconf();
+          WeakConf = get_gentry(AltBank).ctr_weak();
         } else {
           HighConf = bimodal.highconf();
           WeakConf = !HighConf;
@@ -1339,15 +1368,8 @@ public:
     bimodal.select(GI[0], imli_bpred_hash(lastBoundaryPC, 100 + orig_ID - lastBoundaryID));
 #endif
 
-    if (log2_tage_nsub > 0) {
-      for (int i = 1; i <= nhist; i++) {
-        uint32_t pc_offset = GTAG[i] & tage_nsub_mask;
-        GI[i]              = GI[i] ^ pc_offset;
-      }
-    }
-
     for (int i = 1; i <= nhist; i++) {
-      gtable[i][GI[i]].select(GTAG[i]);
+      get_gentry(i).select(GTAG[i]);
     }
   }
 
@@ -1383,7 +1405,7 @@ public:
       }
       if (HitBank) {
         std::print(" bank:{} GI:{}", HitBank, GI[HitBank]);
-        gtable[HitBank][GI[HitBank]].dump();
+        get_gentry(HitBank).dump();
       }
       std::print(" pred:{}\n", pred_taken);
     }
@@ -1679,7 +1701,7 @@ public:
     if (GTAG[1] == 17442) {
       std::print("upd orig_PC:{:x} resolveDir:{} bank:{}\n", e.orig_pc, e.taken, HitBank);
       std::print(" bank:{} ", HitBank);
-      gtable[1][GI[1]].dump();
+      get_gentry(1).dump();
       std::print("\n");
     }
 
@@ -1688,7 +1710,7 @@ public:
                 , e.orig_pc, imli_tag_offset, PC, false, pred_taken, e.taken);
 
       std::print(" bank:{} ", HitBank);
-      gtable[HitBank][GI[HitBank]].dump();
+      get_gentry(HitBank).dump();
       std::print("\n");
     }
 #endif
@@ -1778,7 +1800,7 @@ public:
       if (HitBank > 0) {
         // Manage the selection between longest matching and alternate matching
         // for "pseudo"-newly allocated longest matching entry
-        bool PseudoNewAlloc = gtable[HitBank][GI[HitBank]].ctr_weak();
+        bool PseudoNewAlloc = get_gentry(HitBank).ctr_weak();
         // an entry is considered as newly allocated if its prediction counter is weak
         if (PseudoNewAlloc) {
           if (LongestMatchPred == e.taken) {
@@ -1817,10 +1839,10 @@ public:
         if (T > 0) {
           weakBank = HitBank + A;
           for (int i = weakBank; i <= nhist; i += 1) {
-            if (gtable[i][GI[i]].u_get() == 0) {
+            if (get_gentry(i).u_get() == 0) {
               weakBank = i;
 
-              gtable[i][GI[i]].reset(GTAG[i], e.taken);
+              get_gentry(i).reset(GTAG[i], e.taken);
 
               NA++;
 
@@ -1847,7 +1869,7 @@ public:
         if (T) {
           if (TICK > 0) {
             for (int i = HitBank + 1; i <= nhist; i += 1) {
-              int idx1 = GI[i];
+              int idx1 = get_tage_pos(i);
 
               gtable[i][idx1].u_dec();
               TICK--;
@@ -1876,26 +1898,26 @@ public:
 #if 1
       // TODO: recheck that this is better
       if (HitBank) {
-        if (gtable[HitBank][GI[HitBank]].isHit()) {
+        if (get_gentry(HitBank).isHit()) {
           if (LongestMatchPred != e.taken) {
-            gtable[HitBank][GI[HitBank]].u_dec();
+            get_gentry(HitBank).u_dec();
           }
         }
       }
 #endif
 
       if (HitBank > 0) {
-        gtable[HitBank][GI[HitBank]].ctr_update(e.taken);
-        if (gtable[HitBank][GI[HitBank]].u_get() == 0 && AltBank > 0) {
-          gtable[AltBank][GI[AltBank]].ctr_update(e.taken);
+        get_gentry(HitBank).ctr_update(e.taken);
+        if (get_gentry(HitBank).u_get() == 0 && AltBank > 0) {
+          get_gentry(AltBank).ctr_update(e.taken);
         } else {
           bimodal.update(e.taken);
         }
         if (LongestMatchPred != alttaken) {   // HitBank and AltBank dissagree
           if (LongestMatchPred == e.taken) {  // LongestMatchPred == resolveDir && !noAlloc
-            gtable[HitBank][GI[HitBank]].u_inc();
+            get_gentry(HitBank).u_inc();
           } else {
-            gtable[HitBank][GI[HitBank]].u_dec();
+            get_gentry(HitBank).u_dec();
           }
         }
       } else {

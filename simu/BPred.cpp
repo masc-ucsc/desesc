@@ -912,17 +912,25 @@ BPIMLI::BPIMLI(int32_t i, const std::string& section, const std::string& sname)
   int tage_nsub    = Config::has_entry(section, "tage_nsub") ? Config::get_power2(section, "tage_nsub") : 1;
 
   int bimodalSize = Config::get_power2(section, "bimodal_size", 4);
+  int tageSize    = Config::has_entry(section, "tage_size") ? Config::get_power2(section, "tage_size")
+                                                            : ((1 << DEFAULT_LOG2_TAGE_ENTRIES) * tage_nsub);
   int bwidth      = Config::get_integer(section, "bimodal_width");
 
-  int log2_bimodal_nsub = log2(bimodal_nsub);
-  int blogb             = log2(bimodalSize) - log2_bimodal_nsub;
-  int log2_tage_nsub    = log2(tage_nsub);
+  int log2_bimodal_nsub    = log2(bimodal_nsub);
+  int log2_bimodal_entries = log2(bimodalSize) - log2_bimodal_nsub;
+  int log2_tage_entries    = log2(tageSize) - log2(tage_nsub);
+  int log2_tage_nsub       = log2(tage_nsub);
+
+  if (tageSize < tage_nsub) {
+    Config::add_error(fmt::format("Section {} has tage_size {} smaller than tage_nsub {}", sname, tageSize, tage_nsub));
+  }
 
   int nhist = Config::get_integer(section, "nhist", 1);
 
   bool statcorrector = Config::get_bool(section, "statcorrector");
 
-  imli = std::make_unique<IMLIBest>(log2_bimodal_nsub, blogb, bwidth, nhist, statcorrector, log2_tage_nsub);
+  imli = std::make_unique<IMLIBest>(log2_bimodal_nsub, log2_bimodal_entries, bwidth, nhist, statcorrector, log2_tage_entries,
+                                    log2_tage_nsub);
 }
 
 void BPIMLI::fetchBoundaryBegin(Dinst* dinst) {

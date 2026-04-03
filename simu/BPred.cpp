@@ -528,11 +528,15 @@ BP2bitL0::BP2bitL0(int32_t i, const std::string& section, const std::string& sna
 }
 
 void BP2bitL0::fetchBoundaryBegin(Dinst* dinst) {
+  BPred::fetchBoundaryBegin(dinst);
+  btb.fetchBoundaryBegin(dinst);
   pc                  = dinst->getPC();
   one_prediction_done = false;
 }
 
 void BP2bitL0::fetchBoundaryEnd() {
+  btb.fetchBoundaryEnd();
+  BPred::fetchBoundaryEnd();
   pc = 0;
 }
 
@@ -580,9 +584,15 @@ BP2bit::BP2bit(int32_t i, const std::string& section, const std::string& sname)
   pc = 0;
 }
 
-void BP2bit::fetchBoundaryBegin(Dinst* dinst) { pc = dinst->getPC(); }
+void BP2bit::fetchBoundaryBegin(Dinst* dinst) {
+  BPred::fetchBoundaryBegin(dinst);
+  btb.fetchBoundaryBegin(dinst);
+  pc = dinst->getPC();
+}
 
 void BP2bit::fetchBoundaryEnd() {
+  btb.fetchBoundaryEnd();
+  BPred::fetchBoundaryEnd();
   pc = 0;
 }
 
@@ -785,6 +795,7 @@ std::vector<Pending_update> pending;
 #endif
 
 void BPTahead::fetchBoundaryBegin(Dinst* dinst) {
+  BPred::fetchBoundaryBegin(dinst);
 #ifdef TAHEAD_DELAY_UPDATE
   tahead->fetchBoundaryEnd();
 #endif
@@ -801,6 +812,7 @@ void BPTahead::fetchBoundaryEnd() {
   pending.clear();
 #endif
   btb.fetchBoundaryEnd();
+  BPred::fetchBoundaryEnd();
 }
 
 Outcome BPTahead::predict(Dinst* dinst, bool doUpdate, bool doStats) {
@@ -873,6 +885,7 @@ std::vector<Pending_update> pending;
 #endif
 
 void BPTahead1::fetchBoundaryBegin(Dinst* dinst) {
+  BPred::fetchBoundaryBegin(dinst);
   (void)dinst;
 #ifdef TAHEAD1_DELAY_UPDATE
   tahead1->fetchBoundaryEnd();
@@ -890,6 +903,7 @@ void BPTahead1::fetchBoundaryEnd() {
   pending.clear();
 #endif
   btb.fetchBoundaryEnd();
+  BPred::fetchBoundaryEnd();
 }
 
 Outcome BPTahead1::predict(Dinst* dinst, bool doUpdate, bool doStats) {
@@ -1153,6 +1167,7 @@ BPSuperbp::BPSuperbp(int32_t i, const std::string& section, const std::string& s
 }
 
 void BPSuperbp::fetchBoundaryBegin(Dinst* dinst) {
+  BPred::fetchBoundaryBegin(dinst);
   if (FetchPredict) {
     superbp_p->fetchBoundaryBegin(dinst->getPC());
   }
@@ -1168,6 +1183,7 @@ void BPSuperbp::fetchBoundaryEnd() {
   if (btb_fetch_predict) {
     btb.fetchBoundaryEnd();
   }
+  BPred::fetchBoundaryEnd();
 }
 
 // #define TARGET2_FROM_GSHARE

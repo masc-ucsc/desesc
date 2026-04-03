@@ -70,7 +70,6 @@ bp_addr_shift = 0      # bits shifted by branch predictor PC
 ras_size      = 32
 ras_prefetch  = false
 
-btb_fetch_predict = true
 fetch_predict     = true   # Not a prediction per instruction
 
 btb_fetch_predict = true
@@ -87,6 +86,7 @@ btb_repl_policy   = "LRU"
 
 [bp1]
 type = "imli"
+use_tag_hybrid    = false
 use_tag_offset    = false
 
 delay             = 2
@@ -108,7 +108,6 @@ bp_addr_shift = 0      # bits shifted by branch predictor PC
 ras_size      = 32
 ras_prefetch  = false
 
-btb_fetch_predict = true
 fetch_predict     = true   # Not a prediction per instruction
 
 btb_fetch_predict = true
@@ -120,12 +119,16 @@ btb_split_il1     = false  # do not cache entries that can be computed by IL1
 btb_size          = 8192
 btb_line_size     = 1
 btb_assoc         = 4
+btb_nsub          = 1
 btb_repl_policy   = "LRU"
 
 history_size      = 12
 path_based        = false
 bimodal_size      = 8192
+bimodal_nsub      = 8
 bimodal_width     = 2
+tage_size         = 128
+tage_nsub         = 1
 meta_size  = 1024
 meta_width = 2
 
@@ -169,6 +172,7 @@ table_width = 3
 
 [bp2]
 type = "imli"
+use_tag_hybrid = false
 use_tag_offset = false
 
 delay             = 3
@@ -180,7 +184,6 @@ ras_size      = 32
 ras_prefetch  = false
 
 # IMLI fetch ideal 2 taken branch, set fetch_predict false
-btb_fetch_predict = true
 fetch_predict     = true   # Not a prediction per instruction
 
 btb_fetch_predict = true
@@ -192,12 +195,16 @@ btb_split_il1     = false  # do not cache entries that can be computed by IL1
 btb_size          = 8192
 btb_line_size     = 1
 btb_assoc         = 4
+btb_nsub          = 1
 btb_repl_policy   = "LRU"
 
 nhist             = 6
 statcorrector     = false
 bimodal_size = 1024
+bimodal_nsub = 8
 bimodal_width = 8
+tage_size = 128
+tage_nsub = 1
 
 # SuperBP parameters
 SBP_NUMG = 12

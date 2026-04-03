@@ -143,10 +143,11 @@ type = "imli"
 delay             = 3
 
 fetch_predict     = true
-use_tag_offset    = true
+use_tag_hybrid    = true
+use_tag_offset    = false
 
 btb_fetch_predict = true
-btb_tag_offset    = true
+btb_tag_offset    = false
 btb_tag_hybrid    = false
 btb_tag_size      = 8
 #type = "superbp"
@@ -162,12 +163,16 @@ btb_split_il1     = false  # do not cache entries that can be computed by IL1
 btb_size          = 8192
 btb_line_size     = 1
 btb_assoc         = 4
+btb_nsub          = 8
 btb_repl_policy   = "LRU"
 
 nhist             = 6
 statcorrector     = false
-bimodal_size = 1024
-bimodal_width = 8
+bimodal_size      = 1024
+bimodal_nsub      = 8
+bimodal_width     = 8
+tage_size         = 2048
+tage_nsub         = 8
 
 # SuperBP parameters
 SBP_NUMG = 12

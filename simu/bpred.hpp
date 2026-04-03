@@ -237,6 +237,14 @@ public:
   BPOracle(int32_t i, const std::string& section, const std::string& sname)
       : BPred(i, section, sname, "Oracle"), btb(i, section, sname) {}
 
+  void    fetchBoundaryBegin(Dinst* dinst) {
+    BPred::fetchBoundaryBegin(dinst);
+    btb.fetchBoundaryBegin(dinst);
+  }
+  void    fetchBoundaryEnd() {
+    btb.fetchBoundaryEnd();
+    BPred::fetchBoundaryEnd();
+  }
   Outcome predict(Dinst* dinst, bool doUpdate, bool doStats);
 };
 
@@ -251,6 +259,14 @@ public:
     // Done
   }
 
+  void    fetchBoundaryBegin(Dinst* dinst) {
+    BPred::fetchBoundaryBegin(dinst);
+    btb.fetchBoundaryBegin(dinst);
+  }
+  void    fetchBoundaryEnd() {
+    btb.fetchBoundaryEnd();
+    BPred::fetchBoundaryEnd();
+  }
   Outcome predict(Dinst* dinst, bool doUpdate, bool doStats);
 };
 
@@ -276,6 +292,14 @@ public:
     // Done
   }
 
+  void    fetchBoundaryBegin(Dinst* dinst) {
+    BPred::fetchBoundaryBegin(dinst);
+    btb.fetchBoundaryBegin(dinst);
+  }
+  void    fetchBoundaryEnd() {
+    btb.fetchBoundaryEnd();
+    BPred::fetchBoundaryEnd();
+  }
   Outcome predict(Dinst* dinst, bool doUpdate, bool doStats);
 };
 
@@ -290,6 +314,14 @@ public:
     // Done
   }
 
+  void    fetchBoundaryBegin(Dinst* dinst) {
+    BPred::fetchBoundaryBegin(dinst);
+    btb.fetchBoundaryBegin(dinst);
+  }
+  void    fetchBoundaryEnd() {
+    btb.fetchBoundaryEnd();
+    BPred::fetchBoundaryEnd();
+  }
   Outcome predict(Dinst* dinst, bool doUpdate, bool doStats);
 };
 
@@ -451,6 +483,14 @@ public:
   BP2level(int32_t i, const std::string& section, const std::string& sname);
   ~BP2level();
 
+  void    fetchBoundaryBegin(Dinst* dinst) {
+    BPred::fetchBoundaryBegin(dinst);
+    btb.fetchBoundaryBegin(dinst);
+  }
+  void    fetchBoundaryEnd() {
+    btb.fetchBoundaryEnd();
+    BPred::fetchBoundaryEnd();
+  }
   Outcome predict(Dinst* dinst, bool doUpdate, bool doStats);
 };
 
@@ -473,6 +513,14 @@ public:
   BPHybrid(int32_t i, const std::string& section, const std::string& sname);
   ~BPHybrid();
 
+  void    fetchBoundaryBegin(Dinst* dinst) {
+    BPred::fetchBoundaryBegin(dinst);
+    btb.fetchBoundaryBegin(dinst);
+  }
+  void    fetchBoundaryEnd() {
+    btb.fetchBoundaryEnd();
+    BPred::fetchBoundaryEnd();
+  }
   Outcome predict(Dinst* dinst, bool doUpdate, bool doStats);
 };
 
@@ -501,6 +549,14 @@ public:
   BP2BcgSkew(int32_t i, const std::string& section, const std::string& sname);
   ~BP2BcgSkew();
 
+  void    fetchBoundaryBegin(Dinst* dinst) {
+    BPred::fetchBoundaryBegin(dinst);
+    btb.fetchBoundaryBegin(dinst);
+  }
+  void    fetchBoundaryEnd() {
+    btb.fetchBoundaryEnd();
+    BPred::fetchBoundaryEnd();
+  }
   Outcome predict(Dinst* dinst, bool doUpdate, bool doStats);
 };
 
@@ -530,6 +586,14 @@ public:
   BPyags(int32_t i, const std::string& section, const std::string& sname);
   ~BPyags();
 
+  void    fetchBoundaryBegin(Dinst* dinst) {
+    BPred::fetchBoundaryBegin(dinst);
+    btb.fetchBoundaryBegin(dinst);
+  }
+  void    fetchBoundaryEnd() {
+    btb.fetchBoundaryEnd();
+    BPred::fetchBoundaryEnd();
+  }
   Outcome predict(Dinst* dinst, bool doUpdate, bool doStats);
 };
 
@@ -572,6 +636,14 @@ public:
   BPOgehl(int32_t i, const std::string& section, const std::string& sname);
   ~BPOgehl();
 
+  void    fetchBoundaryBegin(Dinst* dinst) {
+    BPred::fetchBoundaryBegin(dinst);
+    btb.fetchBoundaryBegin(dinst);
+  }
+  void    fetchBoundaryEnd() {
+    btb.fetchBoundaryEnd();
+    BPred::fetchBoundaryEnd();
+  }
   Outcome predict(Dinst* dinst, bool doUpdate, bool doStats);
 };
 
@@ -627,7 +699,14 @@ public:
   BPTData(int32_t i, const std::string& section, const std::string& sname);
   ~BPTData() {}
 
-  void    fetchBoundaryEnd() { btb.fetchBoundaryEnd(); }
+  void    fetchBoundaryBegin(Dinst* dinst) {
+    BPred::fetchBoundaryBegin(dinst);
+    btb.fetchBoundaryBegin(dinst);
+  }
+  void    fetchBoundaryEnd() {
+    btb.fetchBoundaryEnd();
+    BPred::fetchBoundaryEnd();
+  }
   Outcome predict(Dinst* dinst, bool doUpdate, bool doStats);
 };
 
@@ -657,7 +736,14 @@ public:
   BPLdbp(int32_t i, const std::string& section, const std::string& sname, MemObj* dl1 = 0);
   ~BPLdbp() {}
 
-  void     fetchBoundaryEnd() { btb.fetchBoundaryEnd(); }
+  void     fetchBoundaryBegin(Dinst* dinst) {
+    BPred::fetchBoundaryBegin(dinst);
+    btb.fetchBoundaryBegin(dinst);
+  }
+  void     fetchBoundaryEnd() {
+    btb.fetchBoundaryEnd();
+    BPred::fetchBoundaryEnd();
+  }
   Outcome  predict(Dinst* dinst, bool doUpdate, bool doStats);
   bool     outcome_calculator(BrOpType br_op, Data_t br_data1, Data_t br_data2);
   BrOpType branch_type(Addr_t brpc);

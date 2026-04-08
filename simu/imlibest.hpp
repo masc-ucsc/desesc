@@ -1354,7 +1354,7 @@ public:
 
     return sign;
   }
-#define IDEAL_REHASH_BIM_BOUNDARY 1
+  // #define IDEAL_REHASH_BIM_BOUNDARY 1
 
   void select_tage_entries(Addr_t orig_PC, uint64_t orig_ID) {
     (void)orig_ID;

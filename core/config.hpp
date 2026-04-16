@@ -3,6 +3,7 @@
 #pragma once
 
 #include <cstdlib>
+#include <filesystem>
 #include <limits>
 #include <memory>
 #include <vector>

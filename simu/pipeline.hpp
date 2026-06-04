@@ -46,6 +46,10 @@ public:
   virtual ~Pipeline();
 
   void cleanMark();
+  Time_t flushing_from_last_transientid;
+  void set_flushing_from_last_transientid(Time_t flushing_transientid) { flushing_from_last_transientid =  flushing_transientid; } 
+  
+  std::vector<Time_t> flushedPipelineIDs;  // pipelineIds freed during transient flush
 
   // FastQueue<Dinst *>   transient_buffer;
   [[nodiscard]] IBucket* newItem();
@@ -114,6 +118,8 @@ public:
   PipeQueue(CPU_t i);
   ~PipeQueue();
 
+
   Pipeline            pipeLine;
   FastQueue<IBucket*> instQueue;
+
 };

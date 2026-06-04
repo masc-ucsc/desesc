@@ -102,7 +102,11 @@ public:
   void dump(const std::string& str) const;
 
   Dinst* transientDinst;
+  bool   is_control;
   bool   isBlocked() const { return missInst; }
+  bool   is_ifid_control() const { return is_control; }
+  void   set_ifid_control()   { is_control = true; }
+  void   reset_ifid_control()  { is_control = false; }
   // #ifndef NDEBUG
   Dinst* getMissDinst() const { return missDinst; }
   // #endif

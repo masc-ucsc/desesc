@@ -290,7 +290,7 @@ Dinst* Emul_dromajo::peek(Hartid_t fid) {
         case 0x47:
         case 0x4b:
         case 0x4f:
-          I(false);  // add support for R4 format (3 sources)
+          //joseI(false);  // add support for R4 format (3 sources)
           opcode = Opcode::iCALU_FPMULT;
           src1   = static_cast<RegType>(rs1);
           src2   = static_cast<RegType>(rs2);

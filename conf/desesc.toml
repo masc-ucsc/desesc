@@ -8,9 +8,9 @@
 #range = [50000,60000]
 #range = [0,1000000]
 #range = [3100000,3200000]
-range = [0,0]
+#range = [0,0]
 #range = [100000,900000]
-#range = [0,100000000]
+range = [0,100000000]
 #range = [1000000,2000000]
 
 
@@ -25,21 +25,30 @@ emul = ["drom_emu"]
 type      = "dromajo"
 # Load big one: weight maximum:.45::sp4
 #load = "/mada/software/benchmarks/dromajo/spec2017/sp_lpt09/mcf/sp3"
-#load = "/mada/software/benchmarks/dromajo/spec2017/sp_lpt09/gcc_fgcse/sp5"
+#good
+load = "/mada/software/benchmarks/dromajo/spec2017/sp_lpt09/gcc_fgcse/sp5"
 #load = "/mada/software/benchmarks/dromajo/spec2017/sp_lpt09/gcc_fipa-pta/sp1"
+#good
 #load = "/mada/software/benchmarks/dromajo/spec2017/sp_lpt09/leela/sp2"
+#good
 #load = "/mada/software/benchmarks/dromajo/spec2017/sp_lpt09/exchange2/sp1"
+#good
 #load = "/mada/software/benchmarks/dromajo/spec2017/sp_lpt09/perlbench_checkspam/sp3"
 #load = "/mada/software/benchmarks/dromajo/spec2017/sp_lpt09/xz_cld/sp0"
+#good
 #load = "/mada/software/benchmarks/dromajo/spec2017/sp_lpt09/omnetpp/sp5"
-
-load = "/Users/renau/projs/benchmarks/spec2017/sp_lpt09/x264/sp7"
-# load = "/mada/software/benchmarks/dromajo/spec2017/sp_lpt09/x264/sp7"
+#reference
+#load = "/Users/renau/projs/benchmarks/spec2017/sp_lpt09/x264/sp7"
+#good
+#load = "/mada/software/benchmarks/dromajo/spec2017/sp_lpt09/x264/sp7"
+#good
 #load = "/mada/software/benchmarks/dromajo/spec2017/sp_lpt09/deepsjeng/sp1"
+#good
 #load = "/mada/software/benchmarks/dromajo/spec2017/sp_lpt09/xalancebmk/sp5"
 #load = "/mada/software/benchmarks/dromajo/spec2017/sp_lpt09/xz_cpu2006docs/sp6"
 #load = "/mada/software/benchmarks/dromajo/spec2017/sp_lpt09/perlbench_diffmail/sp2"
 #load = "/mada/software/benchmarks/dromajo/spec2017/sp_lpt09/perlbench_splitmail/sp2"
+#good
 #load = "/mada/software/benchmarks/dromajo/spec2017/sp_lpt09/gcc_fselective-scheduling/sp7"
 
 
@@ -128,18 +137,21 @@ start_roi = false
 #sametime       = 1000
 #sametime       = 1500
 #sametime       = 2000
-#sametime         = 8000
-#sametime         =9000
-#sametime        = 10000
-#sametime        = 12000
-#sametime        = 14000
-#sametime         = 30000
-#sametime         = 30000
+#sametime       = 8000
+#sametime       = 9000
+#sametime       = 10000
+#sametime       = 12000
+#sametime       = 14000
+#sametime       = 30000
+#sametime       = 30000
 #time         = 32000
 #time         = 32000
 #time         = 35000
 time         = 400000
-#time       = 1000000
+#time          = 1000000
+#time          = 10000000
+#time          = 5000000
+#time         = 50000000
 
 [rand_emu]
 type = "random"  # Generate random instructions (coverage testing?)
@@ -319,14 +331,12 @@ frequency_mhz = 200
 type  = "ooo"  # ooo or inorder or accel
 frequency_mhz = 1000
 #bpred         = ["bp0", "bp1"]
-#do_random_transients = true
 #bpred         = ["bp0","bp1"]
 #bpred         = ["bp1"]
-#do_random_transients = true
 bpred         = ["bp0", "bp1", "bp2"]
 #bpred         = ["bp2"]
-do_random_transients = true
 #do_random_transients = true
+do_random_transients = false
 
 # Fetch parameters
 fetch_align       = true
@@ -447,7 +457,8 @@ iSALU_SC      = "lsu"
 iSALU_ADDR    = "lsu"
 
 [dl1_cache]
-type       = "nice"   # or nice
+#type       = "nice"   # or nice
+type       = "cache"   # or cache
 cold_misses = true
 size       = 65536
 line_size  = 64

@@ -142,7 +142,8 @@ public:
   bool isROBEmptyOnly() const { return ROB.empty(); }
 
   int getROBSizeOnly() const { return ROB.size(); }
-
+  Time_t flushing_last_transientid;
+  Time_t last_transientid;
   uint32_t getIDFromTop(int position) const { return ROB.getIDFromTop(position); }
   Dinst*   getData(uint32_t position) const { return ROB.getData(position); }
 

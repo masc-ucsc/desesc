@@ -50,13 +50,6 @@ long long instTotal = 0;
 LSQ* lsq;
 
 void doTest() {
-#if 0
-  Instruction *ld    = Instruction::create(iLALU_LD, 0, 0, 0, 0, false );
-  Instruction *st    = Instruction::create(iSALU_ST, 0, 0, 0, 0, false );
-  Instruction *stadd = Instruction::create(iSALU_ADDR, 0, 0, 0, 0, false );
-
-  Dinst *dld1 = Dinst::create(ld, rinst1, 0);
-#endif
 }
 
 // FIXME: this is a broken test/benchmark, but it would be good to have one for the LSQ

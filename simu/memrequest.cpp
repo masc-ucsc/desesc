@@ -18,7 +18,6 @@ bool forcemsgdump = true;
 MemRequest::MemRequest()
 /* constructor  */
 {}
-/*  */
 
 MemRequest::~MemRequest()
 // destructor
@@ -62,12 +61,17 @@ void MemRequest::startSetState() {
   currMemObj->setState(this);
 }
 void MemRequest::startSetStateAck() {
-  I(mt == mt_setStateAck);
-  I(!prefetch);
+  if (!notifyScbDirectly) {
+    I(mt == mt_setStateAck);
+    I(!prefetch);
+  }
+
   currMemObj->setStateAck(this);
 }
 void MemRequest::startDisp() {
-  I(mt == mt_disp);
+  if (!notifyScbDirectly) {
+    I(mt == mt_disp);
+  }
   currMemObj->disp(this);
 }
 
@@ -134,6 +138,7 @@ MemRequest* MemRequest::create(MemObj* mobj, Addr_t addr, bool keep_stats, Callb
   r->cb                 = cb;
   r->startClock         = globalClock;
   r->prefetch           = false;
+  r->notifyScbDirectly  = false;
   r->spec               = false;
   r->dropped            = false;
   r->retrying           = false;
@@ -159,11 +164,9 @@ void MemRequest::dump_all() {
 }
 
 void MemRequest::dump_calledge(TimeDelta_t lat, bool interesting) {
-#if 1
   if (!interesting && !forcemsgdump) {
     return;
   }
-#endif
 
   Time_t total      = 0;
   Time_t last_tismo = 0;
@@ -188,8 +191,8 @@ void MemRequest::rawdump_calledge(TimeDelta_t lat, Time_t total) {
     return;
   }
 
-  printf("digraph path{\n");
-  printf("  ce [label=\"0x%x addr id %ld delta %lu @%lld\"]\n", (unsigned int)addr, id, total, (long long)globalClock);
+  // printf("digraph path{\n");
+  // printf("  ce [label=\"0x%x addr id %llu delta %lu @%lld\"]\n", (unsigned int)addr, id, total, (long long)globalClock);
 
   CacheDebugAccess* c = CacheDebugAccess::getInstance();
   c->mapReset();
@@ -224,7 +227,7 @@ void MemRequest::rawdump_calledge(TimeDelta_t lat, Time_t total) {
     // get START NAME
     k = 0;
     if (ce.s == 0) {
-      printf("  CPU ");
+      // printf("  CPU ");
     } else {
       name = ce.s->getName();
       for (int j = 0; name[j] != 0; j++) {
@@ -233,7 +236,7 @@ void MemRequest::rawdump_calledge(TimeDelta_t lat, Time_t total) {
         }
       }
       gname[k] = 0;
-      printf("  %s", gname);
+      // printf("  %s", gname);
 
       c->setCacheAccess(gname);
     }
@@ -246,18 +249,18 @@ void MemRequest::rawdump_calledge(TimeDelta_t lat, Time_t total) {
       }
     }
     gname[k] = 0;
-    printf(" -> %s", gname);
+    // printf(" -> %s", gname);
 
     if (last_tismo == 0xdeadbeef) {
       last_tismo = ce.tismo;
     }
-    printf(" [label=\"%d%s_%s_%lld_d%d\"]\n", (int)i, t, a, (long long int)ce.tismo, (int)(ce.tismo - last_tismo));
+    // printf(" [label=\"%d%s_%s_%lld_d%d\"]\n", (int)i, t, a, (long long int)ce.tismo, (int)(ce.tismo - last_tismo));
     last_tismo = ce.tismo;
   }
-  printf("  %s -> CPU [label=\"%dRA%d\"]\n", gname, (int)calledge.size(), lat);
+  // printf("  %s -> CPU [label=\"%dRA%d\"]\n", gname, (int)calledge.size(), lat);
 
-  printf("  {rank=same; P0DL1 P0IL1 P1DL1 P1IL1}\n");
-  printf("}\n");
+  // printf("  {rank=same; P0DL1 P0IL1 P1DL1 P1IL1}\n");
+  // printf("}\n");
 }
 
 void MemRequest::upce() {

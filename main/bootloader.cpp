@@ -187,14 +187,6 @@ void BootLoader::plug(int argc, const char** argv) {
 
   arch.drawArchDot("memory-arch.dot");
 
-#if 0
-  if (Config::has_entry("soc","pwdmode")) {
-    auto pwdsection = Config::get_string("soc", "pwrmodel");
-    pwrmodel->plug(pwrsection);
-    check();
-  }
-#endif
-
   TaskHandler::plugEnd();
 }
 

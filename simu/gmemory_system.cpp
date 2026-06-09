@@ -134,13 +134,6 @@ MemObj* Gmemory_system::searchMemoryObj(bool shared, const std::string& name) co
 }
 
 MemObj* Gmemory_system::declareMemoryObj_uniqueName(const std::string& name, const std::string& device_descr_section) {
-#if 0
-  std::vector<std::string> vPars;
-  vPars.push_back(device_descr_section);
-  vPars.push_back(name);
-  vPars.push_back("shared");
-#endif
-
   return finishDeclareMemoryObj({device_descr_section, name, "shared"});
 }
 

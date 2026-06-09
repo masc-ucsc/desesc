@@ -85,7 +85,6 @@ public:
     // I(regPool <= nRegs);
   }
 
-  //<<<<<<< HEAD
   void add_inst_retry(Dinst* dinst) {
     if (!dinst->is_in_cluster()) {
       window.add_inst(dinst);
@@ -93,7 +92,6 @@ public:
   }
 
   int32_t get_reg_pool() { return regPool; }
-  //=======
   // int32_t get_reg_pool() { return regPool; }
 
   int32_t get_nregs() { return nRegs; }
@@ -101,7 +99,6 @@ public:
   int32_t get_window_size() { return windowSize; }
 
   int32_t get_window_maxsize() { return MaxWinSize; }
-  //>>>>>>> upstream/main
 
   void select(Dinst* dinst);
 

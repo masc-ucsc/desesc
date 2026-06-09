@@ -108,11 +108,11 @@ public:
     return res;
   }
 
-  void dump(const char* msg) {
-    printf("%s:", msg);
+  void dump(const char* /*msg*/) {
+    // printf("%s:", msg);
     for (int32_t i = 0; i < nBits; i++) {
-      printf(" %d", bits[i]);
+      // printf(" %d", bits[i]);
     }
-    printf("\n");
+    // printf("\n");
   }
 };

@@ -461,13 +461,13 @@ public:
 
   void reinit() {
     if ((TAHEAD1_AHEAD != 0) && (TAHEAD1_AHEAD != 2)) {
-      printf("Sorry the simulator does not support this TAHEAD1_AHEAD distance\n");
+      // printf("Sorry the simulator does not support this TAHEAD1_AHEAD distance\n");
       exit(1);
     }
     if ((TAHEAD1_LOGASSOC != 1) || (TAHEAD1_PSK == 0)) {
 #if (TAHEAD1_REPSK == 1)
 
-      printf("Sorry TAHEAD1_REPSK only with associativity 2 and TAHEAD1_PSK activated\n");
+      // printf("Sorry TAHEAD1_REPSK only with associativity 2 and TAHEAD1_PSK activated\n");
       exit(1);
 
 #endif
@@ -548,9 +548,9 @@ public:
     // 4 bits per block
 
     for (int i = 1; i <= TAHEAD1_NHIST; i++) {
-      printf("%d ", TAHEAD1_m[i]);
+      // printf("%d ", TAHEAD1_m[i]);
     }
-    printf("\n");
+    // printf("\n");
     // printf ("TAHEAD1_m[TAHEAD1_NHIST] = %u\n", TAHEAD1_m[TAHEAD1_NHIST]);
 #ifndef TAHEAD1_INTERLEAVED
     if (TAHEAD1_SHARED) {

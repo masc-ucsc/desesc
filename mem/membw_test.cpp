@@ -441,7 +441,6 @@ void MemInterface::testlat(int id) {
 
   one_finished = false;
 
-#if 1
   // -------------------
   start = globalClock;
   doread(cache, 0x1000);
@@ -496,7 +495,6 @@ void MemInterface::testlat(int id) {
   l2filltime = globalClock - start;
   printf("L2 LAT wr/wr dir hit, l2 miss: %lld\n", l2filltime);
 
-#endif
   // -------------------
   if (id < 4) {
     doread(p4l2, 0x220);

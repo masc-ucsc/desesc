@@ -101,7 +101,7 @@ protected:
       , sets(roundUpPower2(s / b) / roundUpPower2(a))
       , maskSets(sets - 1)
       , log2Sets(log2i(sets))
-      , numLines(roundUpPower2(roundUpPower2(a)/a) * s / b)
+      , numLines(roundUpPower2(roundUpPower2(a) / a) * s / b)
       , xorIndex(xr) {
     // TODO : assoc and sets must be a power of 2
   }
@@ -779,14 +779,6 @@ void CacheGeneric<State, Addr_t>::createStats([[maybe_unused]] const std::string
   trackerDown2n = std::make_unique<Stats_cntr>(fmt::format("{}_trackerDown2n", name));
   trackerDown3n = std::make_unique<Stats_cntr>(fmt::format("{}_trackerDown3n", name));
   trackerDown4n = std::make_unique<Stats_cntr>(fmt::format("{}_trackerDown4n", name));
-#if 0
-  int32_t procId = 0;
-  if ( name[0] == 'P' && name[1] == '(' ) {
-    // This structure is assigned to an specific processor
-    const std::string &number = &name[2];
-    procId = atoi(number);
-  }
-#endif
 }
 
 template <class State, class Addr_t>
@@ -1017,20 +1009,6 @@ typename CacheAssoc<State, Addr_t>::Line* CacheAssoc<State, Addr_t>::findLinePri
   }
   adjustRRIP(theSet, setEnd, tmp, next_rrip);
 
-#if 0
-  if (policy == UAR) {
-    printf("read %d ", this->calcIndex4Tag(tag));
-    Line **l = setEnd -1;
-    int conta = 0;
-    while(l >= theSet) {
-      printf(" %d:%d", conta,(*l)->rrip);
-      l--;
-      conta++;
-    }
-    printf("\n");
-  }
-#endif
-
   return tmp;
 }
 
@@ -1050,10 +1028,6 @@ typename CacheAssoc<State, Addr_t>::Line* CacheAssoc<State, Addr_t>::findLine2Re
   Line** theSet = &content[this->calcIndex4Tag(this->calcTag(addr))];
   Line** setEnd = theSet + assoc;
 
-#if 0
-  // OK for cache, not BTB
-  assert((*theSet)->getTag() != tag);
-#else
   if ((*theSet)->getTag() == tag) {
     GI(tag, (*theSet)->isValid());
 
@@ -1077,7 +1051,6 @@ typename CacheAssoc<State, Addr_t>::Line* CacheAssoc<State, Addr_t>::findLine2Re
 
     return *theSet;
   }
-#endif
 
   Line** lineHit  = 0;
   Line** lineFree = 0;  // Order of preference, invalid
@@ -1203,20 +1176,6 @@ typename CacheAssoc<State, Addr_t>::Line* CacheAssoc<State, Addr_t>::findLine2Re
   }
 
   // tmp->rrip = RRIP_MAX;
-
-#if 0
-  if (policy == UAR) {
-    printf("repl %d ", this->calcIndex4Tag(tag));
-    Line **l = setEnd -1;
-    int conta = 0;
-    while(l >= theSet) {
-      printf(" %d:%d", conta,(*l)->rrip);
-      l--;
-      conta++;
-    }
-    printf("\n");
-  }
-#endif
 
   return tmp;
 }
@@ -1622,7 +1581,6 @@ typename CacheDMSkew<State, Addr_t>::Line* CacheDMSkew<State, Addr_t>::findLineN
   }
   Line* line1 = line;
 
-#if 1
   // Addr_t tag3 = (tag1 ^ ((tag1>>1) + ((tag1 & 0xFFFF))));
   addrh       = addrh + (addr & 0xFF);
   Addr_t idx3 = this->calcTag(addrh);
@@ -1637,7 +1595,6 @@ typename CacheDMSkew<State, Addr_t>::Line* CacheDMSkew<State, Addr_t>::findLineN
   Line* line3 = line;
 
   line3->recent = false;
-#endif
   line1->recent = false;
   line0->recent = false;
 
@@ -1678,7 +1635,6 @@ typename CacheDMSkew<State, Addr_t>::Line* CacheDMSkew<State, Addr_t>::findLine2
   static int32_t rand_number = 0;
   rand_number++;
 
-#if 1
   addrh        = addrh + (addr & 0xFF);
   Addr_t idx3  = this->calcTag(addrh);
   Line*  line3 = content[this->calcIndex4Tag(idx3)];
@@ -1726,14 +1682,6 @@ typename CacheDMSkew<State, Addr_t>::Line* CacheDMSkew<State, Addr_t>::findLine2
       }
     }
   }
-#else
-  if ((rand_number & 1) == 0) {
-    line1->set_prefetch(prefetch);
-    return line1;
-  }
-  line2->set_prefetch(prefetch);
-  return line2;
-#endif
   // END Skew cache
 }
 

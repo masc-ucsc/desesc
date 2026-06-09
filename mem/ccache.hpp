@@ -118,13 +118,11 @@ protected:
 
   Time_t lastUpMsg;  // can not bypass up messages (races)
   Time_t inOrderUpMessageAbs(Time_t when) {
-#if 1
     if (lastUpMsg > when) {
       when = lastUpMsg;
     } else {
       lastUpMsg = when;
     }
-#endif
     I(when >= globalClock);
     if (when == globalClock) {
       when++;
@@ -133,13 +131,11 @@ protected:
     return when;
   }
   TimeDelta_t inOrderUpMessage(TimeDelta_t lat = 0) {
-#if 1
     if (lastUpMsg > globalClock) {
       lat += (lastUpMsg - globalClock);
     }
 
     lastUpMsg = globalClock + lat;
-#endif
 
     return lat;
   }

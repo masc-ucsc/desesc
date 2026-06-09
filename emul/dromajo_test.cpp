@@ -373,15 +373,6 @@ int main(int argc, char** argv) {
 #endif
 
 #ifdef LIVECACHE
-#if 0
-    // LiveCache Dump
-    uint64_t addr_size;
-    uint64_t *addr = m->llc->traverse(addr_size);
-
-    for (uint64_t i = 0u; i < addr_size; ++i) {
-        printf("addr:%llx %s\n", (unsigned long long)addr[i], (addr[i] & 1) ? "ST" : "LD");
-    }
-#endif
   delete m->llc;
 #endif
 

@@ -254,18 +254,18 @@ void BloomFilter::subtract(BloomFilter& otherbf) {
   }
 }
 
-void BloomFilter::dump(const char* msg) {
-  printf("%s:", msg);
+void BloomFilter::dump(const char* /*msg*/) {
+  // printf("%s:", msg);
 
   if (!BFBuild) {
-    printf("BF never built!\n");
+    // printf("BF never built!\n");
     return;
   }
 
   for (int32_t i = 0; i < nVectors; i++) {
-    printf("\t[%d, %d]", nonZeroCount[i], vSize[i]);
+    // printf("\t[%d, %d]", nonZeroCount[i], vSize[i]);
   }
-  printf("\t%d \t%d\n", getSize(), getSizeRLE(0, 7));
+  // printf("\t%d \t%d\n", getSize(), getSizeRLE(0, 7));
 }
 
 int32_t BloomFilter::getSize() const {

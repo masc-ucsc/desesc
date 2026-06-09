@@ -51,7 +51,7 @@ protected:
     int32_t           nUse;
 #ifdef DEBUG_TRANSIENTS
     std::vector<MemRequest*> pending_mreq;
-    MemRequest*             block_mreq;
+    MemRequest*              block_mreq;
 #endif
   };
 

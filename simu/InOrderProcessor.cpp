@@ -64,59 +64,11 @@ StallCause InOrderProcessor::add_inst(Dinst* dinst) {
 
   size_t smt_local = dinst->getFlowId() % get_smt_size();
 
-#if 1
-#if 0
-  // Simple in-order
-  if(((RAT[smt][inst->getSrc1()] != 0) && (inst->getSrc1() != LREG_NoDependence) && (inst->getSrc1() != RegType::LREG_InvalidOutput)) ||
-    ((RAT[smt][inst->getSrc2()] != 0) && (inst->getSrc2() != LREG_NoDependence) && (inst->getSrc2() != RegType::LREG_InvalidOutput))||
-    ((RAT[smt][inst->getDst1()] != 0) && (inst->getDst1() != RegType::LREG_InvalidOutput))||
-    ((RAT[smt][inst->getDst2()] != 0) && (inst->getDst2() != RegType::LREG_InvalidOutput)))
-#else
-#if 1
   // Simple in-order for RAW, but not WAW or WAR
   if (((RAT[smt_local][inst->getSrc1()] != nullptr) && (inst->getSrc1() != LREG_NoDependence))
-      || ((RAT[smt_local][inst->getSrc2()] != nullptr) && (inst->getSrc2() != LREG_NoDependence)))
-#else
-  // scoreboard, no output dependence
-  if (((RAT[smt][inst->getDst1()] != 0) && (inst->getDst1() != RegType::LREG_InvalidOutput))
-      || ((RAT[smt][inst->getDst2()] != 0) && (inst->getDst2() != RegType::LREG_InvalidOutput)))
-#endif
-#endif
-  {
-#if 0
-    //Useful for debug
-    if (hid == 1 ){
-      fmt::print("\n-------------------------\n");
-      string str ="";
-      str.append("\nCONFLICT->");
-      if (RAT[inst->getSrc1()] != 0){
-        str.append("src1, ");
-        fmt::print(" SRC1 = {}, RAT[entry] = {}\n",inst->getSrc1(), RAT[inst->getSrc1()] );
-        RAT[inst->getSrc1()]->dump("\nSRC1 in use by:");
-      }
-
-      if (RAT[inst->getSrc2()] != 0){
-        str.append("src2, ");
-        RAT[inst->getSrc2()]->dump("\nSRC2 in use by:");
-      }
-
-      if ((RAT[inst->getDst1()] != 0) && (inst->getDst2() != RegType::LREG_InvalidOutput)){
-        str.append("dst1, ");
-        RAT[inst->getDst1()]->dump("\nDST1 in use by:");
-      }
-
-      if ((RAT[inst->getDst2()] != 0) && (inst->getDst2() != RegType::LREG_InvalidOutput)){
-        str.append("dst2, ");
-        RAT[inst->getDst2()]->dump("\nDST2 in use by:");
-      }
-
-      dinst->dump(str.c_str());
-
-    }
-#endif
+      || ((RAT[smt_local][inst->getSrc2()] != nullptr) && (inst->getSrc2() != LREG_NoDependence))) {
     return SmallWinStall;
   }
-#endif
 
   if ((ROB.size() + rROB.size()) >= (MaxROBSize - 1)) {
     return SmallROBStall;
@@ -227,6 +179,7 @@ void InOrderProcessor::retire() { /*{{{*/
     }
 #endif
 
+    Tracer::commit(dinst);
     if (dinst->isPerformed()) {  // Stores can perform after retirement
       dinst->destroy();
     }

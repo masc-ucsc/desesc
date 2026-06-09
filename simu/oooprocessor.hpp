@@ -129,7 +129,7 @@ public:
   }
 
   void dumpROB();
-  bool loadIsSpec();
+  bool is_load_spec(Dinst* dinst);
 
   bool isSerializing() const { return serialize_for != 0; }
 

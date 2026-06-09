@@ -437,7 +437,7 @@ public:
   bool isHit() const { return hit; }
   bool isTagHit() const { return hit; }
 
-  void select(Addr_t t) { hit = (t == tag); }
+    void select(Addr_t t) { hit = (t == tag); }
 
   void reset(uint32_t t, bool taken) {
     tag  = t;
@@ -487,11 +487,11 @@ public:
 #endif
   }
 
-  bool ctr_weak() const { return !hit || ctr_ == 0 || ctr_ == -1; }
+    bool ctr_weak() const { return !hit || ctr_ == 0 || ctr_ == -1; }
 
   bool ctr_highconf() const { return hit && (abs(2 * ctr_ + 1) >= (1 << CWIDTH) - 1); }
 
-  int ctr_get() const { return hit ? ctr_ : 0; }
+    int ctr_get() const { return hit ? ctr_ : 0; }
 
   bool ctr_isTaken() const { return ctr_get() >= 0; }
 
@@ -508,7 +508,7 @@ public:
       u_--;
     }
   }
-  void u_clear() { u_ = 0; }
+    void u_clear() { u_ = 0; }
 };
 
 class IMLIBest {
@@ -787,8 +787,8 @@ public:
       STORAGESIZE += x;
     }
 
-    STORAGESIZE += 2 * (SIZEUSEALT)*4;
-    fprintf(stderr, " altna size=%d log2entries=%d\n", 2 * (SIZEUSEALT)*4, LOGSIZEUSEALT);
+    STORAGESIZE += 2 * (SIZEUSEALT) * 4;
+    fprintf(stderr, " altna size=%d log2entries=%d\n", 2 * (SIZEUSEALT) * 4, LOGSIZEUSEALT);
 
     inter = bwidth * (1 << (log2_bimodal_nsub + log2_bimodal_entries));
     fprintf(stderr, " bimodal table bit_size=%d log2entries=%d log2nsub=%d\n", inter, log2_bimodal_entries, log2_bimodal_nsub);
@@ -811,7 +811,7 @@ public:
 
       inter += 16;                   // global histories for SC
       inter = 8 * (1 << LOGSIZEUP);  // the update threshold counters
-      inter += (PERCWIDTH)*4 * (1 << (LOGBIAS));
+      inter += (PERCWIDTH) * 4 * (1 << (LOGBIAS));
       inter += (GNB - 2) * (1 << (LOGGNB)) * (PERCWIDTH - 1) + (1 << (LOGGNB - 1)) * (2 * PERCWIDTH - 1);
 
       inter += (PNB - 2) * (1 << (LOGPNB)) * (PERCWIDTH - 1) + (1 << (LOGPNB - 1)) * (2 * PERCWIDTH - 1);
@@ -925,6 +925,7 @@ public:
           s = galloc[i];
         }
         gtable[i][j].allocate(s);
+        // printf("IMLIBEST::reinit()::gtable[%d][%d].allocate() at clock cycle %llu\n", i, j, globalClock);
       }
     }
 
@@ -1092,7 +1093,8 @@ public:
       if (ltable[index].TAG == LTAG) {
         LHIT   = i;
         LVALID = ((ltable[index].confid == CONFLOOP) || (ltable[index].confid * ltable[index].NbIter > 128));
-        {}
+        {
+        }
         if (ltable[index].CurrentIter + 1 == ltable[index].NbIter) {
           return (!(ltable[index].dir));
         } else {
@@ -1221,18 +1223,23 @@ public:
   }
 
   void setTAGEPred() {
+    // printf("IMLIBEST::setTAGEPRED():: Entering at clock cycle %llu\n", globalClock);
     HitBank = 0;
     AltBank = 0;
+    // printf("IMLIBEST::setTAGEPRED():: nhist is %d at clock cycle %llu\n", nhist, globalClock);
     for (int i = 1; i <= nhist; i++) {
-      if (get_gentry(i).isHit()) {
+            if (get_gentry(i).isHit()) {
         LongestMatchPred = get_gentry(i).ctr_isTaken();
-        HitBank          = i;
+        HitBank = i;
+        // printf("IMLIBEST::setTAGEPred::gtable[%d][GI[%d]]:: HitBank is %d  at clock cycle %llu\n", i, i, HitBank, globalClock);
       }
     }
 
+    // printf("IMLIBEST::setTAGEPred::LongestMAtchPred is %b  at clock cycle %llu\n", LongestMatchPred, globalClock);
     for (int i = HitBank - 1; i > 0; i--) {
       if (get_gentry(i).isHit()) {
         AltBank = i;
+        // printf("IMLIBEST::setTAGEPred::gtable[%d][GI[%d]]:: AltBank is %d  at clock cycle %llu\n", i, i, AltBank, globalClock);
         break;
       }
     }
@@ -1248,21 +1255,30 @@ public:
 
     if (HitBank > 0) {
       if (AltBank > 0) {
-        alttaken = get_gentry(AltBank).ctr_isTaken();
+                alttaken = get_gentry(AltBank).ctr_isTaken();
       } else {
         alttaken = bimodal.predict();
+        // printf("IMLIBEST::setTAGEPred::HITBANK>0::ALTBANK<= 0:: alttaken ::altaken  is %b  at clock cycle %llu\n",
+               // alttaken,
+               // globalClock);
       }
     } else {
       alttaken         = bimodal.predict();
       LongestMatchPred = alttaken;
+      // printf("IMLIBEST::setTAGEPred::HITBank<=0::longestmatchtaken ::altaken  is %b  at clock cycle %llu\n",
+             // LongestMatchPred,
+             // globalClock);
     }
 #else
     // computes the prediction and the alternate prediction
     if (HitBank > 0) {
       if (AltBank > 0) {
-        alttaken = get_gentry(AltBank).ctr_isTaken();
+                alttaken = get_gentry(AltBank).ctr_isTaken();
       } else {
         alttaken = bimodal.predict();
+        // printf("IMLIBEST::setTAGEPred::HITBANK>0:ALTBANk<=0::BIMODAL_PREDICT::alttaken ::altaken  is %b  at clock cycle %llu\n",
+               // alttaken,
+               // globalClock);
       }
 
       // if the entry is recognized as a newly allocated entry and
@@ -1272,10 +1288,13 @@ public:
 
       if (!Huse_alt_on_na || !get_gentry(HitBank).ctr_weak()) {
         tage_pred = LongestMatchPred;
-        HighConf  = get_gentry(HitBank).ctr_highconf();
-        WeakConf  = get_gentry(HitBank).ctr_weak();
+                HighConf = get_gentry(HitBank).ctr_highconf();
+        WeakConf = get_gentry(HitBank).ctr_weak();
       } else {
         tage_pred = alttaken;
+        // printf("IMLIBEST::setTAGEPred:: gtable[HitBank][GI[HitBank]].ctr_weak())::tage_pred  is %b  at clock cycle %llu\n",
+               // tage_pred,
+               // globalClock);
         if (AltBank) {
           HighConf = get_gentry(AltBank).ctr_highconf();
           WeakConf = get_gentry(AltBank).ctr_weak();
@@ -1285,24 +1304,13 @@ public:
         }
       }
     } else {
-      HighConf         = bimodal.highconf();
-      WeakConf         = !HighConf;
-      alttaken         = bimodal.predict();
-      tage_pred        = alttaken;
+      HighConf  = bimodal.highconf();
+      WeakConf  = !HighConf;
+      alttaken  = bimodal.predict();
+      tage_pred = alttaken;
+      // printf("IMLIBEST::setTAGEPred::HitBank<=0::tage_pred  is %b  at clock cycle %llu\n", tage_pred, globalClock);
       LongestMatchPred = alttaken;
     }
-#if 0
-    static int conta_h=0;
-    static int conta_l=0;
-    if (HighConf)
-      conta_h++;
-    else
-      conta_l++;
-
-    if ((conta_h&0xFFFF)==0) {
-      printf("High conf %d, low conf %d\n", conta_h, conta_l);
-    }
-#endif
 #endif
 
 #ifdef POSTPREDICT
@@ -1373,7 +1381,7 @@ public:
     }
   }
 
-  bool getPrediction(Addr_t orig_PC, uint64_t orig_ID, bool& bias, uint32_t& sign, bool use_tag_offset, bool use_tag_hybrid,
+    bool getPrediction(Addr_t orig_PC, uint64_t orig_ID, bool& bias, uint32_t& sign, bool use_tag_offset, bool use_tag_hybrid,
                      uint32_t taken_counter) {
     bool force_offset = (taken_counter >= 1 && use_tag_hybrid);
 
@@ -1397,25 +1405,7 @@ public:
 
     pred_taken = tage_pred;
 
-#if 0
-    if (orig_PC == 0x13fbb8) {
-      std::print("HERE: ");
-      for(auto e:GTAG) {
-        std::print(" {}", e);
-      }
-      if (HitBank) {
-        std::print(" bank:{} GI:{}", HitBank, GI[HitBank]);
-        get_gentry(HitBank).dump();
-      }
-      std::print(" pred:{}\n", pred_taken);
-    }
-#endif
-
-#if 0
-    bias = !WeakConf;
-#else
     bias = HighConf;
-#endif
     sign = GI[1];
 
 #ifdef LOOPPREDICTOR
@@ -1429,6 +1419,7 @@ public:
     pred_inter = pred_taken;
 
     if (!sc) {
+      // printf("IMLIBEST::getpredict:: !SC return  pred_taken is %b  at clock cycle %llu\n", pred_taken, globalClock);
       return (pred_taken);
     }
 
@@ -1522,9 +1513,11 @@ public:
       bias = true;
     }
 
+    // printf("IMLIBEST::getpredict::RETURN at LAST pred_taken is %b  at clock cycle %llu\n", pred_taken, globalClock);
     return pred_taken;
-  }
+  }  // get_prediction_end
 
+  /*Update History*/
   void HistoryUpdate(Addr_t PC, Opcode brtype, bool taken, Addr_t target, long long& X, int& Y, std::vector<folded_history>& H,
                      std::vector<folded_history>& G, std::vector<folded_history>& J, long long& LH, long long& GBRHIST) {
     // special treatment for unconditional branchs;
@@ -1605,8 +1598,7 @@ public:
 #endif
     }
 
-    // END UPDATE  HISTORIES
-  }
+  }  // HISTORY_UPDATE_END
 
   // PREDICTOR UPDATE
 
@@ -1697,23 +1689,6 @@ public:
     ppi = state.ppi;
 #endif
 
-#if 0
-    if (GTAG[1] == 17442) {
-      std::print("upd orig_PC:{:x} resolveDir:{} bank:{}\n", e.orig_pc, e.taken, HitBank);
-      std::print(" bank:{} ", HitBank);
-      get_gentry(1).dump();
-      std::print("\n");
-    }
-
-    if (e.orig_pc == 0x13fbb8 && HitBank && pred_taken != e.taken) {
-      std::print("miss orig_PC:{:x} offset:{} PC:{:x} use_tag_offset:{} pred:{} reslv:{} "
-                , e.orig_pc, imli_tag_offset, PC, false, pred_taken, e.taken);
-
-      std::print(" bank:{} ", HitBank);
-      get_gentry(HitBank).dump();
-      std::print("\n");
-    }
-#endif
 
 #ifdef LOOPPREDICTOR
     if (LVALID) {
@@ -1860,7 +1835,6 @@ public:
         // Could not find a place to allocate
 
         TICK += (Penalty - NA);
-#if 1
         if (TICK < -127) {
           TICK = -127;
         } else if (TICK > 63) {
@@ -1880,22 +1854,7 @@ public:
             }
           }
         }
-#else
-        // just the best formula for the Championship
-        if (TICK < 0) {
-          TICK = 0;
-        }
-        if (TICK > 1023) {
-          for (int i = 1; i <= nhist; i++) {
-            for (int j = 0; j <= (1 << logg[i]) - 1; j++) {
-              gtable[i][j].u_dec();
-            }
-          }
-          TICK = 0;
-        }
-#endif
       }
-#if 1
       // TODO: recheck that this is better
       if (HitBank) {
         if (get_gentry(HitBank).isHit()) {
@@ -1904,7 +1863,6 @@ public:
           }
         }
       }
-#endif
 
       if (HitBank > 0) {
         get_gentry(HitBank).ctr_update(e.taken);
@@ -1930,7 +1888,7 @@ public:
 #endif
     // END TAGE UPDATE
 
-    bim_tag_offset++;
+        bim_tag_offset++;
     if (state.advance_imli_tag_offset) {
       imli_tag_offset++;
     }

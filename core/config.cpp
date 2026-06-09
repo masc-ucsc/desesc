@@ -49,7 +49,12 @@ bool Config::check(const std::string& block, const std::string& name) {
 
   auto sec = toml::find(data, block);
   if (!sec.contains(name)) {
-    errors.emplace_back(fmt::format("section [{}] is missing field '{}' -- add '{} = <value>' to [{}] in '{}'", block, name, name, block, filename));
+    errors.emplace_back(fmt::format("section [{}] is missing field '{}' -- add '{} = <value>' to [{}] in '{}'",
+                                    block,
+                                    name,
+                                    name,
+                                    block,
+                                    filename));
     return false;
   }
 
@@ -555,13 +560,20 @@ void Config::dump(int fd) {
 
     for (const auto& field : u.second) {
       auto fmt_val = [](const std::string& v) -> std::string {
-        if (!v.empty() && std::isdigit((unsigned char)v[0])) return v;
+        if (!v.empty() && std::isdigit((unsigned char)v[0])) {
+          return v;
+        }
         auto ci_eq = [&](const char* s) {
-          return std::equal(v.begin(), v.end(), s, s + v.size(),
+          return std::equal(v.begin(),
+                            v.end(),
+                            s,
+                            s + v.size(),
                             [](unsigned char a, unsigned char b) { return std::tolower(a) == std::tolower(b); })
                  && v.size() == strlen(s);
         };
-        if (ci_eq("true") || ci_eq("false")) return v;
+        if (ci_eq("true") || ci_eq("false")) {
+          return v;
+        }
         return fmt::format("\"{}\"", v);
       };
       bool is_arr = used_is_array.count(u.first) && used_is_array.at(u.first).count(field.first);

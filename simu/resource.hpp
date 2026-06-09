@@ -81,18 +81,22 @@ public:
   //
   // 4th) When the instruction is retired from the ROB retire is called
 
-  virtual StallCause canIssue(Dinst* dinst)                 = 0;
+    virtual StallCause canIssue(Dinst* dinst)                 = 0;
   virtual void       executing(Dinst* dinst)                = 0;
   virtual void       executed(Dinst* dinst)                 = 0;
   virtual bool       preretire(Dinst* dinst, bool flushing) = 0;
   virtual bool       retire(Dinst* dinst, bool flushing)    = 0;
   virtual void       performed(Dinst* dinst)                = 0;
+  virtual void       performed_spec(Dinst* dinst)           = 0;
+  virtual void       performed_safe_write(Dinst* dinst)     = 0;
   virtual bool       flushed(Dinst* dinst)                  = 0;
   virtual bool       try_flushed(Dinst* dinst)              = 0;
 
-  using executingCB = CallbackMember1<Resource, Dinst*, &Resource::executing>;
-  using executedCB  = CallbackMember1<Resource, Dinst*, &Resource::executed>;
-  using performedCB = CallbackMember1<Resource, Dinst*, &Resource::performed>;
+  using executingCB             = CallbackMember1<Resource, Dinst*, &Resource::executing>;
+  using executedCB              = CallbackMember1<Resource, Dinst*, &Resource::executed>;
+  using performedCB             = CallbackMember1<Resource, Dinst*, &Resource::performed>;
+  using performed_spec_CB       = CallbackMember1<Resource, Dinst*, &Resource::performed_spec>;
+  using performed_safe_write_CB = CallbackMember1<Resource, Dinst*, &Resource::performed_safe_write>;
 
   [[nodiscard]] Time_t getUsedTime() const { return usedTime; }
   void                 setUsedTime() { usedTime = globalClock; }
@@ -149,7 +153,7 @@ private:
   Stats_cntr tso2Replay;
 #endif
 
-  // Helper to avoid code duplication in tryNextSlot immediate vs queued paths
+
   void do_load_execution(Time_t when, Dinst* dinst);
 
 protected:
@@ -161,12 +165,14 @@ public:
          std::shared_ptr<Prefetcher> pref, std::shared_ptr<Store_buffer> scb, TimeDelta_t lsdelay, TimeDelta_t l,
          std::shared_ptr<Gmemory_system> ms, int32_t size, int32_t id, const std::string& cad);
 
-  StallCause canIssue(Dinst* dinst) final;
+    StallCause canIssue(Dinst* dinst) final;
   void       executing(Dinst* dinst) final;
   void       executed(Dinst* dinst) final;
   bool       preretire(Dinst* dinst, bool flushing) final;
   bool       retire(Dinst* dinst, bool flushing) final;
   void       performed(Dinst* dinst) final;
+  void       performed_spec(Dinst* dinst) final;
+  void       performed_safe_write(Dinst* dinst) final;
   bool       flushed(Dinst* dinst) final;
   bool       try_flushed(Dinst* dinst) final;
 };
@@ -176,7 +182,7 @@ private:
   int32_t freeEntries;
   bool    enableDcache;
 
-  // Helper to avoid code duplication in tryNextSlot immediate vs queued paths
+
   void do_store_execution(Time_t when, Dinst* dinst);
 
 public:
@@ -184,31 +190,35 @@ public:
           std::shared_ptr<Prefetcher> pref, std::shared_ptr<Store_buffer> scb, TimeDelta_t l, std::shared_ptr<Gmemory_system> ms,
           int32_t size, int32_t id, const std::string& cad);
 
-  StallCause canIssue(Dinst* dinst) final;
+    StallCause canIssue(Dinst* dinst) final;
   void       executing(Dinst* dinst) final;
   void       executed(Dinst* dinst) final;
   bool       preretire(Dinst* dinst, bool flushing) final;
   bool       retire(Dinst* dinst, bool flushing) final;
   void       performed(Dinst* dinst) final;
+  void       performed_spec(Dinst* dinst) final;
+  void       performed_safe_write(Dinst* dinst) final;
   bool       flushed(Dinst* dinst) final;
   bool       try_flushed(Dinst* dinst) final;
 };
 
 class FUGeneric : public Resource {
 private:
-  // Helper to avoid code duplication in tryNextSlot immediate vs queued paths
+
   void do_generic_execution(Time_t when, Dinst* dinst);
 
 protected:
 public:
   FUGeneric(Opcode type, std::shared_ptr<Cluster> cls, std::shared_ptr<PortGeneric> aGen, TimeDelta_t l, uint32_t cpuid);
 
-  StallCause canIssue(Dinst* dinst) final;
+    StallCause canIssue(Dinst* dinst) final;
   void       executing(Dinst* dinst) final;
   void       executed(Dinst* dinst) final;
   bool       preretire(Dinst* dinst, bool flushing) final;
   bool       retire(Dinst* dinst, bool flushing) final;
   void       performed(Dinst* dinst) final;
+  void       performed_spec(Dinst* dinst) final;
+  void       performed_safe_write(Dinst* dinst) final;
   bool       flushed(Dinst* dinst) final;
   bool       try_flushed(Dinst* dinst) final;
 };
@@ -219,7 +229,7 @@ private:
   bool        drainOnMiss;
   TimeDelta_t bpred_delay;
 
-  // Helper to avoid code duplication in tryNextSlot immediate vs queued paths
+
   void do_branch_execution(Time_t when, Dinst* dinst);
 
 protected:
@@ -227,12 +237,14 @@ public:
   FUBranch(Opcode type, std::shared_ptr<Cluster> cls, std::shared_ptr<PortGeneric> aGen, TimeDelta_t l, uint32_t cpuid, int32_t mb,
            bool dom);
 
-  StallCause canIssue(Dinst* dinst) final;
+    StallCause canIssue(Dinst* dinst) final;
   void       executing(Dinst* dinst) final;
   void       executed(Dinst* dinst) final;
   bool       preretire(Dinst* dinst, bool flushing) final;
   bool       retire(Dinst* dinst, bool flushing) final;
   void       performed(Dinst* dinst) final;
+  void       performed_spec(Dinst* dinst) final;
+  void       performed_safe_write(Dinst* dinst) final;
   bool       flushed(Dinst* dinst) final;
   bool       try_flushed(Dinst* dinst) final;
 };
@@ -243,19 +255,21 @@ private:
   Stats_cntr imemoryBarrier;
   Time_t     blockUntil;
 
-  // Helper to avoid code duplication in tryNextSlot immediate vs queued paths
+
   void do_ralu_execution(Time_t when, Dinst* dinst);
 
 protected:
 public:
   FURALU(Opcode type, std::shared_ptr<Cluster> cls, std::shared_ptr<PortGeneric> aGen, TimeDelta_t l, int32_t id);
 
-  StallCause canIssue(Dinst* dinst) final;
+    StallCause canIssue(Dinst* dinst) final;
   void       executing(Dinst* dinst) final;
   void       executed(Dinst* dinst) final;
   bool       preretire(Dinst* dinst, bool flushing) final;
   bool       retire(Dinst* dinst, bool flushing) final;
   void       performed(Dinst* dinst) final;
+  void       performed_spec(Dinst* dinst) final;
+  void       performed_safe_write(Dinst* dinst) final;
   bool       flushed(Dinst* dinst) final;
   bool       try_flushed(Dinst* dinst) final;
 };

@@ -36,6 +36,7 @@ MemObj::MemObj(const std::string& sSection, const std::string& sName)
 
   // Create router (different objects may override the default router)
   router = new MRouter(this);
+  // scb    = new Store_buffer(this);
 
   if (!name.empty()) {
     std::string name_lc(name);
@@ -63,7 +64,6 @@ void MemObj::addLowerLevel(MemObj* obj) {
 }
 
 void MemObj::addUpperLevel(MemObj* obj) {
-  // printf("%s upper level is %s\n",getName(),obj->getName());
   router->addUpNode(obj);
 }
 
@@ -73,15 +73,6 @@ void MemObj::blockFill(MemRequest* mreq) {
 }
 
 bool MemObj::isLastLevelCache() { return isLLC; }
-
-#if 0
-void MemObj::tryPrefetch(Addr_t addr, bool doStats, int degree, Addr_t pref_sign, Addr_t pc, CallbackBase *cb)
-  /* forward tryPrefetch {{{1 */
-{
-  router->tryPrefetch(addr,doStats, degree, pref_sign, pc, cb);
-}
-/* }}} */
-#endif
 
 void MemObj::dump() const
 /* dump statistics {{{1 */
@@ -199,12 +190,6 @@ void MemObj::setNeedsCoherence() {
   // Only cache uses this
 }
 void MemObj::clearNeedsCoherence() {}
-
-#if 0
-bool MemObj::get_cir_queue(int index, Addr_t pc) {
-  I(0);
-}
-#endif
 
 bool MemObj::Invalid(Addr_t addr) const {
   (void)addr;

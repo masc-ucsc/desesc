@@ -213,7 +213,7 @@ int8_t TAHEAD_FBIAS[(1 << TAHEAD_LOGFNB)];
 #define TAHEAD_PCBL ((TAHEAD_AHEAD) ? (TAHEAD_PrevPCBLOCK) : (TAHEAD_PCBLOCK))
 #endif
 
-#define TAHEAD_INDBIASPC     (((((TAHEAD_PCBL ^ (TAHEAD_PCBL >> (TAHEAD_LOGBIAS - 5))))) & ((1 << TAHEAD_LOGBIAS) - 1)) ^ TAHEAD_PSNUM)
+#define TAHEAD_INDBIASPC (((((TAHEAD_PCBL ^ (TAHEAD_PCBL >> (TAHEAD_LOGBIAS - 5))))) & ((1 << TAHEAD_LOGBIAS) - 1)) ^ TAHEAD_PSNUM)
 #define TAHEAD_INDBIASPCLMAP (TAHEAD_INDBIASPC) ^ ((TAHEAD_LongestMatchPred ^ (TAHEAD_HCpred << 1)) << (TAHEAD_LOGBIAS - 2))
 // a single  physical table but  two logic tables: indices agree on all the bits except 2
 
@@ -459,13 +459,13 @@ public:
 
   void reinit() {
     if ((TAHEAD_AHEAD != 0) && (TAHEAD_AHEAD != 2)) {
-      printf("Sorry the simulator does not support this TAHEAD_AHEAD distance\n");
+      // printf("Sorry the simulator does not support this TAHEAD_AHEAD distance\n");
       exit(1);
     }
     if ((TAHEAD_LOGASSOC != 1) || (TAHEAD_PSK == 0)) {
 #if (TAHEAD_REPSK == 1)
 
-      printf("Sorry TAHEAD_REPSK only with associativity 2 and TAHEAD_PSK activated\n");
+      // printf("Sorry TAHEAD_REPSK only with associativity 2 and TAHEAD_PSK activated\n");
       exit(1);
 
 #endif
@@ -545,9 +545,9 @@ public:
     // 4 bits per block
 
     for (int i = 1; i <= TAHEAD_NHIST; i++) {
-      printf("%d ", TAHEAD_m[i]);
+      // printf("%d ", TAHEAD_m[i]);
     }
-    printf("\n");
+    // printf("\n");
 #ifndef TAHEAD_INTERLEAVED
     if (TAHEAD_SHARED) {
       /* tailored for 14 tables */
@@ -747,8 +747,8 @@ public:
   }
 
   bool getbim() {
-    TAHEAD_BIM      = (get_TAHEAD_btable_entry(TAHEAD_BI).pred) ? (get_TAHEAD_btable_entry(TAHEAD_BI >> TAHEAD_HYSTSHIFT).hyst)
-                                                                : -1 - (get_TAHEAD_btable_entry(TAHEAD_BI >> TAHEAD_HYSTSHIFT).hyst);
+    TAHEAD_BIM = (get_TAHEAD_btable_entry(TAHEAD_BI).pred) ? (get_TAHEAD_btable_entry(TAHEAD_BI >> TAHEAD_HYSTSHIFT).hyst)
+                                                           : -1 - (get_TAHEAD_btable_entry(TAHEAD_BI >> TAHEAD_HYSTSHIFT).hyst);
     TAHEAD_TAGECONF = 3 * (get_TAHEAD_btable_entry(TAHEAD_BI >> TAHEAD_HYSTSHIFT).hyst != 0);
 
     return (get_TAHEAD_btable_entry(TAHEAD_BI).pred != 0);
@@ -1051,9 +1051,9 @@ public:
     TAHEAD_predSC = (TAHEAD_SUMSC >= 0);
 
     if (TAHEAD_TAGECONF > 3) {
-      printf("*******************************************************************\n");
-      printf("*********************** TAGE_CONF = %d ****************************\n", TAHEAD_TAGECONF);
-      printf("*******************************************************************\n");
+      // printf("*******************************************************************\n");
+      // printf("*********************** TAGE_CONF = %d ****************************\n", TAHEAD_TAGECONF);
+      // printf("*******************************************************************\n");
     }
 
     bias = (TAHEAD_TAGECONF >= 1);

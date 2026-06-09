@@ -74,7 +74,6 @@ void BimodalStride::update(Addr_t pc, Addr_t naddr) {
 
   table[get_index(pc)].addr = naddr;
 
-  // printf("UPDATE pc:%llx addr:%llx last:%llx delta:%d\n", pc, naddr, la, ndelta);
   update_delta(pc, ndelta);
 }
 
@@ -339,12 +338,12 @@ Addr_t Tage_address_predictor::predict(Addr_t pc, int distance, bool inLines) {
 
 #ifdef DEBUG_STRIDESO2
     if (pc == 0x12000e220) {
-      printf("dist:%d addr:%llx pred_delta:%d delta:%d conf:%d\n",
-             i,
-             addr,
-             pred_delta,
-             (int)addr - (int)last[get_last_index(pc)].addr,
-             pred_conf);
+      // printf("dist:%d addr:%llx pred_delta:%d delta:%d conf:%d\n",
+             // i,
+             // addr,
+             // pred_delta,
+             // (int)addr - (int)last[get_last_index(pc)].addr,
+             // pred_conf);
     }
 #endif
 
@@ -393,14 +392,14 @@ Conf_level Tage_address_predictor::exe_update(Addr_t pc, Addr_t addr, Data_t dat
 
 #ifdef DEBUG_STRIDESO2
   if (pc == 0x12000e220) {
-    printf("pc:%llx addr:%llx pred_delta:%d delta:%d conf:%d a:%d h:%d\n",
-           pc,
-           addr,
-           pred_delta,
-           ndelta,
-           pred_conf,
-           alt_bank,
-           hit_bank);
+    // printf("pc:%llx addr:%llx pred_delta:%d delta:%d conf:%d a:%d h:%d\n",
+           // pc,
+           // addr,
+           // pred_delta,
+           // ndelta,
+           // pred_conf,
+           // alt_bank,
+           // hit_bank);
   }
 #endif
 
@@ -803,11 +802,7 @@ void Indirect_address_predictor::performed(MemObj* DL1, Addr_t pc, Addr_t ld1_ad
 
   Addr_t pred_addr = adhist[pc].base + (adhist[pc].factor * ld1_data);
 
-#if 1
   DL1->tryPrefetch(pred_addr, false, 1, PSIGN_INDIRECT, pc);  // degree 1 to give high priority
-#else
-  DL1->tryPrefetch(pred_addr, false, 1, PSIGN_INDIRECT, pc);  // degree 1 to give high priority
-#endif
 }
 
 bool Indirect_address_predictor::try_chain_predict(MemObj* DL1, Addr_t pc, int distance) {

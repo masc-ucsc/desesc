@@ -38,7 +38,6 @@ private:
     uint64_t obits = olderBits;
     for (uint64_t i = 0; i < depth; i++) {
       hist[i] = 0;
-#if 1
       if (i == 2) {
         obits = 4;
       } else if (i == 3) {
@@ -49,14 +48,6 @@ private:
       if (obits < 1) {
         obits = 1;
       }
-#else
-      if ((i == 128) || (i == 256) || (i == 64) || (i == 32) || (i == 3316)) {
-        obits--;
-      }
-      if (obits < 1) {
-        obits = 1;
-      }
-#endif
 
       histBits[i] = obits;
       histMask[i] = ((uint64_t)1 << obits) - 1;
@@ -72,7 +63,7 @@ private:
 public:
   DOLC(int d, int o, int l, int c) : depth(d), olderBits(o), lastBits(l), currBits(c) {
     if (o > 63 || l > 63 || c > 63) {
-      printf("ERROR: DOLC out of limits 64bits per entry\n");
+      // printf("ERROR: DOLC out of limits 64bits per entry\n");
       exit(-1);
     }
 

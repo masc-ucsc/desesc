@@ -71,17 +71,6 @@ Router::~Router() {
 }
 
 void Router::launchMsg(Message* msg) {
-#ifdef DEBUG
-#if 0
-  MSG("router(%d)::launchMsg [%d:%d] to [%d:%d]",
-      myID,
-      msg->getSrcRouterID(),
-      msg->getSrcPortID(),
-      msg->getDstRouterID(),
-      msg->getDstPortID());
-#endif
-#endif
-
   I(msg->getSrcRouterID() == myID);
 
   // bufferEnergy.inc() ;  // read

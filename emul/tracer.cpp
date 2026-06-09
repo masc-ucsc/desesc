@@ -27,6 +27,25 @@ bool Tracer::open(const std::string& fname) {
 
   return true;
 }
+bool Tracer::open_t(const std::string& fname_t) {
+  auto file_name = absl::StrCat(fname_t, ".", Report::get_extension());
+
+  ofst.open(file_name);
+  if (!ofst) {
+    Config::add_error(fmt::format("unable to open trace file {}", file_name));
+    // track_from = UINT64_MAX;
+    // track_to   = UINT64_MAX;
+    return false;
+  }
+
+  // main_clock_set = false;
+  // last_clock     = 0;
+  // track_from     = 0;
+  // track_to       = UINT64_MAX;
+  //  track_to       = 2*UINT64_MAX;
+
+  return true;
+}
 
 void Tracer::track_range(uint64_t from, uint64_t to) {
   I(ofs);
@@ -43,12 +62,16 @@ void Tracer::stage(const Dinst* dinst, const std::string ev) {
   }
 
   adjust_clock();
+  // if (!dinst->isTransient()) then id=getNTID()
+  // if (dinst->isTransient()) then id=getNIID()//no increase in T
   int id = dinst->getID();
 
   if (!started.contains(id)) {
     ofs << "I\t" << std::dec << id - track_from << "\t" << id - track_from << "\t" << dinst->getFlowId() << "\n";
     ofs << "L\t" << std::dec << id - track_from << "\t0\t" << std::hex << dinst->getPC() << " " << dinst->getInst()->get_asm()
         << "\n";
+    // dinst->getNTID(); which NTID will not increase in Transient instruction;only increase in NT instruction
+    // ofs << "L\t" << std::dec << id - track_from << "\t0\t" << std::hex << dinst->getPC() << " " << dinst->getNTID()
     started.insert(id);
   }
 
@@ -56,6 +79,36 @@ void Tracer::stage(const Dinst* dinst, const std::string ev) {
   if (ev == "WB" || ev == "RN" || ev == "PNR") {
     pending_end.emplace_back(fmt::format("E\t{}\t0\t{}\n", id - track_from, ev));
   }
+}
+void Tracer::time_diff(const Dinst* dinst, const std::string ev, int global_clock) {
+  I(ev.size() <= 4);  // tracer stages should have 4 or less characers
+
+  if (dinst->getID() > track_to || dinst->getID() < track_from) {
+    return;
+  }
+
+  // adjust_clock();
+  // if (!dinst->isTransient()) then id=getNTID()
+  // if (dinst->isTransient()) then id=getNIID()//no increase in T
+  int dinst_id = dinst->getID();
+  // int orig_id = dinst->get_original_id();
+
+  // if (!started.contains(id)) {
+  // ofst << "OriginalID\t" << std::dec << dinst->get_original_id()  << "\t" << "Transient_Version_ID\t" <<
+  // dinst_id<<"\t"<<"IF_time\t"<<std::dec<<global_clock << "\n";
+  ofst << std::dec << dinst->get_original_id() << "\t" << std::dec << dinst_id << "\t" << std::dec << global_clock << "\n";
+
+  // ofs << "L\t" << std::dec << id - track_from << "\t0\t" << std::hex << dinst->getPC() << " " << dinst->getInst()->get_asm()
+  //   << "\n";
+  // dinst->getNTID(); which NTID will not increase in Transient instruction;only increase in NT instruction
+  // ofs << "L\t" << std::dec << id - track_from << "\t0\t" << std::hex << dinst->getPC() << " " << dinst->getNTID()
+  // started.insert(id);
+  // }
+
+  // ofs << fmt::format("S\t{}\t0\t{}\n", id - track_from, ev);
+  // if (ev == "WB" || ev == "RN" || ev == "PNR") {
+  // pending_end.emplace_back(fmt::format("E\t{}\t0\t{}\n", id - track_from, ev));
+  // }
 }
 
 void Tracer::event(const Dinst* dinst, const std::string ev) {

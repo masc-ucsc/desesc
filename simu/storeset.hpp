@@ -51,12 +51,10 @@ private:
   void   set_SSID(uint64_t PC, SSID_t SSID) { SSIT[hashPC(PC)] = SSID; };
   SSID_t create_set(uint64_t);
 
-#if 1
   // TO - delete
   void stldViolation_withmerge(Dinst* ld_dinst, Dinst* st_dinst);
   void VPC_misspredict(Dinst* ld_dinst, uint64_t store_pc);
   void assign_SSID(Dinst* dinst, SSID_t SSID);
-#endif
 public:
   StoreSet(const int32_t hid);
   ~StoreSet();

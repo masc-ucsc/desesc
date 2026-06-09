@@ -20,6 +20,7 @@ private:
   uint16_t fetch_width;
   uint16_t half_fetch_width;
 
+  friend class IBucket;
   bool fetch_one_line;
   bool fetch_align;
   bool trace_align;
@@ -35,9 +36,9 @@ private:
 
   bool missInst;  // branch missprediction. Stop fetching until solved
                   // #ifndef NDEBUG
-  Dinst* missDinst;
+  Dinst*   missDinst;
   uint16_t maxDelayPending;
-  Dinst *  maxDelayPendingDinst;
+  Dinst*   maxDelayPendingDinst;
   // #endif
 
   // Dinst *transientDinst;
@@ -72,9 +73,9 @@ private:
   Stats_cntr nFirstBranch;
   Stats_cntr nFirstRet;
   Stats_cntr nFirstJump;
-  Stats_cntr nBothBranch; 
-  Stats_cntr nBothRet; 
-  Stats_cntr nBothJump; 
+  Stats_cntr nBothBranch;
+  Stats_cntr nBothRet;
+  Stats_cntr nBothJump;
   // *******************
 
 public:
@@ -101,7 +102,11 @@ public:
   void dump(const std::string& str) const;
 
   Dinst* transientDinst;
+  bool   is_control;
   bool   isBlocked() const { return missInst; }
+  bool   is_ifid_control() const { return is_control; }
+  void   set_ifid_control()   { is_control = true; }
+  void   reset_ifid_control()  { is_control = false; }
   // #ifndef NDEBUG
   Dinst* getMissDinst() const { return missDinst; }
   // #endif

@@ -107,37 +107,6 @@ StallCause GPUSMProcessor::add_inst(Dinst* dinst) {
       || ((RAT[inst->getSrc2()] != 0) && (inst->getSrc2() != LREG_NoDependence) && (inst->getSrc2() != LREG_InvalidOutput))
       || ((RAT[inst->getDst1()] != 0) && (inst->getDst1() != LREG_InvalidOutput))
       || ((RAT[inst->getDst2()] != 0) && (inst->getDst2() != LREG_InvalidOutput))) {
-#if 0
-    //Useful for debug
-    if (hid == 1 ){
-      MSG("\n---------- (@%lld) ---------------",(long long int)globalClock);
-      string str ="";
-      str.append("\nCONFLICT->");
-      if (RAT[inst->getSrc1()] != 0){
-        str.append("src1, ");
-        MSG(" SRC1 = %d, RAT[entry] = %d",inst->getSrc1(), RAT[inst->getSrc1()] );
-        RAT[inst->getSrc1()]->dump("\nSRC1 in use by:");
-      }
-
-      if (RAT[inst->getSrc2()] != 0){
-        str.append("src2, ");
-        RAT[inst->getSrc2()]->dump("\nSRC2 in use by:");
-      }
-
-      if ((RAT[inst->getDst1()] != 0) && (inst->getDst2() != LREG_InvalidOutput)){
-        str.append("dst1, ");
-        RAT[inst->getDst1()]->dump("\nDST1 in use by:");
-      }
-
-      if ((RAT[inst->getDst2()] != 0) && (inst->getDst2() != LREG_InvalidOutput)){
-        str.append("dst2, ");
-        RAT[inst->getDst2()]->dump("\nDST2 in use by:");
-      }
-
-      dinst->dump(str.c_str());
-
-    }
-#endif
     return SmallWinStall;
   }
 
@@ -146,12 +115,6 @@ StallCause GPUSMProcessor::add_inst(Dinst* dinst) {
   }
 
   // FIXME: if nInstPECounter is >0 for this cycle, do a DivertStall
-#if 0
-  if (inst_perpe_percyc[dinst->getPE()] == true){
-    //MSG("d-%d",dinst->getPE());
-    return DivergeStall;
-  }
-#endif
   Cluster* cluster = dinst->getCluster();
   if (!cluster) {
     Resource* res = clusterManager.getResource(dinst);
@@ -168,22 +131,11 @@ StallCause GPUSMProcessor::add_inst(Dinst* dinst) {
   // dinst->dump("");
 
   inst_perpe_percyc[dinst->getPE()] = true;
-  // MSG("Setting Dinst %lld PE-%d, GlobalClock = %lld ",dinst->getID(), dinst->getPE(),globalClock);
 
   nInst[inst->getOpcode()]->inc(dinst->has_stats());
 
   ROB.push(dinst);
 
-#if 0
-
-  dinst->setRAT1Entry(&RAT[inst->getDst1()]);
-  dinst->setRAT2Entry(&RAT[inst->getDst2()]);
-  RAT[inst->getDst1()] = dinst;
-  RAT[inst->getDst2()] = dinst;
-
-  I(dinst->getCluster());
-  dinst->getCluster()->add_inst(dinst);
-#else
   if (!dinst->isSrc2Ready()) {
     // It already has a src2 dep. It means that it is solved at
     // retirement (Memory consistency. coherence issues)
@@ -209,7 +161,6 @@ StallCause GPUSMProcessor::add_inst(Dinst* dinst) {
   RAT[inst->getDst2()] = dinst;
 
   I(dinst->getCluster());
-#endif
 
   return NoStall;
 } /*}}}*/

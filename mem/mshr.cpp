@@ -108,7 +108,7 @@ bool MSHR::retire(Addr_t addr, MemRequest* mreq) {
   I(entry[pos].nUse);
 #ifdef DEBUG_TRANSIENTS
   I(!entry[pos].pending_mreq.empty());
-  for(size_t i=0;i<entry[pos].pending_mreq.size();++i) {
+  for (size_t i = 0; i < entry[pos].pending_mreq.size(); ++i) {
     if (entry[pos].pending_mreq[i] == mreq) {
       entry[pos].pending_mreq[i] = 0;
     }
@@ -118,7 +118,7 @@ bool MSHR::retire(Addr_t addr, MemRequest* mreq) {
   }
   if (mreq->getDinst()) {
     // We retire age order o we have a priority inversion problem
-    for(size_t i=0;i<entry[pos].pending_mreq.size();++i) {
+    for (size_t i = 0; i < entry[pos].pending_mreq.size(); ++i) {
       if (entry[pos].pending_mreq[i] && entry[pos].pending_mreq[i]->getDinst()) {
         I(mreq->getDinst()->getID() < entry[pos].pending_mreq[i]->getDinst()->getID());
       }

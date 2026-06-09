@@ -33,18 +33,6 @@ Dinst* LSQFull::executing(Dinst* dinst)
   const Instruction* inst   = dinst->getInst();
   Dinst*             faulty = 0;
 
-#if 0
-  AddrDinstQMap::const_iterator instIt = instMap.begin();
-  I(instIt != instMap.end());
-
-  I(!dinst->isExecuted());
-
-  while(instIt != instMap.end()) {
-    if (instIt->first != tag){
-      instIt++;
-      continue;
-    }
-#endif
   std::pair<AddrDinstQMap::iterator, AddrDinstQMap::iterator> ret;
   ret = instMap.equal_range(tag);
   for (AddrDinstQMap::iterator instIt = ret.first; instIt != ret.second; ++instIt) {
@@ -53,7 +41,6 @@ Dinst* LSQFull::executing(Dinst* dinst)
     // inst->dump("Executed");
     Dinst* qdinst = instIt->second;
     if (qdinst == dinst) {
-      // printf("LSQFull::executing::NOTunresolve-- :: qdinst==dinst dinstID %ld\n", dinst->getID());
       continue;
     }
 
@@ -79,7 +66,6 @@ Dinst* LSQFull::executing(Dinst* dinst)
     }
   }  // map_for_loop_end
 
-  // printf("LSQFull::executing::unresolve-- dinstID %ld\n", dinst->getID());
   unresolved--;
   I(!dinst->isExecuted());  // first clear, then mark executed
   return faulty;
@@ -144,7 +130,6 @@ Dinst* LSQNone::executing(Dinst* dinst)
   I(addrTable[i] == dinst);
   addrTable[i] = 0;
 
-  // printf("LSQNone::executing::unresolve-- dinstID %ld\n", dinst->getID());
   unresolved--;
   return 0;
 }
@@ -175,7 +160,6 @@ bool LSQVPC::insert(Dinst* dinst)
 Dinst* LSQVPC::executing(Dinst* dinst) {
   (void)dinst;
   I(0);
-  // printf("LSQVPC::executing::unresolve-- dinstID %ld\n", dinst->getID());
   unresolved--;
   return 0;
 }

@@ -21,19 +21,6 @@ private:
 
 public:
   uint16_t size() const { return 32768 / 2 - 2048; }
-#if 0
-    uint16_t realsize() const{
-
-      if (head == tail)
-        return 0;
-
-      if (head > tail){
-        return (4000-(head-tail-1));
-        //return ((head-tail-1));
-      }
-      return (tail-head-1);
-    }
-#endif
 
   ThreadSafeFIFO() : tail(0), head(0) {}
   virtual ~ThreadSafeFIFO() {}
@@ -82,51 +69,5 @@ public:
     head = (head + 1) & 32767;
   };
 };
-
-#if 0
-#include <pthread.h>
-
-ThreadSafeFIFO<uint32_t> cf;
-
-extern "C" void *qemuesesc_main_bootstrap(void *threadargs) {
-  // Producer
-
-  for(uint32_t i=0;i<10000000;i++) {
-    while(cf.full()) {
-      ;
-      //printf("f");
-    }
-    cf.push(&i);
-  }
-}
-
-
-main() {
-
-  pthread_t qemu_thread;
-
-  pthread_create(&qemu_thread,0,&qemuesesc_main_bootstrap,(void *) 0);
-
-  // Consumer
-
-  for(uint32_t i=0;i<10000000;i++) {
-    while(cf.empty()) {
-      ;
-      // printf("e");
-    }
-    uint32_t j;
-    cf.pop(&j);
-    if (j!=i) {
-      printf("ERROR %d vs %d\n",i,j);
-      exit(-3);
-    }
-  }
-
-  printf("Job done\n");
-  pthread_kill(qemu_thread,SIGKILL);
-
-}
-
-#endif
 
 #endif

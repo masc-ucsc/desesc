@@ -75,11 +75,11 @@ public:
 
   void dump() const;
 
-  // Port registration for deferred allocation with contention handling
-  // With PORT_STRICT_PRIORITY: priority order (lowest dinst ID first)
-  // Without PORT_STRICT_PRIORITY: FIFO order (first inserted, first popped)
-  static void registerPort(PortGeneric* port);
-  static void processPendingPortRequests();
+  // Registration for priority-managed ports.  These ports accumulate pending
+  // schedule() requests within a cycle, which are drained in priority order
+  // (lowest dinst ID first) at the end of that cycle.
+  static void register_drain_port(PortGeneric* port);
+  static void drain_port_queues();
 
   static void schedule(Time_t tim, EventScheduler* cb) {
     (void)tim;
@@ -125,15 +125,22 @@ public:
 #endif
     globalClock++;
 
-    // Process pending port requests BEFORE regular callbacks
-    // This allows priority-ordered allocation at cycle start
-    // (no-op without PORT_STRICT_PRIORITY)
-    processPendingPortRequests();
-
+    // Fixed-point drain: run every callback scheduled for this cycle, then drain
+    // priority-managed port queues (which may fire callbacks that enqueue new cbQ
+    // jobs or new port requests).  Repeat until both are empty.
     uint32_t cb_per_clock = 0;
-    while ((cb = cbQ.nextJob(globalClock))) {
-      cb->call();
-      cb_per_clock++;
+    bool     progressed   = true;
+    while (progressed) {
+      progressed = false;
+      while ((cb = cbQ.nextJob(globalClock))) {
+        cb->call();
+        cb_per_clock++;
+        progressed = true;
+      }
+      if (any_drain_port_has_pending()) {
+        drain_port_queues();
+        progressed = true;
+      }
     }
 
     if (cb_per_clock == 0) {
@@ -149,16 +156,18 @@ public:
     I(empty());
     cbQ.reset();
     globalClock = 0;
-    // Clear port registrations on reset
-    getRegisteredPorts().clear();
+    get_drain_ports().clear();
   }
 
 private:
-  // Static storage for registered ports (accessor pattern for static initialization order)
-  static std::vector<PortGeneric*>& getRegisteredPorts() {
-    static std::vector<PortGeneric*> registered_ports;
-    return registered_ports;
+  // Static storage for registered priority-managed ports (accessor pattern for
+  // static initialization order).
+  static std::vector<PortGeneric*>& get_drain_ports() {
+    static std::vector<PortGeneric*> drain_ports;
+    return drain_ports;
   }
+
+  static bool any_drain_port_has_pending();
 };
 
 class CallbackBase : public EventScheduler {

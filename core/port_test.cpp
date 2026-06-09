@@ -4,13 +4,13 @@
 
 #include <vector>
 
+#include "callback.hpp"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 class Port_test : public ::testing::Test {
 protected:
   void SetUp() override {
-    // Reset global clock
     globalClock = 0;
     EventScheduler::reset();
   }
@@ -18,10 +18,11 @@ protected:
   void TearDown() override { EventScheduler::reset(); }
 };
 
+// --- Simple (non-priority) ports ---------------------------------------------
+
 TEST_F(Port_test, unlimited_always_available) {
   auto port = PortGeneric::create("test_unlimited", 0);
 
-  // PortUnlimited should always return current cycle
   EXPECT_EQ(port->nextSlot(true), 0ULL);
   EXPECT_EQ(port->nextSlot(true), 0ULL);
   EXPECT_EQ(port->nextSlot(true), 0ULL);
@@ -34,19 +35,12 @@ TEST_F(Port_test, unlimited_always_available) {
 TEST_F(Port_test, fully_pipe_basic) {
   auto port = PortGeneric::create("test_pipe", 1);
 
-  // First allocation at cycle 0
   EXPECT_EQ(port->nextSlot(true), 0ULL);
-
-  // Second allocation at cycle 1 (port busy)
   EXPECT_EQ(port->nextSlot(true), 1ULL);
-
-  // Third allocation at cycle 2
   EXPECT_EQ(port->nextSlot(true), 2ULL);
 
-  // Advance clock
   globalClock = 5;
 
-  // Should allocate at cycle 5 (catches up)
   EXPECT_EQ(port->nextSlot(true), 5ULL);
   EXPECT_EQ(port->nextSlot(true), 6ULL);
 }
@@ -59,196 +53,226 @@ TEST_F(Port_test, fully_npipe_basic) {
   EXPECT_EQ(port->nextSlot(true), 0ULL);
   EXPECT_EQ(port->nextSlot(true), 0ULL);
 
-  // Fourth allocation at cycle 1 (all units busy)
+  EXPECT_EQ(port->nextSlot(true), 1ULL);
   EXPECT_EQ(port->nextSlot(true), 1ULL);
 
-  // Fifth allocation at cycle 1
-  EXPECT_EQ(port->nextSlot(true), 1ULL);
-
-  // Advance clock
   globalClock = 10;
 
-  // Should allocate 3 at cycle 10, then roll to 11
   EXPECT_EQ(port->nextSlot(true), 10ULL);
   EXPECT_EQ(port->nextSlot(true), 10ULL);
   EXPECT_EQ(port->nextSlot(true), 10ULL);
   EXPECT_EQ(port->nextSlot(true), 11ULL);
 }
 
-#ifdef PORT_STRICT_PRIORITY
+// --- Priority-managed ports --------------------------------------------------
 
-TEST_F(Port_test, priority_immediate_allocation) {
-  auto port = PortGeneric::create("test_priority", 1);
+// Helper: advance the clock one cycle through EventScheduler so priority ports
+// drain their pending queues.
+static void tick_one_cycle() { EventScheduler::advanceClock(); }
 
-  // First request should succeed immediately
-  auto [when1, retry1] = port->tryNextSlot(true, 100);
-  EXPECT_EQ(when1, 0ULL);
-  EXPECT_FALSE(retry1);  // No retry needed
+TEST_F(Port_test, priority_single_unit_age_order_within_cycle) {
+  auto port = PortGeneric::create("test_prio", 1, /*priority_managed=*/true);
+
+  std::vector<Time_t> order;
+  auto                push_priority = [&](Time_t prio) {
+    port->schedule(true, prio, false, [&order, prio](Time_t /*when*/) { order.push_back(prio); });
+  };
+
+  push_priority(100);
+  push_priority(50);
+  push_priority(200);
+  push_priority(75);
+
+  // Single-unit port: one grant per cycle, highest priority (lowest ID) first.
+  tick_one_cycle();
+  ASSERT_EQ(order.size(), 1U);
+  EXPECT_EQ(order[0], 50U);
+
+  tick_one_cycle();
+  ASSERT_EQ(order.size(), 2U);
+  EXPECT_EQ(order[1], 75U);
+
+  tick_one_cycle();
+  ASSERT_EQ(order.size(), 3U);
+  EXPECT_EQ(order[2], 100U);
+
+  tick_one_cycle();
+  ASSERT_EQ(order.size(), 4U);
+  EXPECT_EQ(order[3], 200U);
 }
 
-TEST_F(Port_test, priority_deferred_allocation) {
-  auto port = PortGeneric::create("test_priority", 1);
-
-  // First request succeeds
-  auto [when1, retry1] = port->tryNextSlot(true, 100);
-  EXPECT_EQ(when1, 0ULL);
-  EXPECT_FALSE(retry1);
-
-  // Second request should need retry (port busy)
-  auto [when2, retry2] = port->tryNextSlot(true, 101);
-  EXPECT_EQ(when2, 1ULL);  // Would be allocated at cycle 1
-  EXPECT_TRUE(retry2);  // Retry needed
-}
-
-TEST_F(Port_test, priority_ordering_single_unit) {
-  auto port = PortGeneric::create("test_priority", 1);
-
-  std::vector<Time_t> execution_order;
-
-  // First request allocates immediately
-  auto [when1, retry1] = port->tryNextSlot(true, 100);
-  EXPECT_FALSE(retry1);
-  execution_order.push_back(100);
-
-  // Queue requests with different priorities (lower ID = higher priority)
-  // Request from instruction 50 (higher priority)
-  auto [when2, retry2] = port->tryNextSlot(true, 50);
-  EXPECT_TRUE(retry2);
-  port->queueRequest(true, 50, [&execution_order](Time_t when) {
-    (void)when;
-    execution_order.push_back(50);
-  });
-
-  // Request from instruction 200 (lower priority)
-  auto [when3, retry3] = port->tryNextSlot(true, 200);
-  EXPECT_TRUE(retry3);
-  port->queueRequest(true, 200, [&execution_order](Time_t when) {
-    (void)when;
-    execution_order.push_back(200);
-  });
-
-  // Request from instruction 75 (medium priority)
-  auto [when4, retry4] = port->tryNextSlot(true, 75);
-  EXPECT_TRUE(retry4);
-  port->queueRequest(true, 75, [&execution_order](Time_t when) {
-    (void)when;
-    execution_order.push_back(75);
-  });
-
-  // Advance clock and process pending requests (one per cycle for single-unit port)
-  for (int cycle = 1; cycle <= 3; cycle++) {
-    globalClock = cycle;
-    EventScheduler::advanceClock();
-  }
-
-  // Verify priority ordering: 50 < 75 < 200 (lower ID first)
-  ASSERT_EQ(execution_order.size(), 4ULL);
-  EXPECT_EQ(execution_order[0], 100ULL);  // Immediate at cycle 0
-  EXPECT_EQ(execution_order[1], 50ULL);   // Highest priority at cycle 1
-  EXPECT_EQ(execution_order[2], 75ULL);   // Medium priority at cycle 2
-  EXPECT_EQ(execution_order[3], 200ULL);  // Lowest priority at cycle 3
-}
-
-TEST_F(Port_test, priority_ordering_multi_unit) {
-  auto port = PortGeneric::create("test_priority", 2);  // 2 units
-
-  std::vector<Time_t> execution_order;
-
-  // First 2 requests allocate immediately
-  auto [when1, retry1] = port->tryNextSlot(true, 100);
-  EXPECT_FALSE(retry1);
-  execution_order.push_back(100);
-
-  auto [when2, retry2] = port->tryNextSlot(true, 101);
-  EXPECT_FALSE(retry2);
-  execution_order.push_back(101);
-
-  // Queue 3 more requests (port full)
-  port->queueRequest(true, 50, [&execution_order](Time_t when) {
-    (void)when;
-    execution_order.push_back(50);
-  });
-
-  port->queueRequest(true, 150, [&execution_order](Time_t when) {
-    (void)when;
-    execution_order.push_back(150);
-  });
-
-  port->queueRequest(true, 75, [&execution_order](Time_t when) {
-    (void)when;
-    execution_order.push_back(75);
-  });
-
-  // Advance clock and process (2 units available)
-  globalClock = 1;
-  EventScheduler::advanceClock();
-
-  // Should process 2 highest priority requests (50, 75)
-  ASSERT_GE(execution_order.size(), 4ULL);
-  EXPECT_EQ(execution_order[0], 100ULL);  // Immediate
-  EXPECT_EQ(execution_order[1], 101ULL);  // Immediate
-  EXPECT_EQ(execution_order[2], 50ULL);   // Highest priority
-  EXPECT_EQ(execution_order[3], 75ULL);   // Second priority
-
-  // Advance again to process remaining request
-  globalClock = 2;
-  EventScheduler::advanceClock();
-
-  ASSERT_EQ(execution_order.size(), 5ULL);
-  EXPECT_EQ(execution_order[4], 150ULL);  // Lowest priority
-}
-
-TEST_F(Port_test, priority_multi_cycle_processing) {
-  auto port = PortGeneric::create("test_priority", 1);
+TEST_F(Port_test, priority_grants_happen_at_current_cycle) {
+  auto port = PortGeneric::create("test_prio_cap", 1, /*priority_managed=*/true);
 
   std::vector<std::pair<Time_t, Time_t>> allocations;  // (priority, when)
+  auto                                   push_priority = [&](Time_t prio) {
+    port->schedule(true, prio, false, [&allocations, prio](Time_t when) { allocations.push_back({prio, when}); });
+  };
 
-  // Queue 5 requests in cycle 0
-  for (Time_t prio : {100, 50, 200, 25, 150}) {
-    auto [when, retry] = port->tryNextSlot(true, prio);
-    if (!retry) {
-      allocations.push_back({prio, when});
-    } else {
-      port->queueRequest(true, prio, [&allocations, prio](Time_t when) { allocations.push_back({prio, when}); });
-    }
-  }
+  push_priority(100);
+  push_priority(50);
+  push_priority(75);
 
-  // Process cycles (need 5 cycles for 5 requests on single-unit port)
-  for (int cycle = 1; cycle <= 5; cycle++) {
-    globalClock = cycle;
-    EventScheduler::advanceClock();
-  }
+  // Each cycle grants 1 request.  `when` equals globalClock at time of grant.
+  tick_one_cycle();  // globalClock=1
+  tick_one_cycle();  // globalClock=2
+  tick_one_cycle();  // globalClock=3
 
-  // Verify all requests processed
-  ASSERT_EQ(allocations.size(), 5ULL);
-
-  // Verify priority ordering (lower ID = higher priority = earlier allocation)
-  // Request order: 100 (immediate), then queued: 50, 200, 25, 150
-  // Processing order should be: 100 (immediate), 25, 50, 150, 200 (by priority)
-  EXPECT_EQ(allocations[0].first, 100ULL);  // Immediate at cycle 0
-  EXPECT_EQ(allocations[1].first, 25ULL);   // Highest priority (cycle 1)
-  EXPECT_EQ(allocations[2].first, 50ULL);   // Second priority (cycle 2)
-  EXPECT_EQ(allocations[3].first, 150ULL);  // Third priority (cycle 3)
-  EXPECT_EQ(allocations[4].first, 200ULL);  // Lowest priority (cycle 4)
+  ASSERT_EQ(allocations.size(), 3U);
+  EXPECT_EQ(allocations[0].first, 50U);
+  EXPECT_EQ(allocations[0].second, 1U);
+  EXPECT_EQ(allocations[1].first, 75U);
+  EXPECT_EQ(allocations[1].second, 2U);
+  EXPECT_EQ(allocations[2].first, 100U);
+  EXPECT_EQ(allocations[2].second, 3U);
 }
 
-#else
+TEST_F(Port_test, priority_multi_unit_grants_per_cycle) {
+  auto port = PortGeneric::create("test_prio_n", 2, /*priority_managed=*/true);
 
-TEST_F(Port_test, fifo_ordering_without_priority) {
-  auto port = PortGeneric::create("test_fifo", 1);
+  std::vector<std::pair<Time_t, Time_t>> allocations;
+  auto                                   push_priority = [&](Time_t prio) {
+    port->schedule(true, prio, false, [&allocations, prio](Time_t when) { allocations.push_back({prio, when}); });
+  };
 
-  std::vector<Time_t> allocation_times;
+  push_priority(100);
+  push_priority(50);
+  push_priority(75);
+  push_priority(200);
+  push_priority(150);
 
-  // Allocate in order: 100, 50, 200
-  // Without priority, should get times in FIFO order: 0, 1, 2
-  allocation_times.push_back(port->nextSlot(true));  // 100
-  allocation_times.push_back(port->nextSlot(true));  // 50
-  allocation_times.push_back(port->nextSlot(true));  // 200
+  tick_one_cycle();  // grants 50, 75 at cycle 1
+  tick_one_cycle();  // grants 100, 150 at cycle 2
+  tick_one_cycle();  // grants 200 at cycle 3
 
-  // FIFO order (call order, not priority)
-  EXPECT_EQ(allocation_times[0], 0);
-  EXPECT_EQ(allocation_times[1], 1);
-  EXPECT_EQ(allocation_times[2], 2);
+  ASSERT_EQ(allocations.size(), 5U);
+  EXPECT_EQ(allocations[0].first, 50U);
+  EXPECT_EQ(allocations[0].second, 1U);
+  EXPECT_EQ(allocations[1].first, 75U);
+  EXPECT_EQ(allocations[1].second, 1U);
+  EXPECT_EQ(allocations[2].first, 100U);
+  EXPECT_EQ(allocations[2].second, 2U);
+  EXPECT_EQ(allocations[3].first, 150U);
+  EXPECT_EQ(allocations[4].first, 200U);
+  EXPECT_EQ(allocations[4].second, 3U);
 }
 
-#endif
+TEST_F(Port_test, priority_late_arriving_high_priority_wins_over_waiters) {
+  // Scenario from design discussion:
+  //   cycle 1: T0 (prio 0), N1 (prio 1), N2 (prio 2) arrive.
+  //   cycle 2: T3 (prio -1, i.e. older than N1/N2 by a speculative-ID quirk) arrives.
+  // With fair drain, T3 takes cycle 2, bumping N1 to 3 and N2 to 4.
+  auto port = PortGeneric::create("test_prio_fair", 1, /*priority_managed=*/true);
+
+  std::vector<std::pair<Time_t, Time_t>> allocations;
+  auto                                   push = [&](Time_t prio) {
+    port->schedule(true, prio, false, [&allocations, prio](Time_t when) { allocations.push_back({prio, when}); });
+  };
+
+  push(10);  // T0
+  push(20);  // N1
+  push(30);  // N2
+
+  tick_one_cycle();  // cycle 1 drain: grants T0=10. N1/N2 wait.
+
+  push(15);  // T3 arrives at cycle 2, older than N1/N2 (15 < 20 < 30).
+
+  tick_one_cycle();  // cycle 2: T3(15) wins over N1(20) and N2(30).
+  tick_one_cycle();  // cycle 3: N1(20).
+  tick_one_cycle();  // cycle 4: N2(30).
+
+  ASSERT_EQ(allocations.size(), 4U);
+  EXPECT_EQ(allocations[0].first, 10U);
+  EXPECT_EQ(allocations[0].second, 1U);
+  EXPECT_EQ(allocations[1].first, 15U);
+  EXPECT_EQ(allocations[1].second, 2U);
+  EXPECT_EQ(allocations[2].first, 20U);
+  EXPECT_EQ(allocations[2].second, 3U);
+  EXPECT_EQ(allocations[3].first, 30U);
+  EXPECT_EQ(allocations[3].second, 4U);
+}
+
+TEST_F(Port_test, priority_unlimited_all_at_current_cycle) {
+  auto port = PortGeneric::create("test_prio_unl", 0, /*priority_managed=*/true);
+
+  std::vector<std::pair<Time_t, Time_t>> allocations;
+  auto                                   push_priority = [&](Time_t prio) {
+    port->schedule(true, prio, false, [&allocations, prio](Time_t when) { allocations.push_back({prio, when}); });
+  };
+
+  push_priority(100);
+  push_priority(50);
+  push_priority(200);
+
+  tick_one_cycle();
+
+  ASSERT_EQ(allocations.size(), 3U);
+  // Age order:
+  EXPECT_EQ(allocations[0].first, 50U);
+  EXPECT_EQ(allocations[1].first, 100U);
+  EXPECT_EQ(allocations[2].first, 200U);
+  // Unlimited port: all fire at current cycle (1 after the advance).
+  EXPECT_EQ(allocations[0].second, 1U);
+  EXPECT_EQ(allocations[1].second, 1U);
+  EXPECT_EQ(allocations[2].second, 1U);
+}
+
+TEST_F(Port_test, flush_transient_purges_pending_queue) {
+  auto port = PortGeneric::create("test_prio_flush_q", 1, /*priority_managed=*/true);
+
+  std::vector<Time_t> fired;
+  auto                push = [&](Time_t prio, bool transient) {
+    port->schedule(true, prio, transient, [&fired, prio](Time_t /*when*/) { fired.push_back(prio); });
+  };
+
+  push(50, false);
+  push(75, true);
+  push(100, false);
+  push(150, true);
+
+  // Flush before any drain.  Only non-transient entries survive.
+  port->flush_transient();
+
+  tick_one_cycle();  // grants 50
+  tick_one_cycle();  // grants 100
+
+  ASSERT_EQ(fired.size(), 2U);
+  EXPECT_EQ(fired[0], 50U);
+  EXPECT_EQ(fired[1], 100U);
+}
+
+TEST_F(Port_test, flush_transient_frees_queued_transients_for_new_reals) {
+  auto port = PortGeneric::create("test_prio_flush_occ", 1, /*priority_managed=*/true);
+
+  std::vector<std::pair<Time_t, Time_t>> allocations;
+  auto                                   push = [&](Time_t prio, bool transient) {
+    port->schedule(true, prio, transient, [&allocations, prio](Time_t when) { allocations.push_back({prio, when}); });
+  };
+
+  // Cycle 0: 50 (real), 75 (transient), 100 (transient), 150 (real) submitted.
+  push(50, false);
+  push(75, true);
+  push(100, true);
+  push(150, false);
+
+  tick_one_cycle();  // cycle 1: grants 50 (oldest). 75, 100, 150 still queued.
+
+  // Squash transients before any of them are granted.
+  port->flush_transient();
+
+  tick_one_cycle();  // cycle 2: 75 and 100 gone; only 150 remains → grants 150.
+
+  ASSERT_EQ(allocations.size(), 2U);
+  EXPECT_EQ(allocations[0].first, 50U);
+  EXPECT_EQ(allocations[0].second, 1U);
+  EXPECT_EQ(allocations[1].first, 150U);
+  EXPECT_EQ(allocations[1].second, 2U);
+}
+
+TEST_F(Port_test, flush_transient_noop_on_simple_port) {
+  auto port = PortGeneric::create("test_simple", 1);
+  // Simple port: flush_transient is a no-op.  nextSlot state unaffected.
+  EXPECT_EQ(port->nextSlot(true), 0ULL);
+  port->flush_transient();
+  EXPECT_EQ(port->nextSlot(true), 1ULL);
+}

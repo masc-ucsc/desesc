@@ -1,4 +1,3 @@
-// BISMILLAH HIR RAHMAR NIR RAHIM
 //  See LICENSE for details.
 #include "gprocessor.hpp"
 
@@ -11,6 +10,7 @@
 #include "fetchengine.hpp"
 #include "fmt/format.h"
 #include "gmemory_system.hpp"
+#include "port.hpp"
 #include "report.hpp"
 #include "tracer.hpp"
 
@@ -70,6 +70,8 @@ GProcessor::GProcessor(std::shared_ptr<Gmemory_system> gm, Hartid_t i)
 
   spaceInInstQueue = InstQueueSize;
 
+  flushing_last_transientid = 0;
+  last_transientid =0;
   busy = false;
 }
 
@@ -110,52 +112,101 @@ std::shared_ptr<FetchEngine> SMT_fetch::fetch_next() {
 }
 
 void GProcessor::fetch() {
+  //printf("gprocessor::fetch:: Entering at @clockcycle %lu\n", globalClock);
   I(eint);
   I(is_power_up());
+  
+  auto ifid = smt_fetch.fetch_next();
+ //unblock fetch starts here!!!
+ if (!ifid->isBlocked() && do_random_transients) {
+   //printf("gprocessor::fetch:: After Fetch is done after Br inst+ flush old transients at @clockcycle %lu\n", globalClock);
+   flush_transient_inst_on_fetch_ready();
+ }
 
   if (spaceInInstQueue < FetchWidth) {
+    //printf("gprocessor::fetch:: spaceInInstQueue < FetchWidth) ::RETURN FALSE at @clockcycle %lu\n", globalClock);
     return;
   }
 
-  auto ifid = smt_fetch.fetch_next();
+  //auto ifid = smt_fetch.fetch_next();
   if (ifid->isBlocked() && !do_random_transients) {
+    //printf("gprocessor::fetch::ifid->isBlocked() && !do_random_transients ::RETURN FALSE at @clockcycle %lu\n", globalClock);
     return;
   }
+ //unblock fetch starts here!!!
+ /*if (!ifid->isBlocked() && do_random_transients) {
+   //printf("gprocessor::fetch:: After Fetch is done after Br inst+ flush old transients at @clockcycle %lu\n", globalClock);
+   flush_transient_inst_on_fetch_ready();
+ }*/
 
   IBucket* bucket = pipeQ.pipeLine.newItem();
 
   auto smt_hid = hid;  // FIXME: do SMT fetch
   if (bucket) {
     if (ifid->isBlocked()) {
-      I(do_random_transients);
+      //printf("gprocessor::fetch:: Fetch is blocked and add_transient() is added + bucket size is %zu at @clockcycle %llu\n",
+             // bucket->size(),
+             // globalClock);
+      //I(do_random_transients);
+      //if (ifid->is_ifid_control()){
       Addr_t pc = ifid->getMissDinst()->getAddr() + 4;  // FIXME: it should be last random pc+4
       add_inst_transient_on_branch_miss(bucket, pc);
+      //ifid->reset_ifid_control();
+      //}
     } else {
+      // //printf("gprocessor::fetch::!ISBlocked() Sending fetch to fetchEngine at @clockcycle %llu\n", globalClock);
       ifid->fetch(bucket, eint, smt_hid, this);
+      /*if (do_random_transients) {
+        ////printf(
+            // "gprocessor::fetch:: After Fetch is done after Br inst+ flush old transients+ bucket size is %zu at @clockcycle %lu\n",
+             //bucket->size(),
+             //globalClock);
+        flush_transient_inst_on_fetch_ready();
+      } */
       if (!bucket->empty()) {
-        // printf("gprocessor::fetch:: completed bucket size is %ld\n", bucket->size());
         avgFetchWidth.sample(bucket->size(), bucket->top()->has_stats());
         busy = true;
       }
     }
+  } else {
+     //printf("gprocessor::fetch:: No FETCH !!! No Bucket-->pipeQ.pipeLine.newItem() at @clockcycle %lu\n", globalClock);
   }
+     //printf("gprocessor::fetch:: Leaving FETCH true at @clockcycle %lu\n", globalClock);
 }
 
 void GProcessor::flush_transient_inst_on_fetch_ready() {
-#if 0
-  if (!do_random_transients)
+  if (!do_random_transients) {
     return;
-#endif
+  }
+
+  flushing_last_transientid =last_transientid;
+  pipeQ.pipeLine.set_flushing_from_last_transientid(flushing_last_transientid);
 
   flush_transient_inst_from_inst_queue();
   pipeQ.pipeLine.flush_transient_inst_from_buffer();
+  pipeQ.pipeLine.flush_transient_inst_from_received_bucket();
   flush_transient_from_rob();
+  flush_transient_from_scb();
+  // Do NOT flush_transient_ports(): cbQ still holds Resource::executingCB /
+  // executedCB pointing at these dinsts. If retire destroys them first, the
+  // pool recycles the slot and the stale callbacks corrupt a fresh dinst.
 }
+
+void GProcessor::flush_transient_from_scb() {
+  //printf("gprocessor::flush_transient_scb on before new fetch!!!\n");
+  scb->flush_transient();
+}
+
+void GProcessor::flush_transient_ports() {
+  for (auto& p : owned_ports) {
+    p->flush_transient();
+  }
+}
+
 void GProcessor::dump_rob()
 // {{{1 Dump rob statistics
 {
   uint32_t size = ROB.size();
-  // printf("dump_ROB: ROB_size:%d\n", size);
 
   for (uint32_t i = 0; i < size; i++) {
     uint32_t pos = ROB.getIDFromTop(i);
@@ -171,14 +222,12 @@ void GProcessor::dump_rob()
 
 void GProcessor::flush_transient_from_rob() {
   // try the for loop scan
-  // printf("gprocessor::flush_transient_rob on before new fetch!!!\n");
+  //printf("gprocessor::flush_transient_rob on before new fetch!!!\n");
   while (!ROB.empty()) {
     auto* dinst = ROB.end_data();
     // makes sure isExecuted in preretire()
-    // printf("gprocessor::flush_transient_rob ROB size is %ld!!!\n", ROB.size());
 
     if (!dinst->isTransient()) {
-      // printf("GPROCCESOR::flush_Rob ::NON TRANSIENT  instID %ld\n", dinst->getID());
       ROB.push_pipe_in_cluster(dinst);
       ROB.pop_from_back();
       continue;
@@ -187,41 +236,18 @@ void GProcessor::flush_transient_from_rob() {
       continue;
     }*/
 
-    // printf("GPROCCESOR::flush_Rob ::Entering::TRANSIENT  instID %ld\n", dinst->getID());
     dinst->clearRATEntry();
-    // dinst->mark_to_be_destroyed_transient();
-    /*if (dinst->getCluster()->get_reg_pool() >= dinst->getCluster()->get_nregs() - 2) {
-      break;
-    }*lima_may*/
-    /*if (dinst->getCluster()->get_reg_pool() >= dinst->getCluster()->get_nregs() - 7) {
-      printf("GPROCCESOR::flush_Rob ::TRANSIENT get_reg_pool() >= dinst->getCluster()->get_nregs() - 7:: instID %ld\n",
-    dinst->getID()); dump_rob(); break; }lima_june24*/
 
-    /*limasep if (dinst->getCluster()->get_window_size() == dinst->getCluster()->get_window_maxsize()) {
-       printf("GPROCCESOR::flush_Rob :::>get_window_size() == dinst->getCluster()->get_window_maxsize( instID %ld\n",
-     dinst->getID()); dump_rob(); break;
-     }*/
-    /*if (dinst->hasDeps() || dinst->hasPending()) {
-      ROB.push_pipe_in_cluster(dinst);
-      ROB.pop_from_back();
-      continue;
-    }*/
-
-    // printf("GPROCCESOR::flush_Rob ::Entering  instID %ld\n", dinst->getID());
     // if(dinst)
     dinst->mark_destroy_transient();
     if (!dinst->isRetired() && dinst->isExecuted()) {
       // dinst->clearRATEntry();
       while (dinst->hasPending()) {
-        // printf("GPROCCESOR::flush_Rob :: isRetired() Pending for instID %ld at @Clockcycle %ld\n", dinst->getID(), globalClock);
         Dinst* dstReady = dinst->getNextPending();
         I(dstReady->isTransient());
       }
       bool hasDest = (dinst->getInst()->hasDstRegister());
       if (hasDest && !dinst->is_try_flush_transient()) {
-        // printf("GPROCCESOR::flush_Rob :: isRetired()  regpool++ destroying for instID %ld at @Clockcycle %ld\n",
-        // dinst->getID(),
-        // globalClock);
         dinst->getCluster()->add_reg_pool();
       }
       dinst->clearRATEntry();
@@ -240,26 +266,15 @@ void GProcessor::flush_transient_from_rob() {
       dinst->getCluster()->try_flushed(dinst);
       // limasep2024dinst->mark_del_entry();
       dinst->getCluster()->del_entry_flush(dinst);
-      // printf(
-      //     "GPROCCESOR::flush_Rob :: isExecuting || isIssued()  :: not destroyed::windowsize is %d: for instID %ld at @Clockcycle
-      //     "
-      //     "%ld\n",
-      //     dinst->getCluster()->get_window_size(),
-      //     dinst->getID(),
-      //     globalClock);
-      // lima_june24
+
       bool hasDest = (dinst->getInst()->hasDstRegister());
       if (hasDest) {
-        // printf("GPROCCESOR::flush_Rob :: isExecuting || isIssued()  regpool++ destroying for instID %ld at @Clockcycle %ld\n",
-        //        dinst->getID(),
-        //        globalClock);
         dinst->getCluster()->add_reg_pool();
         dinst->mark_try_flush_transient();
         // dinst->getCluster()->delEntry();
       }
       // lima_june24*/
 
-      // printf("GPROCCESOR::flush_Rob ::mark flush:: isExecuting || isIssued instID %ld\n", dinst->getID());
       ROB.push_pipe_in_cluster(dinst);
     } else if (dinst->isRenamed()) {
       if (dinst->is_try_flush_transient()) {
@@ -271,16 +286,9 @@ void GProcessor::flush_transient_from_rob() {
       dinst->getCluster()->try_flushed(dinst);
       // lima2024sepdinst->mark_del_entry();
       dinst->getCluster()->del_entry_flush(dinst);
-      // printf("GPROCCESOR::flush_Rob :: isRenamed :: not destroyed::After windowsize is %d: for instID %ld at @Clockcycle %ld\n",
-      //        dinst->getCluster()->get_window_size(),
-      //        dinst->getID(),
-      //        globalClock);
-      // lima_june
+
       bool hasDest = (dinst->getInst()->hasDstRegister());
       if (hasDest) {
-        // printf("GPROCCESOR::flush_Rob :: isRenamed  regpool++ destroying for instID %ld at @Clockcycle %ld\n",
-        //        dinst->getID(),
-        //        globalClock);
         dinst->getCluster()->add_reg_pool();
         dinst->mark_try_flush_transient();
       }
@@ -288,87 +296,9 @@ void GProcessor::flush_transient_from_rob() {
       ROB.push_pipe_in_cluster(dinst);
     }
 
-    // printf("GPROCCESOR::flush_Rob :: Poping from ROB.pop_from_back()  instID %ld at @Clockcycle %ld\n",
-    //        dinst->getID(),
-    //        globalClock);
     ROB.pop_from_back();
   }
 
-  /*} else if (dinst->isRenamed()) {
-        printf("GPROCCESOR::flush_Rob :: isTransient and (dinst->isRenamed()  instID %ld\n", dinst->getID());
-        //Rename :RN
-        if( dinst->getCluster()->get_reg_pool() >= dinst->getCluster()->get_nregs()-3){
-          printf("GPROCCESOR::flush_Rob :: isTransient and (dinst->isRenamed() reg_pool>nregs instID %ld\n", dinst->getID());
-          while (dinst->hasPending()) {
-            Dinst *dstReady = dinst->getNextPending();
-            I(dstReady->isTransient());
-        }
-          break;
-        }
-        printf("GPROCCESOR::flush_Rob : isRenamed markexecuted transient  instID %ld\n", dinst->getID());
-        dinst->markExecutedTransient();
-        //dinst->clearRATEntry();
-        printf("GPROCCESOR::flush_Rob : clear RAT entry instID %ld\n", dinst->getID());
-=======
-    ///////startshere///if (!dinst->isRetired() && dinst->isExecuted()) {
-      // dinst->clearRATEntry();
-      while (dinst->hasPending()) {
-        Dinst *dstReady = dinst->getNextPending();
-        I(dstReady->isTransient());
-      }
-      bool hasDest = (dinst->getInst()->hasDstRegister());
-      if (hasDest) {
-        dinst->getCluster()->add_reg_pool();
-      }
-      dinst->destroyTransientInst();
-    } else if (dinst->isExecuting() || dinst->isIssued()) {
-      dinst->mark_flush_transient();
-      while (dinst->hasPending()) {
-        Dinst *dstReady = dinst->getNextPending();
-        I(dstReady->isTransient());
-      }
-
-      ROB.push_pipe_in_cluster(dinst);
-    } else if (dinst->isRenamed()) {
-      // Rename :RN
-      if (dinst->getCluster()->get_reg_pool() >= dinst->getCluster()->get_nregs() - 3) {
->>>>>>> upstream/main
-//ends here////////////////////
-        while (dinst->hasPending()) {
-          Dinst *dstReady = dinst->getNextPending();
-          I(dstReady->isTransient());
-        }
-        break;
-      }
-      dinst->markExecutedTransient();
-      dinst->clearRATEntry();
-      while (dinst->hasPending()) {
-        Dinst *dstReady = dinst->getNextPending();
-        I(dstReady->isTransient());
-      }
-
-        dinst->clearRATEntry();
-
-       //printf("GPROCCESOR::flush_Rob : isRenamed current instID %ld and getParentScr1 ID is: %ld and and getParentScr2 ID is :
-%ld\n",
-         //   dinst->getID(),dinst->getParenmSrc1()->getID(),dinst->getParentSrc1()->getID() );
-
-       printf("GPROCCESOR::flush_Rob : isRenamed current instID %ld\n", dinst->getID());
-
-
-
-
-        dinst->markExecutedTransient();
-        dinst->getCluster()->delEntry();
-        if(!dinst->hasDeps()){
-        dinst->destroyTransientInst();
-        } else {
-        dinst->mark_to_be_destroyed_transient();
-        }
-    }//if_renamed*/
-
-  // ROB.pop_from_back();
-  // }
   while (!ROB.empty_pipe_in_cluster()) {
     auto* dinst = ROB.back_pipe_in_cluster();  // get last element from vector:back()
 
@@ -378,19 +308,6 @@ void GProcessor::flush_transient_from_rob() {
         if (hasDest && !dinst->is_try_flush_transient()) {
           dinst->getCluster()->add_reg_pool();
         }
-        // if (!dinst->is_try_flush_transient()) {
-        //   // printf("GPROCCESOR::flush_Rob :: ROB_back_in:: not destroyed::windowsize is %d: for instID %ld at @Clockcycle
-        //   %ld\n",
-        //   //        dinst->getCluster()->get_window_size(),
-        //   //        dinst->getID(),
-        //   //        globalClock);
-        //   // dinst->getCluster()->delEntry();
-        //   // printf("GPROCCESOR::flush_Rob :: ROB_back_in:: not destroyed::windowsize++ is %d: for instID %ld at @Clockcycle
-        //   %ld\n",
-        //   //        dinst->getCluster()->get_window_size(),
-        //   //        dinst->getID(),
-        //   //        globalClock);
-        // }
 
         dinst->markExecutedTransient();
         dinst->clearRATEntry();
@@ -414,21 +331,26 @@ void GProcessor::flush_transient_from_rob() {
     }
     ROB.pop_pipe_in_cluster();  // pop last element from buffer_ROB
   }
-  // printf("gprocessor::flush_transient_rob Leaving before new fetch!!!\n");
 }
 
-void GProcessor::flush_transient_inst_from_inst_queue() {
-  // printf("gprocessor::flush_transient_inst_queue Entering before new fetch!!!\n");
+void GProcessor::flush_remaining_transient_inst_from_inst_queue() {
+  //printf("gprocessor::flush_transient_remaining_inst_queue Entering before new Transient_add_inst!!!\n");
   while (!pipeQ.instQueue.empty()) {
     auto* bucket = pipeQ.instQueue.end_data();
     if (bucket) {
-      while (!bucket->empty()) {
+      while (!bucket->empty() && bucket->is_transient()) {
         auto* dinst = bucket->end_data();
         if (dinst->isTransient()) {
+          //printf("gprocessor::flush_transient_inst_remain_queue destroying inst %lu at @clockcycle %lu\n",
+                  //dinst->getID(),
+                  //globalClock);
           dinst->destroyTransientInst();
           bucket->pop_from_back();
           ++spaceInInstQueue;
         } else {
+          //printf("gprocessor::flush_transient_inst_remain_queue NO Transient inst!! %lu at @clockcycle %lu\n",
+                 //dinst->getID(),
+                 //globalClock);
           return;
         }
       }
@@ -439,35 +361,41 @@ void GProcessor::flush_transient_inst_from_inst_queue() {
     }
     pipeQ.instQueue.pop_from_back();
   }
-  // printf("gprocessor::flush_transient_inst_queue Leaving  before new fetch!!!\n");
 }
 
-/*
-Addr_t GProcessor::random_addr_gen(){
-      Addr_t addr = 0x200;
-      std::random_device rd;
-      std::mt19937 gen(rd());
-      std::uniform_int_distribution<> dis(1, 100);
-      int randomNumber = dis(gen);
-      return addr+(uint64_t)randomNumber;
+void GProcessor::flush_transient_inst_from_inst_queue() {
+  //printf("gprocessor::flush_transient_inst_queue Entering before new fetch!!!\n");
+  while (!pipeQ.instQueue.empty()) {
+    auto* bucket = pipeQ.instQueue.end_data();
+    if (bucket) {
+      while (!bucket->empty()) {
+        auto* dinst = bucket->end_data();
+        if (dinst->isTransient()) {
+          //printf("gprocessor::flush_transient_inst_queue destroying inst %lu at @clockcycle %lu\n", dinst->getID(), globalClock);
+          dinst->destroyTransientInst();
+          bucket->pop_from_back();
+          ++spaceInInstQueue;
+        } else {
+          if (bucket->empty()) {  // FIXME
+            I(bucket->empty());
+            pipeQ.pipeLine.doneItem(bucket);
+          }
+          return;
+        }
+      }
+      if (bucket->empty()) {  // FIXME
+        I(bucket->empty());
+        pipeQ.pipeLine.doneItem(bucket);
+      }
+    }
+    pipeQ.instQueue.pop_from_back();
+  }
 }
-
-uint64_t GProcessor::random_reg_gen( bool reg){
-*/
-// Addr_t GProcessor::random_addr_gen() {
-//   Addr_t                          addr = 0x200;
-//   std::random_device              rd;
-//   std::mt19937                    gen(rd());
-//   std::uniform_int_distribution<> dis(1, 100);
-//   int                             randomNumber = dis(gen);
-//   return addr + (uint64_t)randomNumber;
-// }
 
 uint64_t GProcessor::random_reg_gen(bool reg) {
   // std::random_device rd;
   //  std::mt19937 gen(rd());
   static std::mt19937 gen(55);
-
   if (reg) {
     std::uniform_int_distribution<> dis_reg(1, 31);
     int                             randomNumber_reg = dis_reg(gen);
@@ -505,6 +433,9 @@ void GProcessor::add_inst_transient_on_branch_miss(IBucket* bucket, Addr_t pc) {
       alu_dinst = Dinst::create(Instruction(Opcode::iCALU_FPALU, src1, src2, dst1, dst2), pc, 0, 0, true);
     } else if (rand() & 1) {
       alu_dinst = Dinst::create(Instruction(Opcode::iBALU_LBRANCH, src1, src2, dst1, dst2), pc, 0, 0, true);
+      //printf("gprocessor::add_transient_inst creating BRANCH_TRANSIENT  %lu at @clockcycle %lu\n",
+             //alu_dinst->getID(),
+             //globalClock);
 
     } else {
       alu_dinst = Dinst::create(
@@ -516,9 +447,13 @@ void GProcessor::add_inst_transient_on_branch_miss(IBucket* bucket, Addr_t pc) {
     }
 
     alu_dinst->setTransient();
+    alu_dinst->set_spec();
+    last_transientid = alu_dinst->getID();
     if (bucket) {
-      // alu_dinst->setFetchTime();
+      //printf("gprocessor::add_transient_inst pushing in pipeline  %lu at @clockcycle %lu\n", alu_dinst->getID(), globalClock);
+      alu_dinst->setFetchTime();
       bucket->push(alu_dinst);
+      // flush_remaining_transient_inst_from_inst_queue();
       Tracer::stage(alu_dinst, "TIF");
     }
     i++;
@@ -528,32 +463,28 @@ void GProcessor::add_inst_transient_on_branch_miss(IBucket* bucket, Addr_t pc) {
 }
 
 int32_t GProcessor::issue() {
+  // //printf("gprocessor::issue Entering Issue \n");
   int32_t i = 0;  // Instructions executed counter
 
   I(!pipeQ.instQueue.empty());
+  // flush_remaining_transient_inst_from_inst_queue();
 
   do {
     IBucket* bucket = pipeQ.instQueue.top();
     do {
       I(!bucket->empty());
       if (i >= IssueWidth) {
+        //printf("gprocessor::issue i<Issuewidth!!! return!!! \n");
         return i;
       }
 
       I(!bucket->empty());
-
       Dinst* dinst = bucket->top();
-      // if (dinst->isTransient()) {
-      //   printf("gProc::Issue Transient  gets from bucketsize %ld \n", bucket->size());
-      // } else {
-      //   printf("gProc::Issue  bucketsize %ld \n", bucket->size());
-      // }
-      //
-      // printf("pProcessor::Issue Inst is %ld \n", dinst->getID());
 
       dinst->setGProc(this);
 
       StallCause c = add_inst(dinst);
+      //printf("gprocessor::issue inst  %llu at @clockcycle %llu\n", dinst->getID(), globalClock);
       if (c != NoStall) {
         if (i < RealisticWidth) {
           nStall[c]->add(RealisticWidth - i, dinst->has_stats());
@@ -566,10 +497,11 @@ int32_t GProcessor::issue() {
 
     } while (!bucket->empty());
 
-    pipeQ.pipeLine.doneItem(bucket);
+    pipeQ.pipeLine.doneItem(bucket);  // make sure pipelineID<minItemCntr
     pipeQ.instQueue.pop();
   } while (!pipeQ.instQueue.empty());
 
+  //printf("gprocessor::issue Exit inst\n");
   return i;
 }
 
@@ -580,23 +512,36 @@ bool GProcessor::decode_stage() {
 
   bool new_clock = adjust_clock(use_stats);
   if (!new_clock) {
+    //printf("gprocessor::decode !newclock @clockcycle %llu\n", globalClock);
     return true;
   }
 
-  // ID Stage (insert to instQueue)
+  // pipeQ.pipeLine.flush_transient_inst_from_received_bucket();
+  //  ID Stage (insert to instQueue)
   if (spaceInInstQueue >= FetchWidth) {
+    //printf("gprocessor::decode  pipeline_nextitem at @clockcycle %llu\n", globalClock);
     IBucket* bucket = pipeQ.pipeLine.nextItem();
+
+    // IBucket* temp = bucket;
+
     if (bucket) {
       I(!bucket->empty());
       spaceInInstQueue -= bucket->size();
+
+      /*if (!bucket->top()->isTransient()) {
+      spaceInInstQueue -= bucket->size();
+      }*/
       pipeQ.instQueue.push(bucket);
+      //printf("gprocessor::decode  pushing from pipelineQ --> InstQ at @clockcycle %llu\n", globalClock);
 
     } else {
       noFetch2.inc(use_stats);
     }
   } else {
+    //printf("gprocessor::decode !spaceInInstQueue >= FetchWidth) at @clockcycle %llu\n", globalClock);
     noFetch.inc(use_stats);
   }
 
+  //printf("gprocessor::decode Return False!!! at @clockcycle %llu\n", globalClock);
   return false;
 }

@@ -12,6 +12,7 @@
 class Tracer {
 public:
   static bool open(const std::string& fname);
+  static bool open_t(const std::string& fname_t);
 
   Tracer() {
     // disabled until open
@@ -22,6 +23,7 @@ public:
   static void track_range(uint64_t from, uint64_t to = UINT64_MAX);
 
   static void stage(const Dinst*, const std::string ev);
+  static void time_diff(const Dinst* dinst, const std::string ev, const int global_clock);
   static void event(const Dinst*, const std::string ev);
 
   static void commit(const Dinst*);
@@ -32,6 +34,9 @@ public:
   ~Tracer() {
     if (ofs) {
       ofs.close();
+    }
+    if (ofst) {
+      ofst.close();
     }
   }
 
@@ -47,4 +52,5 @@ private:
   static inline uint64_t      track_from;
   static inline uint64_t      track_to;
   static inline std::ofstream ofs;
+  static inline std::ofstream ofst;
 };

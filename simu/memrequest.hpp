@@ -68,7 +68,7 @@ private:
 
   bool prefetch;  // This means that can be dropped at will
   bool spec;
-  bool notifyScbDirectly;
+  // bool notifyScbDirectly;
   bool dropped;
   bool retrying;
   bool needsDisp;  // Once set, it keeps the value
@@ -151,7 +151,7 @@ protected:
     (void)total;
   };
   void dump_calledge(TimeDelta_t lat) { (void)lat; }
-  void upce() {};
+  void upce(){};
 #endif
   static MemRequest* create(MemObj* m, Addr_t addr, bool keep_stats, CallbackBase* cb);
 
@@ -161,6 +161,8 @@ public:
   void redoSetState();
   void redoSetStateAck();
   void redoDisp();
+  bool notifyScbDirectly;
+  bool is_notifyScbDirectly() { return notifyScbDirectly; }
 
   using redoReqCB         = CallbackMember0<MemRequest, &MemRequest::redoReq>;
   using redoReqAckCB      = CallbackMember0<MemRequest, &MemRequest::redoReqAck>;
@@ -343,6 +345,39 @@ public:
     mreq->pc         = pc;
     m->req(mreq);
   }
+  static void send_scb_clean_disp(MemObj* m, bool keep_stats, Addr_t addr, Addr_t pc, CallbackBase* cb = nullptr) {
+    MemRequest* mreq        = create(m, addr, keep_stats, cb);
+    mreq->mt                = mt_req;
+    mreq->notifyScbDirectly = true;
+    // mreq->ma              = ma_setDirty;  // For writes, only MO are valid states
+    mreq->ma_orig = mreq->ma;
+    mreq->pc      = pc;
+    m->disp(mreq);
+    // m->req(mreq); //working
+  }
+  static void send_scb_dirty_disp(MemObj* m, bool keep_stats, Addr_t addr, Addr_t pc, CallbackBase* cb = nullptr) {
+    MemRequest* mreq        = create(m, addr, keep_stats, cb);
+    mreq->mt                = mt_req;
+    mreq->notifyScbDirectly = true;
+    mreq->ma                = ma_setDirty;  // For writes, only MO are valid states
+    mreq->ma_orig           = mreq->ma;
+    mreq->pc                = pc;
+    m->disp(mreq);
+    // m->req(mreq); //working
+  }
+
+  /* static void sendDirtyDisp(MemObj *m, MemObj *creator, Addr_t addr, bool keep_stats, CallbackBase *cb = nullptr) {
+     MemRequest *mreq = create(m, addr, keep_stats, cb);
+     mreq->mt         = mt_disp;
+     mreq->ma         = ma_setDirty;
+     mreq->ma_orig    = mreq->ma;
+     I(creator);
+     mreq->creatorObj      = creator;
+     mreq->topCoherentNode = creator;
+     m->disp(mreq);
+   }
+  */
+
   static void sendReqWritePrefetch(MemObj* m, bool keep_stats, Addr_t addr, CallbackBase* cb = nullptr) {
     MemRequest* mreq = create(m, addr, keep_stats, cb);
     mreq->mt         = mt_req;
@@ -491,7 +526,9 @@ public:
   bool                  isHomeNodeSpec(MemObj* cache) const { return currMemObj == cache || cache->isLastLevelCache(); }
 
   [[nodiscard]] bool isTopCoherentNode() const {
-    I(topCoherentNode);
+    if (!notifyScbDirectly) {
+      I(topCoherentNode);
+    }
     return topCoherentNode == currMemObj;
   }
   [[nodiscard]] MsgAction getAction() const { return ma; }
@@ -552,7 +589,7 @@ public:
     return globalClock - startClock;
   }
   [[nodiscard]] Time_t getTimeDelay(Time_t when) const {
-    I(startClock);
+    // limaI(startClock);
     I(startClock <= when);
     return when - startClock;
   }

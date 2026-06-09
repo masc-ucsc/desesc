@@ -290,7 +290,7 @@ Dinst* Emul_dromajo::peek(Hartid_t fid) {
         case 0x47:
         case 0x4b:
         case 0x4f:
-          I(false);  // add support for R4 format (3 sources)
+          //joseI(false);  // add support for R4 format (3 sources)
           opcode = Opcode::iCALU_FPMULT;
           src1   = static_cast<RegType>(rs1);
           src2   = static_cast<RegType>(rs2);
@@ -373,7 +373,6 @@ Dinst* Emul_dromajo::peek(Hartid_t fid) {
       }
   }
 
-
   I(src1 != RegType::LREG_INVALID);
   I(src2 != RegType::LREG_INVALID);
   I(dst1 != RegType::LREG_INVALID);
@@ -395,11 +394,11 @@ Dinst* Emul_dromajo::peek(Hartid_t fid) {
 #ifdef TRACE_CALL_RET
   if (opcode == Opcode::iBALU_RET) {
     std::print("opcode ret   pc:{:x} next:{:x} insn_raw:{:x}\n", last[fid].pc, paddr, insn_raw);
-  }else if (opcode == Opcode::iBALU_LCALL ) {
+  } else if (opcode == Opcode::iBALU_LCALL) {
     std::print("opcode lcall pc:{:x} insn_raw:{:x}\n", last[fid].pc, insn_raw);
-  }else if (opcode == Opcode::iBALU_RCALL) {
+  } else if (opcode == Opcode::iBALU_RCALL) {
     std::print("opcode rcall pc:{:x} insn_raw:{:x}\n", last[fid].pc, insn_raw);
-  }else if (paddr) {
+  } else if (paddr) {
     std::print("opcode {}    pc:{:x} target:{:x} insn_raw:{:x}\n", (int)opcode, last[fid].pc, paddr, insn_raw);
   }
 #endif

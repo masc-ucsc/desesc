@@ -10,16 +10,17 @@
 #include "dinst.hpp"
 #include "gmemory_system.hpp"
 #include "opcode.hpp"
+#include "resource.hpp"
 
 class MemObj;  // To break circular dependencies
-
+class FUStore;
 class Store_buffer_line {
 public:
   // NOTE: Invalid not used because when invalid it is removed from the map
   enum class State { Uncoherent, Modified, Invalid, Clean };  // UMIC
 
-  State state;
-
+  State             state;
+  bool              transient;
   std::vector<bool> word_present;  // FIXME: dinst does byte info
 
   Addr_t line_addr;
@@ -31,6 +32,7 @@ public:
     word_present.assign(line_size >> 2, false);
     state     = State::Uncoherent;
     line_addr = addr;
+    transient = false;
   }
   void set_waiting_wb() { state = State::Uncoherent; }
 
@@ -42,8 +44,9 @@ public:
   bool is_ld_forward(Addr_t addr_off) const { return word_present[addr_off >> 2]; }
 
   void set_clean() { state = State::Clean; }
-
   bool is_clean() const { return state == State::Clean; }
+  void set_transient() { transient = true; }
+  bool is_transient() const { return transient; }
   bool is_waiting_wb() const { return state == State::Uncoherent; }
 };
 
@@ -52,10 +55,12 @@ protected:
   MemObj* dl1;
 
   // FA structure, so a map is fine
-  absl::flat_hash_map<Addr_t, Store_buffer_line> lines;
+  absl::flat_hash_map<Addr_t, Store_buffer_line> scb_lines_map;
 
-  int    scb_size;
-  int    scb_clean_lines;
+  /*scb_size=32*/
+  // int    scb_size;
+  int scb_clean_lines;
+  // int    scb_lines_num;
   size_t line_size;
   size_t line_size_addr_bits;
   size_t line_size_mask;
@@ -63,9 +68,10 @@ protected:
   Addr_t calc_line(Addr_t addr) const { return addr >> line_size_addr_bits; }
   Addr_t calc_offset(Addr_t addr) const { return addr & line_size_mask; }
 
-  void remove_clean();
+  // void remove_clean();
 
 public:
+  int  scb_size;
   void ownership_done(Addr_t addr);
 
   Store_buffer(Hartid_t hid, std::shared_ptr<Gmemory_system> ms);
@@ -73,6 +79,13 @@ public:
 
   bool can_accept_st(Addr_t st_addr) const;
   void add_st(Dinst* dinst);
+  void remove_spec_load(Dinst* dinst);
+  bool find(Dinst* dinst);
+  bool is_clean_disp(Dinst* dinst);
+  void remove_clean();
+  int  get_clean_num() const;
+  void set_clean_scb(Dinst* dinst);
+  void flush_transient();
 
   bool is_ld_forward(Addr_t ld_addr) const;
 };

@@ -11,6 +11,7 @@
 #include "iassert.hpp"
 #include "mrouter.hpp"
 #include "port.hpp"
+#include "store_buffer.hpp"
 
 class MemRequest;
 
@@ -38,6 +39,7 @@ class MemObj {
 private:
 protected:
   friend class MRouter;
+  friend class Store_buffer;
 
   MRouter*    router;
   std::string section;

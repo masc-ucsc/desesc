@@ -82,11 +82,6 @@ std::shared_ptr<Resource> UseClusterScheduler::getResource(Dinst* dinst) {
   int touse_nintra = (cused[inst->getSrc1()] && cused[inst->getSrc1()]->get_id() != res[op][p]->getCluster()->get_id()) ? 1 : 0;
   touse_nintra += (cused[inst->getSrc2()] && cused[inst->getSrc2()]->get_id() != res[op][p]->getCluster()->get_id());
 
-#if 0
-  if (touse_nintra==0 && touse->getCluster()->getAvailSpace()>0 && touse->getCluster()->getNReady() <= 2)
-    return touse;
-#endif
-
   for (const auto i : Opcodes) {
     uint32_t n = p + static_cast<uint32_t>(i);
     if (n >= res[op].size()) {
@@ -100,7 +95,6 @@ std::shared_ptr<Resource> UseClusterScheduler::getResource(Dinst* dinst) {
     int nintra = ((cused[inst->getSrc1()] != res[op][n]->getCluster() && cused[inst->getSrc1()]) ? 1 : 0)
                  + ((cused[inst->getSrc2()] != res[op][n]->getCluster() && cused[inst->getSrc2()]) ? 1 : 0);
 
-#if 1
     if (nintra == touse_nintra && touse->getCluster()->getNReady() < res[op][n]->getCluster()->getNReady()) {
       touse        = res[op][n];
       touse_nintra = nintra;
@@ -108,12 +102,6 @@ std::shared_ptr<Resource> UseClusterScheduler::getResource(Dinst* dinst) {
       touse        = res[op][n];
       touse_nintra = nintra;
     }
-#else
-    if (touse->getCluster()->getAvailSpace() > res[op][n]->getCluster()->getAvailSpace()) {
-      touse        = res[op][n];
-      touse_nintra = nintra;
-    }
-#endif
   }
 
   cused[inst->getDst1()] = touse->getCluster();

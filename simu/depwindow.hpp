@@ -21,7 +21,6 @@ private:
 
   std::shared_ptr<PortGeneric> schedPort;
 
-  // Helper to avoid code duplication in tryNextSlot immediate vs queued paths
   void do_schedule(Time_t when, Dinst* dinst);
 
 protected:
@@ -30,6 +29,8 @@ protected:
 public:
   ~DepWindow();
   DepWindow(uint32_t cpuid, int _src_cluster_id, const std::string& clusterName, uint32_t pos);
+
+  std::shared_ptr<PortGeneric> get_sched_port() const { return schedPort; }
 
   void select(Dinst* dinst);
 

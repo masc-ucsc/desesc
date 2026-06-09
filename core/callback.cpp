@@ -11,13 +11,19 @@ Time_t deadClock   = 0;
 
 void EventScheduler::dump() const { I(0); }
 
-void EventScheduler::registerPort(PortGeneric* port) { getRegisteredPorts().push_back(port); }
+void EventScheduler::register_drain_port(PortGeneric* port) { get_drain_ports().push_back(port); }
 
-void EventScheduler::processPendingPortRequests() {
-  // Process all registered ports' pending requests at start of cycle
-  // With PORT_STRICT_PRIORITY: priority order (lowest ID first)
-  // Without PORT_STRICT_PRIORITY: FIFO order (first inserted, first popped)
-  for (auto* port : getRegisteredPorts()) {
-    port->processPendingRequests();
+void EventScheduler::drain_port_queues() {
+  for (auto* port : get_drain_ports()) {
+    port->drain_pending();
   }
+}
+
+bool EventScheduler::any_drain_port_has_pending() {
+  for (auto* port : get_drain_ports()) {
+    if (port->has_pending()) {
+      return true;
+    }
+  }
+  return false;
 }

@@ -3,14 +3,14 @@
 # and field names
 
 [trace]
-#range = [0,5000]
+range = [5000,10000]
 #range = [0,313000]
 #range = [50000,60000]
 #range = [0,1000000]
 #range = [3100000,3200000]
 #range = [0,0]
 #range = [100000,900000]
-range = [0,100000000]
+#range = [0,100000000]
 #range = [1000000,2000000]
 
 
@@ -26,7 +26,8 @@ type      = "dromajo"
 # Load big one: weight maximum:.45::sp4
 #load = "/mada/software/benchmarks/dromajo/spec2017/sp_lpt09/mcf/sp3"
 #good
-load = "/mada/software/benchmarks/dromajo/spec2017/sp_lpt09/gcc_fgcse/sp5"
+#load = "/mada/software/benchmarks/dromajo/spec2017/sp_lpt09/gcc_fgcse/sp5"
+load = "conf/sp1"
 #load = "/mada/software/benchmarks/dromajo/spec2017/sp_lpt09/gcc_fipa-pta/sp1"
 #good
 #load = "/mada/software/benchmarks/dromajo/spec2017/sp_lpt09/leela/sp2"
@@ -90,68 +91,10 @@ load = "/mada/software/benchmarks/dromajo/spec2017/sp_lpt09/gcc_fgcse/sp5"
 #bench      = "conf/dhrystone.riscv"
 #bench      = "k1"
 
-#start_roi = false
-#rabbit    = 1024
-#detail    = 1024
-#time      = 100e3
-#Number of Insts
-#time      =1_000_000
-#rabbit    = 100000
-#detail    = 30000000
-#time      = 20000000
-#josemustrabbit    = 0
 rabbit    = 0
-#rabbit    = 800000
-#jose mustdetail    = 0
 detail    = 0
-#detail    = 800000
-#Number of Insts
-#time      = 10000
-#time      = 1000000
-#time       = 1500000
-#josemusttime      = 50000000
-#time      = 100000000
-#time      = 100_000_000
-#bench      = "k2"
-
-#start_roi = false
-#rabbit    = 100000
-#detail    = 2500000
-#time      = 2500000
-#bench      = "conf/dhrystone.riscv"
-#bench      = "k2"
-
+time      = 40000
 start_roi = false
-#rabbit    = 100000
-#detail    = 150000
-#time      = 200000
-#time      = 50000000
-#time      = 2000
-#matchtime      = 2100
-#main
-#sametime      = 5000
-
-
-#sametime       = 500
-#sametime       = 800
-#sametime       = 1000
-#sametime       = 1500
-#sametime       = 2000
-#sametime       = 8000
-#sametime       = 9000
-#sametime       = 10000
-#sametime       = 12000
-#sametime       = 14000
-#sametime       = 30000
-#sametime       = 30000
-#time         = 32000
-#time         = 32000
-#time         = 35000
-time         = 400000
-#time          = 1000000
-#time          = 10000000
-#time          = 5000000
-#time         = 50000000
 
 [rand_emu]
 type = "random"  # Generate random instructions (coverage testing?)
